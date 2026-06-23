@@ -2329,8 +2329,9 @@ function formatDateTime(value: string): string {
   return formatDateTimeValue(value) || '-'
 }
 
+const _numberFormat = new Intl.NumberFormat()
 function formatNumber(value: number): string {
-  return new Intl.NumberFormat().format(value)
+  return _numberFormat.format(value)
 }
 
 onMounted(() => {

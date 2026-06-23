@@ -107,6 +107,7 @@
           <iframe
             :src="embeddedUrl"
             class="custom-embed-frame"
+            allow="clipboard-write; clipboard-read; fullscreen"
             allowfullscreen
           ></iframe>
         </div>
@@ -242,7 +243,7 @@ async function fetchAndRenderMarkdown(slug: string) {
     const html = marked.parse(raw) as string
     const sanitized = DOMPurify.sanitize(html, {
       ADD_TAGS: ['iframe'],
-      ADD_ATTR: ['allowfullscreen', 'frameborder', 'src'],
+      ADD_ATTR: ['allowfullscreen', 'frameborder', 'src', 'allow'],
     })
 
     // Inject IDs into headings and build TOC
