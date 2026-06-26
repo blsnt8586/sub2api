@@ -163,6 +163,7 @@ func (s *RateLimitService) CheckErrorPolicy(ctx context.Context, account *Accoun
 // 返回是否应该停止该账号的调度
 func (s *RateLimitService) HandleUpstreamError(ctx context.Context, account *Account, statusCode int, headers http.Header, responseBody []byte, requestedModel ...string) (shouldDisable bool) {
 	customErrorCodesEnabled := account.IsCustomErrorCodesEnabled()
+	customErrorCodesExplicit := customErrorCodesEnabled && len(account.GetCustomErrorCodes()) > 0
 
 	// 池模式默认不标记本地账号状态；仅当用户显式配置自定义错误码时按本地策略处理。
 	if account.IsPoolMode() && !customErrorCodesEnabled {
@@ -178,6 +179,24 @@ func (s *RateLimitService) HandleUpstreamError(ctx context.Context, account *Acc
 	}
 
 	if len(requestedModel) > 0 && s.HandleUpstreamModelNotFound(ctx, account, requestedModel[0], statusCode, responseBody) {
+		return true
+	}
+
+	upstreamMsg := strings.TrimSpace(extractUpstreamErrorMessage(responseBody))
+	upstreamMsg = sanitizeUpstreamErrorMessage(upstreamMsg)
+	if upstreamMsg != "" {
+		upstreamMsg = truncateForLog([]byte(upstreamMsg), 512)
+	}
+
+	// When an API key account explicitly opts into custom error codes, a matched
+	// code is an admin-defined hard account error. Do not let default recovery
+	// heuristics turn it into temp-unschedulable, rate-limited, or overloaded.
+	if customErrorCodesExplicit {
+		msg := "Custom error code triggered"
+		if upstreamMsg != "" {
+			msg = upstreamMsg
+		}
+		s.handleCustomErrorCode(ctx, account, statusCode, msg)
 		return true
 	}
 
@@ -197,12 +216,6 @@ func (s *RateLimitService) HandleUpstreamError(ctx context.Context, account *Acc
 		if s.tryTempUnschedulable(ctx, account, statusCode, responseBody) {
 			return true
 		}
-	}
-
-	upstreamMsg := strings.TrimSpace(extractUpstreamErrorMessage(responseBody))
-	upstreamMsg = sanitizeUpstreamErrorMessage(upstreamMsg)
-	if upstreamMsg != "" {
-		upstreamMsg = truncateForLog([]byte(upstreamMsg), 512)
 	}
 
 	switch statusCode {
@@ -333,15 +346,7 @@ func (s *RateLimitService) HandleUpstreamError(ctx context.Context, account *Acc
 		s.handle529(ctx, account)
 		shouldDisable = false
 	default:
-		// 自定义错误码启用时：在列表中的错误码都应该停止调度
-		if customErrorCodesEnabled {
-			msg := "Custom error code triggered"
-			if upstreamMsg != "" {
-				msg = upstreamMsg
-			}
-			s.handleCustomErrorCode(ctx, account, statusCode, msg)
-			shouldDisable = true
-		} else if statusCode >= 500 {
+		if statusCode >= 500 {
 			// 未启用自定义错误码时：仅记录5xx错误
 			slog.Warn("account_upstream_error", "account_id", account.ID, "status_code", statusCode)
 			shouldDisable = false

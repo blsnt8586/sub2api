@@ -262,6 +262,48 @@ func TestHandleUpstreamError_PoolModeCustomErrorCodesOverride(t *testing.T) {
 		require.Equal(t, 1, repo.setErrCalls)
 		require.Equal(t, 0, repo.tempCalls)
 	})
+
+	t.Run("custom_error_code_403_bypasses_temp_unschedulable", func(t *testing.T) {
+		repo := &errorPolicyRepoStub{}
+		counter := &openAI403CounterCacheStub{counts: []int64{1}}
+		blocker := &runtimeBlockRecorder{}
+		svc := NewRateLimitService(repo, nil, &config.Config{}, nil, nil)
+		svc.SetOpenAI403CounterCache(counter)
+		svc.SetAccountRuntimeBlocker(blocker)
+		account := &Account{
+			ID:       32,
+			Type:     AccountTypeAPIKey,
+			Platform: PlatformOpenAI,
+			Credentials: map[string]any{
+				"custom_error_codes_enabled": true,
+				"custom_error_codes":         []any{float64(403)},
+				"temp_unschedulable_enabled": true,
+				"temp_unschedulable_rules": []any{
+					map[string]any{
+						"error_code":       float64(403),
+						"keywords":         []any{"temporary edge rejection"},
+						"duration_minutes": float64(10),
+					},
+				},
+			},
+		}
+
+		shouldDisable := svc.HandleUpstreamError(
+			context.Background(),
+			account,
+			http.StatusForbidden,
+			http.Header{},
+			[]byte(`{"error":{"message":"temporary edge rejection"}}`),
+		)
+
+		require.True(t, shouldDisable)
+		require.Equal(t, 1, repo.setErrCalls)
+		require.Equal(t, 0, repo.tempCalls)
+		require.Len(t, blocker.accounts, 1)
+		require.Equal(t, "custom_error_code", blocker.reasons[0])
+		require.Contains(t, repo.lastErrorMsg, "Custom error code 403")
+		require.Contains(t, repo.lastErrorMsg, "temporary edge rejection")
+	})
 }
 
 // ---------------------------------------------------------------------------
