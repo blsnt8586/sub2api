@@ -138,3 +138,6 @@ docs/*
 frontend/coverage/
 aicodex
 output/
+
+# 自定义构建产物(94MB,勿入库)
+sub2api-custom

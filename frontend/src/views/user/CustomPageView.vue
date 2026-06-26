@@ -118,7 +118,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores'
 import { useAuthStore } from '@/stores/auth'
@@ -137,6 +137,7 @@ interface TocItem {
 
 const { t, locale } = useI18n()
 const route = useRoute()
+const router = useRouter()
 const appStore = useAppStore()
 const authStore = useAuthStore()
 const adminSettingsStore = useAdminSettingsStore()
@@ -343,8 +344,40 @@ watch(markdownSlug, (slug) => {
   }
 }, { immediate: true })
 
+// 允许的目标 → 路由映射(白名单,避免任意跳转)。
+const NAVIGATE_TARGETS: Record<string, string> = {
+  keys: '/keys',
+}
+
+// 监听嵌入 iframe(如 nova)发来的导航请求,在「当前页」内路由跳转,体验更顺滑。
+// 安全:仅接受来自当前 iframe origin 的消息,且 target 必须在白名单内。
+function handleEmbeddedMessage(event: MessageEvent) {
+  const data = event.data
+  if (!data || typeof data !== 'object' || data.type !== 'sub2api:navigate') return
+
+  // 校验来源 origin 与当前嵌入页面 origin 一致
+  const url = embeddedUrl.value
+  if (!url) return
+  let expectedOrigin: string
+  try {
+    expectedOrigin = new URL(url).origin
+  } catch {
+    return
+  }
+  if (event.origin !== expectedOrigin) return
+
+  const path = NAVIGATE_TARGETS[String(data.target)]
+  if (path) {
+    void router.push(path)
+  }
+}
+
 onMounted(async () => {
   pageTheme.value = detectTheme()
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('message', handleEmbeddedMessage)
+  }
 
   if (typeof document !== 'undefined') {
     themeObserver = new MutationObserver(() => {
@@ -366,6 +399,9 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('message', handleEmbeddedMessage)
+  }
   if (themeObserver) {
     themeObserver.disconnect()
     themeObserver = null
