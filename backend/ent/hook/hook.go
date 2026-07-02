@@ -309,6 +309,42 @@ func (f SettingFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, err
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SettingMutation", m)
 }
 
+// The Sub2APIOptimizeLogFunc type is an adapter to allow the use of ordinary
+// function as Sub2APIOptimizeLog mutator.
+type Sub2APIOptimizeLogFunc func(context.Context, *ent.Sub2APIOptimizeLogMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f Sub2APIOptimizeLogFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.Sub2APIOptimizeLogMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.Sub2APIOptimizeLogMutation", m)
+}
+
+// The Sub2APIOptimizeScheduleFunc type is an adapter to allow the use of ordinary
+// function as Sub2APIOptimizeSchedule mutator.
+type Sub2APIOptimizeScheduleFunc func(context.Context, *ent.Sub2APIOptimizeScheduleMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f Sub2APIOptimizeScheduleFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.Sub2APIOptimizeScheduleMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.Sub2APIOptimizeScheduleMutation", m)
+}
+
+// The Sub2APIProviderFunc type is an adapter to allow the use of ordinary
+// function as Sub2APIProvider mutator.
+type Sub2APIProviderFunc func(context.Context, *ent.Sub2APIProviderMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f Sub2APIProviderFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.Sub2APIProviderMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.Sub2APIProviderMutation", m)
+}
+
 // The SubscriptionPlanFunc type is an adapter to allow the use of ordinary
 // function as SubscriptionPlan mutator.
 type SubscriptionPlanFunc func(context.Context, *ent.SubscriptionPlanMutation) (ent.Value, error)

@@ -64,6 +64,12 @@ type Tx struct {
 	SecuritySecret *SecuritySecretClient
 	// Setting is the client for interacting with the Setting builders.
 	Setting *SettingClient
+	// Sub2APIOptimizeLog is the client for interacting with the Sub2APIOptimizeLog builders.
+	Sub2APIOptimizeLog *Sub2APIOptimizeLogClient
+	// Sub2APIOptimizeSchedule is the client for interacting with the Sub2APIOptimizeSchedule builders.
+	Sub2APIOptimizeSchedule *Sub2APIOptimizeScheduleClient
+	// Sub2APIProvider is the client for interacting with the Sub2APIProvider builders.
+	Sub2APIProvider *Sub2APIProviderClient
 	// SubscriptionPlan is the client for interacting with the SubscriptionPlan builders.
 	SubscriptionPlan *SubscriptionPlanClient
 	// TLSFingerprintProfile is the client for interacting with the TLSFingerprintProfile builders.
@@ -240,6 +246,9 @@ func (tx *Tx) init() {
 	tx.RedeemCode = NewRedeemCodeClient(tx.config)
 	tx.SecuritySecret = NewSecuritySecretClient(tx.config)
 	tx.Setting = NewSettingClient(tx.config)
+	tx.Sub2APIOptimizeLog = NewSub2APIOptimizeLogClient(tx.config)
+	tx.Sub2APIOptimizeSchedule = NewSub2APIOptimizeScheduleClient(tx.config)
+	tx.Sub2APIProvider = NewSub2APIProviderClient(tx.config)
 	tx.SubscriptionPlan = NewSubscriptionPlanClient(tx.config)
 	tx.TLSFingerprintProfile = NewTLSFingerprintProfileClient(tx.config)
 	tx.UsageCleanupTask = NewUsageCleanupTaskClient(tx.config)

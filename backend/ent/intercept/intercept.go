@@ -34,6 +34,9 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
 	"github.com/Wei-Shaw/sub2api/ent/securitysecret"
 	"github.com/Wei-Shaw/sub2api/ent/setting"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apioptimizelog"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apioptimizeschedule"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiprovider"
 	"github.com/Wei-Shaw/sub2api/ent/subscriptionplan"
 	"github.com/Wei-Shaw/sub2api/ent/tlsfingerprintprofile"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
@@ -777,6 +780,87 @@ func (f TraverseSetting) Traverse(ctx context.Context, q ent.Query) error {
 	return fmt.Errorf("unexpected query type %T. expect *ent.SettingQuery", q)
 }
 
+// The Sub2APIOptimizeLogFunc type is an adapter to allow the use of ordinary function as a Querier.
+type Sub2APIOptimizeLogFunc func(context.Context, *ent.Sub2APIOptimizeLogQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f Sub2APIOptimizeLogFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.Sub2APIOptimizeLogQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.Sub2APIOptimizeLogQuery", q)
+}
+
+// The TraverseSub2APIOptimizeLog type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseSub2APIOptimizeLog func(context.Context, *ent.Sub2APIOptimizeLogQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseSub2APIOptimizeLog) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseSub2APIOptimizeLog) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.Sub2APIOptimizeLogQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.Sub2APIOptimizeLogQuery", q)
+}
+
+// The Sub2APIOptimizeScheduleFunc type is an adapter to allow the use of ordinary function as a Querier.
+type Sub2APIOptimizeScheduleFunc func(context.Context, *ent.Sub2APIOptimizeScheduleQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f Sub2APIOptimizeScheduleFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.Sub2APIOptimizeScheduleQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.Sub2APIOptimizeScheduleQuery", q)
+}
+
+// The TraverseSub2APIOptimizeSchedule type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseSub2APIOptimizeSchedule func(context.Context, *ent.Sub2APIOptimizeScheduleQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseSub2APIOptimizeSchedule) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseSub2APIOptimizeSchedule) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.Sub2APIOptimizeScheduleQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.Sub2APIOptimizeScheduleQuery", q)
+}
+
+// The Sub2APIProviderFunc type is an adapter to allow the use of ordinary function as a Querier.
+type Sub2APIProviderFunc func(context.Context, *ent.Sub2APIProviderQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f Sub2APIProviderFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.Sub2APIProviderQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.Sub2APIProviderQuery", q)
+}
+
+// The TraverseSub2APIProvider type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseSub2APIProvider func(context.Context, *ent.Sub2APIProviderQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseSub2APIProvider) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseSub2APIProvider) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.Sub2APIProviderQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.Sub2APIProviderQuery", q)
+}
+
 // The SubscriptionPlanFunc type is an adapter to allow the use of ordinary function as a Querier.
 type SubscriptionPlanFunc func(context.Context, *ent.SubscriptionPlanQuery) (ent.Value, error)
 
@@ -1100,6 +1184,12 @@ func NewQuery(q ent.Query) (Query, error) {
 		return &query[*ent.SecuritySecretQuery, predicate.SecuritySecret, securitysecret.OrderOption]{typ: ent.TypeSecuritySecret, tq: q}, nil
 	case *ent.SettingQuery:
 		return &query[*ent.SettingQuery, predicate.Setting, setting.OrderOption]{typ: ent.TypeSetting, tq: q}, nil
+	case *ent.Sub2APIOptimizeLogQuery:
+		return &query[*ent.Sub2APIOptimizeLogQuery, predicate.Sub2APIOptimizeLog, sub2apioptimizelog.OrderOption]{typ: ent.TypeSub2APIOptimizeLog, tq: q}, nil
+	case *ent.Sub2APIOptimizeScheduleQuery:
+		return &query[*ent.Sub2APIOptimizeScheduleQuery, predicate.Sub2APIOptimizeSchedule, sub2apioptimizeschedule.OrderOption]{typ: ent.TypeSub2APIOptimizeSchedule, tq: q}, nil
+	case *ent.Sub2APIProviderQuery:
+		return &query[*ent.Sub2APIProviderQuery, predicate.Sub2APIProvider, sub2apiprovider.OrderOption]{typ: ent.TypeSub2APIProvider, tq: q}, nil
 	case *ent.SubscriptionPlanQuery:
 		return &query[*ent.SubscriptionPlanQuery, predicate.SubscriptionPlan, subscriptionplan.OrderOption]{typ: ent.TypeSubscriptionPlan, tq: q}, nil
 	case *ent.TLSFingerprintProfileQuery:

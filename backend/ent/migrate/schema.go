@@ -124,7 +124,16 @@ var (
 		{Name: "session_window_start", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "session_window_end", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "session_window_status", Type: field.TypeString, Nullable: true, Size: 20},
+		{Name: "provider_api_key_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "remote_group_name", Type: field.TypeString, Nullable: true, Size: 100},
+		{Name: "remote_group_multiplier", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(10,4)"}},
+		{Name: "remote_group_synced_at", Type: field.TypeTime, Nullable: true},
+		{Name: "sub2api_optimize_enabled", Type: field.TypeBool, Default: false},
+		{Name: "sub2api_max_multiplier", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(10,4)"}},
+		{Name: "sub2api_min_multiplier", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(10,4)"}},
+		{Name: "sub2api_test_model", Type: field.TypeString, Nullable: true, Size: 100},
 		{Name: "proxy_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "provider_id", Type: field.TypeInt64, Nullable: true},
 	}
 	// AccountsTable holds the schema information for the "accounts" table.
 	AccountsTable = &schema.Table{
@@ -134,8 +143,14 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "accounts_proxies_proxy",
-				Columns:    []*schema.Column{AccountsColumns[29]},
+				Columns:    []*schema.Column{AccountsColumns[37]},
 				RefColumns: []*schema.Column{ProxiesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "accounts_sub2api_providers_accounts",
+				Columns:    []*schema.Column{AccountsColumns[38]},
+				RefColumns: []*schema.Column{Sub2apiProvidersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 		},
@@ -158,7 +173,7 @@ var (
 			{
 				Name:    "account_proxy_id",
 				Unique:  false,
-				Columns: []*schema.Column{AccountsColumns[29]},
+				Columns: []*schema.Column{AccountsColumns[37]},
 			},
 			{
 				Name:    "account_priority",
@@ -1231,6 +1246,119 @@ var (
 		Columns:    SettingsColumns,
 		PrimaryKey: []*schema.Column{SettingsColumns[0]},
 	}
+	// Sub2apiOptimizeLogsColumns holds the columns for the "sub2api_optimize_logs" table.
+	Sub2apiOptimizeLogsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "status", Type: field.TypeString, Size: 16, Default: "success"},
+		{Name: "total", Type: field.TypeInt, Default: 0},
+		{Name: "optimized", Type: field.TypeInt, Default: 0},
+		{Name: "skipped", Type: field.TypeInt, Default: 0},
+		{Name: "failed", Type: field.TypeInt, Default: 0},
+		{Name: "detail", Type: field.TypeJSON, Nullable: true},
+		{Name: "started_at", Type: field.TypeTime, Nullable: true},
+		{Name: "finished_at", Type: field.TypeTime, Nullable: true},
+		{Name: "schedule_id", Type: field.TypeInt64},
+	}
+	// Sub2apiOptimizeLogsTable holds the schema information for the "sub2api_optimize_logs" table.
+	Sub2apiOptimizeLogsTable = &schema.Table{
+		Name:       "sub2api_optimize_logs",
+		Columns:    Sub2apiOptimizeLogsColumns,
+		PrimaryKey: []*schema.Column{Sub2apiOptimizeLogsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "sub2api_optimize_logs_sub2api_optimize_schedules_logs",
+				Columns:    []*schema.Column{Sub2apiOptimizeLogsColumns[11]},
+				RefColumns: []*schema.Column{Sub2apiOptimizeSchedulesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "sub2apioptimizelog_schedule_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{Sub2apiOptimizeLogsColumns[11], Sub2apiOptimizeLogsColumns[1]},
+			},
+		},
+	}
+	// Sub2apiOptimizeSchedulesColumns holds the columns for the "sub2api_optimize_schedules" table.
+	Sub2apiOptimizeSchedulesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "cron_expr", Type: field.TypeString, Size: 64},
+		{Name: "enabled", Type: field.TypeBool, Default: true},
+		{Name: "last_run_at", Type: field.TypeTime, Nullable: true},
+		{Name: "next_run_at", Type: field.TypeTime, Nullable: true},
+		{Name: "provider_id", Type: field.TypeInt64, Unique: true},
+	}
+	// Sub2apiOptimizeSchedulesTable holds the schema information for the "sub2api_optimize_schedules" table.
+	Sub2apiOptimizeSchedulesTable = &schema.Table{
+		Name:       "sub2api_optimize_schedules",
+		Columns:    Sub2apiOptimizeSchedulesColumns,
+		PrimaryKey: []*schema.Column{Sub2apiOptimizeSchedulesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "sub2api_optimize_schedules_sub2api_providers_optimize_schedule",
+				Columns:    []*schema.Column{Sub2apiOptimizeSchedulesColumns[7]},
+				RefColumns: []*schema.Column{Sub2apiProvidersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "sub2apioptimizeschedule_provider_id",
+				Unique:  true,
+				Columns: []*schema.Column{Sub2apiOptimizeSchedulesColumns[7]},
+			},
+		},
+	}
+	// Sub2apiProvidersColumns holds the columns for the "sub2api_providers" table.
+	Sub2apiProvidersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "deleted_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "name", Type: field.TypeString, Size: 100},
+		{Name: "base_url", Type: field.TypeString, Size: 500},
+		{Name: "provider_type", Type: field.TypeString, Size: 50, Default: "sub2api"},
+		{Name: "status", Type: field.TypeString, Size: 20, Default: "active"},
+		{Name: "notes", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "email", Type: field.TypeString, Size: 200},
+		{Name: "password_encrypted", Type: field.TypeString, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "api_path_keys", Type: field.TypeString, Nullable: true, Size: 100},
+		{Name: "api_path_groups", Type: field.TypeString, Nullable: true, Size: 100},
+		{Name: "last_sync_at", Type: field.TypeTime, Nullable: true},
+		{Name: "last_sync_status", Type: field.TypeString, Nullable: true, Size: 20},
+		{Name: "last_sync_error", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
+	}
+	// Sub2apiProvidersTable holds the schema information for the "sub2api_providers" table.
+	Sub2apiProvidersTable = &schema.Table{
+		Name:       "sub2api_providers",
+		Columns:    Sub2apiProvidersColumns,
+		PrimaryKey: []*schema.Column{Sub2apiProvidersColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "sub2apiprovider_status",
+				Unique:  false,
+				Columns: []*schema.Column{Sub2apiProvidersColumns[7]},
+			},
+			{
+				Name:    "sub2apiprovider_deleted_at",
+				Unique:  false,
+				Columns: []*schema.Column{Sub2apiProvidersColumns[3]},
+			},
+			{
+				Name:    "sub2apiprovider_base_url_email",
+				Unique:  true,
+				Columns: []*schema.Column{Sub2apiProvidersColumns[5], Sub2apiProvidersColumns[9]},
+				Annotation: &entsql.IndexAnnotation{
+					Where: "deleted_at IS NULL",
+				},
+			},
+		},
+	}
 	// SubscriptionPlansColumns holds the columns for the "subscription_plans" table.
 	SubscriptionPlansColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt64, Increment: true},
@@ -1800,6 +1928,9 @@ var (
 		RedeemCodesTable,
 		SecuritySecretsTable,
 		SettingsTable,
+		Sub2apiOptimizeLogsTable,
+		Sub2apiOptimizeSchedulesTable,
+		Sub2apiProvidersTable,
 		SubscriptionPlansTable,
 		TLSFingerprintProfilesTable,
 		UsageCleanupTasksTable,
@@ -1820,6 +1951,7 @@ func init() {
 		Table: "api_keys",
 	}
 	AccountsTable.ForeignKeys[0].RefTable = ProxiesTable
+	AccountsTable.ForeignKeys[1].RefTable = Sub2apiProvidersTable
 	AccountsTable.Annotation = &entsql.Annotation{
 		Table: "accounts",
 	}
@@ -1909,6 +2041,11 @@ func init() {
 	}
 	SettingsTable.Annotation = &entsql.Annotation{
 		Table: "settings",
+	}
+	Sub2apiOptimizeLogsTable.ForeignKeys[0].RefTable = Sub2apiOptimizeSchedulesTable
+	Sub2apiOptimizeSchedulesTable.ForeignKeys[0].RefTable = Sub2apiProvidersTable
+	Sub2apiProvidersTable.Annotation = &entsql.Annotation{
+		Table: "sub2api_providers",
 	}
 	SubscriptionPlansTable.Annotation = &entsql.Annotation{
 		Table: "subscription_plans",

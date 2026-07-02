@@ -40,6 +40,9 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/redeemcode"
 	"github.com/Wei-Shaw/sub2api/ent/securitysecret"
 	"github.com/Wei-Shaw/sub2api/ent/setting"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apioptimizelog"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apioptimizeschedule"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiprovider"
 	"github.com/Wei-Shaw/sub2api/ent/subscriptionplan"
 	"github.com/Wei-Shaw/sub2api/ent/tlsfingerprintprofile"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
@@ -109,6 +112,12 @@ type Client struct {
 	SecuritySecret *SecuritySecretClient
 	// Setting is the client for interacting with the Setting builders.
 	Setting *SettingClient
+	// Sub2APIOptimizeLog is the client for interacting with the Sub2APIOptimizeLog builders.
+	Sub2APIOptimizeLog *Sub2APIOptimizeLogClient
+	// Sub2APIOptimizeSchedule is the client for interacting with the Sub2APIOptimizeSchedule builders.
+	Sub2APIOptimizeSchedule *Sub2APIOptimizeScheduleClient
+	// Sub2APIProvider is the client for interacting with the Sub2APIProvider builders.
+	Sub2APIProvider *Sub2APIProviderClient
 	// SubscriptionPlan is the client for interacting with the SubscriptionPlan builders.
 	SubscriptionPlan *SubscriptionPlanClient
 	// TLSFingerprintProfile is the client for interacting with the TLSFingerprintProfile builders.
@@ -165,6 +174,9 @@ func (c *Client) init() {
 	c.RedeemCode = NewRedeemCodeClient(c.config)
 	c.SecuritySecret = NewSecuritySecretClient(c.config)
 	c.Setting = NewSettingClient(c.config)
+	c.Sub2APIOptimizeLog = NewSub2APIOptimizeLogClient(c.config)
+	c.Sub2APIOptimizeSchedule = NewSub2APIOptimizeScheduleClient(c.config)
+	c.Sub2APIProvider = NewSub2APIProviderClient(c.config)
 	c.SubscriptionPlan = NewSubscriptionPlanClient(c.config)
 	c.TLSFingerprintProfile = NewTLSFingerprintProfileClient(c.config)
 	c.UsageCleanupTask = NewUsageCleanupTaskClient(c.config)
@@ -292,6 +304,9 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		RedeemCode:                    NewRedeemCodeClient(cfg),
 		SecuritySecret:                NewSecuritySecretClient(cfg),
 		Setting:                       NewSettingClient(cfg),
+		Sub2APIOptimizeLog:            NewSub2APIOptimizeLogClient(cfg),
+		Sub2APIOptimizeSchedule:       NewSub2APIOptimizeScheduleClient(cfg),
+		Sub2APIProvider:               NewSub2APIProviderClient(cfg),
 		SubscriptionPlan:              NewSubscriptionPlanClient(cfg),
 		TLSFingerprintProfile:         NewTLSFingerprintProfileClient(cfg),
 		UsageCleanupTask:              NewUsageCleanupTaskClient(cfg),
@@ -346,6 +361,9 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		RedeemCode:                    NewRedeemCodeClient(cfg),
 		SecuritySecret:                NewSecuritySecretClient(cfg),
 		Setting:                       NewSettingClient(cfg),
+		Sub2APIOptimizeLog:            NewSub2APIOptimizeLogClient(cfg),
+		Sub2APIOptimizeSchedule:       NewSub2APIOptimizeScheduleClient(cfg),
+		Sub2APIProvider:               NewSub2APIProviderClient(cfg),
 		SubscriptionPlan:              NewSubscriptionPlanClient(cfg),
 		TLSFingerprintProfile:         NewTLSFingerprintProfileClient(cfg),
 		UsageCleanupTask:              NewUsageCleanupTaskClient(cfg),
@@ -392,6 +410,7 @@ func (c *Client) Use(hooks ...Hook) {
 		c.IdempotencyRecord, c.IdentityAdoptionDecision, c.PaymentAuditLog,
 		c.PaymentOrder, c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode,
 		c.PromoCodeUsage, c.Proxy, c.RedeemCode, c.SecuritySecret, c.Setting,
+		c.Sub2APIOptimizeLog, c.Sub2APIOptimizeSchedule, c.Sub2APIProvider,
 		c.SubscriptionPlan, c.TLSFingerprintProfile, c.UsageCleanupTask, c.UsageLog,
 		c.User, c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
 		c.UserPlatformQuota, c.UserSubscription,
@@ -411,6 +430,7 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.IdempotencyRecord, c.IdentityAdoptionDecision, c.PaymentAuditLog,
 		c.PaymentOrder, c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode,
 		c.PromoCodeUsage, c.Proxy, c.RedeemCode, c.SecuritySecret, c.Setting,
+		c.Sub2APIOptimizeLog, c.Sub2APIOptimizeSchedule, c.Sub2APIProvider,
 		c.SubscriptionPlan, c.TLSFingerprintProfile, c.UsageCleanupTask, c.UsageLog,
 		c.User, c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
 		c.UserPlatformQuota, c.UserSubscription,
@@ -472,6 +492,12 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.SecuritySecret.mutate(ctx, m)
 	case *SettingMutation:
 		return c.Setting.mutate(ctx, m)
+	case *Sub2APIOptimizeLogMutation:
+		return c.Sub2APIOptimizeLog.mutate(ctx, m)
+	case *Sub2APIOptimizeScheduleMutation:
+		return c.Sub2APIOptimizeSchedule.mutate(ctx, m)
+	case *Sub2APIProviderMutation:
+		return c.Sub2APIProvider.mutate(ctx, m)
 	case *SubscriptionPlanMutation:
 		return c.SubscriptionPlan.mutate(ctx, m)
 	case *TLSFingerprintProfileMutation:
@@ -829,6 +855,22 @@ func (c *AccountClient) QueryUsageLogs(_m *Account) *UsageLogQuery {
 			sqlgraph.From(account.Table, account.FieldID, id),
 			sqlgraph.To(usagelog.Table, usagelog.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, account.UsageLogsTable, account.UsageLogsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryProvider queries the provider edge of a Account.
+func (c *AccountClient) QueryProvider(_m *Account) *Sub2APIProviderQuery {
+	query := (&Sub2APIProviderClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(account.Table, account.FieldID, id),
+			sqlgraph.To(sub2apiprovider.Table, sub2apiprovider.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, account.ProviderTable, account.ProviderColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -4453,6 +4495,487 @@ func (c *SettingClient) mutate(ctx context.Context, m *SettingMutation) (Value, 
 	}
 }
 
+// Sub2APIOptimizeLogClient is a client for the Sub2APIOptimizeLog schema.
+type Sub2APIOptimizeLogClient struct {
+	config
+}
+
+// NewSub2APIOptimizeLogClient returns a client for the Sub2APIOptimizeLog from the given config.
+func NewSub2APIOptimizeLogClient(c config) *Sub2APIOptimizeLogClient {
+	return &Sub2APIOptimizeLogClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `sub2apioptimizelog.Hooks(f(g(h())))`.
+func (c *Sub2APIOptimizeLogClient) Use(hooks ...Hook) {
+	c.hooks.Sub2APIOptimizeLog = append(c.hooks.Sub2APIOptimizeLog, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `sub2apioptimizelog.Intercept(f(g(h())))`.
+func (c *Sub2APIOptimizeLogClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Sub2APIOptimizeLog = append(c.inters.Sub2APIOptimizeLog, interceptors...)
+}
+
+// Create returns a builder for creating a Sub2APIOptimizeLog entity.
+func (c *Sub2APIOptimizeLogClient) Create() *Sub2APIOptimizeLogCreate {
+	mutation := newSub2APIOptimizeLogMutation(c.config, OpCreate)
+	return &Sub2APIOptimizeLogCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Sub2APIOptimizeLog entities.
+func (c *Sub2APIOptimizeLogClient) CreateBulk(builders ...*Sub2APIOptimizeLogCreate) *Sub2APIOptimizeLogCreateBulk {
+	return &Sub2APIOptimizeLogCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *Sub2APIOptimizeLogClient) MapCreateBulk(slice any, setFunc func(*Sub2APIOptimizeLogCreate, int)) *Sub2APIOptimizeLogCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &Sub2APIOptimizeLogCreateBulk{err: fmt.Errorf("calling to Sub2APIOptimizeLogClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*Sub2APIOptimizeLogCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &Sub2APIOptimizeLogCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Sub2APIOptimizeLog.
+func (c *Sub2APIOptimizeLogClient) Update() *Sub2APIOptimizeLogUpdate {
+	mutation := newSub2APIOptimizeLogMutation(c.config, OpUpdate)
+	return &Sub2APIOptimizeLogUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *Sub2APIOptimizeLogClient) UpdateOne(_m *Sub2APIOptimizeLog) *Sub2APIOptimizeLogUpdateOne {
+	mutation := newSub2APIOptimizeLogMutation(c.config, OpUpdateOne, withSub2APIOptimizeLog(_m))
+	return &Sub2APIOptimizeLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *Sub2APIOptimizeLogClient) UpdateOneID(id int64) *Sub2APIOptimizeLogUpdateOne {
+	mutation := newSub2APIOptimizeLogMutation(c.config, OpUpdateOne, withSub2APIOptimizeLogID(id))
+	return &Sub2APIOptimizeLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Sub2APIOptimizeLog.
+func (c *Sub2APIOptimizeLogClient) Delete() *Sub2APIOptimizeLogDelete {
+	mutation := newSub2APIOptimizeLogMutation(c.config, OpDelete)
+	return &Sub2APIOptimizeLogDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *Sub2APIOptimizeLogClient) DeleteOne(_m *Sub2APIOptimizeLog) *Sub2APIOptimizeLogDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *Sub2APIOptimizeLogClient) DeleteOneID(id int64) *Sub2APIOptimizeLogDeleteOne {
+	builder := c.Delete().Where(sub2apioptimizelog.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &Sub2APIOptimizeLogDeleteOne{builder}
+}
+
+// Query returns a query builder for Sub2APIOptimizeLog.
+func (c *Sub2APIOptimizeLogClient) Query() *Sub2APIOptimizeLogQuery {
+	return &Sub2APIOptimizeLogQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSub2APIOptimizeLog},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Sub2APIOptimizeLog entity by its id.
+func (c *Sub2APIOptimizeLogClient) Get(ctx context.Context, id int64) (*Sub2APIOptimizeLog, error) {
+	return c.Query().Where(sub2apioptimizelog.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *Sub2APIOptimizeLogClient) GetX(ctx context.Context, id int64) *Sub2APIOptimizeLog {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QuerySchedule queries the schedule edge of a Sub2APIOptimizeLog.
+func (c *Sub2APIOptimizeLogClient) QuerySchedule(_m *Sub2APIOptimizeLog) *Sub2APIOptimizeScheduleQuery {
+	query := (&Sub2APIOptimizeScheduleClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sub2apioptimizelog.Table, sub2apioptimizelog.FieldID, id),
+			sqlgraph.To(sub2apioptimizeschedule.Table, sub2apioptimizeschedule.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, sub2apioptimizelog.ScheduleTable, sub2apioptimizelog.ScheduleColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *Sub2APIOptimizeLogClient) Hooks() []Hook {
+	return c.hooks.Sub2APIOptimizeLog
+}
+
+// Interceptors returns the client interceptors.
+func (c *Sub2APIOptimizeLogClient) Interceptors() []Interceptor {
+	return c.inters.Sub2APIOptimizeLog
+}
+
+func (c *Sub2APIOptimizeLogClient) mutate(ctx context.Context, m *Sub2APIOptimizeLogMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&Sub2APIOptimizeLogCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&Sub2APIOptimizeLogUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&Sub2APIOptimizeLogUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&Sub2APIOptimizeLogDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Sub2APIOptimizeLog mutation op: %q", m.Op())
+	}
+}
+
+// Sub2APIOptimizeScheduleClient is a client for the Sub2APIOptimizeSchedule schema.
+type Sub2APIOptimizeScheduleClient struct {
+	config
+}
+
+// NewSub2APIOptimizeScheduleClient returns a client for the Sub2APIOptimizeSchedule from the given config.
+func NewSub2APIOptimizeScheduleClient(c config) *Sub2APIOptimizeScheduleClient {
+	return &Sub2APIOptimizeScheduleClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `sub2apioptimizeschedule.Hooks(f(g(h())))`.
+func (c *Sub2APIOptimizeScheduleClient) Use(hooks ...Hook) {
+	c.hooks.Sub2APIOptimizeSchedule = append(c.hooks.Sub2APIOptimizeSchedule, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `sub2apioptimizeschedule.Intercept(f(g(h())))`.
+func (c *Sub2APIOptimizeScheduleClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Sub2APIOptimizeSchedule = append(c.inters.Sub2APIOptimizeSchedule, interceptors...)
+}
+
+// Create returns a builder for creating a Sub2APIOptimizeSchedule entity.
+func (c *Sub2APIOptimizeScheduleClient) Create() *Sub2APIOptimizeScheduleCreate {
+	mutation := newSub2APIOptimizeScheduleMutation(c.config, OpCreate)
+	return &Sub2APIOptimizeScheduleCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Sub2APIOptimizeSchedule entities.
+func (c *Sub2APIOptimizeScheduleClient) CreateBulk(builders ...*Sub2APIOptimizeScheduleCreate) *Sub2APIOptimizeScheduleCreateBulk {
+	return &Sub2APIOptimizeScheduleCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *Sub2APIOptimizeScheduleClient) MapCreateBulk(slice any, setFunc func(*Sub2APIOptimizeScheduleCreate, int)) *Sub2APIOptimizeScheduleCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &Sub2APIOptimizeScheduleCreateBulk{err: fmt.Errorf("calling to Sub2APIOptimizeScheduleClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*Sub2APIOptimizeScheduleCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &Sub2APIOptimizeScheduleCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Sub2APIOptimizeSchedule.
+func (c *Sub2APIOptimizeScheduleClient) Update() *Sub2APIOptimizeScheduleUpdate {
+	mutation := newSub2APIOptimizeScheduleMutation(c.config, OpUpdate)
+	return &Sub2APIOptimizeScheduleUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *Sub2APIOptimizeScheduleClient) UpdateOne(_m *Sub2APIOptimizeSchedule) *Sub2APIOptimizeScheduleUpdateOne {
+	mutation := newSub2APIOptimizeScheduleMutation(c.config, OpUpdateOne, withSub2APIOptimizeSchedule(_m))
+	return &Sub2APIOptimizeScheduleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *Sub2APIOptimizeScheduleClient) UpdateOneID(id int64) *Sub2APIOptimizeScheduleUpdateOne {
+	mutation := newSub2APIOptimizeScheduleMutation(c.config, OpUpdateOne, withSub2APIOptimizeScheduleID(id))
+	return &Sub2APIOptimizeScheduleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Sub2APIOptimizeSchedule.
+func (c *Sub2APIOptimizeScheduleClient) Delete() *Sub2APIOptimizeScheduleDelete {
+	mutation := newSub2APIOptimizeScheduleMutation(c.config, OpDelete)
+	return &Sub2APIOptimizeScheduleDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *Sub2APIOptimizeScheduleClient) DeleteOne(_m *Sub2APIOptimizeSchedule) *Sub2APIOptimizeScheduleDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *Sub2APIOptimizeScheduleClient) DeleteOneID(id int64) *Sub2APIOptimizeScheduleDeleteOne {
+	builder := c.Delete().Where(sub2apioptimizeschedule.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &Sub2APIOptimizeScheduleDeleteOne{builder}
+}
+
+// Query returns a query builder for Sub2APIOptimizeSchedule.
+func (c *Sub2APIOptimizeScheduleClient) Query() *Sub2APIOptimizeScheduleQuery {
+	return &Sub2APIOptimizeScheduleQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSub2APIOptimizeSchedule},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Sub2APIOptimizeSchedule entity by its id.
+func (c *Sub2APIOptimizeScheduleClient) Get(ctx context.Context, id int64) (*Sub2APIOptimizeSchedule, error) {
+	return c.Query().Where(sub2apioptimizeschedule.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *Sub2APIOptimizeScheduleClient) GetX(ctx context.Context, id int64) *Sub2APIOptimizeSchedule {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryProvider queries the provider edge of a Sub2APIOptimizeSchedule.
+func (c *Sub2APIOptimizeScheduleClient) QueryProvider(_m *Sub2APIOptimizeSchedule) *Sub2APIProviderQuery {
+	query := (&Sub2APIProviderClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sub2apioptimizeschedule.Table, sub2apioptimizeschedule.FieldID, id),
+			sqlgraph.To(sub2apiprovider.Table, sub2apiprovider.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, sub2apioptimizeschedule.ProviderTable, sub2apioptimizeschedule.ProviderColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryLogs queries the logs edge of a Sub2APIOptimizeSchedule.
+func (c *Sub2APIOptimizeScheduleClient) QueryLogs(_m *Sub2APIOptimizeSchedule) *Sub2APIOptimizeLogQuery {
+	query := (&Sub2APIOptimizeLogClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sub2apioptimizeschedule.Table, sub2apioptimizeschedule.FieldID, id),
+			sqlgraph.To(sub2apioptimizelog.Table, sub2apioptimizelog.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, sub2apioptimizeschedule.LogsTable, sub2apioptimizeschedule.LogsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *Sub2APIOptimizeScheduleClient) Hooks() []Hook {
+	return c.hooks.Sub2APIOptimizeSchedule
+}
+
+// Interceptors returns the client interceptors.
+func (c *Sub2APIOptimizeScheduleClient) Interceptors() []Interceptor {
+	return c.inters.Sub2APIOptimizeSchedule
+}
+
+func (c *Sub2APIOptimizeScheduleClient) mutate(ctx context.Context, m *Sub2APIOptimizeScheduleMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&Sub2APIOptimizeScheduleCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&Sub2APIOptimizeScheduleUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&Sub2APIOptimizeScheduleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&Sub2APIOptimizeScheduleDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Sub2APIOptimizeSchedule mutation op: %q", m.Op())
+	}
+}
+
+// Sub2APIProviderClient is a client for the Sub2APIProvider schema.
+type Sub2APIProviderClient struct {
+	config
+}
+
+// NewSub2APIProviderClient returns a client for the Sub2APIProvider from the given config.
+func NewSub2APIProviderClient(c config) *Sub2APIProviderClient {
+	return &Sub2APIProviderClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `sub2apiprovider.Hooks(f(g(h())))`.
+func (c *Sub2APIProviderClient) Use(hooks ...Hook) {
+	c.hooks.Sub2APIProvider = append(c.hooks.Sub2APIProvider, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `sub2apiprovider.Intercept(f(g(h())))`.
+func (c *Sub2APIProviderClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Sub2APIProvider = append(c.inters.Sub2APIProvider, interceptors...)
+}
+
+// Create returns a builder for creating a Sub2APIProvider entity.
+func (c *Sub2APIProviderClient) Create() *Sub2APIProviderCreate {
+	mutation := newSub2APIProviderMutation(c.config, OpCreate)
+	return &Sub2APIProviderCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Sub2APIProvider entities.
+func (c *Sub2APIProviderClient) CreateBulk(builders ...*Sub2APIProviderCreate) *Sub2APIProviderCreateBulk {
+	return &Sub2APIProviderCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *Sub2APIProviderClient) MapCreateBulk(slice any, setFunc func(*Sub2APIProviderCreate, int)) *Sub2APIProviderCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &Sub2APIProviderCreateBulk{err: fmt.Errorf("calling to Sub2APIProviderClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*Sub2APIProviderCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &Sub2APIProviderCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Sub2APIProvider.
+func (c *Sub2APIProviderClient) Update() *Sub2APIProviderUpdate {
+	mutation := newSub2APIProviderMutation(c.config, OpUpdate)
+	return &Sub2APIProviderUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *Sub2APIProviderClient) UpdateOne(_m *Sub2APIProvider) *Sub2APIProviderUpdateOne {
+	mutation := newSub2APIProviderMutation(c.config, OpUpdateOne, withSub2APIProvider(_m))
+	return &Sub2APIProviderUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *Sub2APIProviderClient) UpdateOneID(id int64) *Sub2APIProviderUpdateOne {
+	mutation := newSub2APIProviderMutation(c.config, OpUpdateOne, withSub2APIProviderID(id))
+	return &Sub2APIProviderUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Sub2APIProvider.
+func (c *Sub2APIProviderClient) Delete() *Sub2APIProviderDelete {
+	mutation := newSub2APIProviderMutation(c.config, OpDelete)
+	return &Sub2APIProviderDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *Sub2APIProviderClient) DeleteOne(_m *Sub2APIProvider) *Sub2APIProviderDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *Sub2APIProviderClient) DeleteOneID(id int64) *Sub2APIProviderDeleteOne {
+	builder := c.Delete().Where(sub2apiprovider.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &Sub2APIProviderDeleteOne{builder}
+}
+
+// Query returns a query builder for Sub2APIProvider.
+func (c *Sub2APIProviderClient) Query() *Sub2APIProviderQuery {
+	return &Sub2APIProviderQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSub2APIProvider},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Sub2APIProvider entity by its id.
+func (c *Sub2APIProviderClient) Get(ctx context.Context, id int64) (*Sub2APIProvider, error) {
+	return c.Query().Where(sub2apiprovider.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *Sub2APIProviderClient) GetX(ctx context.Context, id int64) *Sub2APIProvider {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryAccounts queries the accounts edge of a Sub2APIProvider.
+func (c *Sub2APIProviderClient) QueryAccounts(_m *Sub2APIProvider) *AccountQuery {
+	query := (&AccountClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sub2apiprovider.Table, sub2apiprovider.FieldID, id),
+			sqlgraph.To(account.Table, account.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, sub2apiprovider.AccountsTable, sub2apiprovider.AccountsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryOptimizeSchedule queries the optimize_schedule edge of a Sub2APIProvider.
+func (c *Sub2APIProviderClient) QueryOptimizeSchedule(_m *Sub2APIProvider) *Sub2APIOptimizeScheduleQuery {
+	query := (&Sub2APIOptimizeScheduleClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sub2apiprovider.Table, sub2apiprovider.FieldID, id),
+			sqlgraph.To(sub2apioptimizeschedule.Table, sub2apioptimizeschedule.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, sub2apiprovider.OptimizeScheduleTable, sub2apiprovider.OptimizeScheduleColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *Sub2APIProviderClient) Hooks() []Hook {
+	hooks := c.hooks.Sub2APIProvider
+	return append(hooks[:len(hooks):len(hooks)], sub2apiprovider.Hooks[:]...)
+}
+
+// Interceptors returns the client interceptors.
+func (c *Sub2APIProviderClient) Interceptors() []Interceptor {
+	inters := c.inters.Sub2APIProvider
+	return append(inters[:len(inters):len(inters)], sub2apiprovider.Interceptors[:]...)
+}
+
+func (c *Sub2APIProviderClient) mutate(ctx context.Context, m *Sub2APIProviderMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&Sub2APIProviderCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&Sub2APIProviderUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&Sub2APIProviderUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&Sub2APIProviderDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Sub2APIProvider mutation op: %q", m.Op())
+	}
+}
+
 // SubscriptionPlanClient is a client for the SubscriptionPlan schema.
 type SubscriptionPlanClient struct {
 	config
@@ -6214,7 +6737,8 @@ type (
 		ChannelMonitorHistory, ChannelMonitorRequestTemplate, ErrorPassthroughRule,
 		Group, IdempotencyRecord, IdentityAdoptionDecision, PaymentAuditLog,
 		PaymentOrder, PaymentProviderInstance, PendingAuthSession, PromoCode,
-		PromoCodeUsage, Proxy, RedeemCode, SecuritySecret, Setting, SubscriptionPlan,
+		PromoCodeUsage, Proxy, RedeemCode, SecuritySecret, Setting, Sub2APIOptimizeLog,
+		Sub2APIOptimizeSchedule, Sub2APIProvider, SubscriptionPlan,
 		TLSFingerprintProfile, UsageCleanupTask, UsageLog, User, UserAllowedGroup,
 		UserAttributeDefinition, UserAttributeValue, UserPlatformQuota,
 		UserSubscription []ent.Hook
@@ -6225,7 +6749,8 @@ type (
 		ChannelMonitorHistory, ChannelMonitorRequestTemplate, ErrorPassthroughRule,
 		Group, IdempotencyRecord, IdentityAdoptionDecision, PaymentAuditLog,
 		PaymentOrder, PaymentProviderInstance, PendingAuthSession, PromoCode,
-		PromoCodeUsage, Proxy, RedeemCode, SecuritySecret, Setting, SubscriptionPlan,
+		PromoCodeUsage, Proxy, RedeemCode, SecuritySecret, Setting, Sub2APIOptimizeLog,
+		Sub2APIOptimizeSchedule, Sub2APIProvider, SubscriptionPlan,
 		TLSFingerprintProfile, UsageCleanupTask, UsageLog, User, UserAllowedGroup,
 		UserAttributeDefinition, UserAttributeValue, UserPlatformQuota,
 		UserSubscription []ent.Interceptor

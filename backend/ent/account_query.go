@@ -18,6 +18,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/predicate"
 	"github.com/Wei-Shaw/sub2api/ent/proxy"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiprovider"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
 )
 
@@ -31,6 +32,7 @@ type AccountQuery struct {
 	withGroups        *GroupQuery
 	withProxy         *ProxyQuery
 	withUsageLogs     *UsageLogQuery
+	withProvider      *Sub2APIProviderQuery
 	withAccountGroups *AccountGroupQuery
 	modifiers         []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
@@ -128,6 +130,28 @@ func (_q *AccountQuery) QueryUsageLogs() *UsageLogQuery {
 			sqlgraph.From(account.Table, account.FieldID, selector),
 			sqlgraph.To(usagelog.Table, usagelog.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, account.UsageLogsTable, account.UsageLogsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryProvider chains the current query on the "provider" edge.
+func (_q *AccountQuery) QueryProvider() *Sub2APIProviderQuery {
+	query := (&Sub2APIProviderClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(account.Table, account.FieldID, selector),
+			sqlgraph.To(sub2apiprovider.Table, sub2apiprovider.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, account.ProviderTable, account.ProviderColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -352,6 +376,7 @@ func (_q *AccountQuery) Clone() *AccountQuery {
 		withGroups:        _q.withGroups.Clone(),
 		withProxy:         _q.withProxy.Clone(),
 		withUsageLogs:     _q.withUsageLogs.Clone(),
+		withProvider:      _q.withProvider.Clone(),
 		withAccountGroups: _q.withAccountGroups.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
@@ -389,6 +414,17 @@ func (_q *AccountQuery) WithUsageLogs(opts ...func(*UsageLogQuery)) *AccountQuer
 		opt(query)
 	}
 	_q.withUsageLogs = query
+	return _q
+}
+
+// WithProvider tells the query-builder to eager-load the nodes that are connected to
+// the "provider" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *AccountQuery) WithProvider(opts ...func(*Sub2APIProviderQuery)) *AccountQuery {
+	query := (&Sub2APIProviderClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withProvider = query
 	return _q
 }
 
@@ -481,10 +517,11 @@ func (_q *AccountQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Acco
 	var (
 		nodes       = []*Account{}
 		_spec       = _q.querySpec()
-		loadedTypes = [4]bool{
+		loadedTypes = [5]bool{
 			_q.withGroups != nil,
 			_q.withProxy != nil,
 			_q.withUsageLogs != nil,
+			_q.withProvider != nil,
 			_q.withAccountGroups != nil,
 		}
 	)
@@ -526,6 +563,12 @@ func (_q *AccountQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Acco
 		if err := _q.loadUsageLogs(ctx, query, nodes,
 			func(n *Account) { n.Edges.UsageLogs = []*UsageLog{} },
 			func(n *Account, e *UsageLog) { n.Edges.UsageLogs = append(n.Edges.UsageLogs, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withProvider; query != nil {
+		if err := _q.loadProvider(ctx, query, nodes, nil,
+			func(n *Account, e *Sub2APIProvider) { n.Edges.Provider = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -662,6 +705,38 @@ func (_q *AccountQuery) loadUsageLogs(ctx context.Context, query *UsageLogQuery,
 	}
 	return nil
 }
+func (_q *AccountQuery) loadProvider(ctx context.Context, query *Sub2APIProviderQuery, nodes []*Account, init func(*Account), assign func(*Account, *Sub2APIProvider)) error {
+	ids := make([]int64, 0, len(nodes))
+	nodeids := make(map[int64][]*Account)
+	for i := range nodes {
+		if nodes[i].ProviderID == nil {
+			continue
+		}
+		fk := *nodes[i].ProviderID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(sub2apiprovider.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "provider_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
 func (_q *AccountQuery) loadAccountGroups(ctx context.Context, query *AccountGroupQuery, nodes []*Account, init func(*Account), assign func(*Account, *AccountGroup)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[int64]*Account)
@@ -723,6 +798,9 @@ func (_q *AccountQuery) querySpec() *sqlgraph.QuerySpec {
 		}
 		if _q.withProxy != nil {
 			_spec.Node.AddColumnOnce(account.FieldProxyID)
+		}
+		if _q.withProvider != nil {
+			_spec.Node.AddColumnOnce(account.FieldProviderID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

@@ -201,14 +201,14 @@ services:
       - TZ=${TZ:-Asia/Shanghai}
     networks:
       - sub2api-network
+    ports:
+      - "127.0.0.1:5434:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sub2api} -d ${POSTGRES_DB:-sub2api}"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
-    # 注意：不暴露端口到宿主机，应用通过内部网络连接
-    # 如需调试，可临时添加：ports: ["127.0.0.1:5433:5432"]
 
   # ===========================================================================
   # Redis Cache
@@ -231,6 +231,8 @@ services:
           --appendonly yes
           --appendfsync everysec
           ${REDIS_PASSWORD:+--requirepass "$REDIS_PASSWORD"}'
+    ports:
+      - "127.0.0.1:6381:6379"
     environment:
       - TZ=${TZ:-Asia/Shanghai}
       # REDISCLI_AUTH is used by redis-cli for authentication (safer than -a flag)

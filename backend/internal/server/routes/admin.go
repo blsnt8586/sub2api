@@ -35,6 +35,9 @@ func RegisterAdminRoutes(
 		// 账号管理
 		registerAccountRoutes(admin, h)
 
+		// Sub2API Provider 管理
+		registerSub2APIProviderRoutes(admin, h)
+
 		// 公告管理
 		registerAnnouncementRoutes(admin, h)
 
@@ -681,5 +684,38 @@ func registerAffiliateRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 			users.PUT("/:user_id", h.Admin.Affiliate.UpdateUserSettings)
 			users.DELETE("/:user_id", h.Admin.Affiliate.ClearUserSettings)
 		}
+	}
+}
+
+// registerSub2APIProviderRoutes 注册 Sub2API Provider 管理路由
+func registerSub2APIProviderRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
+	providers := admin.Group("/sub2api-providers")
+	{
+		providers.GET("", h.Admin.Sub2APIProvider.List)
+		providers.GET("/all", h.Admin.Sub2APIProvider.GetAll)
+		providers.GET("/:id", h.Admin.Sub2APIProvider.GetByID)
+		providers.POST("", h.Admin.Sub2APIProvider.Create)
+		providers.PUT("/:id", h.Admin.Sub2APIProvider.Update)
+		providers.DELETE("/:id", h.Admin.Sub2APIProvider.Delete)
+
+		// 阶段2：路径探测和连接测试
+		providers.POST("/:id/detect-paths", h.Admin.Sub2APIProvider.DetectPaths)
+		providers.POST("/:id/test-connection", h.Admin.Sub2APIProvider.TestConnection)
+
+		// 阶段3：Account 关联管理
+		providers.POST("/:id/link-account", h.Admin.Sub2APIProvider.LinkAccount)
+		providers.DELETE("/:id/accounts/:account_id", h.Admin.Sub2APIProvider.UnlinkAccount)
+		providers.GET("/:id/accounts", h.Admin.Sub2APIProvider.GetLinkedAccounts)
+
+		// 阶段4：分组优化（手动触发，与定时任务共用智能引擎：倍率上限 + 连通测试 + 回滚）
+		providers.POST("/:id/accounts/:account_id/optimize", h.Admin.Sub2APIOptimize.OptimizeAccount)
+		providers.POST("/:id/optimize-all", h.Admin.Sub2APIOptimize.OptimizeAll)
+
+		// 阶段5：定时优化配置
+		providers.GET("/:id/optimize-schedule", h.Admin.Sub2APIOptimize.Get)
+		providers.PUT("/:id/optimize-schedule", h.Admin.Sub2APIOptimize.Upsert)
+		providers.DELETE("/:id/optimize-schedule", h.Admin.Sub2APIOptimize.Delete)
+		providers.POST("/:id/optimize-schedule/run", h.Admin.Sub2APIOptimize.RunNow)
+		providers.PUT("/:id/accounts/:account_id/optimize-settings", h.Admin.Sub2APIOptimize.UpdateAccountSettings)
 	}
 }

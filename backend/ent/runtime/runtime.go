@@ -31,6 +31,9 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/schema"
 	"github.com/Wei-Shaw/sub2api/ent/securitysecret"
 	"github.com/Wei-Shaw/sub2api/ent/setting"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apioptimizelog"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apioptimizeschedule"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiprovider"
 	"github.com/Wei-Shaw/sub2api/ent/subscriptionplan"
 	"github.com/Wei-Shaw/sub2api/ent/tlsfingerprintprofile"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
@@ -252,6 +255,18 @@ func init() {
 	accountDescSessionWindowStatus := accountFields[25].Descriptor()
 	// account.SessionWindowStatusValidator is a validator for the "session_window_status" field. It is called by the builders before save.
 	account.SessionWindowStatusValidator = accountDescSessionWindowStatus.Validators[0].(func(string) error)
+	// accountDescRemoteGroupName is the schema descriptor for remote_group_name field.
+	accountDescRemoteGroupName := accountFields[28].Descriptor()
+	// account.RemoteGroupNameValidator is a validator for the "remote_group_name" field. It is called by the builders before save.
+	account.RemoteGroupNameValidator = accountDescRemoteGroupName.Validators[0].(func(string) error)
+	// accountDescSub2apiOptimizeEnabled is the schema descriptor for sub2api_optimize_enabled field.
+	accountDescSub2apiOptimizeEnabled := accountFields[31].Descriptor()
+	// account.DefaultSub2apiOptimizeEnabled holds the default value on creation for the sub2api_optimize_enabled field.
+	account.DefaultSub2apiOptimizeEnabled = accountDescSub2apiOptimizeEnabled.Default.(bool)
+	// accountDescSub2apiTestModel is the schema descriptor for sub2api_test_model field.
+	accountDescSub2apiTestModel := accountFields[34].Descriptor()
+	// account.Sub2apiTestModelValidator is a validator for the "sub2api_test_model" field. It is called by the builders before save.
+	account.Sub2apiTestModelValidator = accountDescSub2apiTestModel.Validators[0].(func(string) error)
 	accountgroupFields := schema.AccountGroup{}.Fields()
 	_ = accountgroupFields
 	// accountgroupDescPriority is the schema descriptor for priority field.
@@ -1485,6 +1500,181 @@ func init() {
 	setting.DefaultUpdatedAt = settingDescUpdatedAt.Default.(func() time.Time)
 	// setting.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	setting.UpdateDefaultUpdatedAt = settingDescUpdatedAt.UpdateDefault.(func() time.Time)
+	sub2apioptimizelogMixin := schema.Sub2APIOptimizeLog{}.Mixin()
+	sub2apioptimizelogMixinFields0 := sub2apioptimizelogMixin[0].Fields()
+	_ = sub2apioptimizelogMixinFields0
+	sub2apioptimizelogFields := schema.Sub2APIOptimizeLog{}.Fields()
+	_ = sub2apioptimizelogFields
+	// sub2apioptimizelogDescCreatedAt is the schema descriptor for created_at field.
+	sub2apioptimizelogDescCreatedAt := sub2apioptimizelogMixinFields0[0].Descriptor()
+	// sub2apioptimizelog.DefaultCreatedAt holds the default value on creation for the created_at field.
+	sub2apioptimizelog.DefaultCreatedAt = sub2apioptimizelogDescCreatedAt.Default.(func() time.Time)
+	// sub2apioptimizelogDescUpdatedAt is the schema descriptor for updated_at field.
+	sub2apioptimizelogDescUpdatedAt := sub2apioptimizelogMixinFields0[1].Descriptor()
+	// sub2apioptimizelog.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	sub2apioptimizelog.DefaultUpdatedAt = sub2apioptimizelogDescUpdatedAt.Default.(func() time.Time)
+	// sub2apioptimizelog.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	sub2apioptimizelog.UpdateDefaultUpdatedAt = sub2apioptimizelogDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// sub2apioptimizelogDescStatus is the schema descriptor for status field.
+	sub2apioptimizelogDescStatus := sub2apioptimizelogFields[1].Descriptor()
+	// sub2apioptimizelog.DefaultStatus holds the default value on creation for the status field.
+	sub2apioptimizelog.DefaultStatus = sub2apioptimizelogDescStatus.Default.(string)
+	// sub2apioptimizelog.StatusValidator is a validator for the "status" field. It is called by the builders before save.
+	sub2apioptimizelog.StatusValidator = sub2apioptimizelogDescStatus.Validators[0].(func(string) error)
+	// sub2apioptimizelogDescTotal is the schema descriptor for total field.
+	sub2apioptimizelogDescTotal := sub2apioptimizelogFields[2].Descriptor()
+	// sub2apioptimizelog.DefaultTotal holds the default value on creation for the total field.
+	sub2apioptimizelog.DefaultTotal = sub2apioptimizelogDescTotal.Default.(int)
+	// sub2apioptimizelogDescOptimized is the schema descriptor for optimized field.
+	sub2apioptimizelogDescOptimized := sub2apioptimizelogFields[3].Descriptor()
+	// sub2apioptimizelog.DefaultOptimized holds the default value on creation for the optimized field.
+	sub2apioptimizelog.DefaultOptimized = sub2apioptimizelogDescOptimized.Default.(int)
+	// sub2apioptimizelogDescSkipped is the schema descriptor for skipped field.
+	sub2apioptimizelogDescSkipped := sub2apioptimizelogFields[4].Descriptor()
+	// sub2apioptimizelog.DefaultSkipped holds the default value on creation for the skipped field.
+	sub2apioptimizelog.DefaultSkipped = sub2apioptimizelogDescSkipped.Default.(int)
+	// sub2apioptimizelogDescFailed is the schema descriptor for failed field.
+	sub2apioptimizelogDescFailed := sub2apioptimizelogFields[5].Descriptor()
+	// sub2apioptimizelog.DefaultFailed holds the default value on creation for the failed field.
+	sub2apioptimizelog.DefaultFailed = sub2apioptimizelogDescFailed.Default.(int)
+	sub2apioptimizescheduleMixin := schema.Sub2APIOptimizeSchedule{}.Mixin()
+	sub2apioptimizescheduleMixinFields0 := sub2apioptimizescheduleMixin[0].Fields()
+	_ = sub2apioptimizescheduleMixinFields0
+	sub2apioptimizescheduleFields := schema.Sub2APIOptimizeSchedule{}.Fields()
+	_ = sub2apioptimizescheduleFields
+	// sub2apioptimizescheduleDescCreatedAt is the schema descriptor for created_at field.
+	sub2apioptimizescheduleDescCreatedAt := sub2apioptimizescheduleMixinFields0[0].Descriptor()
+	// sub2apioptimizeschedule.DefaultCreatedAt holds the default value on creation for the created_at field.
+	sub2apioptimizeschedule.DefaultCreatedAt = sub2apioptimizescheduleDescCreatedAt.Default.(func() time.Time)
+	// sub2apioptimizescheduleDescUpdatedAt is the schema descriptor for updated_at field.
+	sub2apioptimizescheduleDescUpdatedAt := sub2apioptimizescheduleMixinFields0[1].Descriptor()
+	// sub2apioptimizeschedule.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	sub2apioptimizeschedule.DefaultUpdatedAt = sub2apioptimizescheduleDescUpdatedAt.Default.(func() time.Time)
+	// sub2apioptimizeschedule.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	sub2apioptimizeschedule.UpdateDefaultUpdatedAt = sub2apioptimizescheduleDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// sub2apioptimizescheduleDescCronExpr is the schema descriptor for cron_expr field.
+	sub2apioptimizescheduleDescCronExpr := sub2apioptimizescheduleFields[1].Descriptor()
+	// sub2apioptimizeschedule.CronExprValidator is a validator for the "cron_expr" field. It is called by the builders before save.
+	sub2apioptimizeschedule.CronExprValidator = func() func(string) error {
+		validators := sub2apioptimizescheduleDescCronExpr.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(cron_expr string) error {
+			for _, fn := range fns {
+				if err := fn(cron_expr); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// sub2apioptimizescheduleDescEnabled is the schema descriptor for enabled field.
+	sub2apioptimizescheduleDescEnabled := sub2apioptimizescheduleFields[2].Descriptor()
+	// sub2apioptimizeschedule.DefaultEnabled holds the default value on creation for the enabled field.
+	sub2apioptimizeschedule.DefaultEnabled = sub2apioptimizescheduleDescEnabled.Default.(bool)
+	sub2apiproviderMixin := schema.Sub2APIProvider{}.Mixin()
+	sub2apiproviderMixinHooks1 := sub2apiproviderMixin[1].Hooks()
+	sub2apiprovider.Hooks[0] = sub2apiproviderMixinHooks1[0]
+	sub2apiproviderMixinInters1 := sub2apiproviderMixin[1].Interceptors()
+	sub2apiprovider.Interceptors[0] = sub2apiproviderMixinInters1[0]
+	sub2apiproviderMixinFields0 := sub2apiproviderMixin[0].Fields()
+	_ = sub2apiproviderMixinFields0
+	sub2apiproviderFields := schema.Sub2APIProvider{}.Fields()
+	_ = sub2apiproviderFields
+	// sub2apiproviderDescCreatedAt is the schema descriptor for created_at field.
+	sub2apiproviderDescCreatedAt := sub2apiproviderMixinFields0[0].Descriptor()
+	// sub2apiprovider.DefaultCreatedAt holds the default value on creation for the created_at field.
+	sub2apiprovider.DefaultCreatedAt = sub2apiproviderDescCreatedAt.Default.(func() time.Time)
+	// sub2apiproviderDescUpdatedAt is the schema descriptor for updated_at field.
+	sub2apiproviderDescUpdatedAt := sub2apiproviderMixinFields0[1].Descriptor()
+	// sub2apiprovider.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	sub2apiprovider.DefaultUpdatedAt = sub2apiproviderDescUpdatedAt.Default.(func() time.Time)
+	// sub2apiprovider.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	sub2apiprovider.UpdateDefaultUpdatedAt = sub2apiproviderDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// sub2apiproviderDescName is the schema descriptor for name field.
+	sub2apiproviderDescName := sub2apiproviderFields[0].Descriptor()
+	// sub2apiprovider.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	sub2apiprovider.NameValidator = func() func(string) error {
+		validators := sub2apiproviderDescName.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(name string) error {
+			for _, fn := range fns {
+				if err := fn(name); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// sub2apiproviderDescBaseURL is the schema descriptor for base_url field.
+	sub2apiproviderDescBaseURL := sub2apiproviderFields[1].Descriptor()
+	// sub2apiprovider.BaseURLValidator is a validator for the "base_url" field. It is called by the builders before save.
+	sub2apiprovider.BaseURLValidator = func() func(string) error {
+		validators := sub2apiproviderDescBaseURL.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(base_url string) error {
+			for _, fn := range fns {
+				if err := fn(base_url); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// sub2apiproviderDescProviderType is the schema descriptor for provider_type field.
+	sub2apiproviderDescProviderType := sub2apiproviderFields[2].Descriptor()
+	// sub2apiprovider.DefaultProviderType holds the default value on creation for the provider_type field.
+	sub2apiprovider.DefaultProviderType = sub2apiproviderDescProviderType.Default.(string)
+	// sub2apiprovider.ProviderTypeValidator is a validator for the "provider_type" field. It is called by the builders before save.
+	sub2apiprovider.ProviderTypeValidator = sub2apiproviderDescProviderType.Validators[0].(func(string) error)
+	// sub2apiproviderDescStatus is the schema descriptor for status field.
+	sub2apiproviderDescStatus := sub2apiproviderFields[3].Descriptor()
+	// sub2apiprovider.DefaultStatus holds the default value on creation for the status field.
+	sub2apiprovider.DefaultStatus = sub2apiproviderDescStatus.Default.(string)
+	// sub2apiprovider.StatusValidator is a validator for the "status" field. It is called by the builders before save.
+	sub2apiprovider.StatusValidator = sub2apiproviderDescStatus.Validators[0].(func(string) error)
+	// sub2apiproviderDescEmail is the schema descriptor for email field.
+	sub2apiproviderDescEmail := sub2apiproviderFields[5].Descriptor()
+	// sub2apiprovider.EmailValidator is a validator for the "email" field. It is called by the builders before save.
+	sub2apiprovider.EmailValidator = func() func(string) error {
+		validators := sub2apiproviderDescEmail.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(email string) error {
+			for _, fn := range fns {
+				if err := fn(email); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// sub2apiproviderDescPasswordEncrypted is the schema descriptor for password_encrypted field.
+	sub2apiproviderDescPasswordEncrypted := sub2apiproviderFields[6].Descriptor()
+	// sub2apiprovider.PasswordEncryptedValidator is a validator for the "password_encrypted" field. It is called by the builders before save.
+	sub2apiprovider.PasswordEncryptedValidator = sub2apiproviderDescPasswordEncrypted.Validators[0].(func(string) error)
+	// sub2apiproviderDescAPIPathKeys is the schema descriptor for api_path_keys field.
+	sub2apiproviderDescAPIPathKeys := sub2apiproviderFields[7].Descriptor()
+	// sub2apiprovider.APIPathKeysValidator is a validator for the "api_path_keys" field. It is called by the builders before save.
+	sub2apiprovider.APIPathKeysValidator = sub2apiproviderDescAPIPathKeys.Validators[0].(func(string) error)
+	// sub2apiproviderDescAPIPathGroups is the schema descriptor for api_path_groups field.
+	sub2apiproviderDescAPIPathGroups := sub2apiproviderFields[8].Descriptor()
+	// sub2apiprovider.APIPathGroupsValidator is a validator for the "api_path_groups" field. It is called by the builders before save.
+	sub2apiprovider.APIPathGroupsValidator = sub2apiproviderDescAPIPathGroups.Validators[0].(func(string) error)
+	// sub2apiproviderDescLastSyncStatus is the schema descriptor for last_sync_status field.
+	sub2apiproviderDescLastSyncStatus := sub2apiproviderFields[10].Descriptor()
+	// sub2apiprovider.LastSyncStatusValidator is a validator for the "last_sync_status" field. It is called by the builders before save.
+	sub2apiprovider.LastSyncStatusValidator = sub2apiproviderDescLastSyncStatus.Validators[0].(func(string) error)
 	subscriptionplanFields := schema.SubscriptionPlan{}.Fields()
 	_ = subscriptionplanFields
 	// subscriptionplanDescName is the schema descriptor for name field.

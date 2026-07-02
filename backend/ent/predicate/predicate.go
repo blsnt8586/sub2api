@@ -81,6 +81,15 @@ type SecuritySecret func(*sql.Selector)
 // Setting is the predicate function for setting builders.
 type Setting func(*sql.Selector)
 
+// Sub2APIOptimizeLog is the predicate function for sub2apioptimizelog builders.
+type Sub2APIOptimizeLog func(*sql.Selector)
+
+// Sub2APIOptimizeSchedule is the predicate function for sub2apioptimizeschedule builders.
+type Sub2APIOptimizeSchedule func(*sql.Selector)
+
+// Sub2APIProvider is the predicate function for sub2apiprovider builders.
+type Sub2APIProvider func(*sql.Selector)
+
 // SubscriptionPlan is the predicate function for subscriptionplan builders.
 type SubscriptionPlan func(*sql.Selector)
 

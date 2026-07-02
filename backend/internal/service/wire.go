@@ -635,6 +635,8 @@ var ProviderSet = wire.NewSet(
 	NewModelPricingResolver,
 	NewContentModerationService,
 	NewAffiliateService,
+	NewSub2APIProviderService,
+	ProvideSub2APIOptimizeScheduleService,
 	ProvidePaymentConfigService,
 	ProvidePaymentService,
 	ProvidePaymentOrderExpiryService,
@@ -648,6 +650,35 @@ var ProviderSet = wire.NewSet(
 // ProvideUserPlatformQuotaUsageFlusher 创建并启动 UserPlatformQuotaUsageFlusher。
 func ProvideUserPlatformQuotaUsageFlusher(cfg *config.Config, cache BillingCache, quotaRepo UserPlatformQuotaRepository, tw *TimingWheelService) *UserPlatformQuotaUsageFlusher {
 	svc := NewUserPlatformQuotaUsageFlusher(cfg, cache, quotaRepo, tw)
+	svc.Start()
+	return svc
+}
+
+// ProvideSub2APIOptimizeScheduleService 创建定时优化调度服务，
+// 从配置解析各平台默认测试模型（sub2api.default_test_models），为空时服务内回退内置兜底表。
+func ProvideSub2APIOptimizeScheduleService(
+	scheduleRepo Sub2APIOptimizeScheduleRepository,
+	providerSvc *Sub2APIProviderService,
+	accountTestSvc *AccountTestService,
+	cfg *config.Config,
+) *Sub2APIOptimizeScheduleService {
+	var defaultTestModels map[string]string
+	if cfg != nil {
+		defaultTestModels = cfg.Sub2API.DefaultTestModels
+	}
+	return NewSub2APIOptimizeScheduleService(scheduleRepo, providerSvc, accountTestSvc, defaultTestModels)
+}
+
+// ProvideSub2APIOptimizeRunnerService 创建并启动定时优化 Runner。
+// 注入 leader 锁，多实例部署时每个扫描周期只由一个实例执行。
+func ProvideSub2APIOptimizeRunnerService(
+	scheduleSvc *Sub2APIOptimizeScheduleService,
+	cfg *config.Config,
+	lockCache LeaderLockCache,
+	db *sql.DB,
+) *Sub2APIOptimizeRunnerService {
+	svc := NewSub2APIOptimizeRunnerService(scheduleSvc, cfg)
+	svc.SetLeaderLock(lockCache, db)
 	svc.Start()
 	return svc
 }

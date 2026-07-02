@@ -93,6 +93,15 @@ type Config struct {
 	Gemini                  GeminiConfig                  `mapstructure:"gemini"`
 	Update                  UpdateConfig                  `mapstructure:"update"`
 	Idempotency             IdempotencyConfig             `mapstructure:"idempotency"`
+	Sub2API                 Sub2APIConfig                 `mapstructure:"sub2api"`
+}
+
+// Sub2APIConfig 上游管理（定时分组优化）相关配置。
+type Sub2APIConfig struct {
+	// DefaultTestModels 定时优化切换分组后，账号未单独设置测试模型时按平台使用的默认测试模型。
+	// key 为平台标识（anthropic/openai/gemini），value 为模型 ID。
+	// 未配置的平台会回退到代码内置兜底（见 service.builtinDefaultTestModels）。
+	DefaultTestModels map[string]string `mapstructure:"default_test_models"`
 }
 
 type LogConfig struct {
@@ -1774,6 +1783,14 @@ func setDefaults() {
 
 	// Timezone (default to Asia/Shanghai for Chinese users)
 	viper.SetDefault("timezone", "Asia/Shanghai")
+
+	// Sub2API 上游管理（定时分组优化）
+	// 定时优化切换分组后的默认测试模型（账号未单独设置时按平台取用）。
+	viper.SetDefault("sub2api.default_test_models", map[string]string{
+		"anthropic": "claude-haiku-4-5-20251001",
+		"openai":    "gpt-4o-mini",
+		"gemini":    "gemini-1.5-flash",
+	})
 
 	// API Key auth cache
 	viper.SetDefault("api_key_auth_cache.l1_size", 65535)

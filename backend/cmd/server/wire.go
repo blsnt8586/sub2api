@@ -101,6 +101,7 @@ func provideCleanup(
 	paymentOrderExpiry *service.PaymentOrderExpiryService,
 	channelMonitorRunner *service.ChannelMonitorRunner,
 	quotaFlusher *service.UserPlatformQuotaUsageFlusher,
+	sub2APIOptimizeRunner *service.Sub2APIOptimizeRunnerService,
 ) func() {
 	return func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -238,6 +239,12 @@ func provideCleanup(
 			{"ScheduledTestRunnerService", func() error {
 				if scheduledTestRunner != nil {
 					scheduledTestRunner.Stop()
+				}
+				return nil
+			}},
+			{"Sub2APIOptimizeRunnerService", func() error {
+				if sub2APIOptimizeRunner != nil {
+					sub2APIOptimizeRunner.Stop()
 				}
 				return nil
 			}},

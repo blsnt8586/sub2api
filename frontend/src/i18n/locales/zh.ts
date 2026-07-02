@@ -416,6 +416,7 @@ export default {
     channelMonitor: '渠道监控',
     channelStatus: '渠道状态',
     riskControl: '风控中心',
+    sub2apiProviders: '上游管理',
   },
 
   // Auth
@@ -2586,6 +2587,195 @@ export default {
         syncModelsAlreadyUpToDate: '模型列表已是最新',
         syncModelsError: '同步模型失败'
       }
+    },
+
+    sub2apiProviders: {
+      title: '上游管理',
+      description: '管理第三方 Sub2API 上游实例，自动关联账号并优化费率分组',
+      createProvider: '添加上游',
+      editProvider: '编辑上游',
+      deleteProvider: '删除上游',
+      searchProviders: '搜索上游...',
+      allStatus: '全部状态',
+      noProviders: '暂无上游',
+      noProvidersDesc: '点击"添加上游"配置第一个第三方 Sub2API 上游实例',
+      refresh: '刷新',
+
+      // 表单字段
+      form: {
+        name: '上游名称',
+        namePlaceholder: '例如：JinnyAPI',
+        baseUrl: '基础 URL',
+        baseUrlPlaceholder: 'https://api.example.com',
+        providerType: '上游平台',
+        providerTypeHint: '标识上游的接口协议类型，目前仅支持 Sub2API，创建后不可修改',
+        email: '登录邮箱',
+        emailPlaceholder: '登录第三方实例的邮箱',
+        password: '登录密码',
+        passwordPlaceholder: '登录第三方实例的密码',
+        notes: '备注',
+        notesPlaceholder: '可选备注',
+        status: '状态',
+      },
+
+      // 状态标签
+      statusLabels: {
+        active: '活跃',
+        inactive: '停用',
+      },
+
+      // 同步状态
+      syncStatus: {
+        success: '同步成功',
+        failed: '同步失败',
+        never: '从未同步',
+      },
+
+      // 操作按钮
+      enableProvider: '启用',
+      disableProvider: '停用',
+      testConnection: '测试连接',
+      detectPaths: '探测路径',
+      viewAccounts: '查看关联账号',
+      refreshRemote: '刷新分组',
+      linkAccount: '关联账号',
+      unlinkAccount: '解除关联',
+      optimizeAccount: '优化分组',
+      optimizeAll: '批量优化',
+
+      // 连接测试
+      testingConnection: '测试连接中...',
+      connectionSuccess: '连接成功',
+      connectionFailed: '连接失败',
+
+      // 路径探测
+      detectingPaths: '探测路径中...',
+      pathsDetected: '路径探测成功：Keys={keys}，Groups={groups}',
+      pathsDetectFailed: '路径探测失败',
+
+      // 关联账号
+      linkAccountTitle: '关联账号到代理',
+      linkAccountDesc: '选择要关联的本地账号，系统会自动在远端匹配对应 APIKey。',
+      selectAccount: '选择账号',
+      selectAccountPlaceholder: '请选择账号',
+      linking: '关联中...',
+      linked: '关联成功',
+      linkFailed: '关联失败',
+      unlinking: '解除中...',
+      unlinked: '已解除关联',
+      unlinkFailed: '解除关联失败',
+      unlinkConfirmTitle: '解除关联',
+      unlinkConfirmMessage: '确定要解除账号与该代理的关联吗？',
+
+      // 优化分组
+      optimizing: '优化中...',
+      optimizeSuccess: '分组优化成功：{old} → {new}（倍率 {multiplier}）',
+      alreadyOptimal: '已是最优分组',
+      optimizeFailed: '分组优化失败',
+      optimizeAllTitle: '批量优化结果',
+      optimizeAllSuccess: '批量优化完成：成功 {success}，已最优 {optimal}，失败 {failed}',
+      optimizeStatOptimized: '优化成功',
+      optimizeStatSkipped: '跳过',
+      optimizeStatFailed: '失败',
+
+      // 关联账号列表
+      linkedAccounts: '关联账号',
+      noLinkedAccounts: '暂无关联账号',
+      accountName: '账号名称',
+      remoteKeyId: '远端 Key ID',
+      remoteGroup: '当前分组',
+      multiplier: '倍率',
+      syncedAt: '同步时间',
+
+      // 删除确认
+      deleteConfirmMessage: "确定要删除代理 '{name}' 吗？删除后关联账号信息也会清除。",
+
+      // API 路径
+      apiPaths: 'API 路径',
+      keysPath: 'Keys 路径',
+      groupsPath: 'Groups 路径',
+      pathsNotDetected: '未探测',
+      pathsReady: '路径已探测',
+      pathsNotDetectedHint: '尚未探测 API 路径，关联账号/优化分组前请先在操作菜单中点「探测路径」',
+
+      // 定时优化
+      scheduleOptimize: '定时优化',
+      scheduleOptimizeTitle: '定时优化配置',
+      scheduleOptimizeDesc: '配置自动定时优化分组的计划任务，系统将按 Cron 表达式定时为满足条件的账号寻找更优分组。',
+      cronExpr: 'Cron 表达式',
+      cronExprPlaceholder: '例如：0 2 * * *（每天凌晨2点）',
+      cronPresets: {
+        hourly: '每小时',
+        daily2am: '每天2点',
+        daily6am: '每天6点',
+        every6h: '每6小时',
+        weekly: '每周一',
+      },
+      scheduleEnabled: '启用定时优化',
+      lastRunAt: '上次执行',
+      nextRunAt: '下次执行',
+      neverRun: '尚未执行',
+      runNow: '立即执行',
+      runNowSuccess: '定时优化已触发，请稍后查看日志',
+      runNowFailed: '触发失败',
+      runningHint: '正在后台执行优化，完成后自动刷新记录…',
+      scheduleSaved: '定时优化配置已保存',
+      scheduleDeleted: '定时优化配置已删除',
+      scheduleLoadFailed: '加载定时优化配置失败',
+      scheduleSaveFailed: '保存定时优化配置失败',
+      deleteSchedule: '删除定时配置',
+      deleteScheduleConfirm: '确定要删除该定时优化配置吗？',
+      recentLogs: '最近执行记录',
+      noLogs: '暂无执行记录',
+      logStatus: {
+        success: '成功',
+        failed: '失败',
+        partial: '部分成功',
+      },
+      logTotal: '共 {total} 个账号',
+      logOptimized: '优化 {count}',
+      logSkipped: '跳过 {count}',
+      logFailed: '失败 {count}',
+      logDuration: '耗时 {duration}',
+      detailStatus: {
+        optimized: '已优化',
+        skipped: '跳过',
+        failed: '失败',
+      },
+      // 账号定时优化设置
+      colAccountName: '账号名称',
+      colPlatform: '平台',
+      colCurrentGroup: '当前分组',
+      colMultiplier: '倍率',
+      colActions: '操作',
+      joinSchedule: '参与定时',
+      joinScheduleHint: '开启后该账号参与定时优化，可设置可接受的最高倍率上限',
+      joinScheduleOn: '已参与定时优化，点击关闭',
+      joinScheduleOff: '未参与定时优化，点击开启',
+      minMultiplier: '倍率下限',
+      minMultiplierHint: '只在倍率 ≥ 此值的分组里挑，排除过便宜的超卖/降级分组；留空则不设下限',
+      maxMultiplier: '倍率上限',
+      maxMultiplierHint: '定时优化时选择倍率 ≤ 此值的分组，留空不参与',
+      testModel: '测试模型',
+      testModelHint: '定时优化切换分组后用该模型验证连接',
+      maxMultiplierInvalid: '倍率上限必须为大于 0 的数字',
+      minMultiplierInvalid: '倍率下限必须为不小于 0 的数字',
+      minMultiplierExceedsMax: '倍率下限不能大于倍率上限',
+      maxMultiplierRequired: '开启定时优化前请先设置倍率上限',
+      minMultiplierRequired: '开启定时优化前请先设置倍率下限',
+      testModelRequired: '开启定时优化前请先选择测试模型',
+      optimizeAllIncomplete: '以下账号未填写完整配置(上限/下限/测试模型)，请先补全: {accounts}',
+      settingsSaved: '设置已保存',
+      settingsSaveFailed: '设置保存失败',
+      defaultModel: '平台默认',
+
+      // 错误信息
+      loadFailed: '加载上游列表失败',
+      saveFailed: '保存失败',
+      deleteFailed: '删除失败',
+      deleteSuccess: '代理已删除',
+      createSuccess: '代理创建成功',
+      updateSuccess: '代理更新成功',
     },
 
     riskControl: {

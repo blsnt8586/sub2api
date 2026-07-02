@@ -82,6 +82,17 @@ type AccountRepository interface {
 	// RevertProxyFallback 将账号的 proxy_id 切回 proxy_fallback_origin_id，并清空 origin 字段。
 	// 仅当 proxy_fallback_origin_id IS NOT NULL 时更新，否则视为账号不存在（返回 ErrAccountNotFound）。
 	RevertProxyFallback(ctx context.Context, accountID int64) error
+
+	// UpdateProviderLink 更新 Account 的 Provider 关联
+	UpdateProviderLink(ctx context.Context, accountID, providerID, providerAPIKeyID int64) error
+	// ClearProviderLink 清除 Account 的 Provider 关联
+	ClearProviderLink(ctx context.Context, accountID, providerID int64) error
+	// UpdateRemoteGroupInfo 更新远程分组缓存信息
+	UpdateRemoteGroupInfo(ctx context.Context, accountID int64, groupName string, multiplier float64) error
+	// ListByProviderID 获取关联到指定 Provider 的所有 Account
+	ListByProviderID(ctx context.Context, providerID int64) ([]Account, error)
+	// UpdateSub2APIOptimizeSettings 全量覆盖账号的定时优化设置（是否参与、倍率下限、倍率上限、测试模型）
+	UpdateSub2APIOptimizeSettings(ctx context.Context, accountID int64, enabled bool, minMultiplier, maxMultiplier *float64, testModel *string) error
 }
 
 // AccountBulkUpdate describes the fields that can be updated in a bulk operation.

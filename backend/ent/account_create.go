@@ -14,6 +14,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/account"
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/proxy"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiprovider"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
 )
 
@@ -391,6 +392,132 @@ func (_c *AccountCreate) SetNillableSessionWindowStatus(v *string) *AccountCreat
 	return _c
 }
 
+// SetProviderID sets the "provider_id" field.
+func (_c *AccountCreate) SetProviderID(v int64) *AccountCreate {
+	_c.mutation.SetProviderID(v)
+	return _c
+}
+
+// SetNillableProviderID sets the "provider_id" field if the given value is not nil.
+func (_c *AccountCreate) SetNillableProviderID(v *int64) *AccountCreate {
+	if v != nil {
+		_c.SetProviderID(*v)
+	}
+	return _c
+}
+
+// SetProviderAPIKeyID sets the "provider_api_key_id" field.
+func (_c *AccountCreate) SetProviderAPIKeyID(v int64) *AccountCreate {
+	_c.mutation.SetProviderAPIKeyID(v)
+	return _c
+}
+
+// SetNillableProviderAPIKeyID sets the "provider_api_key_id" field if the given value is not nil.
+func (_c *AccountCreate) SetNillableProviderAPIKeyID(v *int64) *AccountCreate {
+	if v != nil {
+		_c.SetProviderAPIKeyID(*v)
+	}
+	return _c
+}
+
+// SetRemoteGroupName sets the "remote_group_name" field.
+func (_c *AccountCreate) SetRemoteGroupName(v string) *AccountCreate {
+	_c.mutation.SetRemoteGroupName(v)
+	return _c
+}
+
+// SetNillableRemoteGroupName sets the "remote_group_name" field if the given value is not nil.
+func (_c *AccountCreate) SetNillableRemoteGroupName(v *string) *AccountCreate {
+	if v != nil {
+		_c.SetRemoteGroupName(*v)
+	}
+	return _c
+}
+
+// SetRemoteGroupMultiplier sets the "remote_group_multiplier" field.
+func (_c *AccountCreate) SetRemoteGroupMultiplier(v float64) *AccountCreate {
+	_c.mutation.SetRemoteGroupMultiplier(v)
+	return _c
+}
+
+// SetNillableRemoteGroupMultiplier sets the "remote_group_multiplier" field if the given value is not nil.
+func (_c *AccountCreate) SetNillableRemoteGroupMultiplier(v *float64) *AccountCreate {
+	if v != nil {
+		_c.SetRemoteGroupMultiplier(*v)
+	}
+	return _c
+}
+
+// SetRemoteGroupSyncedAt sets the "remote_group_synced_at" field.
+func (_c *AccountCreate) SetRemoteGroupSyncedAt(v time.Time) *AccountCreate {
+	_c.mutation.SetRemoteGroupSyncedAt(v)
+	return _c
+}
+
+// SetNillableRemoteGroupSyncedAt sets the "remote_group_synced_at" field if the given value is not nil.
+func (_c *AccountCreate) SetNillableRemoteGroupSyncedAt(v *time.Time) *AccountCreate {
+	if v != nil {
+		_c.SetRemoteGroupSyncedAt(*v)
+	}
+	return _c
+}
+
+// SetSub2apiOptimizeEnabled sets the "sub2api_optimize_enabled" field.
+func (_c *AccountCreate) SetSub2apiOptimizeEnabled(v bool) *AccountCreate {
+	_c.mutation.SetSub2apiOptimizeEnabled(v)
+	return _c
+}
+
+// SetNillableSub2apiOptimizeEnabled sets the "sub2api_optimize_enabled" field if the given value is not nil.
+func (_c *AccountCreate) SetNillableSub2apiOptimizeEnabled(v *bool) *AccountCreate {
+	if v != nil {
+		_c.SetSub2apiOptimizeEnabled(*v)
+	}
+	return _c
+}
+
+// SetSub2apiMaxMultiplier sets the "sub2api_max_multiplier" field.
+func (_c *AccountCreate) SetSub2apiMaxMultiplier(v float64) *AccountCreate {
+	_c.mutation.SetSub2apiMaxMultiplier(v)
+	return _c
+}
+
+// SetNillableSub2apiMaxMultiplier sets the "sub2api_max_multiplier" field if the given value is not nil.
+func (_c *AccountCreate) SetNillableSub2apiMaxMultiplier(v *float64) *AccountCreate {
+	if v != nil {
+		_c.SetSub2apiMaxMultiplier(*v)
+	}
+	return _c
+}
+
+// SetSub2apiMinMultiplier sets the "sub2api_min_multiplier" field.
+func (_c *AccountCreate) SetSub2apiMinMultiplier(v float64) *AccountCreate {
+	_c.mutation.SetSub2apiMinMultiplier(v)
+	return _c
+}
+
+// SetNillableSub2apiMinMultiplier sets the "sub2api_min_multiplier" field if the given value is not nil.
+func (_c *AccountCreate) SetNillableSub2apiMinMultiplier(v *float64) *AccountCreate {
+	if v != nil {
+		_c.SetSub2apiMinMultiplier(*v)
+	}
+	return _c
+}
+
+// SetSub2apiTestModel sets the "sub2api_test_model" field.
+func (_c *AccountCreate) SetSub2apiTestModel(v string) *AccountCreate {
+	_c.mutation.SetSub2apiTestModel(v)
+	return _c
+}
+
+// SetNillableSub2apiTestModel sets the "sub2api_test_model" field if the given value is not nil.
+func (_c *AccountCreate) SetNillableSub2apiTestModel(v *string) *AccountCreate {
+	if v != nil {
+		_c.SetSub2apiTestModel(*v)
+	}
+	return _c
+}
+
 // AddGroupIDs adds the "groups" edge to the Group entity by IDs.
 func (_c *AccountCreate) AddGroupIDs(ids ...int64) *AccountCreate {
 	_c.mutation.AddGroupIDs(ids...)
@@ -424,6 +551,11 @@ func (_c *AccountCreate) AddUsageLogs(v ...*UsageLog) *AccountCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddUsageLogIDs(ids...)
+}
+
+// SetProvider sets the "provider" edge to the Sub2APIProvider entity.
+func (_c *AccountCreate) SetProvider(v *Sub2APIProvider) *AccountCreate {
+	return _c.SetProviderID(v.ID)
 }
 
 // Mutation returns the AccountMutation object of the builder.
@@ -515,6 +647,10 @@ func (_c *AccountCreate) defaults() error {
 		v := account.DefaultSchedulable
 		_c.mutation.SetSchedulable(v)
 	}
+	if _, ok := _c.mutation.Sub2apiOptimizeEnabled(); !ok {
+		v := account.DefaultSub2apiOptimizeEnabled
+		_c.mutation.SetSub2apiOptimizeEnabled(v)
+	}
 	return nil
 }
 
@@ -582,6 +718,19 @@ func (_c *AccountCreate) check() error {
 	if v, ok := _c.mutation.SessionWindowStatus(); ok {
 		if err := account.SessionWindowStatusValidator(v); err != nil {
 			return &ValidationError{Name: "session_window_status", err: fmt.Errorf(`ent: validator failed for field "Account.session_window_status": %w`, err)}
+		}
+	}
+	if v, ok := _c.mutation.RemoteGroupName(); ok {
+		if err := account.RemoteGroupNameValidator(v); err != nil {
+			return &ValidationError{Name: "remote_group_name", err: fmt.Errorf(`ent: validator failed for field "Account.remote_group_name": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.Sub2apiOptimizeEnabled(); !ok {
+		return &ValidationError{Name: "sub2api_optimize_enabled", err: errors.New(`ent: missing required field "Account.sub2api_optimize_enabled"`)}
+	}
+	if v, ok := _c.mutation.Sub2apiTestModel(); ok {
+		if err := account.Sub2apiTestModelValidator(v); err != nil {
+			return &ValidationError{Name: "sub2api_test_model", err: fmt.Errorf(`ent: validator failed for field "Account.sub2api_test_model": %w`, err)}
 		}
 	}
 	return nil
@@ -723,6 +872,38 @@ func (_c *AccountCreate) createSpec() (*Account, *sqlgraph.CreateSpec) {
 		_spec.SetField(account.FieldSessionWindowStatus, field.TypeString, value)
 		_node.SessionWindowStatus = &value
 	}
+	if value, ok := _c.mutation.ProviderAPIKeyID(); ok {
+		_spec.SetField(account.FieldProviderAPIKeyID, field.TypeInt64, value)
+		_node.ProviderAPIKeyID = &value
+	}
+	if value, ok := _c.mutation.RemoteGroupName(); ok {
+		_spec.SetField(account.FieldRemoteGroupName, field.TypeString, value)
+		_node.RemoteGroupName = &value
+	}
+	if value, ok := _c.mutation.RemoteGroupMultiplier(); ok {
+		_spec.SetField(account.FieldRemoteGroupMultiplier, field.TypeFloat64, value)
+		_node.RemoteGroupMultiplier = &value
+	}
+	if value, ok := _c.mutation.RemoteGroupSyncedAt(); ok {
+		_spec.SetField(account.FieldRemoteGroupSyncedAt, field.TypeTime, value)
+		_node.RemoteGroupSyncedAt = &value
+	}
+	if value, ok := _c.mutation.Sub2apiOptimizeEnabled(); ok {
+		_spec.SetField(account.FieldSub2apiOptimizeEnabled, field.TypeBool, value)
+		_node.Sub2apiOptimizeEnabled = value
+	}
+	if value, ok := _c.mutation.Sub2apiMaxMultiplier(); ok {
+		_spec.SetField(account.FieldSub2apiMaxMultiplier, field.TypeFloat64, value)
+		_node.Sub2apiMaxMultiplier = &value
+	}
+	if value, ok := _c.mutation.Sub2apiMinMultiplier(); ok {
+		_spec.SetField(account.FieldSub2apiMinMultiplier, field.TypeFloat64, value)
+		_node.Sub2apiMinMultiplier = &value
+	}
+	if value, ok := _c.mutation.Sub2apiTestModel(); ok {
+		_spec.SetField(account.FieldSub2apiTestModel, field.TypeString, value)
+		_node.Sub2apiTestModel = &value
+	}
 	if nodes := _c.mutation.GroupsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
@@ -774,6 +955,23 @@ func (_c *AccountCreate) createSpec() (*Account, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ProviderIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   account.ProviderTable,
+			Columns: []string{account.ProviderColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiprovider.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.ProviderID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -1287,6 +1485,186 @@ func (u *AccountUpsert) UpdateSessionWindowStatus() *AccountUpsert {
 // ClearSessionWindowStatus clears the value of the "session_window_status" field.
 func (u *AccountUpsert) ClearSessionWindowStatus() *AccountUpsert {
 	u.SetNull(account.FieldSessionWindowStatus)
+	return u
+}
+
+// SetProviderID sets the "provider_id" field.
+func (u *AccountUpsert) SetProviderID(v int64) *AccountUpsert {
+	u.Set(account.FieldProviderID, v)
+	return u
+}
+
+// UpdateProviderID sets the "provider_id" field to the value that was provided on create.
+func (u *AccountUpsert) UpdateProviderID() *AccountUpsert {
+	u.SetExcluded(account.FieldProviderID)
+	return u
+}
+
+// ClearProviderID clears the value of the "provider_id" field.
+func (u *AccountUpsert) ClearProviderID() *AccountUpsert {
+	u.SetNull(account.FieldProviderID)
+	return u
+}
+
+// SetProviderAPIKeyID sets the "provider_api_key_id" field.
+func (u *AccountUpsert) SetProviderAPIKeyID(v int64) *AccountUpsert {
+	u.Set(account.FieldProviderAPIKeyID, v)
+	return u
+}
+
+// UpdateProviderAPIKeyID sets the "provider_api_key_id" field to the value that was provided on create.
+func (u *AccountUpsert) UpdateProviderAPIKeyID() *AccountUpsert {
+	u.SetExcluded(account.FieldProviderAPIKeyID)
+	return u
+}
+
+// AddProviderAPIKeyID adds v to the "provider_api_key_id" field.
+func (u *AccountUpsert) AddProviderAPIKeyID(v int64) *AccountUpsert {
+	u.Add(account.FieldProviderAPIKeyID, v)
+	return u
+}
+
+// ClearProviderAPIKeyID clears the value of the "provider_api_key_id" field.
+func (u *AccountUpsert) ClearProviderAPIKeyID() *AccountUpsert {
+	u.SetNull(account.FieldProviderAPIKeyID)
+	return u
+}
+
+// SetRemoteGroupName sets the "remote_group_name" field.
+func (u *AccountUpsert) SetRemoteGroupName(v string) *AccountUpsert {
+	u.Set(account.FieldRemoteGroupName, v)
+	return u
+}
+
+// UpdateRemoteGroupName sets the "remote_group_name" field to the value that was provided on create.
+func (u *AccountUpsert) UpdateRemoteGroupName() *AccountUpsert {
+	u.SetExcluded(account.FieldRemoteGroupName)
+	return u
+}
+
+// ClearRemoteGroupName clears the value of the "remote_group_name" field.
+func (u *AccountUpsert) ClearRemoteGroupName() *AccountUpsert {
+	u.SetNull(account.FieldRemoteGroupName)
+	return u
+}
+
+// SetRemoteGroupMultiplier sets the "remote_group_multiplier" field.
+func (u *AccountUpsert) SetRemoteGroupMultiplier(v float64) *AccountUpsert {
+	u.Set(account.FieldRemoteGroupMultiplier, v)
+	return u
+}
+
+// UpdateRemoteGroupMultiplier sets the "remote_group_multiplier" field to the value that was provided on create.
+func (u *AccountUpsert) UpdateRemoteGroupMultiplier() *AccountUpsert {
+	u.SetExcluded(account.FieldRemoteGroupMultiplier)
+	return u
+}
+
+// AddRemoteGroupMultiplier adds v to the "remote_group_multiplier" field.
+func (u *AccountUpsert) AddRemoteGroupMultiplier(v float64) *AccountUpsert {
+	u.Add(account.FieldRemoteGroupMultiplier, v)
+	return u
+}
+
+// ClearRemoteGroupMultiplier clears the value of the "remote_group_multiplier" field.
+func (u *AccountUpsert) ClearRemoteGroupMultiplier() *AccountUpsert {
+	u.SetNull(account.FieldRemoteGroupMultiplier)
+	return u
+}
+
+// SetRemoteGroupSyncedAt sets the "remote_group_synced_at" field.
+func (u *AccountUpsert) SetRemoteGroupSyncedAt(v time.Time) *AccountUpsert {
+	u.Set(account.FieldRemoteGroupSyncedAt, v)
+	return u
+}
+
+// UpdateRemoteGroupSyncedAt sets the "remote_group_synced_at" field to the value that was provided on create.
+func (u *AccountUpsert) UpdateRemoteGroupSyncedAt() *AccountUpsert {
+	u.SetExcluded(account.FieldRemoteGroupSyncedAt)
+	return u
+}
+
+// ClearRemoteGroupSyncedAt clears the value of the "remote_group_synced_at" field.
+func (u *AccountUpsert) ClearRemoteGroupSyncedAt() *AccountUpsert {
+	u.SetNull(account.FieldRemoteGroupSyncedAt)
+	return u
+}
+
+// SetSub2apiOptimizeEnabled sets the "sub2api_optimize_enabled" field.
+func (u *AccountUpsert) SetSub2apiOptimizeEnabled(v bool) *AccountUpsert {
+	u.Set(account.FieldSub2apiOptimizeEnabled, v)
+	return u
+}
+
+// UpdateSub2apiOptimizeEnabled sets the "sub2api_optimize_enabled" field to the value that was provided on create.
+func (u *AccountUpsert) UpdateSub2apiOptimizeEnabled() *AccountUpsert {
+	u.SetExcluded(account.FieldSub2apiOptimizeEnabled)
+	return u
+}
+
+// SetSub2apiMaxMultiplier sets the "sub2api_max_multiplier" field.
+func (u *AccountUpsert) SetSub2apiMaxMultiplier(v float64) *AccountUpsert {
+	u.Set(account.FieldSub2apiMaxMultiplier, v)
+	return u
+}
+
+// UpdateSub2apiMaxMultiplier sets the "sub2api_max_multiplier" field to the value that was provided on create.
+func (u *AccountUpsert) UpdateSub2apiMaxMultiplier() *AccountUpsert {
+	u.SetExcluded(account.FieldSub2apiMaxMultiplier)
+	return u
+}
+
+// AddSub2apiMaxMultiplier adds v to the "sub2api_max_multiplier" field.
+func (u *AccountUpsert) AddSub2apiMaxMultiplier(v float64) *AccountUpsert {
+	u.Add(account.FieldSub2apiMaxMultiplier, v)
+	return u
+}
+
+// ClearSub2apiMaxMultiplier clears the value of the "sub2api_max_multiplier" field.
+func (u *AccountUpsert) ClearSub2apiMaxMultiplier() *AccountUpsert {
+	u.SetNull(account.FieldSub2apiMaxMultiplier)
+	return u
+}
+
+// SetSub2apiMinMultiplier sets the "sub2api_min_multiplier" field.
+func (u *AccountUpsert) SetSub2apiMinMultiplier(v float64) *AccountUpsert {
+	u.Set(account.FieldSub2apiMinMultiplier, v)
+	return u
+}
+
+// UpdateSub2apiMinMultiplier sets the "sub2api_min_multiplier" field to the value that was provided on create.
+func (u *AccountUpsert) UpdateSub2apiMinMultiplier() *AccountUpsert {
+	u.SetExcluded(account.FieldSub2apiMinMultiplier)
+	return u
+}
+
+// AddSub2apiMinMultiplier adds v to the "sub2api_min_multiplier" field.
+func (u *AccountUpsert) AddSub2apiMinMultiplier(v float64) *AccountUpsert {
+	u.Add(account.FieldSub2apiMinMultiplier, v)
+	return u
+}
+
+// ClearSub2apiMinMultiplier clears the value of the "sub2api_min_multiplier" field.
+func (u *AccountUpsert) ClearSub2apiMinMultiplier() *AccountUpsert {
+	u.SetNull(account.FieldSub2apiMinMultiplier)
+	return u
+}
+
+// SetSub2apiTestModel sets the "sub2api_test_model" field.
+func (u *AccountUpsert) SetSub2apiTestModel(v string) *AccountUpsert {
+	u.Set(account.FieldSub2apiTestModel, v)
+	return u
+}
+
+// UpdateSub2apiTestModel sets the "sub2api_test_model" field to the value that was provided on create.
+func (u *AccountUpsert) UpdateSub2apiTestModel() *AccountUpsert {
+	u.SetExcluded(account.FieldSub2apiTestModel)
+	return u
+}
+
+// ClearSub2apiTestModel clears the value of the "sub2api_test_model" field.
+func (u *AccountUpsert) ClearSub2apiTestModel() *AccountUpsert {
+	u.SetNull(account.FieldSub2apiTestModel)
 	return u
 }
 
@@ -1871,6 +2249,216 @@ func (u *AccountUpsertOne) UpdateSessionWindowStatus() *AccountUpsertOne {
 func (u *AccountUpsertOne) ClearSessionWindowStatus() *AccountUpsertOne {
 	return u.Update(func(s *AccountUpsert) {
 		s.ClearSessionWindowStatus()
+	})
+}
+
+// SetProviderID sets the "provider_id" field.
+func (u *AccountUpsertOne) SetProviderID(v int64) *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetProviderID(v)
+	})
+}
+
+// UpdateProviderID sets the "provider_id" field to the value that was provided on create.
+func (u *AccountUpsertOne) UpdateProviderID() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateProviderID()
+	})
+}
+
+// ClearProviderID clears the value of the "provider_id" field.
+func (u *AccountUpsertOne) ClearProviderID() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearProviderID()
+	})
+}
+
+// SetProviderAPIKeyID sets the "provider_api_key_id" field.
+func (u *AccountUpsertOne) SetProviderAPIKeyID(v int64) *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetProviderAPIKeyID(v)
+	})
+}
+
+// AddProviderAPIKeyID adds v to the "provider_api_key_id" field.
+func (u *AccountUpsertOne) AddProviderAPIKeyID(v int64) *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.AddProviderAPIKeyID(v)
+	})
+}
+
+// UpdateProviderAPIKeyID sets the "provider_api_key_id" field to the value that was provided on create.
+func (u *AccountUpsertOne) UpdateProviderAPIKeyID() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateProviderAPIKeyID()
+	})
+}
+
+// ClearProviderAPIKeyID clears the value of the "provider_api_key_id" field.
+func (u *AccountUpsertOne) ClearProviderAPIKeyID() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearProviderAPIKeyID()
+	})
+}
+
+// SetRemoteGroupName sets the "remote_group_name" field.
+func (u *AccountUpsertOne) SetRemoteGroupName(v string) *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetRemoteGroupName(v)
+	})
+}
+
+// UpdateRemoteGroupName sets the "remote_group_name" field to the value that was provided on create.
+func (u *AccountUpsertOne) UpdateRemoteGroupName() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateRemoteGroupName()
+	})
+}
+
+// ClearRemoteGroupName clears the value of the "remote_group_name" field.
+func (u *AccountUpsertOne) ClearRemoteGroupName() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearRemoteGroupName()
+	})
+}
+
+// SetRemoteGroupMultiplier sets the "remote_group_multiplier" field.
+func (u *AccountUpsertOne) SetRemoteGroupMultiplier(v float64) *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetRemoteGroupMultiplier(v)
+	})
+}
+
+// AddRemoteGroupMultiplier adds v to the "remote_group_multiplier" field.
+func (u *AccountUpsertOne) AddRemoteGroupMultiplier(v float64) *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.AddRemoteGroupMultiplier(v)
+	})
+}
+
+// UpdateRemoteGroupMultiplier sets the "remote_group_multiplier" field to the value that was provided on create.
+func (u *AccountUpsertOne) UpdateRemoteGroupMultiplier() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateRemoteGroupMultiplier()
+	})
+}
+
+// ClearRemoteGroupMultiplier clears the value of the "remote_group_multiplier" field.
+func (u *AccountUpsertOne) ClearRemoteGroupMultiplier() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearRemoteGroupMultiplier()
+	})
+}
+
+// SetRemoteGroupSyncedAt sets the "remote_group_synced_at" field.
+func (u *AccountUpsertOne) SetRemoteGroupSyncedAt(v time.Time) *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetRemoteGroupSyncedAt(v)
+	})
+}
+
+// UpdateRemoteGroupSyncedAt sets the "remote_group_synced_at" field to the value that was provided on create.
+func (u *AccountUpsertOne) UpdateRemoteGroupSyncedAt() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateRemoteGroupSyncedAt()
+	})
+}
+
+// ClearRemoteGroupSyncedAt clears the value of the "remote_group_synced_at" field.
+func (u *AccountUpsertOne) ClearRemoteGroupSyncedAt() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearRemoteGroupSyncedAt()
+	})
+}
+
+// SetSub2apiOptimizeEnabled sets the "sub2api_optimize_enabled" field.
+func (u *AccountUpsertOne) SetSub2apiOptimizeEnabled(v bool) *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetSub2apiOptimizeEnabled(v)
+	})
+}
+
+// UpdateSub2apiOptimizeEnabled sets the "sub2api_optimize_enabled" field to the value that was provided on create.
+func (u *AccountUpsertOne) UpdateSub2apiOptimizeEnabled() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateSub2apiOptimizeEnabled()
+	})
+}
+
+// SetSub2apiMaxMultiplier sets the "sub2api_max_multiplier" field.
+func (u *AccountUpsertOne) SetSub2apiMaxMultiplier(v float64) *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetSub2apiMaxMultiplier(v)
+	})
+}
+
+// AddSub2apiMaxMultiplier adds v to the "sub2api_max_multiplier" field.
+func (u *AccountUpsertOne) AddSub2apiMaxMultiplier(v float64) *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.AddSub2apiMaxMultiplier(v)
+	})
+}
+
+// UpdateSub2apiMaxMultiplier sets the "sub2api_max_multiplier" field to the value that was provided on create.
+func (u *AccountUpsertOne) UpdateSub2apiMaxMultiplier() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateSub2apiMaxMultiplier()
+	})
+}
+
+// ClearSub2apiMaxMultiplier clears the value of the "sub2api_max_multiplier" field.
+func (u *AccountUpsertOne) ClearSub2apiMaxMultiplier() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearSub2apiMaxMultiplier()
+	})
+}
+
+// SetSub2apiMinMultiplier sets the "sub2api_min_multiplier" field.
+func (u *AccountUpsertOne) SetSub2apiMinMultiplier(v float64) *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetSub2apiMinMultiplier(v)
+	})
+}
+
+// AddSub2apiMinMultiplier adds v to the "sub2api_min_multiplier" field.
+func (u *AccountUpsertOne) AddSub2apiMinMultiplier(v float64) *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.AddSub2apiMinMultiplier(v)
+	})
+}
+
+// UpdateSub2apiMinMultiplier sets the "sub2api_min_multiplier" field to the value that was provided on create.
+func (u *AccountUpsertOne) UpdateSub2apiMinMultiplier() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateSub2apiMinMultiplier()
+	})
+}
+
+// ClearSub2apiMinMultiplier clears the value of the "sub2api_min_multiplier" field.
+func (u *AccountUpsertOne) ClearSub2apiMinMultiplier() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearSub2apiMinMultiplier()
+	})
+}
+
+// SetSub2apiTestModel sets the "sub2api_test_model" field.
+func (u *AccountUpsertOne) SetSub2apiTestModel(v string) *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetSub2apiTestModel(v)
+	})
+}
+
+// UpdateSub2apiTestModel sets the "sub2api_test_model" field to the value that was provided on create.
+func (u *AccountUpsertOne) UpdateSub2apiTestModel() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateSub2apiTestModel()
+	})
+}
+
+// ClearSub2apiTestModel clears the value of the "sub2api_test_model" field.
+func (u *AccountUpsertOne) ClearSub2apiTestModel() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearSub2apiTestModel()
 	})
 }
 
@@ -2621,6 +3209,216 @@ func (u *AccountUpsertBulk) UpdateSessionWindowStatus() *AccountUpsertBulk {
 func (u *AccountUpsertBulk) ClearSessionWindowStatus() *AccountUpsertBulk {
 	return u.Update(func(s *AccountUpsert) {
 		s.ClearSessionWindowStatus()
+	})
+}
+
+// SetProviderID sets the "provider_id" field.
+func (u *AccountUpsertBulk) SetProviderID(v int64) *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetProviderID(v)
+	})
+}
+
+// UpdateProviderID sets the "provider_id" field to the value that was provided on create.
+func (u *AccountUpsertBulk) UpdateProviderID() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateProviderID()
+	})
+}
+
+// ClearProviderID clears the value of the "provider_id" field.
+func (u *AccountUpsertBulk) ClearProviderID() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearProviderID()
+	})
+}
+
+// SetProviderAPIKeyID sets the "provider_api_key_id" field.
+func (u *AccountUpsertBulk) SetProviderAPIKeyID(v int64) *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetProviderAPIKeyID(v)
+	})
+}
+
+// AddProviderAPIKeyID adds v to the "provider_api_key_id" field.
+func (u *AccountUpsertBulk) AddProviderAPIKeyID(v int64) *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.AddProviderAPIKeyID(v)
+	})
+}
+
+// UpdateProviderAPIKeyID sets the "provider_api_key_id" field to the value that was provided on create.
+func (u *AccountUpsertBulk) UpdateProviderAPIKeyID() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateProviderAPIKeyID()
+	})
+}
+
+// ClearProviderAPIKeyID clears the value of the "provider_api_key_id" field.
+func (u *AccountUpsertBulk) ClearProviderAPIKeyID() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearProviderAPIKeyID()
+	})
+}
+
+// SetRemoteGroupName sets the "remote_group_name" field.
+func (u *AccountUpsertBulk) SetRemoteGroupName(v string) *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetRemoteGroupName(v)
+	})
+}
+
+// UpdateRemoteGroupName sets the "remote_group_name" field to the value that was provided on create.
+func (u *AccountUpsertBulk) UpdateRemoteGroupName() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateRemoteGroupName()
+	})
+}
+
+// ClearRemoteGroupName clears the value of the "remote_group_name" field.
+func (u *AccountUpsertBulk) ClearRemoteGroupName() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearRemoteGroupName()
+	})
+}
+
+// SetRemoteGroupMultiplier sets the "remote_group_multiplier" field.
+func (u *AccountUpsertBulk) SetRemoteGroupMultiplier(v float64) *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetRemoteGroupMultiplier(v)
+	})
+}
+
+// AddRemoteGroupMultiplier adds v to the "remote_group_multiplier" field.
+func (u *AccountUpsertBulk) AddRemoteGroupMultiplier(v float64) *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.AddRemoteGroupMultiplier(v)
+	})
+}
+
+// UpdateRemoteGroupMultiplier sets the "remote_group_multiplier" field to the value that was provided on create.
+func (u *AccountUpsertBulk) UpdateRemoteGroupMultiplier() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateRemoteGroupMultiplier()
+	})
+}
+
+// ClearRemoteGroupMultiplier clears the value of the "remote_group_multiplier" field.
+func (u *AccountUpsertBulk) ClearRemoteGroupMultiplier() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearRemoteGroupMultiplier()
+	})
+}
+
+// SetRemoteGroupSyncedAt sets the "remote_group_synced_at" field.
+func (u *AccountUpsertBulk) SetRemoteGroupSyncedAt(v time.Time) *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetRemoteGroupSyncedAt(v)
+	})
+}
+
+// UpdateRemoteGroupSyncedAt sets the "remote_group_synced_at" field to the value that was provided on create.
+func (u *AccountUpsertBulk) UpdateRemoteGroupSyncedAt() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateRemoteGroupSyncedAt()
+	})
+}
+
+// ClearRemoteGroupSyncedAt clears the value of the "remote_group_synced_at" field.
+func (u *AccountUpsertBulk) ClearRemoteGroupSyncedAt() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearRemoteGroupSyncedAt()
+	})
+}
+
+// SetSub2apiOptimizeEnabled sets the "sub2api_optimize_enabled" field.
+func (u *AccountUpsertBulk) SetSub2apiOptimizeEnabled(v bool) *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetSub2apiOptimizeEnabled(v)
+	})
+}
+
+// UpdateSub2apiOptimizeEnabled sets the "sub2api_optimize_enabled" field to the value that was provided on create.
+func (u *AccountUpsertBulk) UpdateSub2apiOptimizeEnabled() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateSub2apiOptimizeEnabled()
+	})
+}
+
+// SetSub2apiMaxMultiplier sets the "sub2api_max_multiplier" field.
+func (u *AccountUpsertBulk) SetSub2apiMaxMultiplier(v float64) *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetSub2apiMaxMultiplier(v)
+	})
+}
+
+// AddSub2apiMaxMultiplier adds v to the "sub2api_max_multiplier" field.
+func (u *AccountUpsertBulk) AddSub2apiMaxMultiplier(v float64) *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.AddSub2apiMaxMultiplier(v)
+	})
+}
+
+// UpdateSub2apiMaxMultiplier sets the "sub2api_max_multiplier" field to the value that was provided on create.
+func (u *AccountUpsertBulk) UpdateSub2apiMaxMultiplier() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateSub2apiMaxMultiplier()
+	})
+}
+
+// ClearSub2apiMaxMultiplier clears the value of the "sub2api_max_multiplier" field.
+func (u *AccountUpsertBulk) ClearSub2apiMaxMultiplier() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearSub2apiMaxMultiplier()
+	})
+}
+
+// SetSub2apiMinMultiplier sets the "sub2api_min_multiplier" field.
+func (u *AccountUpsertBulk) SetSub2apiMinMultiplier(v float64) *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetSub2apiMinMultiplier(v)
+	})
+}
+
+// AddSub2apiMinMultiplier adds v to the "sub2api_min_multiplier" field.
+func (u *AccountUpsertBulk) AddSub2apiMinMultiplier(v float64) *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.AddSub2apiMinMultiplier(v)
+	})
+}
+
+// UpdateSub2apiMinMultiplier sets the "sub2api_min_multiplier" field to the value that was provided on create.
+func (u *AccountUpsertBulk) UpdateSub2apiMinMultiplier() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateSub2apiMinMultiplier()
+	})
+}
+
+// ClearSub2apiMinMultiplier clears the value of the "sub2api_min_multiplier" field.
+func (u *AccountUpsertBulk) ClearSub2apiMinMultiplier() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearSub2apiMinMultiplier()
+	})
+}
+
+// SetSub2apiTestModel sets the "sub2api_test_model" field.
+func (u *AccountUpsertBulk) SetSub2apiTestModel(v string) *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetSub2apiTestModel(v)
+	})
+}
+
+// UpdateSub2apiTestModel sets the "sub2api_test_model" field to the value that was provided on create.
+func (u *AccountUpsertBulk) UpdateSub2apiTestModel() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateSub2apiTestModel()
+	})
+}
+
+// ClearSub2apiTestModel clears the value of the "sub2api_test_model" field.
+func (u *AccountUpsertBulk) ClearSub2apiTestModel() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearSub2apiTestModel()
 	})
 }
 

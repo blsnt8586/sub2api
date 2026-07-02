@@ -41,6 +41,8 @@ func ProvideAdminHandlers(
 	paymentHandler *admin.PaymentHandler,
 	affiliateHandler *admin.AffiliateHandler,
 	complianceHandler *admin.ComplianceHandler,
+	sub2apiProviderHandler *admin.Sub2APIProviderHandler,
+	sub2apiOptimizeScheduleHandler *admin.Sub2APIOptimizeScheduleHandler,
 ) *AdminHandlers {
 	return &AdminHandlers{
 		Dashboard:              dashboardHandler,
@@ -75,6 +77,8 @@ func ProvideAdminHandlers(
 		Payment:                paymentHandler,
 		Affiliate:              affiliateHandler,
 		Compliance:             complianceHandler,
+		Sub2APIProvider:  sub2apiProviderHandler,
+		Sub2APIOptimize:  sub2apiOptimizeScheduleHandler,
 	}
 }
 
@@ -190,6 +194,7 @@ var ProviderSet = wire.NewSet(
 	admin.NewPaymentHandler,
 	admin.NewAffiliateHandler,
 	admin.NewComplianceHandler,
+	admin.NewSub2APIProviderHandler,
 
 	// AdminHandlers and Handlers constructors
 	ProvideAdminHandlers,

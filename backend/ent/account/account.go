@@ -73,12 +73,32 @@ const (
 	FieldSessionWindowEnd = "session_window_end"
 	// FieldSessionWindowStatus holds the string denoting the session_window_status field in the database.
 	FieldSessionWindowStatus = "session_window_status"
+	// FieldProviderID holds the string denoting the provider_id field in the database.
+	FieldProviderID = "provider_id"
+	// FieldProviderAPIKeyID holds the string denoting the provider_api_key_id field in the database.
+	FieldProviderAPIKeyID = "provider_api_key_id"
+	// FieldRemoteGroupName holds the string denoting the remote_group_name field in the database.
+	FieldRemoteGroupName = "remote_group_name"
+	// FieldRemoteGroupMultiplier holds the string denoting the remote_group_multiplier field in the database.
+	FieldRemoteGroupMultiplier = "remote_group_multiplier"
+	// FieldRemoteGroupSyncedAt holds the string denoting the remote_group_synced_at field in the database.
+	FieldRemoteGroupSyncedAt = "remote_group_synced_at"
+	// FieldSub2apiOptimizeEnabled holds the string denoting the sub2api_optimize_enabled field in the database.
+	FieldSub2apiOptimizeEnabled = "sub2api_optimize_enabled"
+	// FieldSub2apiMaxMultiplier holds the string denoting the sub2api_max_multiplier field in the database.
+	FieldSub2apiMaxMultiplier = "sub2api_max_multiplier"
+	// FieldSub2apiMinMultiplier holds the string denoting the sub2api_min_multiplier field in the database.
+	FieldSub2apiMinMultiplier = "sub2api_min_multiplier"
+	// FieldSub2apiTestModel holds the string denoting the sub2api_test_model field in the database.
+	FieldSub2apiTestModel = "sub2api_test_model"
 	// EdgeGroups holds the string denoting the groups edge name in mutations.
 	EdgeGroups = "groups"
 	// EdgeProxy holds the string denoting the proxy edge name in mutations.
 	EdgeProxy = "proxy"
 	// EdgeUsageLogs holds the string denoting the usage_logs edge name in mutations.
 	EdgeUsageLogs = "usage_logs"
+	// EdgeProvider holds the string denoting the provider edge name in mutations.
+	EdgeProvider = "provider"
 	// EdgeAccountGroups holds the string denoting the account_groups edge name in mutations.
 	EdgeAccountGroups = "account_groups"
 	// Table holds the table name of the account in the database.
@@ -102,6 +122,13 @@ const (
 	UsageLogsInverseTable = "usage_logs"
 	// UsageLogsColumn is the table column denoting the usage_logs relation/edge.
 	UsageLogsColumn = "account_id"
+	// ProviderTable is the table that holds the provider relation/edge.
+	ProviderTable = "accounts"
+	// ProviderInverseTable is the table name for the Sub2APIProvider entity.
+	// It exists in this package in order to avoid circular dependency with the "sub2apiprovider" package.
+	ProviderInverseTable = "sub2api_providers"
+	// ProviderColumn is the table column denoting the provider relation/edge.
+	ProviderColumn = "provider_id"
 	// AccountGroupsTable is the table that holds the account_groups relation/edge.
 	AccountGroupsTable = "account_groups"
 	// AccountGroupsInverseTable is the table name for the AccountGroup entity.
@@ -143,6 +170,15 @@ var Columns = []string{
 	FieldSessionWindowStart,
 	FieldSessionWindowEnd,
 	FieldSessionWindowStatus,
+	FieldProviderID,
+	FieldProviderAPIKeyID,
+	FieldRemoteGroupName,
+	FieldRemoteGroupMultiplier,
+	FieldRemoteGroupSyncedAt,
+	FieldSub2apiOptimizeEnabled,
+	FieldSub2apiMaxMultiplier,
+	FieldSub2apiMinMultiplier,
+	FieldSub2apiTestModel,
 }
 
 var (
@@ -201,6 +237,12 @@ var (
 	DefaultSchedulable bool
 	// SessionWindowStatusValidator is a validator for the "session_window_status" field. It is called by the builders before save.
 	SessionWindowStatusValidator func(string) error
+	// RemoteGroupNameValidator is a validator for the "remote_group_name" field. It is called by the builders before save.
+	RemoteGroupNameValidator func(string) error
+	// DefaultSub2apiOptimizeEnabled holds the default value on creation for the "sub2api_optimize_enabled" field.
+	DefaultSub2apiOptimizeEnabled bool
+	// Sub2apiTestModelValidator is a validator for the "sub2api_test_model" field. It is called by the builders before save.
+	Sub2apiTestModelValidator func(string) error
 )
 
 // OrderOption defines the ordering options for the Account queries.
@@ -346,6 +388,51 @@ func BySessionWindowStatus(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSessionWindowStatus, opts...).ToFunc()
 }
 
+// ByProviderID orders the results by the provider_id field.
+func ByProviderID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldProviderID, opts...).ToFunc()
+}
+
+// ByProviderAPIKeyID orders the results by the provider_api_key_id field.
+func ByProviderAPIKeyID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldProviderAPIKeyID, opts...).ToFunc()
+}
+
+// ByRemoteGroupName orders the results by the remote_group_name field.
+func ByRemoteGroupName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRemoteGroupName, opts...).ToFunc()
+}
+
+// ByRemoteGroupMultiplier orders the results by the remote_group_multiplier field.
+func ByRemoteGroupMultiplier(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRemoteGroupMultiplier, opts...).ToFunc()
+}
+
+// ByRemoteGroupSyncedAt orders the results by the remote_group_synced_at field.
+func ByRemoteGroupSyncedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRemoteGroupSyncedAt, opts...).ToFunc()
+}
+
+// BySub2apiOptimizeEnabled orders the results by the sub2api_optimize_enabled field.
+func BySub2apiOptimizeEnabled(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSub2apiOptimizeEnabled, opts...).ToFunc()
+}
+
+// BySub2apiMaxMultiplier orders the results by the sub2api_max_multiplier field.
+func BySub2apiMaxMultiplier(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSub2apiMaxMultiplier, opts...).ToFunc()
+}
+
+// BySub2apiMinMultiplier orders the results by the sub2api_min_multiplier field.
+func BySub2apiMinMultiplier(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSub2apiMinMultiplier, opts...).ToFunc()
+}
+
+// BySub2apiTestModel orders the results by the sub2api_test_model field.
+func BySub2apiTestModel(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSub2apiTestModel, opts...).ToFunc()
+}
+
 // ByGroupsCount orders the results by groups count.
 func ByGroupsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -381,6 +468,13 @@ func ByUsageLogs(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByProviderField orders the results by provider field.
+func ByProviderField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newProviderStep(), sql.OrderByField(field, opts...))
+	}
+}
+
 // ByAccountGroupsCount orders the results by account_groups count.
 func ByAccountGroupsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -413,6 +507,13 @@ func newUsageLogsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(UsageLogsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, UsageLogsTable, UsageLogsColumn),
+	)
+}
+func newProviderStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ProviderInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, ProviderTable, ProviderColumn),
 	)
 }
 func newAccountGroupsStep() *sqlgraph.Step {

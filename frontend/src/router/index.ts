@@ -550,6 +550,18 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/admin/sub2api-providers',
+    name: 'AdminSub2APIProviders',
+    component: () => import('@/views/admin/Sub2APIProvidersView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'Sub2API Provider Management',
+      titleKey: 'admin.sub2apiProviders.title',
+      descriptionKey: 'admin.sub2apiProviders.description'
+    }
+  },
+  {
     path: '/admin/risk-control',
     name: 'AdminRiskControl',
     component: () => import('@/views/admin/RiskControlView.vue'),

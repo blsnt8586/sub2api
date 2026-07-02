@@ -190,6 +190,51 @@ func SessionWindowStatus(v string) predicate.Account {
 	return predicate.Account(sql.FieldEQ(FieldSessionWindowStatus, v))
 }
 
+// ProviderID applies equality check predicate on the "provider_id" field. It's identical to ProviderIDEQ.
+func ProviderID(v int64) predicate.Account {
+	return predicate.Account(sql.FieldEQ(FieldProviderID, v))
+}
+
+// ProviderAPIKeyID applies equality check predicate on the "provider_api_key_id" field. It's identical to ProviderAPIKeyIDEQ.
+func ProviderAPIKeyID(v int64) predicate.Account {
+	return predicate.Account(sql.FieldEQ(FieldProviderAPIKeyID, v))
+}
+
+// RemoteGroupName applies equality check predicate on the "remote_group_name" field. It's identical to RemoteGroupNameEQ.
+func RemoteGroupName(v string) predicate.Account {
+	return predicate.Account(sql.FieldEQ(FieldRemoteGroupName, v))
+}
+
+// RemoteGroupMultiplier applies equality check predicate on the "remote_group_multiplier" field. It's identical to RemoteGroupMultiplierEQ.
+func RemoteGroupMultiplier(v float64) predicate.Account {
+	return predicate.Account(sql.FieldEQ(FieldRemoteGroupMultiplier, v))
+}
+
+// RemoteGroupSyncedAt applies equality check predicate on the "remote_group_synced_at" field. It's identical to RemoteGroupSyncedAtEQ.
+func RemoteGroupSyncedAt(v time.Time) predicate.Account {
+	return predicate.Account(sql.FieldEQ(FieldRemoteGroupSyncedAt, v))
+}
+
+// Sub2apiOptimizeEnabled applies equality check predicate on the "sub2api_optimize_enabled" field. It's identical to Sub2apiOptimizeEnabledEQ.
+func Sub2apiOptimizeEnabled(v bool) predicate.Account {
+	return predicate.Account(sql.FieldEQ(FieldSub2apiOptimizeEnabled, v))
+}
+
+// Sub2apiMaxMultiplier applies equality check predicate on the "sub2api_max_multiplier" field. It's identical to Sub2apiMaxMultiplierEQ.
+func Sub2apiMaxMultiplier(v float64) predicate.Account {
+	return predicate.Account(sql.FieldEQ(FieldSub2apiMaxMultiplier, v))
+}
+
+// Sub2apiMinMultiplier applies equality check predicate on the "sub2api_min_multiplier" field. It's identical to Sub2apiMinMultiplierEQ.
+func Sub2apiMinMultiplier(v float64) predicate.Account {
+	return predicate.Account(sql.FieldEQ(FieldSub2apiMinMultiplier, v))
+}
+
+// Sub2apiTestModel applies equality check predicate on the "sub2api_test_model" field. It's identical to Sub2apiTestModelEQ.
+func Sub2apiTestModel(v string) predicate.Account {
+	return predicate.Account(sql.FieldEQ(FieldSub2apiTestModel, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Account {
 	return predicate.Account(sql.FieldEQ(FieldCreatedAt, v))
@@ -1550,6 +1595,446 @@ func SessionWindowStatusContainsFold(v string) predicate.Account {
 	return predicate.Account(sql.FieldContainsFold(FieldSessionWindowStatus, v))
 }
 
+// ProviderIDEQ applies the EQ predicate on the "provider_id" field.
+func ProviderIDEQ(v int64) predicate.Account {
+	return predicate.Account(sql.FieldEQ(FieldProviderID, v))
+}
+
+// ProviderIDNEQ applies the NEQ predicate on the "provider_id" field.
+func ProviderIDNEQ(v int64) predicate.Account {
+	return predicate.Account(sql.FieldNEQ(FieldProviderID, v))
+}
+
+// ProviderIDIn applies the In predicate on the "provider_id" field.
+func ProviderIDIn(vs ...int64) predicate.Account {
+	return predicate.Account(sql.FieldIn(FieldProviderID, vs...))
+}
+
+// ProviderIDNotIn applies the NotIn predicate on the "provider_id" field.
+func ProviderIDNotIn(vs ...int64) predicate.Account {
+	return predicate.Account(sql.FieldNotIn(FieldProviderID, vs...))
+}
+
+// ProviderIDIsNil applies the IsNil predicate on the "provider_id" field.
+func ProviderIDIsNil() predicate.Account {
+	return predicate.Account(sql.FieldIsNull(FieldProviderID))
+}
+
+// ProviderIDNotNil applies the NotNil predicate on the "provider_id" field.
+func ProviderIDNotNil() predicate.Account {
+	return predicate.Account(sql.FieldNotNull(FieldProviderID))
+}
+
+// ProviderAPIKeyIDEQ applies the EQ predicate on the "provider_api_key_id" field.
+func ProviderAPIKeyIDEQ(v int64) predicate.Account {
+	return predicate.Account(sql.FieldEQ(FieldProviderAPIKeyID, v))
+}
+
+// ProviderAPIKeyIDNEQ applies the NEQ predicate on the "provider_api_key_id" field.
+func ProviderAPIKeyIDNEQ(v int64) predicate.Account {
+	return predicate.Account(sql.FieldNEQ(FieldProviderAPIKeyID, v))
+}
+
+// ProviderAPIKeyIDIn applies the In predicate on the "provider_api_key_id" field.
+func ProviderAPIKeyIDIn(vs ...int64) predicate.Account {
+	return predicate.Account(sql.FieldIn(FieldProviderAPIKeyID, vs...))
+}
+
+// ProviderAPIKeyIDNotIn applies the NotIn predicate on the "provider_api_key_id" field.
+func ProviderAPIKeyIDNotIn(vs ...int64) predicate.Account {
+	return predicate.Account(sql.FieldNotIn(FieldProviderAPIKeyID, vs...))
+}
+
+// ProviderAPIKeyIDGT applies the GT predicate on the "provider_api_key_id" field.
+func ProviderAPIKeyIDGT(v int64) predicate.Account {
+	return predicate.Account(sql.FieldGT(FieldProviderAPIKeyID, v))
+}
+
+// ProviderAPIKeyIDGTE applies the GTE predicate on the "provider_api_key_id" field.
+func ProviderAPIKeyIDGTE(v int64) predicate.Account {
+	return predicate.Account(sql.FieldGTE(FieldProviderAPIKeyID, v))
+}
+
+// ProviderAPIKeyIDLT applies the LT predicate on the "provider_api_key_id" field.
+func ProviderAPIKeyIDLT(v int64) predicate.Account {
+	return predicate.Account(sql.FieldLT(FieldProviderAPIKeyID, v))
+}
+
+// ProviderAPIKeyIDLTE applies the LTE predicate on the "provider_api_key_id" field.
+func ProviderAPIKeyIDLTE(v int64) predicate.Account {
+	return predicate.Account(sql.FieldLTE(FieldProviderAPIKeyID, v))
+}
+
+// ProviderAPIKeyIDIsNil applies the IsNil predicate on the "provider_api_key_id" field.
+func ProviderAPIKeyIDIsNil() predicate.Account {
+	return predicate.Account(sql.FieldIsNull(FieldProviderAPIKeyID))
+}
+
+// ProviderAPIKeyIDNotNil applies the NotNil predicate on the "provider_api_key_id" field.
+func ProviderAPIKeyIDNotNil() predicate.Account {
+	return predicate.Account(sql.FieldNotNull(FieldProviderAPIKeyID))
+}
+
+// RemoteGroupNameEQ applies the EQ predicate on the "remote_group_name" field.
+func RemoteGroupNameEQ(v string) predicate.Account {
+	return predicate.Account(sql.FieldEQ(FieldRemoteGroupName, v))
+}
+
+// RemoteGroupNameNEQ applies the NEQ predicate on the "remote_group_name" field.
+func RemoteGroupNameNEQ(v string) predicate.Account {
+	return predicate.Account(sql.FieldNEQ(FieldRemoteGroupName, v))
+}
+
+// RemoteGroupNameIn applies the In predicate on the "remote_group_name" field.
+func RemoteGroupNameIn(vs ...string) predicate.Account {
+	return predicate.Account(sql.FieldIn(FieldRemoteGroupName, vs...))
+}
+
+// RemoteGroupNameNotIn applies the NotIn predicate on the "remote_group_name" field.
+func RemoteGroupNameNotIn(vs ...string) predicate.Account {
+	return predicate.Account(sql.FieldNotIn(FieldRemoteGroupName, vs...))
+}
+
+// RemoteGroupNameGT applies the GT predicate on the "remote_group_name" field.
+func RemoteGroupNameGT(v string) predicate.Account {
+	return predicate.Account(sql.FieldGT(FieldRemoteGroupName, v))
+}
+
+// RemoteGroupNameGTE applies the GTE predicate on the "remote_group_name" field.
+func RemoteGroupNameGTE(v string) predicate.Account {
+	return predicate.Account(sql.FieldGTE(FieldRemoteGroupName, v))
+}
+
+// RemoteGroupNameLT applies the LT predicate on the "remote_group_name" field.
+func RemoteGroupNameLT(v string) predicate.Account {
+	return predicate.Account(sql.FieldLT(FieldRemoteGroupName, v))
+}
+
+// RemoteGroupNameLTE applies the LTE predicate on the "remote_group_name" field.
+func RemoteGroupNameLTE(v string) predicate.Account {
+	return predicate.Account(sql.FieldLTE(FieldRemoteGroupName, v))
+}
+
+// RemoteGroupNameContains applies the Contains predicate on the "remote_group_name" field.
+func RemoteGroupNameContains(v string) predicate.Account {
+	return predicate.Account(sql.FieldContains(FieldRemoteGroupName, v))
+}
+
+// RemoteGroupNameHasPrefix applies the HasPrefix predicate on the "remote_group_name" field.
+func RemoteGroupNameHasPrefix(v string) predicate.Account {
+	return predicate.Account(sql.FieldHasPrefix(FieldRemoteGroupName, v))
+}
+
+// RemoteGroupNameHasSuffix applies the HasSuffix predicate on the "remote_group_name" field.
+func RemoteGroupNameHasSuffix(v string) predicate.Account {
+	return predicate.Account(sql.FieldHasSuffix(FieldRemoteGroupName, v))
+}
+
+// RemoteGroupNameIsNil applies the IsNil predicate on the "remote_group_name" field.
+func RemoteGroupNameIsNil() predicate.Account {
+	return predicate.Account(sql.FieldIsNull(FieldRemoteGroupName))
+}
+
+// RemoteGroupNameNotNil applies the NotNil predicate on the "remote_group_name" field.
+func RemoteGroupNameNotNil() predicate.Account {
+	return predicate.Account(sql.FieldNotNull(FieldRemoteGroupName))
+}
+
+// RemoteGroupNameEqualFold applies the EqualFold predicate on the "remote_group_name" field.
+func RemoteGroupNameEqualFold(v string) predicate.Account {
+	return predicate.Account(sql.FieldEqualFold(FieldRemoteGroupName, v))
+}
+
+// RemoteGroupNameContainsFold applies the ContainsFold predicate on the "remote_group_name" field.
+func RemoteGroupNameContainsFold(v string) predicate.Account {
+	return predicate.Account(sql.FieldContainsFold(FieldRemoteGroupName, v))
+}
+
+// RemoteGroupMultiplierEQ applies the EQ predicate on the "remote_group_multiplier" field.
+func RemoteGroupMultiplierEQ(v float64) predicate.Account {
+	return predicate.Account(sql.FieldEQ(FieldRemoteGroupMultiplier, v))
+}
+
+// RemoteGroupMultiplierNEQ applies the NEQ predicate on the "remote_group_multiplier" field.
+func RemoteGroupMultiplierNEQ(v float64) predicate.Account {
+	return predicate.Account(sql.FieldNEQ(FieldRemoteGroupMultiplier, v))
+}
+
+// RemoteGroupMultiplierIn applies the In predicate on the "remote_group_multiplier" field.
+func RemoteGroupMultiplierIn(vs ...float64) predicate.Account {
+	return predicate.Account(sql.FieldIn(FieldRemoteGroupMultiplier, vs...))
+}
+
+// RemoteGroupMultiplierNotIn applies the NotIn predicate on the "remote_group_multiplier" field.
+func RemoteGroupMultiplierNotIn(vs ...float64) predicate.Account {
+	return predicate.Account(sql.FieldNotIn(FieldRemoteGroupMultiplier, vs...))
+}
+
+// RemoteGroupMultiplierGT applies the GT predicate on the "remote_group_multiplier" field.
+func RemoteGroupMultiplierGT(v float64) predicate.Account {
+	return predicate.Account(sql.FieldGT(FieldRemoteGroupMultiplier, v))
+}
+
+// RemoteGroupMultiplierGTE applies the GTE predicate on the "remote_group_multiplier" field.
+func RemoteGroupMultiplierGTE(v float64) predicate.Account {
+	return predicate.Account(sql.FieldGTE(FieldRemoteGroupMultiplier, v))
+}
+
+// RemoteGroupMultiplierLT applies the LT predicate on the "remote_group_multiplier" field.
+func RemoteGroupMultiplierLT(v float64) predicate.Account {
+	return predicate.Account(sql.FieldLT(FieldRemoteGroupMultiplier, v))
+}
+
+// RemoteGroupMultiplierLTE applies the LTE predicate on the "remote_group_multiplier" field.
+func RemoteGroupMultiplierLTE(v float64) predicate.Account {
+	return predicate.Account(sql.FieldLTE(FieldRemoteGroupMultiplier, v))
+}
+
+// RemoteGroupMultiplierIsNil applies the IsNil predicate on the "remote_group_multiplier" field.
+func RemoteGroupMultiplierIsNil() predicate.Account {
+	return predicate.Account(sql.FieldIsNull(FieldRemoteGroupMultiplier))
+}
+
+// RemoteGroupMultiplierNotNil applies the NotNil predicate on the "remote_group_multiplier" field.
+func RemoteGroupMultiplierNotNil() predicate.Account {
+	return predicate.Account(sql.FieldNotNull(FieldRemoteGroupMultiplier))
+}
+
+// RemoteGroupSyncedAtEQ applies the EQ predicate on the "remote_group_synced_at" field.
+func RemoteGroupSyncedAtEQ(v time.Time) predicate.Account {
+	return predicate.Account(sql.FieldEQ(FieldRemoteGroupSyncedAt, v))
+}
+
+// RemoteGroupSyncedAtNEQ applies the NEQ predicate on the "remote_group_synced_at" field.
+func RemoteGroupSyncedAtNEQ(v time.Time) predicate.Account {
+	return predicate.Account(sql.FieldNEQ(FieldRemoteGroupSyncedAt, v))
+}
+
+// RemoteGroupSyncedAtIn applies the In predicate on the "remote_group_synced_at" field.
+func RemoteGroupSyncedAtIn(vs ...time.Time) predicate.Account {
+	return predicate.Account(sql.FieldIn(FieldRemoteGroupSyncedAt, vs...))
+}
+
+// RemoteGroupSyncedAtNotIn applies the NotIn predicate on the "remote_group_synced_at" field.
+func RemoteGroupSyncedAtNotIn(vs ...time.Time) predicate.Account {
+	return predicate.Account(sql.FieldNotIn(FieldRemoteGroupSyncedAt, vs...))
+}
+
+// RemoteGroupSyncedAtGT applies the GT predicate on the "remote_group_synced_at" field.
+func RemoteGroupSyncedAtGT(v time.Time) predicate.Account {
+	return predicate.Account(sql.FieldGT(FieldRemoteGroupSyncedAt, v))
+}
+
+// RemoteGroupSyncedAtGTE applies the GTE predicate on the "remote_group_synced_at" field.
+func RemoteGroupSyncedAtGTE(v time.Time) predicate.Account {
+	return predicate.Account(sql.FieldGTE(FieldRemoteGroupSyncedAt, v))
+}
+
+// RemoteGroupSyncedAtLT applies the LT predicate on the "remote_group_synced_at" field.
+func RemoteGroupSyncedAtLT(v time.Time) predicate.Account {
+	return predicate.Account(sql.FieldLT(FieldRemoteGroupSyncedAt, v))
+}
+
+// RemoteGroupSyncedAtLTE applies the LTE predicate on the "remote_group_synced_at" field.
+func RemoteGroupSyncedAtLTE(v time.Time) predicate.Account {
+	return predicate.Account(sql.FieldLTE(FieldRemoteGroupSyncedAt, v))
+}
+
+// RemoteGroupSyncedAtIsNil applies the IsNil predicate on the "remote_group_synced_at" field.
+func RemoteGroupSyncedAtIsNil() predicate.Account {
+	return predicate.Account(sql.FieldIsNull(FieldRemoteGroupSyncedAt))
+}
+
+// RemoteGroupSyncedAtNotNil applies the NotNil predicate on the "remote_group_synced_at" field.
+func RemoteGroupSyncedAtNotNil() predicate.Account {
+	return predicate.Account(sql.FieldNotNull(FieldRemoteGroupSyncedAt))
+}
+
+// Sub2apiOptimizeEnabledEQ applies the EQ predicate on the "sub2api_optimize_enabled" field.
+func Sub2apiOptimizeEnabledEQ(v bool) predicate.Account {
+	return predicate.Account(sql.FieldEQ(FieldSub2apiOptimizeEnabled, v))
+}
+
+// Sub2apiOptimizeEnabledNEQ applies the NEQ predicate on the "sub2api_optimize_enabled" field.
+func Sub2apiOptimizeEnabledNEQ(v bool) predicate.Account {
+	return predicate.Account(sql.FieldNEQ(FieldSub2apiOptimizeEnabled, v))
+}
+
+// Sub2apiMaxMultiplierEQ applies the EQ predicate on the "sub2api_max_multiplier" field.
+func Sub2apiMaxMultiplierEQ(v float64) predicate.Account {
+	return predicate.Account(sql.FieldEQ(FieldSub2apiMaxMultiplier, v))
+}
+
+// Sub2apiMaxMultiplierNEQ applies the NEQ predicate on the "sub2api_max_multiplier" field.
+func Sub2apiMaxMultiplierNEQ(v float64) predicate.Account {
+	return predicate.Account(sql.FieldNEQ(FieldSub2apiMaxMultiplier, v))
+}
+
+// Sub2apiMaxMultiplierIn applies the In predicate on the "sub2api_max_multiplier" field.
+func Sub2apiMaxMultiplierIn(vs ...float64) predicate.Account {
+	return predicate.Account(sql.FieldIn(FieldSub2apiMaxMultiplier, vs...))
+}
+
+// Sub2apiMaxMultiplierNotIn applies the NotIn predicate on the "sub2api_max_multiplier" field.
+func Sub2apiMaxMultiplierNotIn(vs ...float64) predicate.Account {
+	return predicate.Account(sql.FieldNotIn(FieldSub2apiMaxMultiplier, vs...))
+}
+
+// Sub2apiMaxMultiplierGT applies the GT predicate on the "sub2api_max_multiplier" field.
+func Sub2apiMaxMultiplierGT(v float64) predicate.Account {
+	return predicate.Account(sql.FieldGT(FieldSub2apiMaxMultiplier, v))
+}
+
+// Sub2apiMaxMultiplierGTE applies the GTE predicate on the "sub2api_max_multiplier" field.
+func Sub2apiMaxMultiplierGTE(v float64) predicate.Account {
+	return predicate.Account(sql.FieldGTE(FieldSub2apiMaxMultiplier, v))
+}
+
+// Sub2apiMaxMultiplierLT applies the LT predicate on the "sub2api_max_multiplier" field.
+func Sub2apiMaxMultiplierLT(v float64) predicate.Account {
+	return predicate.Account(sql.FieldLT(FieldSub2apiMaxMultiplier, v))
+}
+
+// Sub2apiMaxMultiplierLTE applies the LTE predicate on the "sub2api_max_multiplier" field.
+func Sub2apiMaxMultiplierLTE(v float64) predicate.Account {
+	return predicate.Account(sql.FieldLTE(FieldSub2apiMaxMultiplier, v))
+}
+
+// Sub2apiMaxMultiplierIsNil applies the IsNil predicate on the "sub2api_max_multiplier" field.
+func Sub2apiMaxMultiplierIsNil() predicate.Account {
+	return predicate.Account(sql.FieldIsNull(FieldSub2apiMaxMultiplier))
+}
+
+// Sub2apiMaxMultiplierNotNil applies the NotNil predicate on the "sub2api_max_multiplier" field.
+func Sub2apiMaxMultiplierNotNil() predicate.Account {
+	return predicate.Account(sql.FieldNotNull(FieldSub2apiMaxMultiplier))
+}
+
+// Sub2apiMinMultiplierEQ applies the EQ predicate on the "sub2api_min_multiplier" field.
+func Sub2apiMinMultiplierEQ(v float64) predicate.Account {
+	return predicate.Account(sql.FieldEQ(FieldSub2apiMinMultiplier, v))
+}
+
+// Sub2apiMinMultiplierNEQ applies the NEQ predicate on the "sub2api_min_multiplier" field.
+func Sub2apiMinMultiplierNEQ(v float64) predicate.Account {
+	return predicate.Account(sql.FieldNEQ(FieldSub2apiMinMultiplier, v))
+}
+
+// Sub2apiMinMultiplierIn applies the In predicate on the "sub2api_min_multiplier" field.
+func Sub2apiMinMultiplierIn(vs ...float64) predicate.Account {
+	return predicate.Account(sql.FieldIn(FieldSub2apiMinMultiplier, vs...))
+}
+
+// Sub2apiMinMultiplierNotIn applies the NotIn predicate on the "sub2api_min_multiplier" field.
+func Sub2apiMinMultiplierNotIn(vs ...float64) predicate.Account {
+	return predicate.Account(sql.FieldNotIn(FieldSub2apiMinMultiplier, vs...))
+}
+
+// Sub2apiMinMultiplierGT applies the GT predicate on the "sub2api_min_multiplier" field.
+func Sub2apiMinMultiplierGT(v float64) predicate.Account {
+	return predicate.Account(sql.FieldGT(FieldSub2apiMinMultiplier, v))
+}
+
+// Sub2apiMinMultiplierGTE applies the GTE predicate on the "sub2api_min_multiplier" field.
+func Sub2apiMinMultiplierGTE(v float64) predicate.Account {
+	return predicate.Account(sql.FieldGTE(FieldSub2apiMinMultiplier, v))
+}
+
+// Sub2apiMinMultiplierLT applies the LT predicate on the "sub2api_min_multiplier" field.
+func Sub2apiMinMultiplierLT(v float64) predicate.Account {
+	return predicate.Account(sql.FieldLT(FieldSub2apiMinMultiplier, v))
+}
+
+// Sub2apiMinMultiplierLTE applies the LTE predicate on the "sub2api_min_multiplier" field.
+func Sub2apiMinMultiplierLTE(v float64) predicate.Account {
+	return predicate.Account(sql.FieldLTE(FieldSub2apiMinMultiplier, v))
+}
+
+// Sub2apiMinMultiplierIsNil applies the IsNil predicate on the "sub2api_min_multiplier" field.
+func Sub2apiMinMultiplierIsNil() predicate.Account {
+	return predicate.Account(sql.FieldIsNull(FieldSub2apiMinMultiplier))
+}
+
+// Sub2apiMinMultiplierNotNil applies the NotNil predicate on the "sub2api_min_multiplier" field.
+func Sub2apiMinMultiplierNotNil() predicate.Account {
+	return predicate.Account(sql.FieldNotNull(FieldSub2apiMinMultiplier))
+}
+
+// Sub2apiTestModelEQ applies the EQ predicate on the "sub2api_test_model" field.
+func Sub2apiTestModelEQ(v string) predicate.Account {
+	return predicate.Account(sql.FieldEQ(FieldSub2apiTestModel, v))
+}
+
+// Sub2apiTestModelNEQ applies the NEQ predicate on the "sub2api_test_model" field.
+func Sub2apiTestModelNEQ(v string) predicate.Account {
+	return predicate.Account(sql.FieldNEQ(FieldSub2apiTestModel, v))
+}
+
+// Sub2apiTestModelIn applies the In predicate on the "sub2api_test_model" field.
+func Sub2apiTestModelIn(vs ...string) predicate.Account {
+	return predicate.Account(sql.FieldIn(FieldSub2apiTestModel, vs...))
+}
+
+// Sub2apiTestModelNotIn applies the NotIn predicate on the "sub2api_test_model" field.
+func Sub2apiTestModelNotIn(vs ...string) predicate.Account {
+	return predicate.Account(sql.FieldNotIn(FieldSub2apiTestModel, vs...))
+}
+
+// Sub2apiTestModelGT applies the GT predicate on the "sub2api_test_model" field.
+func Sub2apiTestModelGT(v string) predicate.Account {
+	return predicate.Account(sql.FieldGT(FieldSub2apiTestModel, v))
+}
+
+// Sub2apiTestModelGTE applies the GTE predicate on the "sub2api_test_model" field.
+func Sub2apiTestModelGTE(v string) predicate.Account {
+	return predicate.Account(sql.FieldGTE(FieldSub2apiTestModel, v))
+}
+
+// Sub2apiTestModelLT applies the LT predicate on the "sub2api_test_model" field.
+func Sub2apiTestModelLT(v string) predicate.Account {
+	return predicate.Account(sql.FieldLT(FieldSub2apiTestModel, v))
+}
+
+// Sub2apiTestModelLTE applies the LTE predicate on the "sub2api_test_model" field.
+func Sub2apiTestModelLTE(v string) predicate.Account {
+	return predicate.Account(sql.FieldLTE(FieldSub2apiTestModel, v))
+}
+
+// Sub2apiTestModelContains applies the Contains predicate on the "sub2api_test_model" field.
+func Sub2apiTestModelContains(v string) predicate.Account {
+	return predicate.Account(sql.FieldContains(FieldSub2apiTestModel, v))
+}
+
+// Sub2apiTestModelHasPrefix applies the HasPrefix predicate on the "sub2api_test_model" field.
+func Sub2apiTestModelHasPrefix(v string) predicate.Account {
+	return predicate.Account(sql.FieldHasPrefix(FieldSub2apiTestModel, v))
+}
+
+// Sub2apiTestModelHasSuffix applies the HasSuffix predicate on the "sub2api_test_model" field.
+func Sub2apiTestModelHasSuffix(v string) predicate.Account {
+	return predicate.Account(sql.FieldHasSuffix(FieldSub2apiTestModel, v))
+}
+
+// Sub2apiTestModelIsNil applies the IsNil predicate on the "sub2api_test_model" field.
+func Sub2apiTestModelIsNil() predicate.Account {
+	return predicate.Account(sql.FieldIsNull(FieldSub2apiTestModel))
+}
+
+// Sub2apiTestModelNotNil applies the NotNil predicate on the "sub2api_test_model" field.
+func Sub2apiTestModelNotNil() predicate.Account {
+	return predicate.Account(sql.FieldNotNull(FieldSub2apiTestModel))
+}
+
+// Sub2apiTestModelEqualFold applies the EqualFold predicate on the "sub2api_test_model" field.
+func Sub2apiTestModelEqualFold(v string) predicate.Account {
+	return predicate.Account(sql.FieldEqualFold(FieldSub2apiTestModel, v))
+}
+
+// Sub2apiTestModelContainsFold applies the ContainsFold predicate on the "sub2api_test_model" field.
+func Sub2apiTestModelContainsFold(v string) predicate.Account {
+	return predicate.Account(sql.FieldContainsFold(FieldSub2apiTestModel, v))
+}
+
 // HasGroups applies the HasEdge predicate on the "groups" edge.
 func HasGroups() predicate.Account {
 	return predicate.Account(func(s *sql.Selector) {
@@ -1611,6 +2096,29 @@ func HasUsageLogs() predicate.Account {
 func HasUsageLogsWith(preds ...predicate.UsageLog) predicate.Account {
 	return predicate.Account(func(s *sql.Selector) {
 		step := newUsageLogsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasProvider applies the HasEdge predicate on the "provider" edge.
+func HasProvider() predicate.Account {
+	return predicate.Account(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, ProviderTable, ProviderColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasProviderWith applies the HasEdge predicate on the "provider" edge with a given conditions (other predicates).
+func HasProviderWith(preds ...predicate.Sub2APIProvider) predicate.Account {
+	return predicate.Account(func(s *sql.Selector) {
+		step := newProviderStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

@@ -141,3 +141,10 @@ output/
 
 # 自定义构建产物(94MB,勿入库)
 sub2api-custom
+backend/sub2api.old2
+
+# 本地开发配置(含密钥,勿入库)
+backend/config.dev.yaml
+
+# 构建日志
+backend/build.err

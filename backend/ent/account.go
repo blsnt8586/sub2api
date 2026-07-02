@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/Wei-Shaw/sub2api/ent/account"
 	"github.com/Wei-Shaw/sub2api/ent/proxy"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiprovider"
 )
 
 // Account is the model entity for the Account schema.
@@ -77,6 +78,24 @@ type Account struct {
 	SessionWindowEnd *time.Time `json:"session_window_end,omitempty"`
 	// SessionWindowStatus holds the value of the "session_window_status" field.
 	SessionWindowStatus *string `json:"session_window_status,omitempty"`
+	// 关联的第三方 Sub2API Provider ID
+	ProviderID *int64 `json:"provider_id,omitempty"`
+	// 远程 Sub2API 实例上的 APIKey ID
+	ProviderAPIKeyID *int64 `json:"provider_api_key_id,omitempty"`
+	// 远程分组名称（缓存）
+	RemoteGroupName *string `json:"remote_group_name,omitempty"`
+	// 远程分组倍率（缓存）
+	RemoteGroupMultiplier *float64 `json:"remote_group_multiplier,omitempty"`
+	// 最后同步时间
+	RemoteGroupSyncedAt *time.Time `json:"remote_group_synced_at,omitempty"`
+	// 是否参与定时优化
+	Sub2apiOptimizeEnabled bool `json:"sub2api_optimize_enabled,omitempty"`
+	// 定时优化最高可接受倍率
+	Sub2apiMaxMultiplier *float64 `json:"sub2api_max_multiplier,omitempty"`
+	// 定时优化最低可接受倍率，null 时无下限
+	Sub2apiMinMultiplier *float64 `json:"sub2api_min_multiplier,omitempty"`
+	// 定时优化测试模型，null 时按平台使用默认模型
+	Sub2apiTestModel *string `json:"sub2api_test_model,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the AccountQuery when eager-loading is set.
 	Edges        AccountEdges `json:"edges"`
@@ -91,11 +110,13 @@ type AccountEdges struct {
 	Proxy *Proxy `json:"proxy,omitempty"`
 	// UsageLogs holds the value of the usage_logs edge.
 	UsageLogs []*UsageLog `json:"usage_logs,omitempty"`
+	// Provider holds the value of the provider edge.
+	Provider *Sub2APIProvider `json:"provider,omitempty"`
 	// AccountGroups holds the value of the account_groups edge.
 	AccountGroups []*AccountGroup `json:"account_groups,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [5]bool
 }
 
 // GroupsOrErr returns the Groups value or an error if the edge
@@ -127,10 +148,21 @@ func (e AccountEdges) UsageLogsOrErr() ([]*UsageLog, error) {
 	return nil, &NotLoadedError{edge: "usage_logs"}
 }
 
+// ProviderOrErr returns the Provider value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e AccountEdges) ProviderOrErr() (*Sub2APIProvider, error) {
+	if e.Provider != nil {
+		return e.Provider, nil
+	} else if e.loadedTypes[3] {
+		return nil, &NotFoundError{label: sub2apiprovider.Label}
+	}
+	return nil, &NotLoadedError{edge: "provider"}
+}
+
 // AccountGroupsOrErr returns the AccountGroups value or an error if the edge
 // was not loaded in eager-loading.
 func (e AccountEdges) AccountGroupsOrErr() ([]*AccountGroup, error) {
-	if e.loadedTypes[3] {
+	if e.loadedTypes[4] {
 		return e.AccountGroups, nil
 	}
 	return nil, &NotLoadedError{edge: "account_groups"}
@@ -143,15 +175,15 @@ func (*Account) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case account.FieldCredentials, account.FieldExtra:
 			values[i] = new([]byte)
-		case account.FieldAutoPauseOnExpired, account.FieldSchedulable:
+		case account.FieldAutoPauseOnExpired, account.FieldSchedulable, account.FieldSub2apiOptimizeEnabled:
 			values[i] = new(sql.NullBool)
-		case account.FieldRateMultiplier:
+		case account.FieldRateMultiplier, account.FieldRemoteGroupMultiplier, account.FieldSub2apiMaxMultiplier, account.FieldSub2apiMinMultiplier:
 			values[i] = new(sql.NullFloat64)
-		case account.FieldID, account.FieldProxyID, account.FieldProxyFallbackOriginID, account.FieldConcurrency, account.FieldLoadFactor, account.FieldPriority:
+		case account.FieldID, account.FieldProxyID, account.FieldProxyFallbackOriginID, account.FieldConcurrency, account.FieldLoadFactor, account.FieldPriority, account.FieldProviderID, account.FieldProviderAPIKeyID:
 			values[i] = new(sql.NullInt64)
-		case account.FieldName, account.FieldNotes, account.FieldPlatform, account.FieldType, account.FieldStatus, account.FieldErrorMessage, account.FieldTempUnschedulableReason, account.FieldSessionWindowStatus:
+		case account.FieldName, account.FieldNotes, account.FieldPlatform, account.FieldType, account.FieldStatus, account.FieldErrorMessage, account.FieldTempUnschedulableReason, account.FieldSessionWindowStatus, account.FieldRemoteGroupName, account.FieldSub2apiTestModel:
 			values[i] = new(sql.NullString)
-		case account.FieldCreatedAt, account.FieldUpdatedAt, account.FieldDeletedAt, account.FieldLastUsedAt, account.FieldExpiresAt, account.FieldRateLimitedAt, account.FieldRateLimitResetAt, account.FieldOverloadUntil, account.FieldTempUnschedulableUntil, account.FieldSessionWindowStart, account.FieldSessionWindowEnd:
+		case account.FieldCreatedAt, account.FieldUpdatedAt, account.FieldDeletedAt, account.FieldLastUsedAt, account.FieldExpiresAt, account.FieldRateLimitedAt, account.FieldRateLimitResetAt, account.FieldOverloadUntil, account.FieldTempUnschedulableUntil, account.FieldSessionWindowStart, account.FieldSessionWindowEnd, account.FieldRemoteGroupSyncedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -368,6 +400,68 @@ func (_m *Account) assignValues(columns []string, values []any) error {
 				_m.SessionWindowStatus = new(string)
 				*_m.SessionWindowStatus = value.String
 			}
+		case account.FieldProviderID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field provider_id", values[i])
+			} else if value.Valid {
+				_m.ProviderID = new(int64)
+				*_m.ProviderID = value.Int64
+			}
+		case account.FieldProviderAPIKeyID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field provider_api_key_id", values[i])
+			} else if value.Valid {
+				_m.ProviderAPIKeyID = new(int64)
+				*_m.ProviderAPIKeyID = value.Int64
+			}
+		case account.FieldRemoteGroupName:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field remote_group_name", values[i])
+			} else if value.Valid {
+				_m.RemoteGroupName = new(string)
+				*_m.RemoteGroupName = value.String
+			}
+		case account.FieldRemoteGroupMultiplier:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field remote_group_multiplier", values[i])
+			} else if value.Valid {
+				_m.RemoteGroupMultiplier = new(float64)
+				*_m.RemoteGroupMultiplier = value.Float64
+			}
+		case account.FieldRemoteGroupSyncedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field remote_group_synced_at", values[i])
+			} else if value.Valid {
+				_m.RemoteGroupSyncedAt = new(time.Time)
+				*_m.RemoteGroupSyncedAt = value.Time
+			}
+		case account.FieldSub2apiOptimizeEnabled:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field sub2api_optimize_enabled", values[i])
+			} else if value.Valid {
+				_m.Sub2apiOptimizeEnabled = value.Bool
+			}
+		case account.FieldSub2apiMaxMultiplier:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field sub2api_max_multiplier", values[i])
+			} else if value.Valid {
+				_m.Sub2apiMaxMultiplier = new(float64)
+				*_m.Sub2apiMaxMultiplier = value.Float64
+			}
+		case account.FieldSub2apiMinMultiplier:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field sub2api_min_multiplier", values[i])
+			} else if value.Valid {
+				_m.Sub2apiMinMultiplier = new(float64)
+				*_m.Sub2apiMinMultiplier = value.Float64
+			}
+		case account.FieldSub2apiTestModel:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field sub2api_test_model", values[i])
+			} else if value.Valid {
+				_m.Sub2apiTestModel = new(string)
+				*_m.Sub2apiTestModel = value.String
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -394,6 +488,11 @@ func (_m *Account) QueryProxy() *ProxyQuery {
 // QueryUsageLogs queries the "usage_logs" edge of the Account entity.
 func (_m *Account) QueryUsageLogs() *UsageLogQuery {
 	return NewAccountClient(_m.config).QueryUsageLogs(_m)
+}
+
+// QueryProvider queries the "provider" edge of the Account entity.
+func (_m *Account) QueryProvider() *Sub2APIProviderQuery {
+	return NewAccountClient(_m.config).QueryProvider(_m)
 }
 
 // QueryAccountGroups queries the "account_groups" edge of the Account entity.
@@ -540,6 +639,49 @@ func (_m *Account) String() string {
 	builder.WriteString(", ")
 	if v := _m.SessionWindowStatus; v != nil {
 		builder.WriteString("session_window_status=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.ProviderID; v != nil {
+		builder.WriteString("provider_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.ProviderAPIKeyID; v != nil {
+		builder.WriteString("provider_api_key_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.RemoteGroupName; v != nil {
+		builder.WriteString("remote_group_name=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.RemoteGroupMultiplier; v != nil {
+		builder.WriteString("remote_group_multiplier=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.RemoteGroupSyncedAt; v != nil {
+		builder.WriteString("remote_group_synced_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("sub2api_optimize_enabled=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Sub2apiOptimizeEnabled))
+	builder.WriteString(", ")
+	if v := _m.Sub2apiMaxMultiplier; v != nil {
+		builder.WriteString("sub2api_max_multiplier=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.Sub2apiMinMultiplier; v != nil {
+		builder.WriteString("sub2api_min_multiplier=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.Sub2apiTestModel; v != nil {
+		builder.WriteString("sub2api_test_model=")
 		builder.WriteString(*v)
 	}
 	builder.WriteByte(')')

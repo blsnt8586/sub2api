@@ -15,6 +15,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/predicate"
 	"github.com/Wei-Shaw/sub2api/ent/proxy"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiprovider"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
 )
 
@@ -530,6 +531,208 @@ func (_u *AccountUpdate) ClearSessionWindowStatus() *AccountUpdate {
 	return _u
 }
 
+// SetProviderID sets the "provider_id" field.
+func (_u *AccountUpdate) SetProviderID(v int64) *AccountUpdate {
+	_u.mutation.SetProviderID(v)
+	return _u
+}
+
+// SetNillableProviderID sets the "provider_id" field if the given value is not nil.
+func (_u *AccountUpdate) SetNillableProviderID(v *int64) *AccountUpdate {
+	if v != nil {
+		_u.SetProviderID(*v)
+	}
+	return _u
+}
+
+// ClearProviderID clears the value of the "provider_id" field.
+func (_u *AccountUpdate) ClearProviderID() *AccountUpdate {
+	_u.mutation.ClearProviderID()
+	return _u
+}
+
+// SetProviderAPIKeyID sets the "provider_api_key_id" field.
+func (_u *AccountUpdate) SetProviderAPIKeyID(v int64) *AccountUpdate {
+	_u.mutation.ResetProviderAPIKeyID()
+	_u.mutation.SetProviderAPIKeyID(v)
+	return _u
+}
+
+// SetNillableProviderAPIKeyID sets the "provider_api_key_id" field if the given value is not nil.
+func (_u *AccountUpdate) SetNillableProviderAPIKeyID(v *int64) *AccountUpdate {
+	if v != nil {
+		_u.SetProviderAPIKeyID(*v)
+	}
+	return _u
+}
+
+// AddProviderAPIKeyID adds value to the "provider_api_key_id" field.
+func (_u *AccountUpdate) AddProviderAPIKeyID(v int64) *AccountUpdate {
+	_u.mutation.AddProviderAPIKeyID(v)
+	return _u
+}
+
+// ClearProviderAPIKeyID clears the value of the "provider_api_key_id" field.
+func (_u *AccountUpdate) ClearProviderAPIKeyID() *AccountUpdate {
+	_u.mutation.ClearProviderAPIKeyID()
+	return _u
+}
+
+// SetRemoteGroupName sets the "remote_group_name" field.
+func (_u *AccountUpdate) SetRemoteGroupName(v string) *AccountUpdate {
+	_u.mutation.SetRemoteGroupName(v)
+	return _u
+}
+
+// SetNillableRemoteGroupName sets the "remote_group_name" field if the given value is not nil.
+func (_u *AccountUpdate) SetNillableRemoteGroupName(v *string) *AccountUpdate {
+	if v != nil {
+		_u.SetRemoteGroupName(*v)
+	}
+	return _u
+}
+
+// ClearRemoteGroupName clears the value of the "remote_group_name" field.
+func (_u *AccountUpdate) ClearRemoteGroupName() *AccountUpdate {
+	_u.mutation.ClearRemoteGroupName()
+	return _u
+}
+
+// SetRemoteGroupMultiplier sets the "remote_group_multiplier" field.
+func (_u *AccountUpdate) SetRemoteGroupMultiplier(v float64) *AccountUpdate {
+	_u.mutation.ResetRemoteGroupMultiplier()
+	_u.mutation.SetRemoteGroupMultiplier(v)
+	return _u
+}
+
+// SetNillableRemoteGroupMultiplier sets the "remote_group_multiplier" field if the given value is not nil.
+func (_u *AccountUpdate) SetNillableRemoteGroupMultiplier(v *float64) *AccountUpdate {
+	if v != nil {
+		_u.SetRemoteGroupMultiplier(*v)
+	}
+	return _u
+}
+
+// AddRemoteGroupMultiplier adds value to the "remote_group_multiplier" field.
+func (_u *AccountUpdate) AddRemoteGroupMultiplier(v float64) *AccountUpdate {
+	_u.mutation.AddRemoteGroupMultiplier(v)
+	return _u
+}
+
+// ClearRemoteGroupMultiplier clears the value of the "remote_group_multiplier" field.
+func (_u *AccountUpdate) ClearRemoteGroupMultiplier() *AccountUpdate {
+	_u.mutation.ClearRemoteGroupMultiplier()
+	return _u
+}
+
+// SetRemoteGroupSyncedAt sets the "remote_group_synced_at" field.
+func (_u *AccountUpdate) SetRemoteGroupSyncedAt(v time.Time) *AccountUpdate {
+	_u.mutation.SetRemoteGroupSyncedAt(v)
+	return _u
+}
+
+// SetNillableRemoteGroupSyncedAt sets the "remote_group_synced_at" field if the given value is not nil.
+func (_u *AccountUpdate) SetNillableRemoteGroupSyncedAt(v *time.Time) *AccountUpdate {
+	if v != nil {
+		_u.SetRemoteGroupSyncedAt(*v)
+	}
+	return _u
+}
+
+// ClearRemoteGroupSyncedAt clears the value of the "remote_group_synced_at" field.
+func (_u *AccountUpdate) ClearRemoteGroupSyncedAt() *AccountUpdate {
+	_u.mutation.ClearRemoteGroupSyncedAt()
+	return _u
+}
+
+// SetSub2apiOptimizeEnabled sets the "sub2api_optimize_enabled" field.
+func (_u *AccountUpdate) SetSub2apiOptimizeEnabled(v bool) *AccountUpdate {
+	_u.mutation.SetSub2apiOptimizeEnabled(v)
+	return _u
+}
+
+// SetNillableSub2apiOptimizeEnabled sets the "sub2api_optimize_enabled" field if the given value is not nil.
+func (_u *AccountUpdate) SetNillableSub2apiOptimizeEnabled(v *bool) *AccountUpdate {
+	if v != nil {
+		_u.SetSub2apiOptimizeEnabled(*v)
+	}
+	return _u
+}
+
+// SetSub2apiMaxMultiplier sets the "sub2api_max_multiplier" field.
+func (_u *AccountUpdate) SetSub2apiMaxMultiplier(v float64) *AccountUpdate {
+	_u.mutation.ResetSub2apiMaxMultiplier()
+	_u.mutation.SetSub2apiMaxMultiplier(v)
+	return _u
+}
+
+// SetNillableSub2apiMaxMultiplier sets the "sub2api_max_multiplier" field if the given value is not nil.
+func (_u *AccountUpdate) SetNillableSub2apiMaxMultiplier(v *float64) *AccountUpdate {
+	if v != nil {
+		_u.SetSub2apiMaxMultiplier(*v)
+	}
+	return _u
+}
+
+// AddSub2apiMaxMultiplier adds value to the "sub2api_max_multiplier" field.
+func (_u *AccountUpdate) AddSub2apiMaxMultiplier(v float64) *AccountUpdate {
+	_u.mutation.AddSub2apiMaxMultiplier(v)
+	return _u
+}
+
+// ClearSub2apiMaxMultiplier clears the value of the "sub2api_max_multiplier" field.
+func (_u *AccountUpdate) ClearSub2apiMaxMultiplier() *AccountUpdate {
+	_u.mutation.ClearSub2apiMaxMultiplier()
+	return _u
+}
+
+// SetSub2apiMinMultiplier sets the "sub2api_min_multiplier" field.
+func (_u *AccountUpdate) SetSub2apiMinMultiplier(v float64) *AccountUpdate {
+	_u.mutation.ResetSub2apiMinMultiplier()
+	_u.mutation.SetSub2apiMinMultiplier(v)
+	return _u
+}
+
+// SetNillableSub2apiMinMultiplier sets the "sub2api_min_multiplier" field if the given value is not nil.
+func (_u *AccountUpdate) SetNillableSub2apiMinMultiplier(v *float64) *AccountUpdate {
+	if v != nil {
+		_u.SetSub2apiMinMultiplier(*v)
+	}
+	return _u
+}
+
+// AddSub2apiMinMultiplier adds value to the "sub2api_min_multiplier" field.
+func (_u *AccountUpdate) AddSub2apiMinMultiplier(v float64) *AccountUpdate {
+	_u.mutation.AddSub2apiMinMultiplier(v)
+	return _u
+}
+
+// ClearSub2apiMinMultiplier clears the value of the "sub2api_min_multiplier" field.
+func (_u *AccountUpdate) ClearSub2apiMinMultiplier() *AccountUpdate {
+	_u.mutation.ClearSub2apiMinMultiplier()
+	return _u
+}
+
+// SetSub2apiTestModel sets the "sub2api_test_model" field.
+func (_u *AccountUpdate) SetSub2apiTestModel(v string) *AccountUpdate {
+	_u.mutation.SetSub2apiTestModel(v)
+	return _u
+}
+
+// SetNillableSub2apiTestModel sets the "sub2api_test_model" field if the given value is not nil.
+func (_u *AccountUpdate) SetNillableSub2apiTestModel(v *string) *AccountUpdate {
+	if v != nil {
+		_u.SetSub2apiTestModel(*v)
+	}
+	return _u
+}
+
+// ClearSub2apiTestModel clears the value of the "sub2api_test_model" field.
+func (_u *AccountUpdate) ClearSub2apiTestModel() *AccountUpdate {
+	_u.mutation.ClearSub2apiTestModel()
+	return _u
+}
+
 // AddGroupIDs adds the "groups" edge to the Group entity by IDs.
 func (_u *AccountUpdate) AddGroupIDs(ids ...int64) *AccountUpdate {
 	_u.mutation.AddGroupIDs(ids...)
@@ -563,6 +766,11 @@ func (_u *AccountUpdate) AddUsageLogs(v ...*UsageLog) *AccountUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.AddUsageLogIDs(ids...)
+}
+
+// SetProvider sets the "provider" edge to the Sub2APIProvider entity.
+func (_u *AccountUpdate) SetProvider(v *Sub2APIProvider) *AccountUpdate {
+	return _u.SetProviderID(v.ID)
 }
 
 // Mutation returns the AccountMutation object of the builder.
@@ -616,6 +824,12 @@ func (_u *AccountUpdate) RemoveUsageLogs(v ...*UsageLog) *AccountUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveUsageLogIDs(ids...)
+}
+
+// ClearProvider clears the "provider" edge to the Sub2APIProvider entity.
+func (_u *AccountUpdate) ClearProvider() *AccountUpdate {
+	_u.mutation.ClearProvider()
+	return _u
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -685,6 +899,16 @@ func (_u *AccountUpdate) check() error {
 	if v, ok := _u.mutation.SessionWindowStatus(); ok {
 		if err := account.SessionWindowStatusValidator(v); err != nil {
 			return &ValidationError{Name: "session_window_status", err: fmt.Errorf(`ent: validator failed for field "Account.session_window_status": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.RemoteGroupName(); ok {
+		if err := account.RemoteGroupNameValidator(v); err != nil {
+			return &ValidationError{Name: "remote_group_name", err: fmt.Errorf(`ent: validator failed for field "Account.remote_group_name": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.Sub2apiTestModel(); ok {
+		if err := account.Sub2apiTestModelValidator(v); err != nil {
+			return &ValidationError{Name: "sub2api_test_model", err: fmt.Errorf(`ent: validator failed for field "Account.sub2api_test_model": %w`, err)}
 		}
 	}
 	return nil
@@ -843,6 +1067,63 @@ func (_u *AccountUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.SessionWindowStatusCleared() {
 		_spec.ClearField(account.FieldSessionWindowStatus, field.TypeString)
 	}
+	if value, ok := _u.mutation.ProviderAPIKeyID(); ok {
+		_spec.SetField(account.FieldProviderAPIKeyID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedProviderAPIKeyID(); ok {
+		_spec.AddField(account.FieldProviderAPIKeyID, field.TypeInt64, value)
+	}
+	if _u.mutation.ProviderAPIKeyIDCleared() {
+		_spec.ClearField(account.FieldProviderAPIKeyID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.RemoteGroupName(); ok {
+		_spec.SetField(account.FieldRemoteGroupName, field.TypeString, value)
+	}
+	if _u.mutation.RemoteGroupNameCleared() {
+		_spec.ClearField(account.FieldRemoteGroupName, field.TypeString)
+	}
+	if value, ok := _u.mutation.RemoteGroupMultiplier(); ok {
+		_spec.SetField(account.FieldRemoteGroupMultiplier, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedRemoteGroupMultiplier(); ok {
+		_spec.AddField(account.FieldRemoteGroupMultiplier, field.TypeFloat64, value)
+	}
+	if _u.mutation.RemoteGroupMultiplierCleared() {
+		_spec.ClearField(account.FieldRemoteGroupMultiplier, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.RemoteGroupSyncedAt(); ok {
+		_spec.SetField(account.FieldRemoteGroupSyncedAt, field.TypeTime, value)
+	}
+	if _u.mutation.RemoteGroupSyncedAtCleared() {
+		_spec.ClearField(account.FieldRemoteGroupSyncedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.Sub2apiOptimizeEnabled(); ok {
+		_spec.SetField(account.FieldSub2apiOptimizeEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.Sub2apiMaxMultiplier(); ok {
+		_spec.SetField(account.FieldSub2apiMaxMultiplier, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedSub2apiMaxMultiplier(); ok {
+		_spec.AddField(account.FieldSub2apiMaxMultiplier, field.TypeFloat64, value)
+	}
+	if _u.mutation.Sub2apiMaxMultiplierCleared() {
+		_spec.ClearField(account.FieldSub2apiMaxMultiplier, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.Sub2apiMinMultiplier(); ok {
+		_spec.SetField(account.FieldSub2apiMinMultiplier, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedSub2apiMinMultiplier(); ok {
+		_spec.AddField(account.FieldSub2apiMinMultiplier, field.TypeFloat64, value)
+	}
+	if _u.mutation.Sub2apiMinMultiplierCleared() {
+		_spec.ClearField(account.FieldSub2apiMinMultiplier, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.Sub2apiTestModel(); ok {
+		_spec.SetField(account.FieldSub2apiTestModel, field.TypeString, value)
+	}
+	if _u.mutation.Sub2apiTestModelCleared() {
+		_spec.ClearField(account.FieldSub2apiTestModel, field.TypeString)
+	}
 	if _u.mutation.GroupsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
@@ -967,6 +1248,35 @@ func (_u *AccountUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(usagelog.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ProviderCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   account.ProviderTable,
+			Columns: []string{account.ProviderColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiprovider.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ProviderIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   account.ProviderTable,
+			Columns: []string{account.ProviderColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiprovider.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -1493,6 +1803,208 @@ func (_u *AccountUpdateOne) ClearSessionWindowStatus() *AccountUpdateOne {
 	return _u
 }
 
+// SetProviderID sets the "provider_id" field.
+func (_u *AccountUpdateOne) SetProviderID(v int64) *AccountUpdateOne {
+	_u.mutation.SetProviderID(v)
+	return _u
+}
+
+// SetNillableProviderID sets the "provider_id" field if the given value is not nil.
+func (_u *AccountUpdateOne) SetNillableProviderID(v *int64) *AccountUpdateOne {
+	if v != nil {
+		_u.SetProviderID(*v)
+	}
+	return _u
+}
+
+// ClearProviderID clears the value of the "provider_id" field.
+func (_u *AccountUpdateOne) ClearProviderID() *AccountUpdateOne {
+	_u.mutation.ClearProviderID()
+	return _u
+}
+
+// SetProviderAPIKeyID sets the "provider_api_key_id" field.
+func (_u *AccountUpdateOne) SetProviderAPIKeyID(v int64) *AccountUpdateOne {
+	_u.mutation.ResetProviderAPIKeyID()
+	_u.mutation.SetProviderAPIKeyID(v)
+	return _u
+}
+
+// SetNillableProviderAPIKeyID sets the "provider_api_key_id" field if the given value is not nil.
+func (_u *AccountUpdateOne) SetNillableProviderAPIKeyID(v *int64) *AccountUpdateOne {
+	if v != nil {
+		_u.SetProviderAPIKeyID(*v)
+	}
+	return _u
+}
+
+// AddProviderAPIKeyID adds value to the "provider_api_key_id" field.
+func (_u *AccountUpdateOne) AddProviderAPIKeyID(v int64) *AccountUpdateOne {
+	_u.mutation.AddProviderAPIKeyID(v)
+	return _u
+}
+
+// ClearProviderAPIKeyID clears the value of the "provider_api_key_id" field.
+func (_u *AccountUpdateOne) ClearProviderAPIKeyID() *AccountUpdateOne {
+	_u.mutation.ClearProviderAPIKeyID()
+	return _u
+}
+
+// SetRemoteGroupName sets the "remote_group_name" field.
+func (_u *AccountUpdateOne) SetRemoteGroupName(v string) *AccountUpdateOne {
+	_u.mutation.SetRemoteGroupName(v)
+	return _u
+}
+
+// SetNillableRemoteGroupName sets the "remote_group_name" field if the given value is not nil.
+func (_u *AccountUpdateOne) SetNillableRemoteGroupName(v *string) *AccountUpdateOne {
+	if v != nil {
+		_u.SetRemoteGroupName(*v)
+	}
+	return _u
+}
+
+// ClearRemoteGroupName clears the value of the "remote_group_name" field.
+func (_u *AccountUpdateOne) ClearRemoteGroupName() *AccountUpdateOne {
+	_u.mutation.ClearRemoteGroupName()
+	return _u
+}
+
+// SetRemoteGroupMultiplier sets the "remote_group_multiplier" field.
+func (_u *AccountUpdateOne) SetRemoteGroupMultiplier(v float64) *AccountUpdateOne {
+	_u.mutation.ResetRemoteGroupMultiplier()
+	_u.mutation.SetRemoteGroupMultiplier(v)
+	return _u
+}
+
+// SetNillableRemoteGroupMultiplier sets the "remote_group_multiplier" field if the given value is not nil.
+func (_u *AccountUpdateOne) SetNillableRemoteGroupMultiplier(v *float64) *AccountUpdateOne {
+	if v != nil {
+		_u.SetRemoteGroupMultiplier(*v)
+	}
+	return _u
+}
+
+// AddRemoteGroupMultiplier adds value to the "remote_group_multiplier" field.
+func (_u *AccountUpdateOne) AddRemoteGroupMultiplier(v float64) *AccountUpdateOne {
+	_u.mutation.AddRemoteGroupMultiplier(v)
+	return _u
+}
+
+// ClearRemoteGroupMultiplier clears the value of the "remote_group_multiplier" field.
+func (_u *AccountUpdateOne) ClearRemoteGroupMultiplier() *AccountUpdateOne {
+	_u.mutation.ClearRemoteGroupMultiplier()
+	return _u
+}
+
+// SetRemoteGroupSyncedAt sets the "remote_group_synced_at" field.
+func (_u *AccountUpdateOne) SetRemoteGroupSyncedAt(v time.Time) *AccountUpdateOne {
+	_u.mutation.SetRemoteGroupSyncedAt(v)
+	return _u
+}
+
+// SetNillableRemoteGroupSyncedAt sets the "remote_group_synced_at" field if the given value is not nil.
+func (_u *AccountUpdateOne) SetNillableRemoteGroupSyncedAt(v *time.Time) *AccountUpdateOne {
+	if v != nil {
+		_u.SetRemoteGroupSyncedAt(*v)
+	}
+	return _u
+}
+
+// ClearRemoteGroupSyncedAt clears the value of the "remote_group_synced_at" field.
+func (_u *AccountUpdateOne) ClearRemoteGroupSyncedAt() *AccountUpdateOne {
+	_u.mutation.ClearRemoteGroupSyncedAt()
+	return _u
+}
+
+// SetSub2apiOptimizeEnabled sets the "sub2api_optimize_enabled" field.
+func (_u *AccountUpdateOne) SetSub2apiOptimizeEnabled(v bool) *AccountUpdateOne {
+	_u.mutation.SetSub2apiOptimizeEnabled(v)
+	return _u
+}
+
+// SetNillableSub2apiOptimizeEnabled sets the "sub2api_optimize_enabled" field if the given value is not nil.
+func (_u *AccountUpdateOne) SetNillableSub2apiOptimizeEnabled(v *bool) *AccountUpdateOne {
+	if v != nil {
+		_u.SetSub2apiOptimizeEnabled(*v)
+	}
+	return _u
+}
+
+// SetSub2apiMaxMultiplier sets the "sub2api_max_multiplier" field.
+func (_u *AccountUpdateOne) SetSub2apiMaxMultiplier(v float64) *AccountUpdateOne {
+	_u.mutation.ResetSub2apiMaxMultiplier()
+	_u.mutation.SetSub2apiMaxMultiplier(v)
+	return _u
+}
+
+// SetNillableSub2apiMaxMultiplier sets the "sub2api_max_multiplier" field if the given value is not nil.
+func (_u *AccountUpdateOne) SetNillableSub2apiMaxMultiplier(v *float64) *AccountUpdateOne {
+	if v != nil {
+		_u.SetSub2apiMaxMultiplier(*v)
+	}
+	return _u
+}
+
+// AddSub2apiMaxMultiplier adds value to the "sub2api_max_multiplier" field.
+func (_u *AccountUpdateOne) AddSub2apiMaxMultiplier(v float64) *AccountUpdateOne {
+	_u.mutation.AddSub2apiMaxMultiplier(v)
+	return _u
+}
+
+// ClearSub2apiMaxMultiplier clears the value of the "sub2api_max_multiplier" field.
+func (_u *AccountUpdateOne) ClearSub2apiMaxMultiplier() *AccountUpdateOne {
+	_u.mutation.ClearSub2apiMaxMultiplier()
+	return _u
+}
+
+// SetSub2apiMinMultiplier sets the "sub2api_min_multiplier" field.
+func (_u *AccountUpdateOne) SetSub2apiMinMultiplier(v float64) *AccountUpdateOne {
+	_u.mutation.ResetSub2apiMinMultiplier()
+	_u.mutation.SetSub2apiMinMultiplier(v)
+	return _u
+}
+
+// SetNillableSub2apiMinMultiplier sets the "sub2api_min_multiplier" field if the given value is not nil.
+func (_u *AccountUpdateOne) SetNillableSub2apiMinMultiplier(v *float64) *AccountUpdateOne {
+	if v != nil {
+		_u.SetSub2apiMinMultiplier(*v)
+	}
+	return _u
+}
+
+// AddSub2apiMinMultiplier adds value to the "sub2api_min_multiplier" field.
+func (_u *AccountUpdateOne) AddSub2apiMinMultiplier(v float64) *AccountUpdateOne {
+	_u.mutation.AddSub2apiMinMultiplier(v)
+	return _u
+}
+
+// ClearSub2apiMinMultiplier clears the value of the "sub2api_min_multiplier" field.
+func (_u *AccountUpdateOne) ClearSub2apiMinMultiplier() *AccountUpdateOne {
+	_u.mutation.ClearSub2apiMinMultiplier()
+	return _u
+}
+
+// SetSub2apiTestModel sets the "sub2api_test_model" field.
+func (_u *AccountUpdateOne) SetSub2apiTestModel(v string) *AccountUpdateOne {
+	_u.mutation.SetSub2apiTestModel(v)
+	return _u
+}
+
+// SetNillableSub2apiTestModel sets the "sub2api_test_model" field if the given value is not nil.
+func (_u *AccountUpdateOne) SetNillableSub2apiTestModel(v *string) *AccountUpdateOne {
+	if v != nil {
+		_u.SetSub2apiTestModel(*v)
+	}
+	return _u
+}
+
+// ClearSub2apiTestModel clears the value of the "sub2api_test_model" field.
+func (_u *AccountUpdateOne) ClearSub2apiTestModel() *AccountUpdateOne {
+	_u.mutation.ClearSub2apiTestModel()
+	return _u
+}
+
 // AddGroupIDs adds the "groups" edge to the Group entity by IDs.
 func (_u *AccountUpdateOne) AddGroupIDs(ids ...int64) *AccountUpdateOne {
 	_u.mutation.AddGroupIDs(ids...)
@@ -1526,6 +2038,11 @@ func (_u *AccountUpdateOne) AddUsageLogs(v ...*UsageLog) *AccountUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.AddUsageLogIDs(ids...)
+}
+
+// SetProvider sets the "provider" edge to the Sub2APIProvider entity.
+func (_u *AccountUpdateOne) SetProvider(v *Sub2APIProvider) *AccountUpdateOne {
+	return _u.SetProviderID(v.ID)
 }
 
 // Mutation returns the AccountMutation object of the builder.
@@ -1579,6 +2096,12 @@ func (_u *AccountUpdateOne) RemoveUsageLogs(v ...*UsageLog) *AccountUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveUsageLogIDs(ids...)
+}
+
+// ClearProvider clears the "provider" edge to the Sub2APIProvider entity.
+func (_u *AccountUpdateOne) ClearProvider() *AccountUpdateOne {
+	_u.mutation.ClearProvider()
+	return _u
 }
 
 // Where appends a list predicates to the AccountUpdate builder.
@@ -1661,6 +2184,16 @@ func (_u *AccountUpdateOne) check() error {
 	if v, ok := _u.mutation.SessionWindowStatus(); ok {
 		if err := account.SessionWindowStatusValidator(v); err != nil {
 			return &ValidationError{Name: "session_window_status", err: fmt.Errorf(`ent: validator failed for field "Account.session_window_status": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.RemoteGroupName(); ok {
+		if err := account.RemoteGroupNameValidator(v); err != nil {
+			return &ValidationError{Name: "remote_group_name", err: fmt.Errorf(`ent: validator failed for field "Account.remote_group_name": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.Sub2apiTestModel(); ok {
+		if err := account.Sub2apiTestModelValidator(v); err != nil {
+			return &ValidationError{Name: "sub2api_test_model", err: fmt.Errorf(`ent: validator failed for field "Account.sub2api_test_model": %w`, err)}
 		}
 	}
 	return nil
@@ -1836,6 +2369,63 @@ func (_u *AccountUpdateOne) sqlSave(ctx context.Context) (_node *Account, err er
 	if _u.mutation.SessionWindowStatusCleared() {
 		_spec.ClearField(account.FieldSessionWindowStatus, field.TypeString)
 	}
+	if value, ok := _u.mutation.ProviderAPIKeyID(); ok {
+		_spec.SetField(account.FieldProviderAPIKeyID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedProviderAPIKeyID(); ok {
+		_spec.AddField(account.FieldProviderAPIKeyID, field.TypeInt64, value)
+	}
+	if _u.mutation.ProviderAPIKeyIDCleared() {
+		_spec.ClearField(account.FieldProviderAPIKeyID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.RemoteGroupName(); ok {
+		_spec.SetField(account.FieldRemoteGroupName, field.TypeString, value)
+	}
+	if _u.mutation.RemoteGroupNameCleared() {
+		_spec.ClearField(account.FieldRemoteGroupName, field.TypeString)
+	}
+	if value, ok := _u.mutation.RemoteGroupMultiplier(); ok {
+		_spec.SetField(account.FieldRemoteGroupMultiplier, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedRemoteGroupMultiplier(); ok {
+		_spec.AddField(account.FieldRemoteGroupMultiplier, field.TypeFloat64, value)
+	}
+	if _u.mutation.RemoteGroupMultiplierCleared() {
+		_spec.ClearField(account.FieldRemoteGroupMultiplier, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.RemoteGroupSyncedAt(); ok {
+		_spec.SetField(account.FieldRemoteGroupSyncedAt, field.TypeTime, value)
+	}
+	if _u.mutation.RemoteGroupSyncedAtCleared() {
+		_spec.ClearField(account.FieldRemoteGroupSyncedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.Sub2apiOptimizeEnabled(); ok {
+		_spec.SetField(account.FieldSub2apiOptimizeEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.Sub2apiMaxMultiplier(); ok {
+		_spec.SetField(account.FieldSub2apiMaxMultiplier, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedSub2apiMaxMultiplier(); ok {
+		_spec.AddField(account.FieldSub2apiMaxMultiplier, field.TypeFloat64, value)
+	}
+	if _u.mutation.Sub2apiMaxMultiplierCleared() {
+		_spec.ClearField(account.FieldSub2apiMaxMultiplier, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.Sub2apiMinMultiplier(); ok {
+		_spec.SetField(account.FieldSub2apiMinMultiplier, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedSub2apiMinMultiplier(); ok {
+		_spec.AddField(account.FieldSub2apiMinMultiplier, field.TypeFloat64, value)
+	}
+	if _u.mutation.Sub2apiMinMultiplierCleared() {
+		_spec.ClearField(account.FieldSub2apiMinMultiplier, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.Sub2apiTestModel(); ok {
+		_spec.SetField(account.FieldSub2apiTestModel, field.TypeString, value)
+	}
+	if _u.mutation.Sub2apiTestModelCleared() {
+		_spec.ClearField(account.FieldSub2apiTestModel, field.TypeString)
+	}
 	if _u.mutation.GroupsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
@@ -1960,6 +2550,35 @@ func (_u *AccountUpdateOne) sqlSave(ctx context.Context) (_node *Account, err er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(usagelog.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ProviderCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   account.ProviderTable,
+			Columns: []string{account.ProviderColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiprovider.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ProviderIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   account.ProviderTable,
+			Columns: []string{account.ProviderColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiprovider.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

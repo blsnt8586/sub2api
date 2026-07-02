@@ -60,6 +60,19 @@ type Account struct {
 	GroupIDs      []int64
 	Groups        []*Group
 
+	// Sub2API Provider 关联字段
+	ProviderID            *int64
+	ProviderAPIKeyID      *int64
+	RemoteGroupName       *string
+	RemoteGroupMultiplier *float64
+	RemoteGroupSyncedAt   *time.Time
+
+	// Sub2API 定时优化字段
+	Sub2APIOptimizeEnabled bool     // 是否参与定时优化（与倍率上限/测试模型解耦，关闭后保留原值）
+	Sub2APIMinMultiplier   *float64 // 倍率下限：null = 未设置（不设质量底线，从最便宜开始试）
+	Sub2APIMaxMultiplier   *float64 // 倍率上限：null = 未设置
+	Sub2APITestModel       *string  // null = 按平台使用默认模型
+
 	// model_mapping 热路径缓存（非持久化字段）
 	modelMappingCache               map[string]string
 	modelMappingCacheReady          bool

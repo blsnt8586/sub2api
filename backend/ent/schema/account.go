@@ -196,6 +196,71 @@ func (Account) Fields() []ent.Field {
 			Optional().
 			Nillable().
 			MaxLen(20),
+
+		// ========== Sub2API Provider 关联字段 ==========
+
+		// provider_id: 关联的第三方 Sub2API Provider ID（可选）
+		field.Int64("provider_id").
+			Optional().
+			Nillable().
+			Comment("关联的第三方 Sub2API Provider ID"),
+
+		// provider_api_key_id: 在远程 Sub2API 实例上的 APIKey ID
+		field.Int64("provider_api_key_id").
+			Optional().
+			Nillable().
+			Comment("远程 Sub2API 实例上的 APIKey ID"),
+
+		// remote_group_name: 远程分组名称（缓存）
+		field.String("remote_group_name").
+			MaxLen(100).
+			Optional().
+			Nillable().
+			Comment("远程分组名称（缓存）"),
+
+		// remote_group_multiplier: 远程分组倍率（缓存）
+		field.Float("remote_group_multiplier").
+			Optional().
+			Nillable().
+			SchemaType(map[string]string{dialect.Postgres: "decimal(10,4)"}).
+			Comment("远程分组倍率（缓存）"),
+
+		// remote_group_synced_at: 最后同步时间
+		field.Time("remote_group_synced_at").
+			Optional().
+			Nillable().
+			Comment("最后同步时间"),
+
+		// sub2api_optimize_enabled: 是否参与定时优化（与倍率上限/测试模型解耦，
+		// 关闭时保留已配置的倍率上限与测试模型，便于重新开启）
+		field.Bool("sub2api_optimize_enabled").
+			Default(false).
+			Comment("是否参与定时优化"),
+
+		// sub2api_max_multiplier: 定时优化接受的最高倍率上限
+		// null = 未配置上限；> 0 = 只切到倍率 ≤ 该值的分组
+		field.Float("sub2api_max_multiplier").
+			Optional().
+			Nillable().
+			SchemaType(map[string]string{dialect.Postgres: "decimal(10,4)"}).
+			Comment("定时优化最高可接受倍率"),
+
+		// sub2api_min_multiplier: 定时优化接受的最低倍率下限（质量底线）
+		// null = 无下限，从最便宜候选开始试；> 0 = 只切到倍率 ≥ 该值的分组，
+		// 避免切到超卖/特价等过于便宜但不稳定的分组。须 ≤ max_multiplier。
+		field.Float("sub2api_min_multiplier").
+			Optional().
+			Nillable().
+			SchemaType(map[string]string{dialect.Postgres: "decimal(10,4)"}).
+			Comment("定时优化最低可接受倍率，null 时无下限"),
+
+		// sub2api_test_model: 定时优化时切换分组后用于测试的模型 ID
+		// null = 按平台使用默认模型（anthropic→haiku，openai→gpt-4o-mini）
+		field.String("sub2api_test_model").
+			MaxLen(100).
+			Optional().
+			Nillable().
+			Comment("定时优化测试模型，null 时按平台使用默认模型"),
 	}
 }
 
@@ -214,6 +279,11 @@ func (Account) Edges() []ent.Edge {
 			Unique(),
 		// usage_logs: 该账户的使用日志
 		edge.To("usage_logs", UsageLog.Type),
+		// provider: 关联的第三方 Sub2API Provider（可选的多对一关系）
+		edge.From("provider", Sub2APIProvider.Type).
+			Ref("accounts").
+			Field("provider_id").
+			Unique(),
 	}
 }
 
