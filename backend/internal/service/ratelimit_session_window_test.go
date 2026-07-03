@@ -162,21 +162,6 @@ func (m *sessionWindowMockRepo) ResetQuotaUsed(context.Context, int64) error { p
 func (m *sessionWindowMockRepo) RevertProxyFallback(context.Context, int64) error {
 	panic("unexpected")
 }
-func (m *sessionWindowMockRepo) ClearProviderLink(context.Context, int64, int64) error {
-	panic("unexpected")
-}
-func (m *sessionWindowMockRepo) UpdateProviderLink(context.Context, int64, int64, int64) error {
-	panic("unexpected")
-}
-func (m *sessionWindowMockRepo) UpdateRemoteGroupInfo(context.Context, int64, string, float64) error {
-	panic("unexpected")
-}
-func (m *sessionWindowMockRepo) ListByProviderID(context.Context, int64) ([]Account, error) {
-	panic("unexpected")
-}
-func (m *sessionWindowMockRepo) UpdateSub2APIOptimizeSettings(context.Context, int64, bool, *float64, *float64, *string) error {
-	panic("unexpected")
-}
 func (m *sessionWindowMockRepo) ListShadowsByParent(context.Context, int64) ([]*Account, error) {
 	panic("unexpected")
 }
