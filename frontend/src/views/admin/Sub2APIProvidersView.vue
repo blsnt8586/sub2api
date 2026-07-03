@@ -42,6 +42,17 @@
             </div>
           </template>
 
+          <!-- 上游平台列 -->
+          <template #cell-provider_type="{ row }">
+            <span
+              class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium"
+              :class="providerTypeBadgeTagClass(row.provider_type)"
+            >
+              <span class="h-1.5 w-1.5 rounded-full" :class="providerTypeDotClass(row.provider_type)"></span>
+              {{ providerTypeLabel(row.provider_type) }}
+            </span>
+          </template>
+
           <!-- 路径探测列 -->
           <template #cell-api_paths="{ row }">
             <span
@@ -483,11 +494,48 @@
           <p class="input-hint">例如 https://direct.jinnyapi.com（同一实例可管理多个平台的账号）</p>
         </div>
 
-        <div>
+        <!-- 上游平台仅创建时选择（当前仅 sub2api）；编辑时隐藏，避免切换上游类型导致接口逻辑与历史数据不匹配 -->
+        <div v-if="!isEditing">
           <label class="input-label">{{ t('admin.sub2apiProviders.form.providerType') }}</label>
-          <!-- 创建时可选（当前仅 sub2api）；编辑时只读，避免切换上游类型导致接口逻辑与历史数据不匹配 -->
-          <Select v-if="!isEditing" v-model="form.provider_type" :options="providerTypeOptions" />
-          <input v-else :value="providerTypeLabel(form.provider_type)" type="text" class="input" disabled />
+          <div class="flex flex-wrap gap-3">
+            <button
+              v-for="opt in providerTypeOptions"
+              :key="opt.value"
+              type="button"
+              @click="form.provider_type = opt.value"
+              class="group relative flex items-center gap-3 overflow-hidden rounded-xl border px-4 py-3 text-left transition-all duration-200 focus:outline-none"
+              :class="providerTypeCardClass(opt.color, form.provider_type === opt.value)"
+            >
+              <!-- 选中态柔和光晕背景 -->
+              <span
+                v-if="form.provider_type === opt.value"
+                class="pointer-events-none absolute inset-0 opacity-60"
+                :class="providerTypeGlowClass(opt.color)"
+              />
+              <!-- 图标徽章 -->
+              <span
+                class="relative flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg transition-colors"
+                :class="providerTypeBadgeClass(opt.color, form.provider_type === opt.value)"
+              >
+                <Icon name="grid" size="sm" />
+              </span>
+              <!-- 名称 -->
+              <span
+                class="relative text-sm font-semibold transition-colors"
+                :class="form.provider_type === opt.value ? providerTypeTextClass(opt.color) : 'text-gray-600 dark:text-dark-300'"
+              >
+                {{ opt.label }}
+              </span>
+              <!-- 选中勾选角标 -->
+              <span
+                v-if="form.provider_type === opt.value"
+                class="relative flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-white shadow-sm"
+                :class="providerTypeCheckClass(opt.color)"
+              >
+                <Icon name="check" size="xs" :stroke-width="3" />
+              </span>
+            </button>
+          </div>
           <p class="input-hint">{{ t('admin.sub2apiProviders.form.providerTypeHint') }}</p>
         </div>
 
@@ -659,6 +707,7 @@ const pagination = reactive({ page: 1, page_size: getPersistedPageSize(), total:
 
 const columns = computed((): Column[] => [
   { key: 'name', label: '上游名称', sortable: false },
+  { key: 'provider_type', label: '上游平台', sortable: false },
   { key: 'status', label: '启用', sortable: false },
   { key: 'last_sync_status', label: '连通状态', sortable: false },
   { key: 'api_paths', label: '路径探测', sortable: false },
@@ -679,9 +728,81 @@ const statusOptions = computed(() => [
 ])
 
 // 上游平台（provider_type）：当前仅支持 sub2api，后续扩展其他上游协议时在此追加选项。
+// color 用于单选按钮组的选中态配色，新增平台时给一个区分色即可。
 const providerTypeOptions = [
-  { value: 'sub2api', label: 'Sub2API' },
+  { value: 'sub2api', label: 'Sub2API', color: 'blue' },
 ]
+
+// 卡片选择器配色（Tailwind 需静态字面量，故用查表而非拼接）。
+// 新增平台时给一个 color（blue/green/purple/orange）即可自动套用整套配色。
+const PROVIDER_TYPE_PALETTE: Record<string, {
+  card: string           // 选中态卡片：边框 + 底色 + 阴影
+  glow: string           // 选中态柔和光晕背景（渐变）
+  badge: string          // 选中态图标徽章
+  badgeOff: string       // 未选中图标徽章
+  text: string           // 选中态文字
+  check: string          // 勾选角标底色
+}> = {
+  blue: {
+    card: 'border-blue-400 bg-blue-50/60 shadow-md shadow-blue-500/10 dark:border-blue-500/60 dark:bg-blue-900/20',
+    glow: 'bg-gradient-to-br from-blue-100/70 via-transparent to-transparent dark:from-blue-800/20',
+    badge: 'bg-blue-500 text-white shadow-sm shadow-blue-500/30',
+    badgeOff: 'bg-gray-100 text-gray-400 group-hover:bg-blue-100 group-hover:text-blue-500 dark:bg-dark-700 dark:text-dark-400',
+    text: 'text-blue-700 dark:text-blue-300',
+    check: 'bg-blue-500',
+  },
+  green: {
+    card: 'border-green-400 bg-green-50/60 shadow-md shadow-green-500/10 dark:border-green-500/60 dark:bg-green-900/20',
+    glow: 'bg-gradient-to-br from-green-100/70 via-transparent to-transparent dark:from-green-800/20',
+    badge: 'bg-green-500 text-white shadow-sm shadow-green-500/30',
+    badgeOff: 'bg-gray-100 text-gray-400 group-hover:bg-green-100 group-hover:text-green-500 dark:bg-dark-700 dark:text-dark-400',
+    text: 'text-green-700 dark:text-green-300',
+    check: 'bg-green-500',
+  },
+  purple: {
+    card: 'border-purple-400 bg-purple-50/60 shadow-md shadow-purple-500/10 dark:border-purple-500/60 dark:bg-purple-900/20',
+    glow: 'bg-gradient-to-br from-purple-100/70 via-transparent to-transparent dark:from-purple-800/20',
+    badge: 'bg-purple-500 text-white shadow-sm shadow-purple-500/30',
+    badgeOff: 'bg-gray-100 text-gray-400 group-hover:bg-purple-100 group-hover:text-purple-500 dark:bg-dark-700 dark:text-dark-400',
+    text: 'text-purple-700 dark:text-purple-300',
+    check: 'bg-purple-500',
+  },
+  orange: {
+    card: 'border-orange-400 bg-orange-50/60 shadow-md shadow-orange-500/10 dark:border-orange-500/60 dark:bg-orange-900/20',
+    glow: 'bg-gradient-to-br from-orange-100/70 via-transparent to-transparent dark:from-orange-800/20',
+    badge: 'bg-orange-500 text-white shadow-sm shadow-orange-500/30',
+    badgeOff: 'bg-gray-100 text-gray-400 group-hover:bg-orange-100 group-hover:text-orange-500 dark:bg-dark-700 dark:text-dark-400',
+    text: 'text-orange-700 dark:text-orange-300',
+    check: 'bg-orange-500',
+  },
+}
+const providerTypePalette = (color: string) => PROVIDER_TYPE_PALETTE[color] ?? PROVIDER_TYPE_PALETTE.blue
+
+// 表格里「上游平台」列的徽章配色（浅底 + 圆点），按 provider_type 查表
+const PROVIDER_TYPE_TAG: Record<string, { tag: string; dot: string }> = {
+  blue: { tag: 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400', dot: 'bg-blue-500' },
+  green: { tag: 'bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400', dot: 'bg-green-500' },
+  purple: { tag: 'bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400', dot: 'bg-purple-500' },
+  orange: { tag: 'bg-orange-50 text-orange-600 dark:bg-orange-900/20 dark:text-orange-400', dot: 'bg-orange-500' },
+}
+// provider_type 值 → 配色 key（未知类型回退 blue）
+const providerTypeTagColor = (v: string) =>
+  providerTypeOptions.find((o) => o.value === v)?.color ?? 'blue'
+const providerTypeBadgeTagClass = (v: string) =>
+  (PROVIDER_TYPE_TAG[providerTypeTagColor(v)] ?? PROVIDER_TYPE_TAG.blue).tag
+const providerTypeDotClass = (v: string) =>
+  (PROVIDER_TYPE_TAG[providerTypeTagColor(v)] ?? PROVIDER_TYPE_TAG.blue).dot
+
+// 卡片整体：选中态用配色，未选中用中性描边 + hover 轻微抬升
+const providerTypeCardClass = (color: string, active: boolean): string =>
+  active
+    ? providerTypePalette(color).card
+    : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm dark:border-dark-600 dark:bg-dark-800 dark:hover:border-dark-500'
+const providerTypeGlowClass = (color: string) => providerTypePalette(color).glow
+const providerTypeBadgeClass = (color: string, active: boolean): string =>
+  active ? providerTypePalette(color).badge : providerTypePalette(color).badgeOff
+const providerTypeTextClass = (color: string) => providerTypePalette(color).text
+const providerTypeCheckClass = (color: string) => providerTypePalette(color).check
 // 编辑态只读展示用：把 provider_type 值映射为展示名，未知值原样回退
 const providerTypeLabel = (v: string) =>
   providerTypeOptions.find((o) => o.value === v)?.label ?? v
