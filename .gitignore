@@ -150,3 +150,4 @@ backend/config.dev.yaml
 
 # 构建日志
 backend/build.err
+sub2api_linux_amd64

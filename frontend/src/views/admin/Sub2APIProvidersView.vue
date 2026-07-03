@@ -332,7 +332,7 @@
                   :value="acc.sub2api_max_multiplier ?? ''"
                   :placeholder="t('admin.sub2apiProviders.maxMultiplier')"
                   @change="handleUpdateMaxMultiplier(acc, ($event.target as HTMLInputElement).value)"
-                  :disabled="savingSettingsId === acc.id || !acc.sub2api_optimize_enabled"
+                  :disabled="savingSettingsId === acc.id"
                   :title="t('admin.sub2apiProviders.maxMultiplierHint')"
                   class="w-16 rounded border border-gray-200 bg-white px-1.5 py-1 text-center text-xs font-mono text-gray-700 focus:border-blue-400 focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 dark:border-dark-600 dark:bg-dark-700 dark:text-gray-300 dark:disabled:bg-dark-800 dark:disabled:text-dark-500"
                 />
@@ -346,7 +346,7 @@
                   :value="acc.sub2api_min_multiplier ?? ''"
                   :placeholder="t('admin.sub2apiProviders.minMultiplier')"
                   @change="handleUpdateMinMultiplier(acc, ($event.target as HTMLInputElement).value)"
-                  :disabled="savingSettingsId === acc.id || !acc.sub2api_optimize_enabled"
+                  :disabled="savingSettingsId === acc.id"
                   :title="t('admin.sub2apiProviders.minMultiplierHint')"
                   class="w-16 rounded border border-gray-200 bg-white px-1.5 py-1 text-center text-xs font-mono text-gray-700 focus:border-blue-400 focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 dark:border-dark-600 dark:bg-dark-700 dark:text-gray-300 dark:disabled:bg-dark-800 dark:disabled:text-dark-500"
                 />
@@ -357,7 +357,7 @@
                   :value="acc.sub2api_test_model ?? ''"
                   @focus="loadAccountModels(acc)"
                   @change="handleUpdateTestModel(acc, ($event.target as HTMLSelectElement).value)"
-                  :disabled="savingSettingsId === acc.id || !acc.sub2api_optimize_enabled"
+                  :disabled="savingSettingsId === acc.id"
                   :title="acc.sub2api_test_model ?? t('admin.sub2apiProviders.defaultModel')"
                   class="w-full rounded border border-gray-200 bg-white px-1.5 py-1 text-xs text-gray-700 focus:border-blue-400 focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 dark:border-dark-600 dark:bg-dark-700 dark:text-gray-300 dark:disabled:bg-dark-800 dark:disabled:text-dark-500"
                 >
