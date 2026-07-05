@@ -146,6 +146,21 @@ def login(base_url: str, email: str, password: str) -> dict:
         turnstile_iframes = driver.find_elements(By.CSS_SELECTOR, "iframe[src*='challenges.cloudflare.com']")
         log.info("Turnstile iframe 数量: %d", len(turnstile_iframes))
 
+        # 如果 Turnstile 是复选框模式（服务器环境），点击复选框
+        if turnstile_iframes:
+            try:
+                driver.switch_to.frame(turnstile_iframes[0])
+                checkbox = WebDriverWait(driver, 5).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, "input[type='checkbox']"))
+                )
+                driver.execute_script("arguments[0].click();", checkbox)
+                log.info("已点击 Turnstile 复选框")
+                driver.switch_to.default_content()
+                time.sleep(3)
+            except Exception as e:
+                log.warning("点击 Turnstile 复选框失败: %s", e)
+                driver.switch_to.default_content()
+
         # 截图看 Turnstile 状态
         driver.save_screenshot("/tmp/step3_turnstile.png")
         log.info("截图已保存: /tmp/step3_turnstile.png")
