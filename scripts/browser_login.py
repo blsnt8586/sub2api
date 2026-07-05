@@ -97,12 +97,22 @@ def login(base_url: str, email: str, password: str) -> dict:
         except Exception:
             pass
 
+        # 截图：免责声明关闭后
+        driver.save_screenshot("/tmp/step1_after_disclaimer.png")
+        log.info("截图已保存: /tmp/step1_after_disclaimer.png")
+
         # 打开登录弹窗（JS 触发，绕过所有遮挡）
         driver.execute_script("""
             const btn = document.querySelector('button[data-dialog-open="login"]');
             if (btn) btn.click();
         """)
         time.sleep(2)
+
+        # 截图：点击 login 按钮后
+        driver.save_screenshot("/tmp/step2_after_login_click.png")
+        log.info("截图已保存: /tmp/step2_after_login_click.png")
+        log.info("当前 URL: %s", driver.current_url)
+        log.info("页面标题: %s", driver.title)
 
         # 填写表单（JS 直接赋值+触发事件，更稳定）
         WebDriverWait(driver, 10).until(
