@@ -140,7 +140,13 @@ def login(base_url: str, email: str, password: str) -> dict:
 
         # 检查 Turnstile iframe 是否存在
         time.sleep(3)
-        turnstile_iframes = driver.find_elements(By.CSS_SELECTOR, "iframe[src*='challenges.cloudflare.com']")
+        # 打印所有 iframe 的 src，帮助调试
+        all_iframes = driver.find_elements(By.TAG_NAME, "iframe")
+        log.info("页面总 iframe 数量: %d", len(all_iframes))
+        for idx, f in enumerate(all_iframes):
+            log.info("  iframe[%d] src=%s", idx, f.get_attribute("src") or "(空)")
+
+        turnstile_iframes = [f for f in all_iframes if "cloudflare" in (f.get_attribute("src") or "")]
         log.info("Turnstile iframe 数量: %d", len(turnstile_iframes))
 
         # 如果 Turnstile 是复选框模式（服务器环境），点击复选框
