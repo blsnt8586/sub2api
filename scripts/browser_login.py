@@ -74,10 +74,7 @@ def login(base_url: str, email: str, password: str) -> dict:
     options.add_argument("--no-first-run")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    # 注意：不加 --disable-gpu，改用 SwiftShader 软件 GPU
-    # --disable-gpu 会导致 Turnstile 检测到无渲染环境而拒绝加载
-    options.add_argument("--use-gl=swiftshader")
-    options.add_argument("--use-angle=swiftshader")
+    options.add_argument("--disable-gpu")  # 服务器无 GPU，Turnstile 会以复选框模式加载
     if use_offscreen:
         options.add_argument("--window-position=-32000,-32000")
         options.add_argument("--window-size=1280,800")
