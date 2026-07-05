@@ -93,6 +93,40 @@ def login(base_url: str, email: str, password: str) -> dict:
     chrome_version = int(os.environ.get("SUB2API_CHROME_VERSION", "150"))
     driver = uc.Chrome(options=options, version_main=chrome_version)
     try:
+        # ----------------------------------------------------------------
+        # 注入 WebGL 指纹伪造：把 SwiftShader 伪装成真实 Intel GPU
+        # Turnstile 通过 getParameter(37445/37446) 检测渲染器
+        # SwiftShader 返回 "Google SwiftShader" → 触发 checkbox 模式
+        # 伪造成 Intel GPU → Turnstile 自动通过（与 WSL2 行为一致）
+        # ----------------------------------------------------------------
+        driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
+            "source": """
+            (function() {
+                // 伪造 WebGL1 指纹
+                const origGetParam = WebGLRenderingContext.prototype.getParameter;
+                WebGLRenderingContext.prototype.getParameter = function(parameter) {
+                    if (parameter === 37445) return 'Intel Inc.';
+                    if (parameter === 37446) return 'Intel(R) Iris(TM) Plus Graphics 640';
+                    return origGetParam.apply(this, arguments);
+                };
+                // 伪造 WebGL2 指纹
+                if (typeof WebGL2RenderingContext !== 'undefined') {
+                    const orig2 = WebGL2RenderingContext.prototype.getParameter;
+                    WebGL2RenderingContext.prototype.getParameter = function(parameter) {
+                        if (parameter === 37445) return 'Intel Inc.';
+                        if (parameter === 37446) return 'Intel(R) Iris(TM) Plus Graphics 640';
+                        return orig2.apply(this, arguments);
+                    };
+                }
+                // 伪造 navigator.hardwareConcurrency (8核)
+                Object.defineProperty(navigator, 'hardwareConcurrency', { get: () => 8 });
+                // 伪造 navigator.platform
+                Object.defineProperty(navigator, 'platform', { get: () => 'Linux x86_64' });
+            })();
+            """
+        })
+        log.info("WebGL 指纹伪造已注入")
+
         log.info("访问 %s ...", base_url)
         driver.get(base_url)
         time.sleep(3)
