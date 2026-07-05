@@ -138,31 +138,31 @@ def login(base_url: str, email: str, password: str) -> dict:
         except Exception:
             pass
 
-        # 检查 Turnstile iframe 是否存在
+        # 检查 Turnstile iframe 是否存在，并尝试点击复选框
         time.sleep(3)
-        # 打印所有 iframe 的 src，帮助调试
         all_iframes = driver.find_elements(By.TAG_NAME, "iframe")
         log.info("页面总 iframe 数量: %d", len(all_iframes))
         for idx, f in enumerate(all_iframes):
             log.info("  iframe[%d] src=%s", idx, f.get_attribute("src") or "(空)")
 
-        turnstile_iframes = [f for f in all_iframes if "cloudflare" in (f.get_attribute("src") or "")]
-        log.info("Turnstile iframe 数量: %d", len(turnstile_iframes))
-
-        # 如果 Turnstile 是复选框模式（服务器环境），点击复选框
-        if turnstile_iframes:
+        # 遍历所有 iframe，找到含有 Turnstile 复选框的那个并点击
+        clicked = False
+        for iframe in all_iframes:
             try:
-                driver.switch_to.frame(turnstile_iframes[0])
-                checkbox = WebDriverWait(driver, 5).until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR, "input[type='checkbox']"))
-                )
+                driver.switch_to.frame(iframe)
+                checkbox = driver.find_element(By.CSS_SELECTOR, "input[type='checkbox']")
                 driver.execute_script("arguments[0].click();", checkbox)
                 log.info("已点击 Turnstile 复选框")
+                clicked = True
                 driver.switch_to.default_content()
                 time.sleep(3)
-            except Exception as e:
-                log.warning("点击 Turnstile 复选框失败: %s", e)
+                break
+            except Exception:
                 driver.switch_to.default_content()
+                continue
+
+        if not clicked:
+            log.info("未找到复选框，等待 Turnstile 自动验证...")
 
         # 截图看 Turnstile 状态
         driver.save_screenshot("/tmp/step3_turnstile.png")
