@@ -87,19 +87,25 @@ def login(base_url: str, email: str, password: str) -> dict:
         driver.get(base_url)
         time.sleep(3)
 
-        # 关闭免责声明
+        # 关闭免责声明（等待背景层完全消失后再继续）
         try:
-            WebDriverWait(driver, 5).until(
+            btn = WebDriverWait(driver, 5).until(
                 EC.element_to_be_clickable((By.CSS_SELECTOR, "button[data-disclaimer-confirm]"))
-            ).click()
-            time.sleep(1)
+            )
+            btn.click()
+            # 等待 disclaimer backdrop 消失
+            WebDriverWait(driver, 5).until(
+                EC.invisibility_of_element_located((By.CSS_SELECTOR, ".disclaimer-backdrop"))
+            )
+            time.sleep(0.5)
         except Exception:
             pass
 
-        # 打开登录弹窗
-        WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "button[data-dialog-open='login']"))
-        ).click()
+        # 打开登录弹窗（用 JS click 绕过偶发遮挡）
+        login_btn = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "button[data-dialog-open='login']"))
+        )
+        driver.execute_script("arguments[0].click();", login_btn)
         time.sleep(2)
 
         # 填写表单
