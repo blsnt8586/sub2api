@@ -87,32 +87,36 @@ def login(base_url: str, email: str, password: str) -> dict:
         driver.get(base_url)
         time.sleep(3)
 
-        # 关闭免责声明（等待背景层完全消失后再继续）
+        # 关闭免责声明（直接 JS 触发，不依赖点击）
         try:
-            btn = WebDriverWait(driver, 5).until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, "button[data-disclaimer-confirm]"))
-            )
-            btn.click()
-            # 等待 disclaimer backdrop 消失
-            WebDriverWait(driver, 5).until(
-                EC.invisibility_of_element_located((By.CSS_SELECTOR, ".disclaimer-backdrop"))
-            )
-            time.sleep(0.5)
+            driver.execute_script("""
+                const btn = document.querySelector('button[data-disclaimer-confirm]');
+                if (btn) btn.click();
+            """)
+            time.sleep(2)
         except Exception:
             pass
 
-        # 打开登录弹窗（用 JS click 绕过偶发遮挡）
-        login_btn = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, "button[data-dialog-open='login']"))
-        )
-        driver.execute_script("arguments[0].click();", login_btn)
+        # 打开登录弹窗（JS 触发，绕过所有遮挡）
+        driver.execute_script("""
+            const btn = document.querySelector('button[data-dialog-open="login"]');
+            if (btn) btn.click();
+        """)
         time.sleep(2)
 
-        # 填写表单
+        # 填写表单（JS 直接赋值+触发事件，更稳定）
         WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "input[name='email']"))
-        ).send_keys(email)
-        driver.find_element(By.CSS_SELECTOR, "input[name='password']").send_keys(password)
+            EC.presence_of_element_located((By.CSS_SELECTOR, "input[name='email']"))
+        )
+        driver.execute_script("""
+            const email = document.querySelector('input[name="email"]');
+            const pwd   = document.querySelector('input[name="password"]');
+            const nativeInput = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+            nativeInput.call(email, arguments[0]);
+            email.dispatchEvent(new Event('input', { bubbles: true }));
+            nativeInput.call(pwd, arguments[1]);
+            pwd.dispatchEvent(new Event('input', { bubbles: true }));
+        """, email, password)
         log.info("登录表单填写完毕，等待 Turnstile 验证...")
 
         # 等待 Turnstile 自动完成
