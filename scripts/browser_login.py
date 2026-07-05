@@ -149,91 +149,149 @@ def login(base_url: str, email: str, password: str) -> dict:
             pass
 
         # ----------------------------------------------------------------
-        # 等待 Turnstile iframe 出现（最多 20 秒）
-        # SwiftShader 模式下 Turnstile 应能正常创建 iframe
+        # Turnstile 处理：等待 widget 加载，然后找 checkbox 点击
+        # 注意：Turnstile 在某些配置下不用 iframe，直接内嵌到主 DOM
         # ----------------------------------------------------------------
-        log.info("等待 Turnstile iframe 出现（最多20秒）...")
-        try:
-            WebDriverWait(driver, 20).until(
-                lambda d: len(d.find_elements(By.TAG_NAME, "iframe")) > 0
-            )
-        except TimeoutException:
-            log.warning("20秒内未检测到任何 iframe")
+        log.info("等待 Turnstile widget 加载（5秒）...")
+        time.sleep(5)
 
+        # 诊断：打印页面所有 input 元素
+        dom_info = driver.execute_script("""
+            const inputs = Array.from(document.querySelectorAll('input'));
+            return inputs.map(el => ({
+                type: el.type,
+                name: el.name,
+                id: el.id,
+                className: el.className.substring(0, 60),
+                visible: el.offsetParent !== null,
+                rect: (function(){
+                    var r = el.getBoundingClientRect();
+                    return {x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height)};
+                })()
+            }));
+        """)
+        log.info("页面 input 元素 (%d 个):", len(dom_info))
+        for el in dom_info:
+            log.info("  type=%-10s name=%-30s id=%-20s visible=%s rect=%s",
+                     el.get('type',''), el.get('name',''), el.get('id',''),
+                     el.get('visible'), el.get('rect'))
+
+        # 也打印 iframe 信息
         all_iframes = driver.find_elements(By.TAG_NAME, "iframe")
-        log.info("检测到 %d 个 iframe", len(all_iframes))
+        log.info("iframe 数量: %d", len(all_iframes))
         for i, f in enumerate(all_iframes):
             try:
-                log.info("  iframe[%d] src=%s id=%s", i, f.get_attribute("src"), f.get_attribute("id"))
+                log.info("  iframe[%d] src=%s id=%s name=%s",
+                         i, f.get_attribute("src"), f.get_attribute("id"), f.get_attribute("name"))
             except Exception:
                 pass
 
+        # turnstile widget IDs
+        widget_info = driver.execute_script("""
+            if (!window.turnstile) return null;
+            try {
+                // 尝试获取所有 widget
+                const widgets = window.turnstile._widgets || window.turnstile.widgets;
+                if (widgets) return JSON.stringify(Object.keys(widgets));
+            } catch(e) {}
+            return 'turnstile-exists-no-widgets-api';
+        """)
+        log.info("Turnstile widget 信息: %s", widget_info)
+
         clicked = False
 
-        # 方法1: 遍历所有 iframe，找 Turnstile checkbox 并点击
-        for i, iframe in enumerate(all_iframes):
-            try:
-                driver.switch_to.frame(iframe)
-                cb = driver.find_element(By.CSS_SELECTOR, "input[type='checkbox']")
-                driver.execute_script("arguments[0].click();", cb)
-                log.info("✅ 方法1: iframe[%d] 复选框点击成功", i)
-                clicked = True
-                driver.switch_to.default_content()
-                break
-            except Exception:
-                driver.switch_to.default_content()
-
-        # 方法2: Shadow DOM - 找 cf-turnstile 容器，点击内部复选框
+        # 方法A: 直接找主 DOM 里的 checkbox（Turnstile 非 iframe 嵌入）
         if not clicked:
             try:
-                cb = driver.execute_script("""
-                    const containers = document.querySelectorAll('.cf-turnstile, [data-sitekey]');
-                    for (const c of containers) {
-                        const shadow = c.shadowRoot;
-                        if (shadow) {
-                            const input = shadow.querySelector('input[type=checkbox]');
-                            if (input) { input.click(); return 'shadow-clicked'; }
+                cb_result = driver.execute_script("""
+                    // 找所有 checkbox
+                    const cbs = Array.from(document.querySelectorAll('input[type="checkbox"]'));
+                    for (const cb of cbs) {
+                        // 点击所有可见的 checkbox
+                        if (cb.offsetParent !== null || cb.style.display !== 'none') {
+                            cb.click();
+                            const r = cb.getBoundingClientRect();
+                            return 'clicked-checkbox: ' + cb.className + ' at ' + JSON.stringify({x:r.x,y:r.y});
+                        }
+                    }
+                    return 'no-checkbox-found (total=' + cbs.length + ')';
+                """)
+                log.info("方法A 结果: %s", cb_result)
+                if cb_result and 'clicked-checkbox' in cb_result:
+                    clicked = True
+            except Exception as e:
+                log.warning("方法A 失败: %s", e)
+
+        # 方法B: label 文字匹配 "human" / "verify"，点击对应 checkbox
+        if not clicked:
+            try:
+                cb_result = driver.execute_script("""
+                    const labels = Array.from(document.querySelectorAll('label, span, div'));
+                    for (const el of labels) {
+                        if (el.textContent && /verify|human/i.test(el.textContent.trim())) {
+                            const cb = el.querySelector('input[type="checkbox"]')
+                                    || el.closest('label')?.querySelector('input[type="checkbox"]');
+                            if (cb) { cb.click(); return 'label-click: ' + el.textContent.trim().substring(0,40); }
+                            el.click();
+                            return 'el-click: ' + el.tagName + ' ' + el.textContent.trim().substring(0,40);
                         }
                     }
                     return null;
                 """)
-                if cb:
-                    log.info("✅ 方法2: Shadow DOM 点击成功: %s", cb)
+                if cb_result:
+                    log.info("✅ 方法B: %s", cb_result)
                     clicked = True
             except Exception as e:
-                log.warning("方法2 失败: %s", e)
+                log.warning("方法B 失败: %s", e)
 
-        # 方法3: ActionChains 点击 cf-turnstile 容器中心
+        # 方法C: ActionChains 按坐标点击 checkbox 区域（从截图看大约在表单中部）
         if not clicked:
             try:
-                container = driver.find_element(By.CSS_SELECTOR, ".cf-turnstile, [data-sitekey]")
-                ActionChains(driver).move_to_element(container).click().perform()
-                log.info("✅ 方法3: ActionChains 点击容器成功")
-                clicked = True
-            except Exception as e:
-                log.warning("方法3 失败: %s", e)
-
-        # 方法4: JS 直接触发 Turnstile token（仅适用于某些版本）
-        if not clicked:
-            try:
-                result = driver.execute_script("""
-                    // 检查 Turnstile 是否已经有 token（SwiftShader 自动解决情况）
-                    const resp = document.querySelector('[name="cf-turnstile-response"]');
-                    if (resp && resp.value && resp.value.length > 10) {
-                        return 'already-solved:' + resp.value.substring(0, 20);
-                    }
-                    // 尝试通过 cf 对象调用
-                    if (window.turnstile) {
-                        return 'turnstile-object-found';
+                # 找 "Human verification" 区域
+                cb_rect = driver.execute_script("""
+                    const all = Array.from(document.querySelectorAll('*'));
+                    for (const el of all) {
+                        if (el.children.length === 0 && el.textContent.trim() === 'Verify you are human') {
+                            const r = el.getBoundingClientRect();
+                            return {x: r.x, y: r.y, w: r.width, h: r.height};
+                        }
                     }
                     return null;
                 """)
-                if result:
-                    log.info("✅ 方法4: Turnstile 状态: %s", result)
-                    if result.startswith('already-solved'):
-                        clicked = True  # 已经自动解决
+                if cb_rect:
+                    log.info("找到 'Verify you are human' 元素位置: %s", cb_rect)
+                    # checkbox 在文字左侧约 20px
+                    click_x = cb_rect['x'] - 20
+                    click_y = cb_rect['y'] + cb_rect['h'] / 2
+                    ActionChains(driver).move_by_offset(int(click_x), int(click_y)).click().perform()
+                    log.info("✅ 方法C: ActionChains 坐标点击 (%d, %d)", int(click_x), int(click_y))
+                    clicked = True
             except Exception as e:
-                log.warning("方法4 失败: %s", e)
+                log.warning("方法C 失败: %s", e)
+
+        # 方法D: window.turnstile 注入 token（绕过 UI，直接调用回调）
+        if not clicked:
+            try:
+                inject_result = driver.execute_script("""
+                    if (!window.turnstile) return 'no-turnstile';
+                    // 找所有 cf-turnstile-response hidden input，直接触发
+                    const hidden = document.querySelector('input[name="cf-turnstile-response"]');
+                    if (hidden) {
+                        // 找绑定在 widget 上的 callback
+                        const containers = document.querySelectorAll('[data-sitekey]');
+                        for (const c of containers) {
+                            const cb = c.getAttribute('data-callback');
+                            if (cb && window[cb]) {
+                                window[cb]('DUMMY_TOKEN_BYPASS');
+                                return 'callback-injected: ' + cb;
+                            }
+                        }
+                    }
+                    return 'no-callback-found';
+                """)
+                log.info("方法D 结果: %s", inject_result)
+            except Exception as e:
+                log.warning("方法D 失败: %s", e)
 
         if not clicked:
             log.info("⚠️ 所有点击方法均未成功，等待 Turnstile 自动验证...")
