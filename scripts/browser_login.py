@@ -74,7 +74,10 @@ def login(base_url: str, email: str, password: str) -> dict:
     options.add_argument("--no-first-run")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--disable-gpu")
+    # 注意：不加 --disable-gpu，改用 SwiftShader 软件 GPU
+    # --disable-gpu 会导致 Turnstile 检测到无渲染环境而拒绝加载
+    options.add_argument("--use-gl=swiftshader")
+    options.add_argument("--use-angle=swiftshader")
     if use_offscreen:
         options.add_argument("--window-position=-32000,-32000")
         options.add_argument("--window-size=1280,800")
@@ -127,6 +130,26 @@ def login(base_url: str, email: str, password: str) -> dict:
 
         log.info("登录表单填写完毕，等待 Turnstile 验证...")
 
+        # 触发鼠标移动，帮助 Turnstile widget 加载
+        from selenium.webdriver.common.action_chains import ActionChains
+        try:
+            actions = ActionChains(driver)
+            actions.move_to_element(email_input).perform()
+            time.sleep(0.5)
+            actions.move_to_element(pwd_input).perform()
+            time.sleep(0.5)
+        except Exception:
+            pass
+
+        # 检查 Turnstile iframe 是否存在
+        time.sleep(3)
+        turnstile_iframes = driver.find_elements(By.CSS_SELECTOR, "iframe[src*='challenges.cloudflare.com']")
+        log.info("Turnstile iframe 数量: %d", len(turnstile_iframes))
+
+        # 截图看 Turnstile 状态
+        driver.save_screenshot("/tmp/step3_turnstile.png")
+        log.info("截图已保存: /tmp/step3_turnstile.png")
+
         # 等待 Turnstile 自动完成
         for i in range(60):
             token = driver.execute_script(
@@ -137,6 +160,8 @@ def login(base_url: str, email: str, password: str) -> dict:
                 break
             time.sleep(1)
         else:
+            # 超时截图
+            driver.save_screenshot("/tmp/step4_turnstile_timeout.png")
             return {"error": "Turnstile 验证超时（60秒）"}
 
         # 提交
