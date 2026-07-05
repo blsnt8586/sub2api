@@ -114,19 +114,17 @@ def login(base_url: str, email: str, password: str) -> dict:
         log.info("当前 URL: %s", driver.current_url)
         log.info("页面标题: %s", driver.title)
 
-        # 填写表单（JS 直接赋值+触发事件，更稳定）
-        WebDriverWait(driver, 10).until(
+        # 填写表单（弹窗已打开，send_keys 直接写入）
+        email_input = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "input[name='email']"))
         )
-        driver.execute_script("""
-            const email = document.querySelector('input[name="email"]');
-            const pwd   = document.querySelector('input[name="password"]');
-            const nativeInput = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-            nativeInput.call(email, arguments[0]);
-            email.dispatchEvent(new Event('input', { bubbles: true }));
-            nativeInput.call(pwd, arguments[1]);
-            pwd.dispatchEvent(new Event('input', { bubbles: true }));
-        """, email, password)
+        email_input.clear()
+        email_input.send_keys(email)
+
+        pwd_input = driver.find_element(By.CSS_SELECTOR, "input[name='password']")
+        pwd_input.clear()
+        pwd_input.send_keys(password)
+
         log.info("登录表单填写完毕，等待 Turnstile 验证...")
 
         # 等待 Turnstile 自动完成
