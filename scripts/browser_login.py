@@ -6,6 +6,10 @@ browser_login.py — 通过 undetected-chromedriver 绕过 Cloudflare Turnstile 
 用法:
     python3 browser_login.py --url URL --email EMAIL --password PASS --output json
 
+代理（服务器机房 IP 被 Turnstile 拦截时必需）:
+    --proxy http://user:pass@host:port   命令行传入
+    或环境变量 SUB2API_PROXY=http://user:pass@host:port
+
 输出 (stdout):
     {"auth_token": "eyJ...", "refresh_token": "rt_..."}
     或
@@ -35,6 +39,103 @@ def _need_xvfb() -> bool:
     return not os.environ.get("DISPLAY")
 
 
+def _parse_proxy(proxy_url: str) -> dict | None:
+    """解析代理 URL，拆出 scheme/host/port/user/pass
+
+    支持格式:
+        http://host:port
+        http://user:pass@host:port
+        socks5://user:pass@host:port
+    """
+    from urllib.parse import urlparse
+    if not proxy_url:
+        return None
+    p = urlparse(proxy_url)
+    if not p.hostname or not p.port:
+        log.warning("代理 URL 格式无效（缺 host 或 port）: %s", proxy_url)
+        return None
+    return {
+        "scheme": p.scheme or "http",
+        "host": p.hostname,
+        "port": p.port,
+        "user": p.username or "",
+        "pass": p.password or "",
+    }
+
+
+def _build_proxy_auth_extension(proxy: dict) -> str:
+    """为带认证的代理生成临时 Chrome 扩展目录
+
+    Chrome 的 --proxy-server 不支持在 URL 里带 user:pass，
+    必须用扩展的 webRequest.onAuthRequired 注入凭证。
+    返回扩展目录路径（调用方负责清理）。
+    """
+    import tempfile
+
+    ext_dir = tempfile.mkdtemp(prefix="proxy_auth_")
+
+    manifest = {
+        "version": "1.0.0",
+        "manifest_version": 2,
+        "name": "Proxy Auth",
+        "permissions": [
+            "proxy",
+            "tabs",
+            "unlimitedStorage",
+            "storage",
+            "<all_urls>",
+            "webRequest",
+            "webRequestBlocking",
+        ],
+        "background": {"scripts": ["background.js"]},
+        "minimum_chrome_version": "76.0.0",
+    }
+
+    # scheme 映射：Chrome proxy API 用 "http"/"https"/"socks5"
+    scheme = proxy["scheme"]
+    if scheme == "socks5":
+        chrome_scheme = "socks5"
+    elif scheme == "https":
+        chrome_scheme = "https"
+    else:
+        chrome_scheme = "http"
+
+    background = """
+var config = {
+    mode: "fixed_servers",
+    rules: {
+        singleProxy: {
+            scheme: "%s",
+            host: "%s",
+            port: parseInt(%d)
+        },
+        bypassList: ["localhost"]
+    }
+};
+chrome.proxy.settings.set({value: config, scope: "regular"}, function() {});
+function callbackFn(details) {
+    return {
+        authCredentials: {
+            username: "%s",
+            password: "%s"
+        }
+    };
+}
+chrome.webRequest.onAuthRequired.addListener(
+    callbackFn,
+    {urls: ["<all_urls>"]},
+    ['blocking']
+);
+""" % (chrome_scheme, proxy["host"], proxy["port"], proxy["user"], proxy["pass"])
+
+    with open(os.path.join(ext_dir, "manifest.json"), "w", encoding="utf-8") as f:
+        json.dump(manifest, f)
+    with open(os.path.join(ext_dir, "background.js"), "w", encoding="utf-8") as f:
+        f.write(background)
+
+    return ext_dir
+
+
 def _start_xvfb() -> "subprocess.Popen | None":
     if os.path.exists(f"/tmp/.X{XVFB_DISPLAY[1:]}-lock"):
         log.info("Xvfb %s 已在运行", XVFB_DISPLAY)
@@ -55,7 +156,8 @@ def _start_xvfb() -> "subprocess.Popen | None":
         return None
 
 
-def login(base_url: str, email: str, password: str) -> dict:
+def login(base_url: str, email: str, password: str, proxy_url: str = "") -> dict:
+    import shutil
     import undetected_chromedriver as uc
     from selenium.webdriver.common.by import By
     from selenium.webdriver.support import expected_conditions as EC
@@ -84,9 +186,39 @@ def login(base_url: str, email: str, password: str) -> dict:
     #   WSL2 → 使用真实 GPU/ANGLE，Turnstile 自动通过
     #   服务器 → Chrome 尝试 EGL/Mesa，比 SwiftShader 更真实
 
+    # ----------------------------------------------------------------
+    # 代理：机房 IP 被 Turnstile 拦截时，走住宅代理让 CF 静默放行
+    # 命令行 --proxy 优先，其次环境变量 SUB2API_PROXY
+    # ----------------------------------------------------------------
+    proxy = _parse_proxy(proxy_url or os.environ.get("SUB2API_PROXY", ""))
+    proxy_ext_dir = None
+    if proxy:
+        if proxy["user"] or proxy["pass"]:
+            # 带认证：用扩展注入 user:pass（--proxy-server 不支持 URL 认证）
+            proxy_ext_dir = _build_proxy_auth_extension(proxy)
+            options.add_argument(f"--load-extension={proxy_ext_dir}")
+            log.info("已挂载代理认证扩展: %s://%s:%d (带认证)",
+                     proxy["scheme"], proxy["host"], proxy["port"])
+        else:
+            # 无认证：直接 --proxy-server
+            options.add_argument(
+                f"--proxy-server={proxy['scheme']}://{proxy['host']}:{proxy['port']}"
+            )
+            log.info("已设置代理: %s://%s:%d",
+                     proxy["scheme"], proxy["host"], proxy["port"])
+
     chrome_version = int(os.environ.get("SUB2API_CHROME_VERSION", "150"))
     driver = uc.Chrome(options=options, version_main=chrome_version)
     try:
+        # 代理生效自检：打印出口 IP，确认没有走本机机房 IP
+        if proxy:
+            try:
+                driver.get("https://api.ipify.org?format=json")
+                time.sleep(1)
+                ip_txt = driver.find_element(By.TAG_NAME, "body").text
+                log.info("代理出口 IP: %s", ip_txt[:120])
+            except Exception as e:
+                log.warning("代理出口 IP 自检失败: %s", e)
         log.info("访问 %s ...", base_url)
         driver.get(base_url)
         time.sleep(3)
@@ -224,6 +356,8 @@ def login(base_url: str, email: str, password: str) -> dict:
         if xvfb_proc:
             xvfb_proc.terminate()
             log.info("Xvfb 已关闭")
+        if proxy_ext_dir:
+            shutil.rmtree(proxy_ext_dir, ignore_errors=True)
 
 
 def main():
@@ -231,10 +365,12 @@ def main():
     parser.add_argument("--url", required=True)
     parser.add_argument("--email", required=True)
     parser.add_argument("--password", required=True)
+    parser.add_argument("--proxy", default="",
+                        help="代理 URL，如 http://user:pass@host:port；也可用环境变量 SUB2API_PROXY")
     parser.add_argument("--output", default="json", choices=["json", "text"])
     args = parser.parse_args()
 
-    result = login(args.url, args.email, args.password)
+    result = login(args.url, args.email, args.password, proxy_url=args.proxy)
     print(json.dumps(result, ensure_ascii=False))
     sys.exit(0 if "auth_token" in result else 1)
 
