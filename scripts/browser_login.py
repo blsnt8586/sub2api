@@ -138,31 +138,61 @@ def login(base_url: str, email: str, password: str) -> dict:
         except Exception:
             pass
 
-        # 检查 Turnstile iframe 是否存在，并尝试点击复选框
+        # Turnstile 用 Shadow DOM 渲染，先找容器再点击
         time.sleep(3)
         all_iframes = driver.find_elements(By.TAG_NAME, "iframe")
         log.info("页面总 iframe 数量: %d", len(all_iframes))
-        for idx, f in enumerate(all_iframes):
-            log.info("  iframe[%d] src=%s", idx, f.get_attribute("src") or "(空)")
 
-        # 遍历所有 iframe，找到含有 Turnstile 复选框的那个并点击
         clicked = False
+
+        # 方法1: 尝试 iframe 方式（传统 Turnstile）
         for iframe in all_iframes:
             try:
                 driver.switch_to.frame(iframe)
-                checkbox = driver.find_element(By.CSS_SELECTOR, "input[type='checkbox']")
-                driver.execute_script("arguments[0].click();", checkbox)
-                log.info("已点击 Turnstile 复选框")
+                cb = driver.find_element(By.CSS_SELECTOR, "input[type='checkbox']")
+                driver.execute_script("arguments[0].click();", cb)
+                log.info("✅ 方法1: iframe 复选框点击成功")
                 clicked = True
                 driver.switch_to.default_content()
-                time.sleep(3)
                 break
             except Exception:
                 driver.switch_to.default_content()
-                continue
+
+        # 方法2: Shadow DOM - 找 cf-turnstile 容器，点击内部复选框
+        if not clicked:
+            try:
+                cb = driver.execute_script("""
+                    const containers = document.querySelectorAll('.cf-turnstile, [data-sitekey]');
+                    for (const c of containers) {
+                        const shadow = c.shadowRoot;
+                        if (shadow) {
+                            const input = shadow.querySelector('input[type=checkbox]');
+                            if (input) { input.click(); return 'shadow-clicked'; }
+                        }
+                    }
+                    return null;
+                """)
+                if cb:
+                    log.info("✅ 方法2: Shadow DOM 点击成功: %s", cb)
+                    clicked = True
+            except Exception as e:
+                log.warning("方法2 失败: %s", e)
+
+        # 方法3: ActionChains 点击 cf-turnstile 容器中心
+        if not clicked:
+            try:
+                from selenium.webdriver.common.action_chains import ActionChains
+                container = driver.find_element(By.CSS_SELECTOR, ".cf-turnstile, [data-sitekey]")
+                ActionChains(driver).move_to_element(container).click().perform()
+                log.info("✅ 方法3: ActionChains 点击容器成功")
+                clicked = True
+            except Exception as e:
+                log.warning("方法3 失败: %s", e)
 
         if not clicked:
-            log.info("未找到复选框，等待 Turnstile 自动验证...")
+            log.info("⚠️ 未能点击 Turnstile，等待自动验证...")
+        else:
+            time.sleep(3)
 
         # 截图看 Turnstile 状态
         driver.save_screenshot("/tmp/step3_turnstile.png")
