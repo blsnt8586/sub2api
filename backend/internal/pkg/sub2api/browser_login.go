@@ -21,7 +21,8 @@ type browserLoginResult struct {
 
 // BrowserLogin 通过 undetected-chromedriver 浏览器登录有 Turnstile 验证的平台。
 // 调用 Python 脚本完成登录，返回 JWT token。
-// 环境要求：python3、undetected-chromedriver、selenium（服务器还需 Xvfb）
+// 环境要求：python3、undetected-chromedriver、selenium（服务器还需 Xvfb + chromium/chrome）
+// Chrome 版本由 SUB2API_CHROME_VERSION 环境变量控制，默认 150
 func BrowserLogin(ctx context.Context, baseURL, email, password string) (string, error) {
 	scriptPath, err := findLoginScript()
 	if err != nil {

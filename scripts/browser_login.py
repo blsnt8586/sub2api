@@ -79,7 +79,9 @@ def login(base_url: str, email: str, password: str) -> dict:
         options.add_argument("--window-position=-32000,-32000")
         options.add_argument("--window-size=1280,800")
 
-    driver = uc.Chrome(options=options, version_main=145)
+    # Chrome 版本：优先读环境变量 SUB2API_CHROME_VERSION，默认 150（服务器 Chromium 150）
+    chrome_version = int(os.environ.get("SUB2API_CHROME_VERSION", "150"))
+    driver = uc.Chrome(options=options, version_main=chrome_version)
     try:
         log.info("访问 %s ...", base_url)
         driver.get(base_url)
