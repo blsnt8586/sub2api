@@ -118,7 +118,8 @@ backend/.installed
 tests
 CLAUDE.md
 .claude
-scripts
+scripts/*
+!scripts/browser_login.py
 !backend/scripts/
 !backend/scripts/resolve-version.sh
 .code-review-state

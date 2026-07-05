@@ -33,6 +33,11 @@ func (r *Sub2APIProviderRepository) Create(ctx context.Context, input *service.C
 		builder = builder.SetProviderType(input.ProviderType)
 	}
 
+	// 登录方式：显式指定时写入，未指定则由 ent schema 默认值（http）兜底
+	if input.LoginMethod != "" {
+		builder = builder.SetLoginMethod(input.LoginMethod)
+	}
+
 	if input.Notes != nil {
 		builder = builder.SetNotes(*input.Notes)
 	}
@@ -134,6 +139,9 @@ func (r *Sub2APIProviderRepository) Update(ctx context.Context, id int64, input 
 	}
 	if input.Password != nil {
 		update = update.SetPasswordEncrypted(*input.Password)
+	}
+	if input.LoginMethod != nil {
+		update = update.SetLoginMethod(*input.LoginMethod)
 	}
 	if input.Status != nil {
 		update = update.SetStatus(*input.Status)

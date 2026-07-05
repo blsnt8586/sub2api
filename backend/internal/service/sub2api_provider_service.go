@@ -35,18 +35,20 @@ type CreateSub2APIProviderInput struct {
 	Name         string
 	BaseURL      string
 	ProviderType string
+	LoginMethod  string
 	Email        string
 	Password     string
 	Notes        *string
 }
 
 type UpdateSub2APIProviderInput struct {
-	Name     *string
-	BaseURL  *string
-	Email    *string
-	Password *string
-	Status   *string
-	Notes    *string
+	Name        *string
+	BaseURL     *string
+	LoginMethod *string
+	Email       *string
+	Password    *string
+	Status      *string
+	Notes       *string
 }
 
 type Sub2APIProviderFilters struct {
@@ -67,12 +69,30 @@ func NewSub2APIProviderService(repo Sub2APIProviderRepository, accountRepo Accou
 }
 
 // newAuthedClient 为指定 Provider 创建已登录的客户端。
-// 优先使用缓存 token，缓存未命中时登录并写入缓存。
+// 优先使用缓存 token，缓存未命中时根据 login_method 选择登录方式。
 func (s *Sub2APIProviderService) newAuthedClient(ctx context.Context, provider *ent.Sub2APIProvider) (*sub2api.Client, error) {
 	client := sub2api.NewClient(provider.BaseURL, provider.Email, provider.PasswordEncrypted)
-	if err := client.EnsureLoggedIn(ctx, int64(provider.ID), s.tokenCache); err != nil {
-		return nil, fmt.Errorf("login to provider %d failed: %w", provider.ID, err)
+
+	// 检查 token 缓存
+	if token, ok := s.tokenCache.Get(int64(provider.ID)); ok {
+		client.Token = token
+		return client, nil
 	}
+
+	// 根据登录方式选择登录逻辑
+	if provider.LoginMethod == domain.LoginMethodBrowser {
+		token, err := sub2api.BrowserLogin(ctx, provider.BaseURL, provider.Email, provider.PasswordEncrypted)
+		if err != nil {
+			return nil, fmt.Errorf("browser login to provider %d failed: %w", provider.ID, err)
+		}
+		client.Token = token
+	} else {
+		if err := client.Login(ctx); err != nil {
+			return nil, fmt.Errorf("login to provider %d failed: %w", provider.ID, err)
+		}
+	}
+
+	s.tokenCache.Set(int64(provider.ID), client.Token)
 	return client, nil
 }
 
@@ -103,11 +123,21 @@ func (s *Sub2APIProviderService) CreateProvider(ctx context.Context, input *Crea
 		return nil, ErrInvalidProviderType
 	}
 
+	// 登录方式：未显式指定时用默认（http），并校验
+	loginMethod := input.LoginMethod
+	if loginMethod == "" {
+		loginMethod = domain.LoginMethodDefault
+	}
+	if !domain.IsValidLoginMethod(loginMethod) {
+		return nil, infraerrors.BadRequest("INVALID_LOGIN_METHOD", "unsupported login method, must be http or browser")
+	}
+
 	// 调用 Repository
 	provider, err := s.repo.Create(ctx, &CreateSub2APIProviderInput{
 		Name:         input.Name,
 		BaseURL:      input.BaseURL,
 		ProviderType: providerType,
+		LoginMethod:  loginMethod,
 		Email:        input.Email,
 		Password:     input.Password, // 阶段1明文存储
 		Notes:        input.Notes,
@@ -208,12 +238,13 @@ func (s *Sub2APIProviderService) UpdateProvider(ctx context.Context, id int64, i
 
 	// 更新
 	provider, err := s.repo.Update(ctx, id, &UpdateSub2APIProviderInput{
-		Name:     input.Name,
-		BaseURL:  input.BaseURL,
-		Email:    input.Email,
-		Password: input.Password,
-		Status:   input.Status,
-		Notes:    input.Notes,
+		Name:        input.Name,
+		BaseURL:     input.BaseURL,
+		LoginMethod: input.LoginMethod,
+		Email:       input.Email,
+		Password:    input.Password,
+		Status:      input.Status,
+		Notes:       input.Notes,
 	})
 
 	if err != nil {
@@ -267,6 +298,7 @@ func providerFromEnt(e *ent.Sub2APIProvider) *Provider {
 		Name:         e.Name,
 		BaseURL:      e.BaseURL,
 		ProviderType: e.ProviderType,
+		LoginMethod:  e.LoginMethod,
 		Status:       e.Status,
 		Notes:          e.Notes,
 		Email:          e.Email,
@@ -290,6 +322,7 @@ type Provider struct {
 	Name           string  `json:"name"`
 	BaseURL        string  `json:"base_url"`
 	ProviderType   string  `json:"provider_type"`
+	LoginMethod    string  `json:"login_method"`
 	Status         string  `json:"status"`
 	Notes          *string `json:"notes,omitempty"`
 	Email          string  `json:"email"`
@@ -315,6 +348,7 @@ type CreateProviderInput struct {
 	Name         string  `json:"name"`
 	BaseURL      string  `json:"base_url"`
 	ProviderType string  `json:"provider_type,omitempty"`
+	LoginMethod  string  `json:"login_method,omitempty"`
 	Email        string  `json:"email"`
 	Password     string  `json:"password"`
 	Notes        *string `json:"notes,omitempty"`
@@ -322,12 +356,13 @@ type CreateProviderInput struct {
 
 // UpdateProviderInput 更新 Provider 的输入
 type UpdateProviderInput struct {
-	Name     *string `json:"name,omitempty"`
-	BaseURL  *string `json:"base_url,omitempty"`
-	Email    *string `json:"email,omitempty"`
-	Password *string `json:"password,omitempty"`
-	Status   *string `json:"status,omitempty"`
-	Notes    *string `json:"notes,omitempty"`
+	Name        *string `json:"name,omitempty"`
+	BaseURL     *string `json:"base_url,omitempty"`
+	LoginMethod *string `json:"login_method,omitempty"`
+	Email       *string `json:"email,omitempty"`
+	Password    *string `json:"password,omitempty"`
+	Status      *string `json:"status,omitempty"`
+	Notes       *string `json:"notes,omitempty"`
 }
 
 // DetectAndUpdateAPIPaths 探测并更新 API 路径

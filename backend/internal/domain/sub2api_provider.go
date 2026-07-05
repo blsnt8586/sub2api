@@ -24,6 +24,26 @@ const (
 	ProviderTypeDefault = ProviderTypeSub2API
 )
 
+// 登录方式（login_method）：决定登录时走普通 HTTP 还是浏览器（用于绕过 Cloudflare Turnstile）。
+const (
+	// LoginMethodHTTP 直接 HTTP POST 登录（默认，适用于大多数平台）
+	LoginMethodHTTP = "http"
+	// LoginMethodBrowser 通过 undetected-chromedriver 浏览器登录（适用于有 Turnstile 验证的平台）
+	LoginMethodBrowser = "browser"
+	// LoginMethodDefault 默认登录方式
+	LoginMethodDefault = LoginMethodHTTP
+)
+
+// IsValidLoginMethod 判断登录方式是否合法
+func IsValidLoginMethod(m string) bool {
+	switch m {
+	case LoginMethodHTTP, LoginMethodBrowser:
+		return true
+	default:
+		return false
+	}
+}
+
 // IsValidProviderType 判断上游类型是否受支持。
 func IsValidProviderType(t string) bool {
 	switch t {

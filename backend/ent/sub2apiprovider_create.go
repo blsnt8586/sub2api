@@ -132,6 +132,20 @@ func (_c *Sub2APIProviderCreate) SetPasswordEncrypted(v string) *Sub2APIProvider
 	return _c
 }
 
+// SetLoginMethod sets the "login_method" field.
+func (_c *Sub2APIProviderCreate) SetLoginMethod(v string) *Sub2APIProviderCreate {
+	_c.mutation.SetLoginMethod(v)
+	return _c
+}
+
+// SetNillableLoginMethod sets the "login_method" field if the given value is not nil.
+func (_c *Sub2APIProviderCreate) SetNillableLoginMethod(v *string) *Sub2APIProviderCreate {
+	if v != nil {
+		_c.SetLoginMethod(*v)
+	}
+	return _c
+}
+
 // SetAPIPathKeys sets the "api_path_keys" field.
 func (_c *Sub2APIProviderCreate) SetAPIPathKeys(v string) *Sub2APIProviderCreate {
 	_c.mutation.SetAPIPathKeys(v)
@@ -295,6 +309,10 @@ func (_c *Sub2APIProviderCreate) defaults() error {
 		v := sub2apiprovider.DefaultStatus
 		_c.mutation.SetStatus(v)
 	}
+	if _, ok := _c.mutation.LoginMethod(); !ok {
+		v := sub2apiprovider.DefaultLoginMethod
+		_c.mutation.SetLoginMethod(v)
+	}
 	return nil
 }
 
@@ -352,6 +370,14 @@ func (_c *Sub2APIProviderCreate) check() error {
 	if v, ok := _c.mutation.PasswordEncrypted(); ok {
 		if err := sub2apiprovider.PasswordEncryptedValidator(v); err != nil {
 			return &ValidationError{Name: "password_encrypted", err: fmt.Errorf(`ent: validator failed for field "Sub2APIProvider.password_encrypted": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.LoginMethod(); !ok {
+		return &ValidationError{Name: "login_method", err: errors.New(`ent: missing required field "Sub2APIProvider.login_method"`)}
+	}
+	if v, ok := _c.mutation.LoginMethod(); ok {
+		if err := sub2apiprovider.LoginMethodValidator(v); err != nil {
+			return &ValidationError{Name: "login_method", err: fmt.Errorf(`ent: validator failed for field "Sub2APIProvider.login_method": %w`, err)}
 		}
 	}
 	if v, ok := _c.mutation.APIPathKeys(); ok {
@@ -435,6 +461,10 @@ func (_c *Sub2APIProviderCreate) createSpec() (*Sub2APIProvider, *sqlgraph.Creat
 	if value, ok := _c.mutation.PasswordEncrypted(); ok {
 		_spec.SetField(sub2apiprovider.FieldPasswordEncrypted, field.TypeString, value)
 		_node.PasswordEncrypted = value
+	}
+	if value, ok := _c.mutation.LoginMethod(); ok {
+		_spec.SetField(sub2apiprovider.FieldLoginMethod, field.TypeString, value)
+		_node.LoginMethod = value
 	}
 	if value, ok := _c.mutation.APIPathKeys(); ok {
 		_spec.SetField(sub2apiprovider.FieldAPIPathKeys, field.TypeString, value)
@@ -657,6 +687,18 @@ func (u *Sub2APIProviderUpsert) SetPasswordEncrypted(v string) *Sub2APIProviderU
 // UpdatePasswordEncrypted sets the "password_encrypted" field to the value that was provided on create.
 func (u *Sub2APIProviderUpsert) UpdatePasswordEncrypted() *Sub2APIProviderUpsert {
 	u.SetExcluded(sub2apiprovider.FieldPasswordEncrypted)
+	return u
+}
+
+// SetLoginMethod sets the "login_method" field.
+func (u *Sub2APIProviderUpsert) SetLoginMethod(v string) *Sub2APIProviderUpsert {
+	u.Set(sub2apiprovider.FieldLoginMethod, v)
+	return u
+}
+
+// UpdateLoginMethod sets the "login_method" field to the value that was provided on create.
+func (u *Sub2APIProviderUpsert) UpdateLoginMethod() *Sub2APIProviderUpsert {
+	u.SetExcluded(sub2apiprovider.FieldLoginMethod)
 	return u
 }
 
@@ -932,6 +974,20 @@ func (u *Sub2APIProviderUpsertOne) SetPasswordEncrypted(v string) *Sub2APIProvid
 func (u *Sub2APIProviderUpsertOne) UpdatePasswordEncrypted() *Sub2APIProviderUpsertOne {
 	return u.Update(func(s *Sub2APIProviderUpsert) {
 		s.UpdatePasswordEncrypted()
+	})
+}
+
+// SetLoginMethod sets the "login_method" field.
+func (u *Sub2APIProviderUpsertOne) SetLoginMethod(v string) *Sub2APIProviderUpsertOne {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.SetLoginMethod(v)
+	})
+}
+
+// UpdateLoginMethod sets the "login_method" field to the value that was provided on create.
+func (u *Sub2APIProviderUpsertOne) UpdateLoginMethod() *Sub2APIProviderUpsertOne {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.UpdateLoginMethod()
 	})
 }
 
@@ -1388,6 +1444,20 @@ func (u *Sub2APIProviderUpsertBulk) SetPasswordEncrypted(v string) *Sub2APIProvi
 func (u *Sub2APIProviderUpsertBulk) UpdatePasswordEncrypted() *Sub2APIProviderUpsertBulk {
 	return u.Update(func(s *Sub2APIProviderUpsert) {
 		s.UpdatePasswordEncrypted()
+	})
+}
+
+// SetLoginMethod sets the "login_method" field.
+func (u *Sub2APIProviderUpsertBulk) SetLoginMethod(v string) *Sub2APIProviderUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.SetLoginMethod(v)
+	})
+}
+
+// UpdateLoginMethod sets the "login_method" field to the value that was provided on create.
+func (u *Sub2APIProviderUpsertBulk) UpdateLoginMethod() *Sub2APIProviderUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.UpdateLoginMethod()
 	})
 }
 

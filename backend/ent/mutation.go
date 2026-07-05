@@ -34672,6 +34672,7 @@ type Sub2APIProviderMutation struct {
 	notes                    *string
 	email                    *string
 	password_encrypted       *string
+	login_method             *string
 	api_path_keys            *string
 	api_path_groups          *string
 	last_sync_at             *time.Time
@@ -35172,6 +35173,42 @@ func (m *Sub2APIProviderMutation) ResetPasswordEncrypted() {
 	m.password_encrypted = nil
 }
 
+// SetLoginMethod sets the "login_method" field.
+func (m *Sub2APIProviderMutation) SetLoginMethod(s string) {
+	m.login_method = &s
+}
+
+// LoginMethod returns the value of the "login_method" field in the mutation.
+func (m *Sub2APIProviderMutation) LoginMethod() (r string, exists bool) {
+	v := m.login_method
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLoginMethod returns the old "login_method" field's value of the Sub2APIProvider entity.
+// If the Sub2APIProvider object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderMutation) OldLoginMethod(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLoginMethod is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLoginMethod requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLoginMethod: %w", err)
+	}
+	return oldValue.LoginMethod, nil
+}
+
+// ResetLoginMethod resets all changes to the "login_method" field.
+func (m *Sub2APIProviderMutation) ResetLoginMethod() {
+	m.login_method = nil
+}
+
 // SetAPIPathKeys sets the "api_path_keys" field.
 func (m *Sub2APIProviderMutation) SetAPIPathKeys(s string) {
 	m.api_path_keys = &s
@@ -35544,7 +35581,7 @@ func (m *Sub2APIProviderMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *Sub2APIProviderMutation) Fields() []string {
-	fields := make([]string, 0, 15)
+	fields := make([]string, 0, 16)
 	if m.created_at != nil {
 		fields = append(fields, sub2apiprovider.FieldCreatedAt)
 	}
@@ -35574,6 +35611,9 @@ func (m *Sub2APIProviderMutation) Fields() []string {
 	}
 	if m.password_encrypted != nil {
 		fields = append(fields, sub2apiprovider.FieldPasswordEncrypted)
+	}
+	if m.login_method != nil {
+		fields = append(fields, sub2apiprovider.FieldLoginMethod)
 	}
 	if m.api_path_keys != nil {
 		fields = append(fields, sub2apiprovider.FieldAPIPathKeys)
@@ -35618,6 +35658,8 @@ func (m *Sub2APIProviderMutation) Field(name string) (ent.Value, bool) {
 		return m.Email()
 	case sub2apiprovider.FieldPasswordEncrypted:
 		return m.PasswordEncrypted()
+	case sub2apiprovider.FieldLoginMethod:
+		return m.LoginMethod()
 	case sub2apiprovider.FieldAPIPathKeys:
 		return m.APIPathKeys()
 	case sub2apiprovider.FieldAPIPathGroups:
@@ -35657,6 +35699,8 @@ func (m *Sub2APIProviderMutation) OldField(ctx context.Context, name string) (en
 		return m.OldEmail(ctx)
 	case sub2apiprovider.FieldPasswordEncrypted:
 		return m.OldPasswordEncrypted(ctx)
+	case sub2apiprovider.FieldLoginMethod:
+		return m.OldLoginMethod(ctx)
 	case sub2apiprovider.FieldAPIPathKeys:
 		return m.OldAPIPathKeys(ctx)
 	case sub2apiprovider.FieldAPIPathGroups:
@@ -35745,6 +35789,13 @@ func (m *Sub2APIProviderMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetPasswordEncrypted(v)
+		return nil
+	case sub2apiprovider.FieldLoginMethod:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLoginMethod(v)
 		return nil
 	case sub2apiprovider.FieldAPIPathKeys:
 		v, ok := value.(string)
@@ -35904,6 +35955,9 @@ func (m *Sub2APIProviderMutation) ResetField(name string) error {
 		return nil
 	case sub2apiprovider.FieldPasswordEncrypted:
 		m.ResetPasswordEncrypted()
+		return nil
+	case sub2apiprovider.FieldLoginMethod:
+		m.ResetLoginMethod()
 		return nil
 	case sub2apiprovider.FieldAPIPathKeys:
 		m.ResetAPIPathKeys()

@@ -105,6 +105,11 @@ func PasswordEncrypted(v string) predicate.Sub2APIProvider {
 	return predicate.Sub2APIProvider(sql.FieldEQ(FieldPasswordEncrypted, v))
 }
 
+// LoginMethod applies equality check predicate on the "login_method" field. It's identical to LoginMethodEQ.
+func LoginMethod(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldEQ(FieldLoginMethod, v))
+}
+
 // APIPathKeys applies equality check predicate on the "api_path_keys" field. It's identical to APIPathKeysEQ.
 func APIPathKeys(v string) predicate.Sub2APIProvider {
 	return predicate.Sub2APIProvider(sql.FieldEQ(FieldAPIPathKeys, v))
@@ -723,6 +728,71 @@ func PasswordEncryptedEqualFold(v string) predicate.Sub2APIProvider {
 // PasswordEncryptedContainsFold applies the ContainsFold predicate on the "password_encrypted" field.
 func PasswordEncryptedContainsFold(v string) predicate.Sub2APIProvider {
 	return predicate.Sub2APIProvider(sql.FieldContainsFold(FieldPasswordEncrypted, v))
+}
+
+// LoginMethodEQ applies the EQ predicate on the "login_method" field.
+func LoginMethodEQ(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldEQ(FieldLoginMethod, v))
+}
+
+// LoginMethodNEQ applies the NEQ predicate on the "login_method" field.
+func LoginMethodNEQ(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldNEQ(FieldLoginMethod, v))
+}
+
+// LoginMethodIn applies the In predicate on the "login_method" field.
+func LoginMethodIn(vs ...string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldIn(FieldLoginMethod, vs...))
+}
+
+// LoginMethodNotIn applies the NotIn predicate on the "login_method" field.
+func LoginMethodNotIn(vs ...string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldNotIn(FieldLoginMethod, vs...))
+}
+
+// LoginMethodGT applies the GT predicate on the "login_method" field.
+func LoginMethodGT(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldGT(FieldLoginMethod, v))
+}
+
+// LoginMethodGTE applies the GTE predicate on the "login_method" field.
+func LoginMethodGTE(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldGTE(FieldLoginMethod, v))
+}
+
+// LoginMethodLT applies the LT predicate on the "login_method" field.
+func LoginMethodLT(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldLT(FieldLoginMethod, v))
+}
+
+// LoginMethodLTE applies the LTE predicate on the "login_method" field.
+func LoginMethodLTE(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldLTE(FieldLoginMethod, v))
+}
+
+// LoginMethodContains applies the Contains predicate on the "login_method" field.
+func LoginMethodContains(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldContains(FieldLoginMethod, v))
+}
+
+// LoginMethodHasPrefix applies the HasPrefix predicate on the "login_method" field.
+func LoginMethodHasPrefix(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldHasPrefix(FieldLoginMethod, v))
+}
+
+// LoginMethodHasSuffix applies the HasSuffix predicate on the "login_method" field.
+func LoginMethodHasSuffix(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldHasSuffix(FieldLoginMethod, v))
+}
+
+// LoginMethodEqualFold applies the EqualFold predicate on the "login_method" field.
+func LoginMethodEqualFold(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldEqualFold(FieldLoginMethod, v))
+}
+
+// LoginMethodContainsFold applies the ContainsFold predicate on the "login_method" field.
+func LoginMethodContainsFold(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldContainsFold(FieldLoginMethod, v))
 }
 
 // APIPathKeysEQ applies the EQ predicate on the "api_path_keys" field.

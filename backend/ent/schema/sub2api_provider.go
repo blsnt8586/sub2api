@@ -73,6 +73,12 @@ func (Sub2APIProvider) Fields() []ent.Field {
 			Sensitive(). // Ent 会在日志中隐藏此字段
 			Comment("登录密码（阶段1明文，阶段7加密）"),
 
+		// 登录方式：http（默认）或 browser（有 Turnstile 的平台用浏览器登录）
+		field.String("login_method").
+			MaxLen(20).
+			Default(domain.LoginMethodDefault).
+			Comment("登录方式：http（默认）或 browser（需要浏览器绕过 Turnstile）"),
+
 		// API 路径配置
 		field.String("api_path_keys").
 			MaxLen(100).

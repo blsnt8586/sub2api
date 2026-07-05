@@ -26,6 +26,7 @@ type CreateProviderRequest struct {
 	Name         string  `json:"name" binding:"required"`
 	BaseURL      string  `json:"base_url" binding:"required,url"`
 	ProviderType string  `json:"provider_type" binding:"omitempty,oneof=sub2api"`
+	LoginMethod  string  `json:"login_method" binding:"omitempty,oneof=http browser"`
 	Email        string  `json:"email" binding:"required,email"`
 	Password     string  `json:"password" binding:"required"`
 	Notes        *string `json:"notes"`
@@ -33,12 +34,13 @@ type CreateProviderRequest struct {
 
 // UpdateProviderRequest 更新 Provider 请求
 type UpdateProviderRequest struct {
-	Name     *string `json:"name"`
-	BaseURL  *string `json:"base_url" binding:"omitempty,url"`
-	Email    *string `json:"email" binding:"omitempty,email"`
-	Password *string `json:"password"`
-	Status   *string `json:"status" binding:"omitempty,oneof=active inactive"`
-	Notes    *string `json:"notes"`
+	Name        *string `json:"name"`
+	BaseURL     *string `json:"base_url" binding:"omitempty,url"`
+	LoginMethod *string `json:"login_method" binding:"omitempty,oneof=http browser"`
+	Email       *string `json:"email" binding:"omitempty,email"`
+	Password    *string `json:"password"`
+	Status      *string `json:"status" binding:"omitempty,oneof=active inactive"`
+	Notes       *string `json:"notes"`
 }
 
 // Create 创建 Provider
@@ -54,6 +56,7 @@ func (h *Sub2APIProviderHandler) Create(c *gin.Context) {
 		Name:         req.Name,
 		BaseURL:      req.BaseURL,
 		ProviderType: req.ProviderType,
+		LoginMethod:  req.LoginMethod,
 		Email:        req.Email,
 		Password:     req.Password,
 		Notes:        req.Notes,
@@ -155,12 +158,13 @@ func (h *Sub2APIProviderHandler) Update(c *gin.Context) {
 	}
 
 	provider, err := h.providerService.UpdateProvider(c.Request.Context(), id, &service.UpdateProviderInput{
-		Name:     req.Name,
-		BaseURL:  req.BaseURL,
-		Email:    req.Email,
-		Password: req.Password,
-		Status:   req.Status,
-		Notes:    req.Notes,
+		Name:        req.Name,
+		BaseURL:     req.BaseURL,
+		LoginMethod: req.LoginMethod,
+		Email:       req.Email,
+		Password:    req.Password,
+		Status:      req.Status,
+		Notes:       req.Notes,
 	})
 
 	if err != nil {

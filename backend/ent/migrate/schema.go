@@ -1344,6 +1344,7 @@ var (
 		{Name: "notes", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "email", Type: field.TypeString, Size: 200},
 		{Name: "password_encrypted", Type: field.TypeString, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "login_method", Type: field.TypeString, Size: 20, Default: "http"},
 		{Name: "api_path_keys", Type: field.TypeString, Nullable: true, Size: 100},
 		{Name: "api_path_groups", Type: field.TypeString, Nullable: true, Size: 100},
 		{Name: "last_sync_at", Type: field.TypeTime, Nullable: true},

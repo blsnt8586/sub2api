@@ -10,6 +10,7 @@ type Provider struct {
 	Name           string  `json:"name"`
 	BaseURL        string  `json:"base_url"`
 	ProviderType   string  `json:"provider_type"`
+	LoginMethod    string  `json:"login_method"`
 	Status         string  `json:"status"`
 	Notes          *string `json:"notes,omitempty"`
 	Email          string  `json:"email"`
@@ -30,11 +31,12 @@ func ProviderFromService(s *service.Provider) *Provider {
 	}
 
 	return &Provider{
-		ID:      s.ID,
-		Name:    s.Name,
-		BaseURL: s.BaseURL,
+		ID:           s.ID,
+		Name:         s.Name,
+		BaseURL:      s.BaseURL,
 		ProviderType: s.ProviderType,
-		Status:  s.Status,
+		LoginMethod:  s.LoginMethod,
+		Status:       s.Status,
 		Notes:          s.Notes,
 		Email:          s.Email,
 		APIPathKeys:    s.APIPathKeys,

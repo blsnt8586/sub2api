@@ -38,6 +38,8 @@ type Sub2APIProvider struct {
 	Email string `json:"email,omitempty"`
 	// 登录密码（阶段1明文，阶段7加密）
 	PasswordEncrypted string `json:"-"`
+	// 登录方式：http（默认）或 browser（需要浏览器绕过 Turnstile）
+	LoginMethod string `json:"login_method,omitempty"`
 	// APIKey 列表路径，如 /api/v1/keys
 	APIPathKeys *string `json:"api_path_keys,omitempty"`
 	// 分组列表路径，如 /api/v1/groups/available
@@ -92,7 +94,7 @@ func (*Sub2APIProvider) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case sub2apiprovider.FieldID:
 			values[i] = new(sql.NullInt64)
-		case sub2apiprovider.FieldName, sub2apiprovider.FieldBaseURL, sub2apiprovider.FieldProviderType, sub2apiprovider.FieldStatus, sub2apiprovider.FieldNotes, sub2apiprovider.FieldEmail, sub2apiprovider.FieldPasswordEncrypted, sub2apiprovider.FieldAPIPathKeys, sub2apiprovider.FieldAPIPathGroups, sub2apiprovider.FieldLastSyncStatus, sub2apiprovider.FieldLastSyncError:
+		case sub2apiprovider.FieldName, sub2apiprovider.FieldBaseURL, sub2apiprovider.FieldProviderType, sub2apiprovider.FieldStatus, sub2apiprovider.FieldNotes, sub2apiprovider.FieldEmail, sub2apiprovider.FieldPasswordEncrypted, sub2apiprovider.FieldLoginMethod, sub2apiprovider.FieldAPIPathKeys, sub2apiprovider.FieldAPIPathGroups, sub2apiprovider.FieldLastSyncStatus, sub2apiprovider.FieldLastSyncError:
 			values[i] = new(sql.NullString)
 		case sub2apiprovider.FieldCreatedAt, sub2apiprovider.FieldUpdatedAt, sub2apiprovider.FieldDeletedAt, sub2apiprovider.FieldLastSyncAt:
 			values[i] = new(sql.NullTime)
@@ -178,6 +180,12 @@ func (_m *Sub2APIProvider) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field password_encrypted", values[i])
 			} else if value.Valid {
 				_m.PasswordEncrypted = value.String
+			}
+		case sub2apiprovider.FieldLoginMethod:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field login_method", values[i])
+			} else if value.Valid {
+				_m.LoginMethod = value.String
 			}
 		case sub2apiprovider.FieldAPIPathKeys:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -292,6 +300,9 @@ func (_m *Sub2APIProvider) String() string {
 	builder.WriteString(_m.Email)
 	builder.WriteString(", ")
 	builder.WriteString("password_encrypted=<sensitive>")
+	builder.WriteString(", ")
+	builder.WriteString("login_method=")
+	builder.WriteString(_m.LoginMethod)
 	builder.WriteString(", ")
 	if v := _m.APIPathKeys; v != nil {
 		builder.WriteString("api_path_keys=")

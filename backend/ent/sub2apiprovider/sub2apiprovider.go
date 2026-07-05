@@ -35,6 +35,8 @@ const (
 	FieldEmail = "email"
 	// FieldPasswordEncrypted holds the string denoting the password_encrypted field in the database.
 	FieldPasswordEncrypted = "password_encrypted"
+	// FieldLoginMethod holds the string denoting the login_method field in the database.
+	FieldLoginMethod = "login_method"
 	// FieldAPIPathKeys holds the string denoting the api_path_keys field in the database.
 	FieldAPIPathKeys = "api_path_keys"
 	// FieldAPIPathGroups holds the string denoting the api_path_groups field in the database.
@@ -80,6 +82,7 @@ var Columns = []string{
 	FieldNotes,
 	FieldEmail,
 	FieldPasswordEncrypted,
+	FieldLoginMethod,
 	FieldAPIPathKeys,
 	FieldAPIPathGroups,
 	FieldLastSyncAt,
@@ -127,6 +130,10 @@ var (
 	EmailValidator func(string) error
 	// PasswordEncryptedValidator is a validator for the "password_encrypted" field. It is called by the builders before save.
 	PasswordEncryptedValidator func(string) error
+	// DefaultLoginMethod holds the default value on creation for the "login_method" field.
+	DefaultLoginMethod string
+	// LoginMethodValidator is a validator for the "login_method" field. It is called by the builders before save.
+	LoginMethodValidator func(string) error
 	// APIPathKeysValidator is a validator for the "api_path_keys" field. It is called by the builders before save.
 	APIPathKeysValidator func(string) error
 	// APIPathGroupsValidator is a validator for the "api_path_groups" field. It is called by the builders before save.
@@ -191,6 +198,11 @@ func ByEmail(opts ...sql.OrderTermOption) OrderOption {
 // ByPasswordEncrypted orders the results by the password_encrypted field.
 func ByPasswordEncrypted(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPasswordEncrypted, opts...).ToFunc()
+}
+
+// ByLoginMethod orders the results by the login_method field.
+func ByLoginMethod(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLoginMethod, opts...).ToFunc()
 }
 
 // ByAPIPathKeys orders the results by the api_path_keys field.

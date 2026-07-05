@@ -160,6 +160,20 @@ func (_u *Sub2APIProviderUpdate) SetNillablePasswordEncrypted(v *string) *Sub2AP
 	return _u
 }
 
+// SetLoginMethod sets the "login_method" field.
+func (_u *Sub2APIProviderUpdate) SetLoginMethod(v string) *Sub2APIProviderUpdate {
+	_u.mutation.SetLoginMethod(v)
+	return _u
+}
+
+// SetNillableLoginMethod sets the "login_method" field if the given value is not nil.
+func (_u *Sub2APIProviderUpdate) SetNillableLoginMethod(v *string) *Sub2APIProviderUpdate {
+	if v != nil {
+		_u.SetLoginMethod(*v)
+	}
+	return _u
+}
+
 // SetAPIPathKeys sets the "api_path_keys" field.
 func (_u *Sub2APIProviderUpdate) SetAPIPathKeys(v string) *Sub2APIProviderUpdate {
 	_u.mutation.SetAPIPathKeys(v)
@@ -400,6 +414,11 @@ func (_u *Sub2APIProviderUpdate) check() error {
 			return &ValidationError{Name: "password_encrypted", err: fmt.Errorf(`ent: validator failed for field "Sub2APIProvider.password_encrypted": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.LoginMethod(); ok {
+		if err := sub2apiprovider.LoginMethodValidator(v); err != nil {
+			return &ValidationError{Name: "login_method", err: fmt.Errorf(`ent: validator failed for field "Sub2APIProvider.login_method": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.APIPathKeys(); ok {
 		if err := sub2apiprovider.APIPathKeysValidator(v); err != nil {
 			return &ValidationError{Name: "api_path_keys", err: fmt.Errorf(`ent: validator failed for field "Sub2APIProvider.api_path_keys": %w`, err)}
@@ -462,6 +481,9 @@ func (_u *Sub2APIProviderUpdate) sqlSave(ctx context.Context) (_node int, err er
 	}
 	if value, ok := _u.mutation.PasswordEncrypted(); ok {
 		_spec.SetField(sub2apiprovider.FieldPasswordEncrypted, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.LoginMethod(); ok {
+		_spec.SetField(sub2apiprovider.FieldLoginMethod, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.APIPathKeys(); ok {
 		_spec.SetField(sub2apiprovider.FieldAPIPathKeys, field.TypeString, value)
@@ -713,6 +735,20 @@ func (_u *Sub2APIProviderUpdateOne) SetPasswordEncrypted(v string) *Sub2APIProvi
 func (_u *Sub2APIProviderUpdateOne) SetNillablePasswordEncrypted(v *string) *Sub2APIProviderUpdateOne {
 	if v != nil {
 		_u.SetPasswordEncrypted(*v)
+	}
+	return _u
+}
+
+// SetLoginMethod sets the "login_method" field.
+func (_u *Sub2APIProviderUpdateOne) SetLoginMethod(v string) *Sub2APIProviderUpdateOne {
+	_u.mutation.SetLoginMethod(v)
+	return _u
+}
+
+// SetNillableLoginMethod sets the "login_method" field if the given value is not nil.
+func (_u *Sub2APIProviderUpdateOne) SetNillableLoginMethod(v *string) *Sub2APIProviderUpdateOne {
+	if v != nil {
+		_u.SetLoginMethod(*v)
 	}
 	return _u
 }
@@ -970,6 +1006,11 @@ func (_u *Sub2APIProviderUpdateOne) check() error {
 			return &ValidationError{Name: "password_encrypted", err: fmt.Errorf(`ent: validator failed for field "Sub2APIProvider.password_encrypted": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.LoginMethod(); ok {
+		if err := sub2apiprovider.LoginMethodValidator(v); err != nil {
+			return &ValidationError{Name: "login_method", err: fmt.Errorf(`ent: validator failed for field "Sub2APIProvider.login_method": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.APIPathKeys(); ok {
 		if err := sub2apiprovider.APIPathKeysValidator(v); err != nil {
 			return &ValidationError{Name: "api_path_keys", err: fmt.Errorf(`ent: validator failed for field "Sub2APIProvider.api_path_keys": %w`, err)}
@@ -1049,6 +1090,9 @@ func (_u *Sub2APIProviderUpdateOne) sqlSave(ctx context.Context) (_node *Sub2API
 	}
 	if value, ok := _u.mutation.PasswordEncrypted(); ok {
 		_spec.SetField(sub2apiprovider.FieldPasswordEncrypted, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.LoginMethod(); ok {
+		_spec.SetField(sub2apiprovider.FieldLoginMethod, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.APIPathKeys(); ok {
 		_spec.SetField(sub2apiprovider.FieldAPIPathKeys, field.TypeString, value)

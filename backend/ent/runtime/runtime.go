@@ -1683,16 +1683,22 @@ func init() {
 	sub2apiproviderDescPasswordEncrypted := sub2apiproviderFields[6].Descriptor()
 	// sub2apiprovider.PasswordEncryptedValidator is a validator for the "password_encrypted" field. It is called by the builders before save.
 	sub2apiprovider.PasswordEncryptedValidator = sub2apiproviderDescPasswordEncrypted.Validators[0].(func(string) error)
+	// sub2apiproviderDescLoginMethod is the schema descriptor for login_method field.
+	sub2apiproviderDescLoginMethod := sub2apiproviderFields[7].Descriptor()
+	// sub2apiprovider.DefaultLoginMethod holds the default value on creation for the login_method field.
+	sub2apiprovider.DefaultLoginMethod = sub2apiproviderDescLoginMethod.Default.(string)
+	// sub2apiprovider.LoginMethodValidator is a validator for the "login_method" field. It is called by the builders before save.
+	sub2apiprovider.LoginMethodValidator = sub2apiproviderDescLoginMethod.Validators[0].(func(string) error)
 	// sub2apiproviderDescAPIPathKeys is the schema descriptor for api_path_keys field.
-	sub2apiproviderDescAPIPathKeys := sub2apiproviderFields[7].Descriptor()
+	sub2apiproviderDescAPIPathKeys := sub2apiproviderFields[8].Descriptor()
 	// sub2apiprovider.APIPathKeysValidator is a validator for the "api_path_keys" field. It is called by the builders before save.
 	sub2apiprovider.APIPathKeysValidator = sub2apiproviderDescAPIPathKeys.Validators[0].(func(string) error)
 	// sub2apiproviderDescAPIPathGroups is the schema descriptor for api_path_groups field.
-	sub2apiproviderDescAPIPathGroups := sub2apiproviderFields[8].Descriptor()
+	sub2apiproviderDescAPIPathGroups := sub2apiproviderFields[9].Descriptor()
 	// sub2apiprovider.APIPathGroupsValidator is a validator for the "api_path_groups" field. It is called by the builders before save.
 	sub2apiprovider.APIPathGroupsValidator = sub2apiproviderDescAPIPathGroups.Validators[0].(func(string) error)
 	// sub2apiproviderDescLastSyncStatus is the schema descriptor for last_sync_status field.
-	sub2apiproviderDescLastSyncStatus := sub2apiproviderFields[10].Descriptor()
+	sub2apiproviderDescLastSyncStatus := sub2apiproviderFields[11].Descriptor()
 	// sub2apiprovider.LastSyncStatusValidator is a validator for the "last_sync_status" field. It is called by the builders before save.
 	sub2apiprovider.LastSyncStatusValidator = sub2apiproviderDescLastSyncStatus.Validators[0].(func(string) error)
 	subscriptionplanFields := schema.SubscriptionPlan{}.Fields()
