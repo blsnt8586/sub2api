@@ -55,6 +55,8 @@ func (r *groupRepository) Create(ctx context.Context, groupIn *service.Group) er
 		SetNillableImagePrice1k(groupIn.ImagePrice1K).
 		SetNillableImagePrice2k(groupIn.ImagePrice2K).
 		SetNillableImagePrice4k(groupIn.ImagePrice4K).
+		SetNillableVideoPricePerCount(groupIn.VideoPricePerCount).
+		SetNillableVideoPricePerSecond(groupIn.VideoPricePerSecond).
 		SetDefaultValidityDays(groupIn.DefaultValidityDays).
 		SetClaudeCodeOnly(groupIn.ClaudeCodeOnly).
 		SetNillableFallbackGroupID(groupIn.FallbackGroupID).
@@ -137,6 +139,8 @@ func (r *groupRepository) Update(ctx context.Context, groupIn *service.Group) er
 		SetNillableImagePrice1k(groupIn.ImagePrice1K).
 		SetNillableImagePrice2k(groupIn.ImagePrice2K).
 		SetNillableImagePrice4k(groupIn.ImagePrice4K).
+		SetNillableVideoPricePerCount(groupIn.VideoPricePerCount).
+		SetNillableVideoPricePerSecond(groupIn.VideoPricePerSecond).
 		SetDefaultValidityDays(groupIn.DefaultValidityDays).
 		SetClaudeCodeOnly(groupIn.ClaudeCodeOnly).
 		SetModelRoutingEnabled(groupIn.ModelRoutingEnabled).
@@ -183,6 +187,16 @@ func (r *groupRepository) Update(ctx context.Context, groupIn *service.Group) er
 		builder = builder.SetImagePrice4k(*groupIn.ImagePrice4K)
 	} else {
 		builder = builder.ClearImagePrice4k()
+	}
+	if groupIn.VideoPricePerCount != nil {
+		builder = builder.SetVideoPricePerCount(*groupIn.VideoPricePerCount)
+	} else {
+		builder = builder.ClearVideoPricePerCount()
+	}
+	if groupIn.VideoPricePerSecond != nil {
+		builder = builder.SetVideoPricePerSecond(*groupIn.VideoPricePerSecond)
+	} else {
+		builder = builder.ClearVideoPricePerSecond()
 	}
 
 	// 处理 FallbackGroupID：nil 时清除，否则设置

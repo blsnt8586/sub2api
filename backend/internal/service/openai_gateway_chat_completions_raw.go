@@ -250,6 +250,17 @@ func (s *OpenAIGatewayService) forwardAsRawChatCompletions(
 
 func (s *OpenAIGatewayService) rawChatCompletionsURL(account *Account) (string, error) {
 	if account.Platform == PlatformGrok {
+		// OAuth（xAI 订阅）账号走 xAI 官方域名白名单校验；
+		// api_key（第三方兼容端点）账号改用通用可配置的上游 URL 校验，
+		// 以便放行 xAI 官方之外的第三方 base_url，与 OpenAI api_key 行为一致。
+		if account.Type == AccountTypeAPIKey {
+			baseURL := account.GetGrokBaseURL()
+			validatedURL, err := s.validateUpstreamBaseURL(baseURL)
+			if err != nil {
+				return "", fmt.Errorf("invalid grok base_url: %w", err)
+			}
+			return buildOpenAIChatCompletionsURL(validatedURL), nil
+		}
 		targetURL, err := xai.BuildChatCompletionsURL(account.GetGrokBaseURL())
 		if err != nil {
 			return "", fmt.Errorf("invalid grok base_url: %w", err)

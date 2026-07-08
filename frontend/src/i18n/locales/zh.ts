@@ -1937,6 +1937,7 @@ export default {
         usageOpenAI: '用量 (OpenAI)',
         usageGemini: '用量 (Gemini)',
         usageAntigravity: '用量 (Antigravity)',
+        usageJimeng: '用量 (即梦)',
         concurrency: '并发数',
         status: '状态',
         lastActive: '最后活跃时间',
@@ -2287,6 +2288,7 @@ export default {
         gemini: 'Gemini',
         antigravity: 'Antigravity',
         grok: 'Grok',
+        jimeng: '即梦',
       },
       saving: '保存中...',
       noGroups: '暂无分组',
@@ -2380,6 +2382,13 @@ export default {
         modeHint: '默认关闭独立倍率时，图片费用 = 图片价格 × 当前分组有效倍率；开启独立倍率后，图片费用 = 图片价格 × 生图独立倍率。',
         finalPricePreview: '最终单张价格预览',
         notConfigured: '未配置'
+      },
+      videoPricing: {
+        title: '视频计费配置',
+        hint: '配置即梦视频生成的计费方式，两项均为空时使用内置默认价格（$0.05/次）',
+        perCount: '按次计费',
+        perSecond: '按秒计费',
+        priorityHint: '优先级：按秒计费 > 按次计费 > 内置默认。设置"按秒计费"后，费用 = 时长(秒) × 单价；否则费用 = 次数 × 单价。'
       },
       peakRate: {
         enable: '启用高峰倍率',
@@ -3593,6 +3602,7 @@ export default {
         gemini: 'Gemini',
         antigravity: 'Antigravity',
         grok: 'Grok',
+        jimeng: '即梦',
       },
       types: {
         oauth: 'OAuth',
@@ -3955,8 +3965,13 @@ export default {
         modelRestrictionDisabledByPassthrough: '已开启自动透传：模型白名单/映射不会生效。',
       },
       grok: {
-        baseUrlHint: 'Grok OAuth 账号会转发到官方 xAI API Base URL。',
-        apiKeyHint: 'Grok 订阅支持使用 OAuth refresh token；API Key 账号不在本次范围内。'
+        baseUrlHint: 'OAuth 账号转发到官方 xAI API Base URL；API Key 账号会转发到此处填写的第三方兼容端点。',
+        apiKeyHint: 'Grok 支持两种接入方式：OAuth（xAI 订阅）或 API Key（第三方兼容端点，需填写 Base URL + API Key）。'
+      },
+      jimeng: {
+        name: '即梦',
+        baseUrlHint: '即梦视频第三方端点地址，例如：https://api.example.com/v1（会转发到 {baseUrl}/videos）。',
+        apiKeyHint: '即梦仅支持 API Key 接入（第三方兼容端点，需填写 Base URL + API Key），用于视频生成 /v1/videos。'
       },
       anthropic: {
         apiKeyPassthrough: '自动透传（仅替换认证）',

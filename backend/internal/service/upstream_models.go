@@ -137,6 +137,8 @@ func (s *AccountTestService) buildUpstreamModelsRequest(ctx context.Context, acc
 		return s.buildGeminiUpstreamModelsRequest(ctx, account)
 	case account.IsAnthropic():
 		return s.buildAnthropicUpstreamModelsRequest(ctx, account)
+	case account.IsJimeng():
+		return s.buildJimengUpstreamModelsRequest(ctx, account)
 	default:
 		return nil, newUpstreamModelSyncUnsupportedError(
 			fmt.Sprintf("Unsupported platform for upstream model sync: %s", account.Platform), nil,
@@ -475,4 +477,32 @@ func dedupeAndSortModelIDs(models []string) []string {
 	}
 	sort.Strings(result)
 	return result
+}
+
+// buildJimengUpstreamModelsRequest 构建即梦平台的 GET /v1/models 请求。
+// 即梦仅支持 api_key 账号，用 credentials.api_key 作 Bearer 鉴权，
+// credentials.base_url 决定端点地址。
+func (s *AccountTestService) buildJimengUpstreamModelsRequest(ctx context.Context, account *Account) (*http.Request, error) {
+	if account.Type != AccountTypeAPIKey {
+		return nil, newUpstreamModelSyncUnsupportedError(
+			fmt.Sprintf("Jimeng only supports api_key accounts, got: %s", account.Type), nil,
+		)
+	}
+	apiKey := strings.TrimSpace(account.GetJimengAPIKey())
+	if apiKey == "" {
+		return nil, newUpstreamModelSyncConfigError("No Jimeng API key is available", nil)
+	}
+	baseURL := strings.TrimSpace(account.GetJimengBaseURL())
+	normalizedBaseURL, err := s.validateUpstreamBaseURL(baseURL)
+	if err != nil {
+		return nil, newUpstreamModelSyncConfigError("Invalid Jimeng base URL", err)
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, buildV1ModelsURL(normalizedBaseURL), nil)
+	if err != nil {
+		return nil, newUpstreamModelSyncConfigError("Invalid Jimeng model list URL", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("User-Agent", "sub2api-jimeng/1.0")
+	return req, nil
 }

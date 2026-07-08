@@ -256,6 +256,10 @@ type OpenAIForwardResult struct {
 	ImageSizeSource    string
 	ImageSizeBreakdown map[string]int
 
+	// 视频生成计费字段（即梦 jimeng 平台使用）
+	VideoCount   int // 生成的视频数量（通常为 1）
+	VideoSeconds int // 视频时长（秒，来自请求 duration 字段；0 表示未知，退回按次计费）
+
 	wsReplayInput       []json.RawMessage
 	wsReplayInputExists bool
 }
@@ -1376,6 +1380,9 @@ func (s *OpenAIGatewayService) SelectAccountForModelWithExclusions(ctx context.C
 func normalizeOpenAICompatiblePlatform(platform string) string {
 	if platform == PlatformGrok {
 		return PlatformGrok
+	}
+	if platform == PlatformJimeng {
+		return PlatformJimeng
 	}
 	return PlatformOpenAI
 }
@@ -2630,6 +2637,11 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 
 	if account.Platform == PlatformGrok {
 		_ = promptCacheKey
+		// api_key 账号走独立的第三方兼容端点路径（通用 URL 校验，可对接非 xAI 官方域名）；
+		// oauth 账号走订阅转发（xAI 白名单 + 配额快照），两条路径互不干扰。
+		if account.Type == AccountTypeAPIKey {
+			return s.forwardGrokResponsesViaAPIKey(ctx, c, account, body, originalModel, reqStream, startTime)
+		}
 		return s.forwardGrokResponses(ctx, c, account, body, originalModel, reqStream, startTime)
 	}
 
@@ -6577,6 +6589,17 @@ func (s *OpenAIGatewayService) calculateOpenAIRecordUsageCost(
 	serviceTier string,
 ) (*CostBreakdown, error) {
 	billingModel := firstUsageBillingModel(billingModels)
+	// 视频计费：即梦 jimeng 平台（优先于图片计费分支）
+	if result != nil && result.VideoCount > 0 {
+		var groupConfig *VideoPriceConfig
+		if apiKey.Group != nil {
+			groupConfig = &VideoPriceConfig{
+				PricePerCount:  apiKey.Group.VideoPricePerCount,
+				PricePerSecond: apiKey.Group.VideoPricePerSecond,
+			}
+		}
+		return s.billingService.CalculateVideoCost(result.VideoCount, result.VideoSeconds, groupConfig, multiplier), nil
+	}
 	if result != nil && result.ImageCount > 0 {
 		// 渠道定价为 token 计费时走 token 路径，否则走图片计费
 		if resolved := s.resolveOpenAIChannelPricing(ctx, billingModel, apiKey); resolved == nil || resolved.Mode != BillingModeToken {

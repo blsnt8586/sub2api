@@ -195,6 +195,26 @@ func (m *mockAccountRepoForGemini) ListShadowsByParent(ctx context.Context, pare
 	return nil, nil
 }
 
+func (m *mockAccountRepoForGemini) UpdateProviderLink(ctx context.Context, accountID, providerID, providerAPIKeyID int64) error {
+	return nil
+}
+
+func (m *mockAccountRepoForGemini) ClearProviderLink(ctx context.Context, accountID, providerID int64) error {
+	return nil
+}
+
+func (m *mockAccountRepoForGemini) UpdateRemoteGroupInfo(ctx context.Context, accountID int64, groupName string, multiplier float64) error {
+	return nil
+}
+
+func (m *mockAccountRepoForGemini) ListByProviderID(ctx context.Context, providerID int64) ([]Account, error) {
+	return nil, nil
+}
+
+func (m *mockAccountRepoForGemini) UpdateSub2APIOptimizeSettings(ctx context.Context, accountID int64, enabled bool, minMultiplier, maxMultiplier *float64, testModel *string) error {
+	return nil
+}
+
 // Verify interface implementation
 var _ AccountRepository = (*mockAccountRepoForGemini)(nil)
 

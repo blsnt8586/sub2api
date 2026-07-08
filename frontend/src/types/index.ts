@@ -491,7 +491,7 @@ export interface PaginationConfig {
 
 // ==================== API Key & Group Types ====================
 
-export type GroupPlatform = 'anthropic' | 'openai' | 'gemini' | 'antigravity' | 'grok'
+export type GroupPlatform = 'anthropic' | 'openai' | 'gemini' | 'antigravity' | 'grok' | 'jimeng'
 
 export type SubscriptionType = 'standard' | 'subscription'
 
@@ -522,6 +522,9 @@ export interface Group {
   image_price_1k: number | null
   image_price_2k: number | null
   image_price_4k: number | null
+  // 视频计费配置（即梦 jimeng 平台）
+  video_price_per_count: number | null
+  video_price_per_second: number | null
   // 高峰时段倍率配置
   peak_rate_enabled: boolean
   peak_start: string
@@ -645,6 +648,9 @@ export interface CreateGroupRequest {
   image_price_1k?: number | null
   image_price_2k?: number | null
   image_price_4k?: number | null
+  // 视频计费配置（即梦 jimeng 平台）
+  video_price_per_count?: number | null
+  video_price_per_second?: number | null
   peak_rate_enabled?: boolean
   peak_start?: string
   peak_end?: string
@@ -684,6 +690,9 @@ export interface UpdateGroupRequest {
   image_price_1k?: number | null
   image_price_2k?: number | null
   image_price_4k?: number | null
+  // 视频计费配置（即梦 jimeng 平台）
+  video_price_per_count?: number | null
+  video_price_per_second?: number | null
   peak_rate_enabled?: boolean
   peak_start?: string
   peak_end?: string
@@ -707,7 +716,7 @@ export interface UpdateGroupRequest {
 
 // ==================== Account & Proxy Types ====================
 
-export type AccountPlatform = 'anthropic' | 'openai' | 'gemini' | 'antigravity' | 'grok'
+export type AccountPlatform = 'anthropic' | 'openai' | 'gemini' | 'antigravity' | 'grok' | 'jimeng'
 export type AccountType = 'oauth' | 'setup-token' | 'apikey' | 'upstream' | 'bedrock' | 'service_account'
 export type OAuthAddMethod = 'oauth' | 'setup-token'
 export type ProxyProtocol = 'http' | 'https' | 'socks5' | 'socks5h'

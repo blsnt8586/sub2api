@@ -20,6 +20,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/claude"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/geminicli"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/jimeng"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/openai"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/openai_compat"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/xai"
@@ -200,7 +201,122 @@ func (s *AccountTestService) TestAccountConnection(c *gin.Context, accountID int
 		return s.routeAntigravityTest(c, account, modelID, prompt)
 	}
 
+	if account.IsJimeng() {
+		return s.testJimengAccountConnection(c, account, modelID, prompt)
+	}
+
 	return s.testClaudeAccountConnection(c, account, modelID)
+}
+
+// testJimengAccountConnection 测试即梦视频账号连接。
+// 向 POST /v1/videos 发起一次创建任务请求，验证鉴权与接口可达性。
+// 若上游返回 task_id / id / request_id，则说明账号正常；任务无需真正等待完成。
+func (s *AccountTestService) testJimengAccountConnection(c *gin.Context, account *Account, modelID string, prompt string) error {
+	ctx := c.Request.Context()
+
+	apiKey := account.GetJimengAPIKey()
+	if apiKey == "" {
+		return s.sendErrorAndEnd(c, "即梦账号缺少 api_key")
+	}
+
+	baseURL := account.GetJimengBaseURL()
+	normalizedBaseURL, err := s.validateUpstreamBaseURL(baseURL)
+	if err != nil {
+		return s.sendErrorAndEnd(c, fmt.Sprintf("无效的 base URL: %s", err.Error()))
+	}
+
+	// 选测试模型
+	testModelID := strings.TrimSpace(modelID)
+	if testModelID == "" {
+		testModelID = "video-ds-2.0"
+	}
+
+	// 测试提示词
+	testPrompt := strings.TrimSpace(prompt)
+	if testPrompt == "" {
+		testPrompt = "A serene mountain landscape with a flowing river at sunset."
+	}
+
+	// 构建请求体：duration 最小值 4（新提供商支持 4–15 秒），测试用最短时长
+	payload := map[string]any{
+		"model":        testModelID,
+		"prompt":       testPrompt,
+		"duration":     4,
+		"aspect_ratio": "16:9",
+	}
+	payloadBytes, _ := json.Marshal(payload)
+
+	videosURL, err := jimeng.BuildVideosURL(normalizedBaseURL)
+	if err != nil {
+		return s.sendErrorAndEnd(c, fmt.Sprintf("构建 URL 失败: %s", err.Error()))
+	}
+
+	// 设置 SSE 头
+	c.Writer.Header().Set("Content-Type", "text/event-stream")
+	c.Writer.Header().Set("Cache-Control", "no-cache")
+	c.Writer.Header().Set("Connection", "keep-alive")
+	c.Writer.Header().Set("X-Accel-Buffering", "no")
+	c.Writer.Flush()
+
+	s.sendEvent(c, TestEvent{Type: "test_start", Model: testModelID})
+	s.sendEvent(c, TestEvent{Type: "status", Text: fmt.Sprintf("正在向 %s 发送创建视频请求…", videosURL)})
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, videosURL, bytes.NewReader(payloadBytes))
+	if err != nil {
+		return s.sendErrorAndEnd(c, "构建请求失败")
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+
+	proxyURL := ""
+	if account.ProxyID != nil && account.Proxy != nil {
+		proxyURL = account.Proxy.URL()
+	}
+
+	resp, err := s.httpUpstream.DoWithTLS(req, proxyURL, account.ID, account.Concurrency, s.tlsFPProfileService.ResolveTLSProfile(account))
+	if err != nil {
+		return s.sendErrorAndEnd(c, fmt.Sprintf("请求失败: %s", err.Error()))
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	body, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+
+	if resp.StatusCode != http.StatusOK {
+		return s.sendErrorAndEnd(c, fmt.Sprintf("API 返回 %d: %s", resp.StatusCode, string(body)))
+	}
+
+	// 尝试从响应里提取任务 ID（兼容 id / request_id / task_id / data.id 等字段）
+	var respData map[string]any
+	taskID := ""
+	if err := json.Unmarshal(body, &respData); err == nil {
+		for _, key := range []string{"id", "request_id", "task_id"} {
+			if v, ok := respData[key].(string); ok && v != "" {
+				taskID = v
+				break
+			}
+		}
+		// data.id 嵌套场景
+		if taskID == "" {
+			if data, ok := respData["data"].(map[string]any); ok {
+				for _, key := range []string{"id", "request_id", "task_id"} {
+					if v, ok := data[key].(string); ok && v != "" {
+						taskID = v
+						break
+					}
+				}
+			}
+		}
+	}
+
+	if taskID != "" {
+		s.sendEvent(c, TestEvent{Type: "content", Text: fmt.Sprintf("✅ 视频任务已创建成功\n任务 ID: %s\n模型: %s\n提示词: %s", taskID, testModelID, testPrompt)})
+	} else {
+		// 返回了 200 但无 task_id，也认为连接成功，把原始响应显示出来
+		s.sendEvent(c, TestEvent{Type: "content", Text: fmt.Sprintf("✅ 接口返回 200\n响应: %s", string(body))})
+	}
+
+	s.sendEvent(c, TestEvent{Type: "test_complete", Success: true})
+	return nil
 }
 
 // testClaudeAccountConnection tests an Anthropic Claude account's connection

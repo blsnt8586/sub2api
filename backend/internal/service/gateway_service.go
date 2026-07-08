@@ -574,6 +574,10 @@ type ForwardResult struct {
 	ImageOutputSizes   []string
 	ImageSizeSource    string
 	ImageSizeBreakdown map[string]int
+
+	// 视频生成计费字段（即梦 jimeng 平台使用）
+	VideoCount   int // 生成的视频数量（通常为 1）
+	VideoSeconds int // 视频时长（秒，来自请求 duration 字段；0 表示未知，退回按次计费）
 }
 
 // UpstreamFailoverError indicates an upstream error that should trigger account failover.
@@ -9717,6 +9721,18 @@ func (s *GatewayService) calculateRecordUsageCost(
 	imageMultiplier float64,
 	opts *recordUsageOpts,
 ) *CostBreakdown {
+	// 视频生成：即梦 jimeng 平台使用
+	if result.VideoCount > 0 {
+		var groupConfig *VideoPriceConfig
+		if apiKey.Group != nil {
+			groupConfig = &VideoPriceConfig{
+				PricePerCount:  apiKey.Group.VideoPricePerCount,
+				PricePerSecond: apiKey.Group.VideoPricePerSecond,
+			}
+		}
+		return s.billingService.CalculateVideoCost(result.VideoCount, result.VideoSeconds, groupConfig, multiplier)
+	}
+
 	// 图片生成：渠道定价为 token 计费时走 token 路径，否则走图片计费
 	if result.ImageCount > 0 {
 		if resolved := s.resolveChannelPricing(ctx, billingModel, apiKey); resolved != nil && resolved.Mode == BillingModeToken {

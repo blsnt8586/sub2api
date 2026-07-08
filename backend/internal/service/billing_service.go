@@ -1208,6 +1208,60 @@ type ImagePriceConfig struct {
 	Price4K *float64 // 4K 尺寸价格（nil 表示使用默认值）
 }
 
+// VideoPriceConfig 视频计费配置（即梦 jimeng 平台）
+type VideoPriceConfig struct {
+	// PricePerSecond 非 nil 时优先生效：按视频时长（秒）× 单价计费。
+	// 两者均为 nil 时按内置默认 0.05 USD/次 计费。
+	PricePerCount  *float64 // USD/次
+	PricePerSecond *float64 // USD/秒
+}
+
+// DefaultVideoPricePerCount 默认视频按次单价（USD），无分组配置时使用。
+const DefaultVideoPricePerCount = 0.05
+
+// CalculateVideoCost 计算视频生成费用。
+//
+// videoCount:   生成的视频数量（通常为 1）。
+// videoSeconds: 视频时长（秒，来自请求体的 duration 字段）。
+// groupConfig:  分组级价格配置，nil 时使用内置默认值。
+// rateMultiplier: 费率倍数（0 按 0 处理，< 0 视为 0）。
+//
+// 计费优先级：
+//  1. groupConfig.PricePerSecond != nil → 按秒计费（videoSeconds × 单价 × count）
+//  2. groupConfig.PricePerCount != nil  → 按次计费（count × 单价）
+//  3. 默认按次计费（count × DefaultVideoPricePerCount）
+func (s *BillingService) CalculateVideoCost(videoCount int, videoSeconds int, groupConfig *VideoPriceConfig, rateMultiplier float64) *CostBreakdown {
+	if videoCount <= 0 {
+		return &CostBreakdown{}
+	}
+	if rateMultiplier < 0 {
+		rateMultiplier = 0
+	}
+
+	var totalCost float64
+	var billingMode BillingMode
+
+	if groupConfig != nil && groupConfig.PricePerSecond != nil && videoSeconds > 0 {
+		// 按秒计费：每次视频的时长 × 单价 × 次数
+		totalCost = *groupConfig.PricePerSecond * float64(videoSeconds) * float64(videoCount)
+		billingMode = BillingModeVideoPerSecond
+	} else {
+		// 按次计费
+		unitPrice := DefaultVideoPricePerCount
+		if groupConfig != nil && groupConfig.PricePerCount != nil {
+			unitPrice = *groupConfig.PricePerCount
+		}
+		totalCost = unitPrice * float64(videoCount)
+		billingMode = BillingModeVideo
+	}
+
+	return &CostBreakdown{
+		TotalCost:   totalCost,
+		ActualCost:  totalCost * rateMultiplier,
+		BillingMode: string(billingMode),
+	}
+}
+
 // CalculateImageCost 计算图片生成费用
 // model: 请求的模型名称（用于获取 LiteLLM 默认价格）
 // imageSize: 图片尺寸 "1K", "2K", "4K"

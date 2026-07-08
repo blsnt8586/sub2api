@@ -1916,6 +1916,7 @@ export default {
         usageOpenAI: 'Usage (OpenAI)',
         usageGemini: 'Usage (Gemini)',
         usageAntigravity: 'Usage (Antigravity)',
+        usageJimeng: 'Usage (Jimeng)',
         concurrency: 'Concurrency',
         status: 'Status',
         lastActive: 'Last Active',
@@ -2268,6 +2269,7 @@ export default {
         gemini: 'Gemini',
         antigravity: 'Antigravity',
         grok: 'Grok',
+        jimeng: 'Jimeng',
       },
       deleteConfirm:
         "Are you sure you want to delete '{name}'? All associated API keys will no longer belong to any group.",
@@ -2297,6 +2299,13 @@ export default {
         modeHint: 'By default, image billing uses image price × current effective group multiplier. Independent mode uses image price × image multiplier.',
         finalPricePreview: 'Final per-image price preview',
         notConfigured: 'Not configured'
+      },
+      videoPricing: {
+        title: 'Video Billing Config',
+        hint: 'Configure billing for Jimeng video generation. Leave empty to use built-in default ($0.05/request).',
+        perCount: 'Per request',
+        perSecond: 'Per second',
+        priorityHint: 'Priority: per-second > per-request > built-in default. When per-second is set, cost = duration(s) × unit price; otherwise cost = count × unit price.'
       },
       peakRate: {
         enable: 'Enable peak rate multiplier',
@@ -3395,6 +3404,7 @@ export default {
         gemini: 'Gemini',
         antigravity: 'Antigravity',
         grok: 'Grok',
+        jimeng: 'Jimeng',
       },
       types: {
         oauth: 'OAuth',
@@ -3771,8 +3781,13 @@ export default {
         modelRestrictionDisabledByPassthrough: 'Automatic passthrough is enabled: model whitelist/mapping will not take effect.',
       },
       grok: {
-        baseUrlHint: 'Grok OAuth accounts forward to the official xAI API base URL.',
-        apiKeyHint: 'Grok subscription support uses OAuth refresh tokens; API keys are out of scope for this account type.'
+        baseUrlHint: 'OAuth accounts forward to the official xAI API base URL; API Key accounts can point to a third-party xAI-compatible endpoint (defaults to https://api.x.ai/v1).',
+        apiKeyHint: 'Enter the API Key for the third-party or official xAI-compatible endpoint. Use the OAuth type for subscription-backed accounts.'
+      },
+      jimeng: {
+        name: 'Jimeng',
+        baseUrlHint: 'Third-party Jimeng video endpoint, e.g. https://api.example.com/v1 (requests forward to {baseUrl}/videos).',
+        apiKeyHint: 'Jimeng supports API Key access only (third-party compatible endpoint, requires Base URL + API Key) for video generation at /v1/videos.'
       },
       anthropic: {
         apiKeyPassthrough: 'Auto passthrough (auth only)',

@@ -113,6 +113,18 @@ func (Group) Fields() []ent.Field {
 			Nillable().
 			SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}),
 
+		// 视频生成计费配置（即梦 jimeng 平台使用，added by migration 165）
+		field.Float("video_price_per_count").
+			Optional().
+			Nillable().
+			SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}).
+			Comment("每次视频生成的价格（USD/次），nil 表示使用默认价格"),
+		field.Float("video_price_per_second").
+			Optional().
+			Nillable().
+			SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}).
+			Comment("每秒视频的价格（USD/秒），非 nil 时优先于 video_price_per_count 按秒计费"),
+
 		// Claude Code 客户端限制 (added by migration 029)
 		field.Bool("claude_code_only").
 			Default(false).

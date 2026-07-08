@@ -58,11 +58,7 @@ func RegisterGatewayRoutes(
 			})
 		}
 	}
-	videoGenerationHandler := func(c *gin.Context) {
-		if getGroupPlatform(c) == service.PlatformGrok {
-			h.OpenAIGateway.GrokVideoGeneration(c)
-			return
-		}
+	videoUnsupported := func(c *gin.Context) {
 		service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonLocalFeatureGate)
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": gin.H{
@@ -71,18 +67,40 @@ func RegisterGatewayRoutes(
 			},
 		})
 	}
-	videoStatusHandler := func(c *gin.Context) {
+	// videoGenerationHandler 处理 Grok 的 POST /v1/videos/generations。
+	videoGenerationHandler := func(c *gin.Context) {
 		if getGroupPlatform(c) == service.PlatformGrok {
-			h.OpenAIGateway.GrokVideoStatus(c)
+			h.OpenAIGateway.GrokVideoGeneration(c)
 			return
 		}
-		service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonLocalFeatureGate)
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": gin.H{
-				"type":    "not_found_error",
-				"message": "Videos API is not supported for this platform",
-			},
-		})
+		videoUnsupported(c)
+	}
+	// videoStatusHandler 处理 GET /v1/videos/{id}：Grok 与即梦按平台分流。
+	videoStatusHandler := func(c *gin.Context) {
+		switch getGroupPlatform(c) {
+		case service.PlatformGrok:
+			h.OpenAIGateway.GrokVideoStatus(c)
+		case service.PlatformJimeng:
+			h.OpenAIGateway.JimengVideoStatus(c)
+		default:
+			videoUnsupported(c)
+		}
+	}
+	// jimengVideoCreateHandler 处理即梦的 POST /v1/videos（固定接口，非 /generations）。
+	jimengVideoCreateHandler := func(c *gin.Context) {
+		if getGroupPlatform(c) == service.PlatformJimeng {
+			h.OpenAIGateway.JimengVideoCreation(c)
+			return
+		}
+		videoUnsupported(c)
+	}
+	// jimengVideoContentHandler 处理即梦的 GET /v1/videos/{id}/content 视频下载。
+	jimengVideoContentHandler := func(c *gin.Context) {
+		if getGroupPlatform(c) == service.PlatformJimeng {
+			h.OpenAIGateway.JimengVideoContent(c)
+			return
+		}
+		videoUnsupported(c)
 	}
 	// API网关（Claude API兼容）
 	gateway := r.Group("/v1")
@@ -165,7 +183,10 @@ func RegisterGatewayRoutes(
 		gateway.POST("/images/generations", imagesHandler)
 		gateway.POST("/images/edits", imagesHandler)
 		gateway.POST("/videos/generations", videoGenerationHandler)
+		// 即梦固定接口：POST /v1/videos（创建）与 /v1/videos/{id}/content（下载）
+		gateway.POST("/videos", jimengVideoCreateHandler)
 		gateway.GET("/videos/:request_id", videoStatusHandler)
+		gateway.GET("/videos/:request_id/content", jimengVideoContentHandler)
 	}
 
 	// Gemini 原生 API 兼容层（Gemini SDK/CLI 直连）
@@ -229,7 +250,9 @@ func RegisterGatewayRoutes(
 	r.POST("/images/generations", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, imagesHandler)
 	r.POST("/images/edits", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, imagesHandler)
 	r.POST("/videos/generations", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, videoGenerationHandler)
+	r.POST("/videos", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, jimengVideoCreateHandler)
 	r.GET("/videos/:request_id", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, videoStatusHandler)
+	r.GET("/videos/:request_id/content", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, jimengVideoContentHandler)
 
 	// Antigravity 模型列表
 	r.GET("/antigravity/models", gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, h.Gateway.AntigravityModels)

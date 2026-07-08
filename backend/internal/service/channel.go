@@ -11,15 +11,18 @@ import (
 type BillingMode string
 
 const (
-	BillingModeToken      BillingMode = "token"       // 按 token 区间计费
-	BillingModePerRequest BillingMode = "per_request" // 按次计费（支持上下文窗口分层）
-	BillingModeImage      BillingMode = "image"       // 图片计费（当前按次，预留 token 计费）
+	BillingModeToken          BillingMode = "token"            // 按 token 区间计费
+	BillingModePerRequest     BillingMode = "per_request"      // 按次计费（支持上下文窗口分层）
+	BillingModeImage          BillingMode = "image"            // 图片计费（当前按次，预留 token 计费）
+	BillingModeVideo          BillingMode = "video"            // 视频按次计费（即梦等视频平台）
+	BillingModeVideoPerSecond BillingMode = "video_per_second" // 视频按秒计费
 )
 
 // IsValid 检查 BillingMode 是否为合法值
 func (m BillingMode) IsValid() bool {
 	switch m {
-	case BillingModeToken, BillingModePerRequest, BillingModeImage, "":
+	case BillingModeToken, BillingModePerRequest, BillingModeImage,
+		BillingModeVideo, BillingModeVideoPerSecond, "":
 		return true
 	}
 	return false

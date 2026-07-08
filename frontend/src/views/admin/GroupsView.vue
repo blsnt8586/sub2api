@@ -140,7 +140,9 @@
                       ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
                       : value === 'grok'
                         ? 'bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-100'
-                        : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+                        : value === 'jimeng'
+                          ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300'
+                          : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
               ]"
             >
               <PlatformIcon :platform="value" size="xs" />
@@ -889,6 +891,42 @@
               </div>
             </div>
           </div>
+        </div>
+        <!-- 视频计费配置（即梦 jimeng 平台） -->
+        <div class="form-group" v-if="createForm.platform === 'jimeng'">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            {{ t("admin.groups.videoPricing.title") }}
+          </label>
+          <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">
+            {{ t("admin.groups.videoPricing.hint") }}
+          </p>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="input-label">{{ t("admin.groups.videoPricing.perCount") }} ($/次)</label>
+              <input
+                v-model.number="createForm.video_price_per_count"
+                type="number"
+                step="0.001"
+                min="0"
+                class="input"
+                placeholder="0.05"
+              />
+            </div>
+            <div>
+              <label class="input-label">{{ t("admin.groups.videoPricing.perSecond") }} ($/秒)</label>
+              <input
+                v-model.number="createForm.video_price_per_second"
+                type="number"
+                step="0.0001"
+                min="0"
+                class="input"
+                placeholder="0.01"
+              />
+            </div>
+          </div>
+          <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+            {{ t("admin.groups.videoPricing.priorityHint") }}
+          </p>
         </div>
 
         <!-- 高峰时段倍率配置（仅订阅类型分组） -->
@@ -2229,6 +2267,42 @@
             </div>
           </div>
         </div>
+        <!-- 视频计费配置（即梦 jimeng 平台） -->
+        <div class="form-group" v-if="editForm.platform === 'jimeng'">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            {{ t("admin.groups.videoPricing.title") }}
+          </label>
+          <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">
+            {{ t("admin.groups.videoPricing.hint") }}
+          </p>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="input-label">{{ t("admin.groups.videoPricing.perCount") }} ($/次)</label>
+              <input
+                v-model.number="editForm.video_price_per_count"
+                type="number"
+                step="0.001"
+                min="0"
+                class="input"
+                placeholder="0.05"
+              />
+            </div>
+            <div>
+              <label class="input-label">{{ t("admin.groups.videoPricing.perSecond") }} ($/秒)</label>
+              <input
+                v-model.number="editForm.video_price_per_second"
+                type="number"
+                step="0.0001"
+                min="0"
+                class="input"
+                placeholder="0.01"
+              />
+            </div>
+          </div>
+          <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+            {{ t("admin.groups.videoPricing.priorityHint") }}
+          </p>
+        </div>
 
         <!-- 高峰时段倍率配置（仅订阅类型分组） -->
         <div v-if="editForm.subscription_type === 'subscription'" class="border-t pt-4">
@@ -3351,6 +3425,7 @@ const platformOptions = computed(() => [
   { value: "gemini", label: "Gemini" },
   { value: "antigravity", label: "Antigravity" },
   { value: "grok", label: "Grok" },
+  { value: "jimeng", label: t("admin.groups.platforms.jimeng") },
 ]);
 
 const platformFilterOptions = computed(() => [
@@ -3360,6 +3435,7 @@ const platformFilterOptions = computed(() => [
   { value: "gemini", label: "Gemini" },
   { value: "antigravity", label: "Antigravity" },
   { value: "grok", label: "Grok" },
+  { value: "jimeng", label: t("admin.groups.platforms.jimeng") },
 ]);
 
 const editStatusOptions = computed(() => [
@@ -3554,6 +3630,8 @@ const createForm = reactive({
   image_price_1k: null as number | null,
   image_price_2k: null as number | null,
   image_price_4k: null as number | null,
+  video_price_per_count: null as number | null,
+  video_price_per_second: null as number | null,
   // 高峰时段倍率配置
   peak_rate_enabled: false,
   peak_start: "",
@@ -3890,6 +3968,8 @@ const editForm = reactive({
   image_price_1k: null as number | null,
   image_price_2k: null as number | null,
   image_price_4k: null as number | null,
+  video_price_per_count: null as number | null,
+  video_price_per_second: null as number | null,
   // 高峰时段倍率配置
   peak_rate_enabled: false,
   peak_start: "",
@@ -3928,6 +4008,8 @@ type ImagePricingFormState = {
   image_price_1k: number | string | null;
   image_price_2k: number | string | null;
   image_price_4k: number | string | null;
+  video_price_per_count: number | string | null;
+  video_price_per_second: number | string | null;
   peak_rate_enabled: boolean;
   peak_start: string;
   peak_end: string;
@@ -4163,6 +4245,8 @@ const closeCreateModal = () => {
   createForm.image_price_1k = null;
   createForm.image_price_2k = null;
   createForm.image_price_4k = null;
+  createForm.video_price_per_count = null;
+  createForm.video_price_per_second = null;
   createForm.peak_rate_enabled = false;
   createForm.peak_start = "";
   createForm.peak_end = "";
@@ -4299,6 +4383,8 @@ const handleEdit = async (group: AdminGroup) => {
   editForm.image_price_1k = group.image_price_1k;
   editForm.image_price_2k = group.image_price_2k;
   editForm.image_price_4k = group.image_price_4k;
+  editForm.video_price_per_count = group.video_price_per_count ?? null;
+  editForm.video_price_per_second = group.video_price_per_second ?? null;
   editForm.peak_rate_enabled = group.peak_rate_enabled ?? false;
   editForm.peak_start = group.peak_start ?? "";
   editForm.peak_end = group.peak_end ?? "";

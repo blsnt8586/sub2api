@@ -108,6 +108,9 @@ type Group struct {
 	ImagePrice1K       *float64 `json:"image_price_1k"`
 	ImagePrice2K       *float64 `json:"image_price_2k"`
 	ImagePrice4K       *float64 `json:"image_price_4k"`
+	// 视频生成计费配置（即梦 jimeng 平台）
+	VideoPricePerCount  *float64 `json:"video_price_per_count"`
+	VideoPricePerSecond *float64 `json:"video_price_per_second"`
 
 	// Claude Code 客户端限制
 	ClaudeCodeOnly  bool   `json:"claude_code_only"`

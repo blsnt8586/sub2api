@@ -219,6 +219,26 @@ func (s *accountRepoStub) ListShadowsByParent(ctx context.Context, parentID int6
 	return nil, nil
 }
 
+func (s *accountRepoStub) UpdateProviderLink(ctx context.Context, accountID, providerID, providerAPIKeyID int64) error {
+	return nil
+}
+
+func (s *accountRepoStub) ClearProviderLink(ctx context.Context, accountID, providerID int64) error {
+	return nil
+}
+
+func (s *accountRepoStub) UpdateRemoteGroupInfo(ctx context.Context, accountID int64, groupName string, multiplier float64) error {
+	return nil
+}
+
+func (s *accountRepoStub) ListByProviderID(ctx context.Context, providerID int64) ([]Account, error) {
+	return nil, nil
+}
+
+func (s *accountRepoStub) UpdateSub2APIOptimizeSettings(ctx context.Context, accountID int64, enabled bool, minMultiplier, maxMultiplier *float64, testModel *string) error {
+	return nil
+}
+
 // TestAccountService_Delete_NotFound 测试删除不存在的账号时返回正确的错误。
 // 预期行为：
 //   - ExistsByID 返回 false（账号不存在）

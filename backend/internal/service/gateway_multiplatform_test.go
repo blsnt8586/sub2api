@@ -206,6 +206,26 @@ func (m *mockAccountRepoForPlatform) ListShadowsByParent(ctx context.Context, pa
 	return nil, nil
 }
 
+func (m *mockAccountRepoForPlatform) UpdateProviderLink(ctx context.Context, accountID, providerID, providerAPIKeyID int64) error {
+	return nil
+}
+
+func (m *mockAccountRepoForPlatform) ClearProviderLink(ctx context.Context, accountID, providerID int64) error {
+	return nil
+}
+
+func (m *mockAccountRepoForPlatform) UpdateRemoteGroupInfo(ctx context.Context, accountID int64, groupName string, multiplier float64) error {
+	return nil
+}
+
+func (m *mockAccountRepoForPlatform) ListByProviderID(ctx context.Context, providerID int64) ([]Account, error) {
+	return nil, nil
+}
+
+func (m *mockAccountRepoForPlatform) UpdateSub2APIOptimizeSettings(ctx context.Context, accountID int64, enabled bool, minMultiplier, maxMultiplier *float64, testModel *string) error {
+	return nil
+}
+
 // Verify interface implementation
 var _ AccountRepository = (*mockAccountRepoForPlatform)(nil)
 

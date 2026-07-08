@@ -77,6 +77,18 @@
         />
       </div>
 
+      <!-- Jimeng video prompt -->
+      <div v-if="isJimengAccount" class="space-y-1.5">
+        <TextArea
+          v-model="testPrompt"
+          label="视频提示词"
+          placeholder="描述要生成的视频内容，留空使用默认提示词"
+          hint="即梦将根据提示词创建一个 5 秒的测试视频任务，验证账号连通性"
+          :disabled="status === 'connecting'"
+          rows="3"
+        />
+      </div>
+
       <!-- Terminal Output -->
       <div class="group relative">
         <div
@@ -187,9 +199,11 @@
         <span class="flex items-center gap-1">
           <Icon name="chat" size="sm" :stroke-width="2" />
           {{
-            supportsImageTest
-              ? t('admin.accounts.imageTestMode')
-              : t('admin.accounts.testPrompt')
+            isJimengAccount
+              ? `视频提示词: "${testPrompt || 'A serene mountain landscape...'}`
+              : supportsImageTest
+                ? t('admin.accounts.imageTestMode')
+                : t('admin.accounts.testPrompt')
           }}
         </span>
       </div>
@@ -288,6 +302,7 @@ let abortController: AbortController | null = null
 const generatedImages = ref<PreviewImage[]>([])
 const testMode = ref<'default' | 'compact'>('default')
 const isOpenAIAccount = computed(() => props.account?.platform === 'openai')
+const isJimengAccount = computed(() => props.account?.platform === 'jimeng')
 const openAITestModeOptions = computed(() => [
   { value: 'default', label: t('admin.accounts.openai.testModeDefault') },
   { value: 'compact', label: t('admin.accounts.openai.testModeCompact') }
@@ -325,7 +340,10 @@ watch(
   () => props.show,
   async (newVal) => {
     if (newVal && props.account) {
-      testPrompt.value = ''
+      // 即梦账号自动填入默认视频提示词
+      testPrompt.value = props.account.platform === 'jimeng'
+        ? 'A serene mountain landscape with a flowing river at sunset.'
+        : ''
       testMode.value = 'default'
       resetState()
       await loadAvailableModels()

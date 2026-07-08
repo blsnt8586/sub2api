@@ -66,6 +66,18 @@
         />
       </div>
 
+      <!-- Jimeng video prompt -->
+      <div v-if="isJimengAccount" class="space-y-1.5">
+        <TextArea
+          v-model="testPrompt"
+          label="视频提示词"
+          placeholder="描述要生成的视频内容，留空使用默认提示词"
+          hint="即梦将根据提示词创建一个 4 秒的测试视频任务，验证账号连通性"
+          :disabled="status === 'connecting'"
+          rows="3"
+        />
+      </div>
+
       <!-- Terminal Output -->
       <div class="group relative">
         <div
@@ -176,9 +188,11 @@
         <span class="flex items-center gap-1">
           <Icon name="chat" size="sm" :stroke-width="2" />
           {{
-            supportsImageTest
-              ? t('admin.accounts.imageTestMode')
-              : t('admin.accounts.testPrompt')
+            isJimengAccount
+              ? `视频提示词: "${testPrompt || 'A serene mountain landscape...'}"`
+              : supportsImageTest
+                ? t('admin.accounts.imageTestMode')
+                : t('admin.accounts.testPrompt')
           }}
         </span>
       </div>
@@ -291,6 +305,7 @@ const supportsOpenAIImageTest = computed(() => {
 })
 
 const supportsImageTest = computed(() => supportsGeminiImageTest.value || supportsOpenAIImageTest.value)
+const isJimengAccount = computed(() => props.account?.platform === 'jimeng')
 
 const sortTestModels = (models: ClaudeModel[]) => {
   const priorityMap = new Map(prioritizedGeminiModels.map((id, index) => [id, index]))
@@ -308,7 +323,10 @@ watch(
   () => props.show,
   async (newVal) => {
     if (newVal && props.account) {
-      testPrompt.value = ''
+      // 即梦账号自动填入默认视频提示词
+      testPrompt.value = props.account.platform === 'jimeng'
+        ? 'A serene mountain landscape with a flowing river at sunset.'
+        : ''
       resetState()
       await loadAvailableModels()
     } else {
@@ -479,7 +497,9 @@ const handleEvent = (event: {
         addLine(t('admin.accounts.usingModel', { model: event.model }), 'text-cyan-400')
       }
       addLine(
-        supportsImageTest.value
+        isJimengAccount.value
+          ? '正在提交视频任务…'
+          : supportsImageTest.value
             ? t('admin.accounts.sendingImageRequest')
             : t('admin.accounts.sendingTestMessage'),
         'text-gray-400'

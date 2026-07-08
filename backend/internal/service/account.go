@@ -14,6 +14,7 @@ import (
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/domain"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/jimeng"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/xai"
 )
 
@@ -237,12 +238,17 @@ func (a *Account) IsGrok() bool {
 	return a.Platform == PlatformGrok
 }
 
+// IsJimeng 报告账号是否为即梦视频平台账号。
+func (a *Account) IsJimeng() bool {
+	return a.Platform == PlatformJimeng
+}
+
 func (a *Account) IsGrokOAuth() bool {
 	return a.IsGrok() && a.Type == AccountTypeOAuth
 }
 
 func (a *Account) IsOpenAICompatible() bool {
-	return a != nil && (a.Platform == PlatformOpenAI || a.Platform == PlatformGrok)
+	return a != nil && (a.Platform == PlatformOpenAI || a.Platform == PlatformGrok || a.Platform == PlatformJimeng)
 }
 
 func (a *Account) GeminiOAuthType() string {
@@ -1250,6 +1256,27 @@ func (a *Account) GetGrokAccessToken() string {
 		return ""
 	}
 	return a.GetCredential("access_token")
+}
+
+// GetJimengBaseURL 返回即梦第三方端点的 base_url（credentials.base_url）。
+// 未配置时兜底为占位默认值，实际由 service 层的 allowlist 校验决定是否放行。
+func (a *Account) GetJimengBaseURL() string {
+	if !a.IsJimeng() {
+		return ""
+	}
+	baseURL := strings.TrimSpace(a.GetCredential("base_url"))
+	if baseURL != "" {
+		return baseURL
+	}
+	return jimeng.DefaultBaseURL
+}
+
+// GetJimengAPIKey 返回即梦账号的 api_key 凭据。
+func (a *Account) GetJimengAPIKey() string {
+	if !a.IsJimeng() {
+		return ""
+	}
+	return strings.TrimSpace(a.GetCredential("api_key"))
 }
 
 func (a *Account) GetGrokRefreshToken() string {

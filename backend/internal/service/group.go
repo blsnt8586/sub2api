@@ -43,6 +43,12 @@ type Group struct {
 	ImagePrice2K         *float64
 	ImagePrice4K         *float64
 
+	// 视频生成计费配置（即梦 jimeng 平台使用）
+	// VideoPricePerSecond 非 nil 时优先于 VideoPricePerCount，按视频时长（秒）计费。
+	// 两者均为 nil 时退回到内置默认定价。
+	VideoPricePerCount  *float64 // USD/次
+	VideoPricePerSecond *float64 // USD/秒
+
 	// Claude Code 客户端限制
 	ClaudeCodeOnly  bool
 	FallbackGroupID *int64

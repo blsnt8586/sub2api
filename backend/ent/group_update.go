@@ -468,6 +468,60 @@ func (_u *GroupUpdate) ClearImagePrice4k() *GroupUpdate {
 	return _u
 }
 
+// SetVideoPricePerCount sets the "video_price_per_count" field.
+func (_u *GroupUpdate) SetVideoPricePerCount(v float64) *GroupUpdate {
+	_u.mutation.ResetVideoPricePerCount()
+	_u.mutation.SetVideoPricePerCount(v)
+	return _u
+}
+
+// SetNillableVideoPricePerCount sets the "video_price_per_count" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableVideoPricePerCount(v *float64) *GroupUpdate {
+	if v != nil {
+		_u.SetVideoPricePerCount(*v)
+	}
+	return _u
+}
+
+// AddVideoPricePerCount adds value to the "video_price_per_count" field.
+func (_u *GroupUpdate) AddVideoPricePerCount(v float64) *GroupUpdate {
+	_u.mutation.AddVideoPricePerCount(v)
+	return _u
+}
+
+// ClearVideoPricePerCount clears the value of the "video_price_per_count" field.
+func (_u *GroupUpdate) ClearVideoPricePerCount() *GroupUpdate {
+	_u.mutation.ClearVideoPricePerCount()
+	return _u
+}
+
+// SetVideoPricePerSecond sets the "video_price_per_second" field.
+func (_u *GroupUpdate) SetVideoPricePerSecond(v float64) *GroupUpdate {
+	_u.mutation.ResetVideoPricePerSecond()
+	_u.mutation.SetVideoPricePerSecond(v)
+	return _u
+}
+
+// SetNillableVideoPricePerSecond sets the "video_price_per_second" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableVideoPricePerSecond(v *float64) *GroupUpdate {
+	if v != nil {
+		_u.SetVideoPricePerSecond(*v)
+	}
+	return _u
+}
+
+// AddVideoPricePerSecond adds value to the "video_price_per_second" field.
+func (_u *GroupUpdate) AddVideoPricePerSecond(v float64) *GroupUpdate {
+	_u.mutation.AddVideoPricePerSecond(v)
+	return _u
+}
+
+// ClearVideoPricePerSecond clears the value of the "video_price_per_second" field.
+func (_u *GroupUpdate) ClearVideoPricePerSecond() *GroupUpdate {
+	_u.mutation.ClearVideoPricePerSecond()
+	return _u
+}
+
 // SetClaudeCodeOnly sets the "claude_code_only" field.
 func (_u *GroupUpdate) SetClaudeCodeOnly(v bool) *GroupUpdate {
 	_u.mutation.SetClaudeCodeOnly(v)
@@ -1151,6 +1205,24 @@ func (_u *GroupUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.ImagePrice4kCleared() {
 		_spec.ClearField(group.FieldImagePrice4k, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.VideoPricePerCount(); ok {
+		_spec.SetField(group.FieldVideoPricePerCount, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedVideoPricePerCount(); ok {
+		_spec.AddField(group.FieldVideoPricePerCount, field.TypeFloat64, value)
+	}
+	if _u.mutation.VideoPricePerCountCleared() {
+		_spec.ClearField(group.FieldVideoPricePerCount, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.VideoPricePerSecond(); ok {
+		_spec.SetField(group.FieldVideoPricePerSecond, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedVideoPricePerSecond(); ok {
+		_spec.AddField(group.FieldVideoPricePerSecond, field.TypeFloat64, value)
+	}
+	if _u.mutation.VideoPricePerSecondCleared() {
+		_spec.ClearField(group.FieldVideoPricePerSecond, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.ClaudeCodeOnly(); ok {
 		_spec.SetField(group.FieldClaudeCodeOnly, field.TypeBool, value)
@@ -1969,6 +2041,60 @@ func (_u *GroupUpdateOne) ClearImagePrice4k() *GroupUpdateOne {
 	return _u
 }
 
+// SetVideoPricePerCount sets the "video_price_per_count" field.
+func (_u *GroupUpdateOne) SetVideoPricePerCount(v float64) *GroupUpdateOne {
+	_u.mutation.ResetVideoPricePerCount()
+	_u.mutation.SetVideoPricePerCount(v)
+	return _u
+}
+
+// SetNillableVideoPricePerCount sets the "video_price_per_count" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableVideoPricePerCount(v *float64) *GroupUpdateOne {
+	if v != nil {
+		_u.SetVideoPricePerCount(*v)
+	}
+	return _u
+}
+
+// AddVideoPricePerCount adds value to the "video_price_per_count" field.
+func (_u *GroupUpdateOne) AddVideoPricePerCount(v float64) *GroupUpdateOne {
+	_u.mutation.AddVideoPricePerCount(v)
+	return _u
+}
+
+// ClearVideoPricePerCount clears the value of the "video_price_per_count" field.
+func (_u *GroupUpdateOne) ClearVideoPricePerCount() *GroupUpdateOne {
+	_u.mutation.ClearVideoPricePerCount()
+	return _u
+}
+
+// SetVideoPricePerSecond sets the "video_price_per_second" field.
+func (_u *GroupUpdateOne) SetVideoPricePerSecond(v float64) *GroupUpdateOne {
+	_u.mutation.ResetVideoPricePerSecond()
+	_u.mutation.SetVideoPricePerSecond(v)
+	return _u
+}
+
+// SetNillableVideoPricePerSecond sets the "video_price_per_second" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableVideoPricePerSecond(v *float64) *GroupUpdateOne {
+	if v != nil {
+		_u.SetVideoPricePerSecond(*v)
+	}
+	return _u
+}
+
+// AddVideoPricePerSecond adds value to the "video_price_per_second" field.
+func (_u *GroupUpdateOne) AddVideoPricePerSecond(v float64) *GroupUpdateOne {
+	_u.mutation.AddVideoPricePerSecond(v)
+	return _u
+}
+
+// ClearVideoPricePerSecond clears the value of the "video_price_per_second" field.
+func (_u *GroupUpdateOne) ClearVideoPricePerSecond() *GroupUpdateOne {
+	_u.mutation.ClearVideoPricePerSecond()
+	return _u
+}
+
 // SetClaudeCodeOnly sets the "claude_code_only" field.
 func (_u *GroupUpdateOne) SetClaudeCodeOnly(v bool) *GroupUpdateOne {
 	_u.mutation.SetClaudeCodeOnly(v)
@@ -2682,6 +2808,24 @@ func (_u *GroupUpdateOne) sqlSave(ctx context.Context) (_node *Group, err error)
 	}
 	if _u.mutation.ImagePrice4kCleared() {
 		_spec.ClearField(group.FieldImagePrice4k, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.VideoPricePerCount(); ok {
+		_spec.SetField(group.FieldVideoPricePerCount, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedVideoPricePerCount(); ok {
+		_spec.AddField(group.FieldVideoPricePerCount, field.TypeFloat64, value)
+	}
+	if _u.mutation.VideoPricePerCountCleared() {
+		_spec.ClearField(group.FieldVideoPricePerCount, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.VideoPricePerSecond(); ok {
+		_spec.SetField(group.FieldVideoPricePerSecond, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedVideoPricePerSecond(); ok {
+		_spec.AddField(group.FieldVideoPricePerSecond, field.TypeFloat64, value)
+	}
+	if _u.mutation.VideoPricePerSecondCleared() {
+		_spec.ClearField(group.FieldVideoPricePerSecond, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.ClaudeCodeOnly(); ok {
 		_spec.SetField(group.FieldClaudeCodeOnly, field.TypeBool, value)

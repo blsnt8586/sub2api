@@ -64,6 +64,10 @@ const (
 	FieldImagePrice2k = "image_price_2k"
 	// FieldImagePrice4k holds the string denoting the image_price_4k field in the database.
 	FieldImagePrice4k = "image_price_4k"
+	// FieldVideoPricePerCount holds the string denoting the video_price_per_count field in the database.
+	FieldVideoPricePerCount = "video_price_per_count"
+	// FieldVideoPricePerSecond holds the string denoting the video_price_per_second field in the database.
+	FieldVideoPricePerSecond = "video_price_per_second"
 	// FieldClaudeCodeOnly holds the string denoting the claude_code_only field in the database.
 	FieldClaudeCodeOnly = "claude_code_only"
 	// FieldFallbackGroupID holds the string denoting the fallback_group_id field in the database.
@@ -193,6 +197,8 @@ var Columns = []string{
 	FieldImagePrice1k,
 	FieldImagePrice2k,
 	FieldImagePrice4k,
+	FieldVideoPricePerCount,
+	FieldVideoPricePerSecond,
 	FieldClaudeCodeOnly,
 	FieldFallbackGroupID,
 	FieldFallbackGroupIDOnInvalidRequest,
@@ -435,6 +441,16 @@ func ByImagePrice2k(opts ...sql.OrderTermOption) OrderOption {
 // ByImagePrice4k orders the results by the image_price_4k field.
 func ByImagePrice4k(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldImagePrice4k, opts...).ToFunc()
+}
+
+// ByVideoPricePerCount orders the results by the video_price_per_count field.
+func ByVideoPricePerCount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldVideoPricePerCount, opts...).ToFunc()
+}
+
+// ByVideoPricePerSecond orders the results by the video_price_per_second field.
+func ByVideoPricePerSecond(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldVideoPricePerSecond, opts...).ToFunc()
 }
 
 // ByClaudeCodeOnly orders the results by the claude_code_only field.

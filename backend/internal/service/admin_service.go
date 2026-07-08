@@ -220,6 +220,9 @@ type CreateGroupInput struct {
 	ImagePrice1K       *float64
 	ImagePrice2K       *float64
 	ImagePrice4K       *float64
+	// 视频生成计费配置（即梦 jimeng 平台）
+	VideoPricePerCount  *float64 // USD/次；nil 使用默认值
+	VideoPricePerSecond *float64 // USD/秒；非 nil 时优先于 VideoPricePerCount
 	ClaudeCodeOnly     bool   // 仅允许 Claude Code 客户端
 	FallbackGroupID    *int64 // 降级分组 ID
 	// 无效请求兜底分组 ID（仅 anthropic 平台使用）
@@ -266,6 +269,9 @@ type UpdateGroupInput struct {
 	ImagePrice1K       *float64
 	ImagePrice2K       *float64
 	ImagePrice4K       *float64
+	// 视频生成计费配置（即梦 jimeng 平台）
+	VideoPricePerCount  *float64 // USD/次；nil 使用默认值
+	VideoPricePerSecond *float64 // USD/秒；非 nil 时优先于 VideoPricePerCount
 	ClaudeCodeOnly     *bool  // 仅允许 Claude Code 客户端
 	FallbackGroupID    *int64 // 降级分组 ID
 	// 无效请求兜底分组 ID（仅 anthropic 平台使用）
@@ -1940,6 +1946,8 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		ImagePrice1K:                    imagePrice1K,
 		ImagePrice2K:                    imagePrice2K,
 		ImagePrice4K:                    imagePrice4K,
+		VideoPricePerCount:              normalizePrice(input.VideoPricePerCount),
+		VideoPricePerSecond:             normalizePrice(input.VideoPricePerSecond),
 		ClaudeCodeOnly:                  input.ClaudeCodeOnly,
 		FallbackGroupID:                 input.FallbackGroupID,
 		FallbackGroupIDOnInvalidRequest: fallbackOnInvalidRequest,
@@ -2153,6 +2161,13 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 	}
 	if input.ImagePrice4K != nil {
 		group.ImagePrice4K = normalizePrice(input.ImagePrice4K)
+	}
+	// 视频计费配置（即梦 jimeng 平台）
+	if input.VideoPricePerCount != nil {
+		group.VideoPricePerCount = normalizePrice(input.VideoPricePerCount)
+	}
+	if input.VideoPricePerSecond != nil {
+		group.VideoPricePerSecond = normalizePrice(input.VideoPricePerSecond)
 	}
 
 	// Claude Code 客户端限制
