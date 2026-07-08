@@ -61,6 +61,17 @@ const TEXT: Record<Platform, string> = {
 }
 const TEXT_DEFAULT = 'text-primary-600 dark:text-primary-400'
 
+// ── Strong text (text-700，用于模型 tag 文字/分组标题等需更深文字色的场景) ──
+const TEXT_STRONG: Record<Platform, string> = {
+  anthropic: 'text-orange-700 dark:text-orange-400',
+  openai: 'text-emerald-700 dark:text-emerald-400',
+  antigravity: 'text-purple-700 dark:text-purple-400',
+  gemini: 'text-blue-700 dark:text-blue-400',
+  grok: 'text-zinc-700 dark:text-zinc-300',
+  jimeng: 'text-rose-700 dark:text-rose-400',
+}
+const TEXT_STRONG_DEFAULT = 'text-blue-700 dark:text-blue-400'
+
 // ── Icon (check mark etc.) ──────────────────────────────────────────
 const ICON: Record<Platform, string> = {
   anthropic: 'text-orange-500 dark:text-orange-400',
@@ -93,6 +104,63 @@ const DISCOUNT: Record<Platform, string> = {
   jimeng: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300',
 }
 const DISCOUNT_DEFAULT = 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+
+// ── Solid tag (bg-100 + text-700，用于模型/平台标签徽章) ─────────────
+const TAG: Record<Platform, string> = {
+  anthropic: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+  openai: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+  antigravity: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+  gemini: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+  grok: 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300',
+  jimeng: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
+}
+const TAG_DEFAULT = 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400'
+
+// ── Soft tag (bg-100 + text-600，文字浅一档，用于 type/plan 副徽章) ──
+const TAG_SOFT: Record<Platform, string> = {
+  anthropic: 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400',
+  openai: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400',
+  antigravity: 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400',
+  gemini: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
+  grok: 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300',
+  jimeng: 'bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400',
+}
+const TAG_SOFT_DEFAULT = 'bg-gray-100 text-gray-600 dark:bg-gray-900/30 dark:text-gray-400'
+
+// ── Badge standard variant (bg-50 淡色背景，用于 GroupBadge standard 类型) ──
+// 注意：色系与 subscription 略有不同（如 anthropic sub=orange，std=amber）
+const BADGE_STANDARD: Record<Platform, string> = {
+  anthropic: 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400',
+  openai: 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400',
+  antigravity: 'bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-900/20 dark:text-fuchsia-400',
+  gemini: 'bg-sky-50 text-sky-700 dark:bg-sky-900/20 dark:text-sky-400',
+  grok: 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200',
+  jimeng: 'bg-rose-50 text-rose-700 dark:bg-rose-900/20 dark:text-rose-400',
+}
+const BADGE_STANDARD_DEFAULT = 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+
+// ── Label subscription (bg-200/60 深色背景，用于 GroupBadge labelClass 订阅正常状态) ──
+const LABEL_SUBSCRIPTION: Record<Platform, string> = {
+  anthropic: 'bg-orange-200/60 text-orange-800 dark:bg-orange-800/40 dark:text-orange-300',
+  openai: 'bg-emerald-200/60 text-emerald-800 dark:bg-emerald-800/40 dark:text-emerald-300',
+  antigravity: 'bg-purple-200/60 text-purple-800 dark:bg-purple-800/40 dark:text-purple-300',
+  gemini: 'bg-blue-200/60 text-blue-800 dark:bg-blue-800/40 dark:text-blue-300',
+  grok: 'bg-zinc-300/70 text-zinc-800 dark:bg-zinc-700/60 dark:text-zinc-200',
+  jimeng: 'bg-pink-200/60 text-pink-800 dark:bg-pink-800/40 dark:text-pink-300',
+}
+const LABEL_SUBSCRIPTION_DEFAULT = 'bg-violet-200/60 text-violet-800 dark:bg-violet-800/40 dark:text-violet-300'
+
+// ── Badge subscription variant (bg-100，用于 GroupBadge subscription 类型主徽章) ──
+// 注意 grok/jimeng 与 TAG 色系略有差异（grok 更深，jimeng 用 pink）
+const BADGE_SUBSCRIPTION: Record<Platform, string> = {
+  anthropic: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+  openai: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+  antigravity: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+  gemini: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+  grok: 'bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-100',
+  jimeng: 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400',
+}
+const BADGE_SUBSCRIPTION_DEFAULT = 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400'
 
 // ── Header gradient (subscription confirm) ─────────────────────────
 const GRADIENT: Record<Platform, string> = {
@@ -152,6 +220,10 @@ export function platformTextClass(p: string): string {
   return isPlatform(p) ? TEXT[p] : TEXT_DEFAULT
 }
 
+export function platformStrongTextClass(p: string, fallback: string = TEXT_STRONG_DEFAULT): string {
+  return isPlatform(p) ? TEXT_STRONG[p] : fallback
+}
+
 export function platformIconClass(p: string): string {
   return isPlatform(p) ? ICON[p] : ICON_DEFAULT
 }
@@ -162,6 +234,32 @@ export function platformButtonClass(p: string): string {
 
 export function platformDiscountClass(p: string): string {
   return isPlatform(p) ? DISCOUNT[p] : DISCOUNT_DEFAULT
+}
+
+// platformTagClass 返回实心标签样式（bg-100 + text-700）。
+// fallback 允许调用方覆盖未知平台的默认色（如 PlatformTypeBadge 历史上未知走蓝色）。
+export function platformTagClass(p: string, fallback: string = TAG_DEFAULT): string {
+  return isPlatform(p) ? TAG[p] : fallback
+}
+
+// platformTagSoftClass 同 platformTagClass 但文字浅一档（text-600），用于副徽章。
+export function platformTagSoftClass(p: string, fallback: string = TAG_SOFT_DEFAULT): string {
+  return isPlatform(p) ? TAG_SOFT[p] : fallback
+}
+
+// platformBadgeStandardClass 返回 GroupBadge standard 类型的淡色背景徽章样式。
+export function platformBadgeStandardClass(p: string, fallback: string = BADGE_STANDARD_DEFAULT): string {
+  return isPlatform(p) ? BADGE_STANDARD[p] : fallback
+}
+
+// platformLabelSubscriptionClass 返回 GroupBadge 订阅分组正常状态下右侧 label 的样式。
+export function platformLabelSubscriptionClass(p: string, fallback: string = LABEL_SUBSCRIPTION_DEFAULT): string {
+  return isPlatform(p) ? LABEL_SUBSCRIPTION[p] : fallback
+}
+
+// platformBadgeSubscriptionClass 返回 GroupBadge 订阅类型主徽章样式（bg-100）。
+export function platformBadgeSubscriptionClass(p: string, fallback: string = BADGE_SUBSCRIPTION_DEFAULT): string {
+  return isPlatform(p) ? BADGE_SUBSCRIPTION[p] : fallback
 }
 
 export function platformGradientClass(p: string): string {
@@ -186,4 +284,29 @@ export function platformLabel(p: string): string {
     case 'jimeng': return '即梦'
     default: return p || 'API'
   }
+}
+
+// ── 平台权威枚举列表 ────────────────────────────────────────
+//
+// 单一权威来源：新增平台只需在此追加一项（并补上文各 Record 的对应条目），
+// 所有平台下拉/多选/配额矩阵会自动包含新平台，无需逐个文件改。
+// 顺序即 UI 展示顺序。后端权威列表见 service/domain_constants.go AllowedQuotaPlatforms。
+export const ALL_PLATFORMS: Platform[] = [
+  'anthropic',
+  'openai',
+  'gemini',
+  'antigravity',
+  'grok',
+  'jimeng',
+]
+
+// PlatformSelectOption 是下拉/筛选组件使用的 { value, label } 结构。
+export interface PlatformSelectOption {
+  value: Platform
+  label: string
+}
+
+// platformSelectOptions 返回全部平台的 { value, label } 列表（label 走 platformLabel）。
+export function platformSelectOptions(): PlatformSelectOption[] {
+  return ALL_PLATFORMS.map((p) => ({ value: p, label: platformLabel(p) }))
 }
