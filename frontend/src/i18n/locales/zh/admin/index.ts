@@ -4,6 +4,7 @@ import accounts from './accounts'
 import resources from './resources'
 import ops from './ops'
 import settings from './settings'
+import sub2apiProviders from './sub2apiProviders'
 
 export default {
   ...overview,
@@ -12,4 +13,5 @@ export default {
   ...resources,
   ...ops,
   ...settings,
+  ...sub2apiProviders,
 }
