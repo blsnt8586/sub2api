@@ -177,6 +177,7 @@ func (h *OpenAIGatewayHandler) runJimengVideoForwardLoop(
 			service.OpenAIUpstreamTransportHTTPSSE,
 			"",
 			false,
+			false,
 			service.PlatformJimeng,
 		)
 		if err != nil {
