@@ -137,6 +137,8 @@ func (s *AccountTestService) buildUpstreamModelsRequest(ctx context.Context, acc
 		return s.buildGeminiUpstreamModelsRequest(ctx, account)
 	case account.IsAnthropic():
 		return s.buildAnthropicUpstreamModelsRequest(ctx, account)
+	case account.IsGrok():
+		return s.buildGrokUpstreamModelsRequest(ctx, account)
 	case account.IsJimeng():
 		return s.buildJimengUpstreamModelsRequest(ctx, account)
 	default:
@@ -474,6 +476,48 @@ func dedupeAndSortModelIDs(models []string) []string {
 	}
 	sort.Strings(result)
 	return result
+}
+
+// buildGrokUpstreamModelsRequest 构建 Grok 平台的 GET /v1/models 请求。
+// api_key 账号走第三方兼容端点（base_url + Bearer api_key）；
+// OAuth 账号走 xAI 官方端点（获取 access_token 作 Bearer）。
+func (s *AccountTestService) buildGrokUpstreamModelsRequest(ctx context.Context, account *Account) (*http.Request, error) {
+	baseURL := strings.TrimSpace(account.GetGrokBaseURL())
+	normalizedBaseURL, err := s.validateUpstreamBaseURL(baseURL)
+	if err != nil {
+		return nil, newUpstreamModelSyncConfigError("Invalid Grok base URL", err)
+	}
+
+	var authHeader string
+	if account.Type == AccountTypeAPIKey {
+		apiKey := strings.TrimSpace(account.GetCredential("api_key"))
+		if apiKey == "" {
+			return nil, newUpstreamModelSyncConfigError("No Grok API key is available", nil)
+		}
+		authHeader = "Bearer " + apiKey
+	} else if account.Type == AccountTypeOAuth {
+		if s.claudeTokenProvider == nil {
+			return nil, newUpstreamModelSyncConfigError("Token provider is not configured for Grok OAuth", nil)
+		}
+		token, tokenErr := s.claudeTokenProvider.GetAccessToken(ctx, account)
+		if tokenErr != nil {
+			return nil, newUpstreamModelSyncUpstreamError("Failed to get Grok OAuth access token", tokenErr)
+		}
+		authHeader = "Bearer " + strings.TrimSpace(token)
+	} else {
+		return nil, newUpstreamModelSyncUnsupportedError(
+			fmt.Sprintf("Unsupported Grok account type for model sync: %s", account.Type), nil,
+		)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, buildV1ModelsURL(normalizedBaseURL), nil)
+	if err != nil {
+		return nil, newUpstreamModelSyncConfigError("Invalid Grok model list URL", err)
+	}
+	req.Header.Set("Authorization", authHeader)
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("User-Agent", "sub2api-grok/1.0")
+	return req, nil
 }
 
 // buildJimengUpstreamModelsRequest 构建即梦平台的 GET /v1/models 请求。
