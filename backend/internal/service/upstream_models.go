@@ -496,10 +496,10 @@ func (s *AccountTestService) buildGrokUpstreamModelsRequest(ctx context.Context,
 		}
 		authHeader = "Bearer " + apiKey
 	} else if account.Type == AccountTypeOAuth {
-		if s.claudeTokenProvider == nil {
+		if s.grokTokenProvider == nil {
 			return nil, newUpstreamModelSyncConfigError("Token provider is not configured for Grok OAuth", nil)
 		}
-		token, tokenErr := s.claudeTokenProvider.GetAccessToken(ctx, account)
+		token, tokenErr := s.grokTokenProvider.GetAccessToken(ctx, account)
 		if tokenErr != nil {
 			return nil, newUpstreamModelSyncUpstreamError("Failed to get Grok OAuth access token", tokenErr)
 		}

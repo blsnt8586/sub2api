@@ -778,6 +778,18 @@ func (s *AccountTestService) testGrokAccountConnection(c *gin.Context, account *
 	return s.testGrokOAuthAccountConnection(c, account, modelID)
 }
 
+// resolveGrokTestModelID 解析 Grok 测试用的 model ID：若空则回退到 grok-4.3，再应用账号级模型映射。
+func resolveGrokTestModelID(account *Account, modelID string) string {
+	id := strings.TrimSpace(modelID)
+	if id == "" {
+		id = "grok-4.3"
+	}
+	if mapped := strings.TrimSpace(account.GetMappedModel(id)); mapped != "" {
+		return mapped
+	}
+	return id
+}
+
 // testGrokOAuthAccountConnection tests a Grok OAuth account through xAI's Responses API.
 func (s *AccountTestService) testGrokOAuthAccountConnection(c *gin.Context, account *Account, modelID string) error {
 	ctx := c.Request.Context()
@@ -792,13 +804,7 @@ func (s *AccountTestService) testGrokOAuthAccountConnection(c *gin.Context, acco
 		return s.sendErrorAndEnd(c, "HTTP upstream not configured")
 	}
 
-	testModelID := strings.TrimSpace(modelID)
-	if testModelID == "" {
-		testModelID = "grok-4.3"
-	}
-	if mapped := strings.TrimSpace(account.GetMappedModel(testModelID)); mapped != "" {
-		testModelID = mapped
-	}
+	testModelID := resolveGrokTestModelID(account, modelID)
 
 	authToken, err := s.grokTokenProvider.GetAccessToken(ctx, account)
 	if err != nil {
@@ -876,19 +882,12 @@ func (s *AccountTestService) testGrokAPIKeyAccountConnection(c *gin.Context, acc
 	}
 
 	baseURL := strings.TrimSpace(account.GetGrokBaseURL())
-	normalizedBaseURL, err := s.validateUpstreamBaseURL(baseURL)
+	apiURL, err := xai.BuildResponsesURL(baseURL)
 	if err != nil {
 		return s.sendErrorAndEnd(c, fmt.Sprintf("Invalid Grok base URL: %s", err.Error()))
 	}
-	apiURL := strings.TrimRight(normalizedBaseURL, "/") + "/responses"
 
-	testModelID := strings.TrimSpace(modelID)
-	if testModelID == "" {
-		testModelID = "grok-4.3"
-	}
-	if mapped := strings.TrimSpace(account.GetMappedModel(testModelID)); mapped != "" {
-		testModelID = mapped
-	}
+	testModelID := resolveGrokTestModelID(account, modelID)
 
 	c.Writer.Header().Set("Content-Type", "text/event-stream")
 	c.Writer.Header().Set("Cache-Control", "no-cache")
