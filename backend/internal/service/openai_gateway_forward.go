@@ -42,6 +42,11 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 
 	if account.Platform == PlatformGrok {
 		_ = promptCacheKey
+		// api_key 类型走第三方兼容端点（forwardGrokResponsesViaAPIKey）；
+		// OAuth 订阅类型走 xAI 官方端点（forwardGrokResponses）。
+		if account.Type == AccountTypeAPIKey {
+			return s.forwardGrokResponsesViaAPIKey(ctx, c, account, body, originalModel, reqStream, startTime)
+		}
 		return s.forwardGrokResponses(ctx, c, account, body, originalModel, reqStream, startTime)
 	}
 
