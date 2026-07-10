@@ -156,6 +156,9 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 	// 视频价格：负数表示清除（使用默认价格），0 保留（表示免费）
 	videoPricePerCount := normalizePrice(input.VideoPricePerCount)
 	videoPricePerSecond := normalizePrice(input.VideoPricePerSecond)
+	videoPrice480P := normalizePrice(input.VideoPrice480P)
+	videoPrice720P := normalizePrice(input.VideoPrice720P)
+	videoPrice1080P := normalizePrice(input.VideoPrice1080P)
 	imageRateMultiplier := 1.0
 	if input.ImageRateMultiplier != nil {
 		if *input.ImageRateMultiplier < 0 {
@@ -181,6 +184,13 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 	// 实际成本会超过冻结额，结算永远失败、用户冻结余额无法解冻。
 	if batchImageHoldMultiplier < batchImageDiscountMultiplier {
 		return nil, errors.New("batch_image_hold_multiplier must be >= batch_image_discount_multiplier")
+	}
+	videoRateMultiplier := 1.0
+	if input.VideoRateMultiplier != nil {
+		if *input.VideoRateMultiplier < 0 {
+			return nil, errors.New("video_rate_multiplier must be >= 0")
+		}
+		videoRateMultiplier = *input.VideoRateMultiplier
 	}
 
 	peakRateMultiplier := 1.0
@@ -268,6 +278,8 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		ImageRateMultiplier:             imageRateMultiplier,
 		BatchImageDiscountMultiplier:    batchImageDiscountMultiplier,
 		BatchImageHoldMultiplier:        batchImageHoldMultiplier,
+		VideoRateIndependent:            input.VideoRateIndependent,
+		VideoRateMultiplier:             videoRateMultiplier,
 		PeakRateEnabled:                 peakRateEnabled,
 		PeakStart:                       peakStart,
 		PeakEnd:                         peakEnd,
@@ -277,6 +289,9 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		ImagePrice4K:                    imagePrice4K,
 		VideoPricePerCount:              videoPricePerCount,
 		VideoPricePerSecond:             videoPricePerSecond,
+		VideoPrice480P:                  videoPrice480P,
+		VideoPrice720P:                  videoPrice720P,
+		VideoPrice1080P:                 videoPrice1080P,
 		ClaudeCodeOnly:                  input.ClaudeCodeOnly,
 		FallbackGroupID:                 input.FallbackGroupID,
 		FallbackGroupIDOnInvalidRequest: fallbackOnInvalidRequest,
@@ -487,6 +502,15 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 		group.BatchImageHoldMultiplier < group.BatchImageDiscountMultiplier {
 		return nil, errors.New("batch_image_hold_multiplier must be >= batch_image_discount_multiplier")
 	}
+	if input.VideoRateIndependent != nil {
+		group.VideoRateIndependent = *input.VideoRateIndependent
+	}
+	if input.VideoRateMultiplier != nil {
+		if *input.VideoRateMultiplier < 0 {
+			return nil, errors.New("video_rate_multiplier must be >= 0")
+		}
+		group.VideoRateMultiplier = *input.VideoRateMultiplier
+	}
 	if input.PeakRateEnabled != nil {
 		group.PeakRateEnabled = *input.PeakRateEnabled
 	}
@@ -521,6 +545,15 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 	}
 	if input.VideoPricePerSecond != nil {
 		group.VideoPricePerSecond = normalizePrice(input.VideoPricePerSecond)
+	}
+	if input.VideoPrice480P != nil {
+		group.VideoPrice480P = normalizePrice(input.VideoPrice480P)
+	}
+	if input.VideoPrice720P != nil {
+		group.VideoPrice720P = normalizePrice(input.VideoPrice720P)
+	}
+	if input.VideoPrice1080P != nil {
+		group.VideoPrice1080P = normalizePrice(input.VideoPrice1080P)
 	}
 
 	// Claude Code 客户端限制

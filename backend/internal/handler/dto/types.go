@@ -59,6 +59,7 @@ type APIKey struct {
 	IPWhitelist []string   `json:"ip_whitelist"`
 	IPBlacklist []string   `json:"ip_blacklist"`
 	LastUsedAt  *time.Time `json:"last_used_at"`
+	LastUsedIP  *string    `json:"last_used_ip"`
 	Quota       float64    `json:"quota"`      // Quota limit in USD (0 = unlimited)
 	QuotaUsed   float64    `json:"quota_used"` // Used quota amount in USD
 	ExpiresAt   *time.Time `json:"expires_at"` // Expiration time (nil = never expires)
@@ -106,6 +107,8 @@ type Group struct {
 	ImageRateMultiplier          float64 `json:"image_rate_multiplier"`
 	BatchImageDiscountMultiplier float64 `json:"batch_image_discount_multiplier"`
 	BatchImageHoldMultiplier     float64 `json:"batch_image_hold_multiplier"`
+	VideoRateIndependent         bool    `json:"video_rate_independent"`
+	VideoRateMultiplier          float64 `json:"video_rate_multiplier"`
 	// 高峰时段倍率配置
 	PeakRateEnabled    bool     `json:"peak_rate_enabled"`
 	PeakStart          string   `json:"peak_start"`
@@ -117,6 +120,9 @@ type Group struct {
 	// 视频生成计费配置（即梦 jimeng 平台）
 	VideoPricePerCount  *float64 `json:"video_price_per_count"`
 	VideoPricePerSecond *float64 `json:"video_price_per_second"`
+	VideoPrice480P      *float64 `json:"video_price_480p"`
+	VideoPrice720P      *float64 `json:"video_price_720p"`
+	VideoPrice1080P     *float64 `json:"video_price_1080p"`
 
 	// Claude Code 客户端限制
 	ClaudeCodeOnly  bool   `json:"claude_code_only"`

@@ -242,6 +242,10 @@ type OpenAIForwardResult struct {
 	ImageOutputSizes   []string
 	ImageSizeSource    string
 	ImageSizeBreakdown map[string]int
+	VideoCount         int
+	VideoResolution    string
+	// VideoDurationSeconds 是提交时请求的生成时长（xAI 按输出秒数计费），已归一化到 1-15 秒。
+	VideoDurationSeconds int
 
 	// 视频生成计费字段（即梦 jimeng 平台使用）
 	VideoCount   int // 生成的视频数量（通常为 1）

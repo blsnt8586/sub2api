@@ -125,10 +125,13 @@ type CreateUserInput struct {
 	Password      string
 	Username      string
 	Notes         string
+	Role          string // 空字符串表示使用默认角色(user);合法值 admin/user
 	Balance       *float64
 	Concurrency   int
 	RPMLimit      int
 	AllowedGroups []int64
+	// ActorAdminID 执行本次操作的管理员ID(来自JWT)，仅用于权限敏感操作的审计日志。
+	ActorAdminID int64
 }
 
 type UpdateUserInput struct {
@@ -136,6 +139,7 @@ type UpdateUserInput struct {
 	Password      string
 	Username      *string
 	Notes         *string
+	Role          string   // 空字符串表示"未提供"(不修改);合法值 admin/user
 	Balance       *float64 // 使用指针区分"未提供"和"设置为0"
 	Concurrency   *int     // 使用指针区分"未提供"和"设置为0"
 	RPMLimit      *int     // 使用指针区分"未提供"和"设置为0"
@@ -144,6 +148,8 @@ type UpdateUserInput struct {
 	// GroupRates 用户专属分组倍率配置
 	// map[groupID]*rate，nil 表示删除该分组的专属倍率
 	GroupRates map[int64]*float64
+	// ActorAdminID 执行本次操作的管理员ID(来自JWT)，仅用于权限敏感操作的审计日志。
+	ActorAdminID int64
 }
 
 type AdminBindAuthIdentityInput struct {
@@ -201,6 +207,8 @@ type CreateGroupInput struct {
 	ImageRateMultiplier          *float64
 	BatchImageDiscountMultiplier *float64
 	BatchImageHoldMultiplier     *float64
+	VideoRateIndependent         bool
+	VideoRateMultiplier          *float64
 	// 高峰时段倍率配置（PeakRateMultiplier 为 nil 时按 1.0 处理）
 	PeakRateEnabled    bool
 	PeakStart          string
@@ -212,8 +220,11 @@ type CreateGroupInput struct {
 	// 视频计费配置（仅 jimeng 平台使用）
 	VideoPricePerCount  *float64 // USD/次；nil 使用默认值
 	VideoPricePerSecond *float64 // USD/秒；非 nil 时优先于 VideoPricePerCount
-	ClaudeCodeOnly      bool     // 仅允许 Claude Code 客户端
-	FallbackGroupID     *int64   // 降级分组 ID
+	VideoPrice480P      *float64
+	VideoPrice720P      *float64
+	VideoPrice1080P     *float64
+	ClaudeCodeOnly      bool   // 仅允许 Claude Code 客户端
+	FallbackGroupID     *int64 // 降级分组 ID
 	// 无效请求兜底分组 ID（仅 anthropic 平台使用）
 	FallbackGroupIDOnInvalidRequest *int64
 	// 模型路由配置（仅 anthropic 平台使用）
@@ -253,6 +264,8 @@ type UpdateGroupInput struct {
 	ImageRateMultiplier          *float64
 	BatchImageDiscountMultiplier *float64
 	BatchImageHoldMultiplier     *float64
+	VideoRateIndependent         *bool
+	VideoRateMultiplier          *float64
 	// 高峰时段倍率配置（nil 表示不修改）
 	PeakRateEnabled    *bool
 	PeakStart          *string
@@ -264,8 +277,11 @@ type UpdateGroupInput struct {
 	// 视频计费配置（仅 jimeng 平台使用）
 	VideoPricePerCount  *float64 // USD/次；nil 使用默认值
 	VideoPricePerSecond *float64 // USD/秒；非 nil 时优先于 VideoPricePerCount
-	ClaudeCodeOnly      *bool    // 仅允许 Claude Code 客户端
-	FallbackGroupID     *int64   // 降级分组 ID
+	VideoPrice480P      *float64
+	VideoPrice720P      *float64
+	VideoPrice1080P     *float64
+	ClaudeCodeOnly      *bool  // 仅允许 Claude Code 客户端
+	FallbackGroupID     *int64 // 降级分组 ID
 	// 无效请求兜底分组 ID（仅 anthropic 平台使用）
 	FallbackGroupIDOnInvalidRequest *int64
 	// 模型路由配置（仅 anthropic 平台使用）

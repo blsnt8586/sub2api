@@ -433,6 +433,7 @@ export default {
       creating: 'Creating...',
       updating: 'Updating...',
       form: {
+        roleLabel: 'Role',
         rpmLimit: 'Requests Per Minute (RPM)',
         rpmLimitPlaceholder: '0 = unlimited',
         rpmLimitHint: 'Max requests per minute for this user; 0 = unlimited. Acts as a fallback only when the group has no rpm_limit set.'
@@ -771,6 +772,7 @@ export default {
       failedToLoad: 'Failed to load groups',
       failedToCreate: 'Failed to create group',
       failedToUpdate: 'Failed to update group',
+      failedToSave: 'Failed to save group',
       failedToDelete: 'Failed to delete group',
       nameRequired: 'Please enter group name',
       rateMultipliers: 'Rate Multipliers',
@@ -844,11 +846,22 @@ export default {
         notConfigured: 'Not configured'
       },
       videoPricing: {
-        title: 'Video Billing',
-        hint: 'Configure billing for Jimeng video generation. Leave empty to use built-in default ($0.05/request).',
-        perCount: 'Per request',
-        perSecond: 'Per second',
-        priorityHint: 'Priority: per-second > per-request > built-in default. When "per second" is set, cost = duration(s) × unit price; otherwise cost = count × unit price.'
+        title: 'Video Generation Pricing',
+        description:
+          'Configure Grok video generation prices in USD per second of output video. Leave empty to use the default per-second rates (grok-imagine-video: $0.05/s 480p, $0.07/s 720p; video-1.5: $0.08/s 480p, $0.14/s 720p, $0.25/s 1080p).',
+        independentMultiplier: 'Use independent video multiplier',
+        videoMultiplier: 'Video multiplier',
+        modeHint:
+          'Videos are billed per second: per-second price × duration (1-15s, default 8s). By default the current effective group multiplier applies; independent mode uses the video multiplier instead.',
+        finalPricePreview: 'Final per-second price preview',
+        notConfigured: 'Not configured',
+        jimengVideoBilling: {
+          title: 'Video Billing',
+          hint: 'Configure billing for Jimeng video generation. Leave empty to use built-in default ($0.05/request).',
+          perCount: 'Per request',
+          perSecond: 'Per second',
+          priorityHint: 'Priority: per-second > per-request > built-in default. When "per second" is set, cost = duration(s) × unit price; otherwise cost = count × unit price.'
+        }
       },
       peakRate: {
         enable: 'Enable peak rate multiplier',

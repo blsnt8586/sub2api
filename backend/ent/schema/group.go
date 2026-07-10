@@ -136,6 +136,30 @@ func (Group) Fields() []ent.Field {
 			SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}).
 			Comment("每秒视频的价格（USD/秒），非 nil 时优先于 video_price_per_count 按秒计费"),
 
+		// 视频生成计费配置（Grok 平台使用）
+		field.Bool("video_rate_independent").
+			Default(false).
+			Comment("视频计费是否使用独立倍率（Grok 平台）"),
+		field.Float("video_rate_multiplier").
+			SchemaType(map[string]string{dialect.Postgres: "decimal(10,4)"}).
+			Default(1.0).
+			Comment("视频计费独立倍率（Grok 平台）"),
+		field.Float("video_price_480p").
+			Optional().
+			Nillable().
+			SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}).
+			Comment("480p 视频每秒单价（USD/秒，Grok 平台）"),
+		field.Float("video_price_720p").
+			Optional().
+			Nillable().
+			SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}).
+			Comment("720p 视频每秒单价（USD/秒，Grok 平台）"),
+		field.Float("video_price_1080p").
+			Optional().
+			Nillable().
+			SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}).
+			Comment("1080p 视频每秒单价（USD/秒，Grok 平台）"),
+
 		// Claude Code 客户端限制 (added by migration 029)
 		field.Bool("claude_code_only").
 			Default(false).

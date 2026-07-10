@@ -782,7 +782,7 @@ func (s *AccountTestService) testGrokAccountConnection(c *gin.Context, account *
 func resolveGrokTestModelID(account *Account, modelID string) string {
 	id := strings.TrimSpace(modelID)
 	if id == "" {
-		id = "grok-4.3"
+		id = "grok-4.5"
 	}
 	if mapped := strings.TrimSpace(account.GetMappedModel(id)); mapped != "" {
 		return mapped
