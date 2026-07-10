@@ -15,6 +15,14 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+// ptrStringOrNil 若 s 非空返回其指针，否则返回 nil。
+func ptrStringOrNil(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
 // forwardGrokResponsesViaAPIKey 处理 api_key 类型的 Grok 账号（第三方 xAI 兼容端点）。
 //
 // 与 OAuth 订阅转发（forwardGrokResponses）刻意分离，对齐 OpenAI 的
