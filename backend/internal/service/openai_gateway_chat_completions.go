@@ -234,6 +234,13 @@ func (s *OpenAIGatewayService) ForwardAsChatCompletions(
 	}
 	responsesBody = updatedBody
 
+	// [CUSTOM] 注入全局 OpenAI system prompt 到顶层 instructions（详见 openai_system_prompt_inject.go）
+	if s.settingService != nil {
+		if enabled, prompt := s.settingService.GetOpenAISystemPromptInjection(ctx); enabled {
+			responsesBody, _ = injectOpenAIGlobalInstructions(responsesBody, prompt)
+		}
+	}
+
 	// 5. Get access token
 	token, _, err := s.GetAccessToken(ctx, account)
 	if err != nil {

@@ -564,6 +564,8 @@ export interface SystemSettings {
   enable_client_dateline_normalization: boolean;
   antigravity_user_agent_version: string;
   openai_codex_user_agent: string;
+  enable_openai_system_prompt_injection: boolean;
+  openai_system_prompt: string;
   // codex_cli_only 加固
   min_codex_version: string;
   max_codex_version: string;
@@ -838,6 +840,8 @@ export interface UpdateSettingsRequest {
   enable_client_dateline_normalization?: boolean;
   antigravity_user_agent_version?: string;
   openai_codex_user_agent?: string;
+  enable_openai_system_prompt_injection?: boolean;
+  openai_system_prompt?: string;
   // codex_cli_only 加固
   min_codex_version?: string;
   max_codex_version?: string;

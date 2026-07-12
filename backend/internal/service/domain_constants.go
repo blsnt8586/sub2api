@@ -475,6 +475,10 @@ const (
 	// 当客户端 UA 被识别为浏览器（Chrome/Firefox/Safari/Edge 等）时，转发给 OpenAI 上游前会替换为此值，
 	// 用于避免 Cloudflare 对浏览器型 UA 的质询拦截。
 	SettingKeyOpenAICodexUserAgent = "openai_codex_user_agent"
+	// SettingKeyEnableOpenAISystemPromptInjection 是否对 OpenAI/Codex Responses 路径注入全局 system prompt（默认 false）
+	SettingKeyEnableOpenAISystemPromptInjection = "enable_openai_system_prompt_injection"
+	// SettingKeyOpenAISystemPrompt OpenAI/Codex Responses 路径注入的全局 system prompt（合并到顶层 instructions；空值等价关闭）
+	SettingKeyOpenAISystemPrompt = "openai_system_prompt"
 	// SettingKeyOpenAIAllowClaudeCodeCodexPlugin 已废弃：历史全局开关只作为升级迁移输入读取。
 	// 迁移后等价规则写入 SettingKeyCodexCLIOnlyWhitelist，不再参与运行时判定。
 	SettingKeyOpenAIAllowClaudeCodeCodexPlugin = "openai_allow_claude_code_codex_plugin"

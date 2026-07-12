@@ -226,6 +226,8 @@ type UpdateSettingsRequest struct {
 	EnableClientDatelineNormalization      *bool   `json:"enable_client_dateline_normalization"`
 	AntigravityUserAgentVersion            *string `json:"antigravity_user_agent_version"`
 	OpenAICodexUserAgent                   *string `json:"openai_codex_user_agent"`
+	EnableOpenAISystemPromptInjection      *bool   `json:"enable_openai_system_prompt_injection"`
+	OpenAISystemPrompt                     *string `json:"openai_system_prompt"`
 
 	// codex_cli_only 加固（global-only）
 	MinCodexVersion                      string `json:"min_codex_version"`
@@ -1388,6 +1390,18 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 			}
 			return previousSettings.OpenAICodexUserAgent
 		}(),
+		EnableOpenAISystemPromptInjection: func() bool {
+			if req.EnableOpenAISystemPromptInjection != nil {
+				return *req.EnableOpenAISystemPromptInjection
+			}
+			return previousSettings.EnableOpenAISystemPromptInjection
+		}(),
+		OpenAISystemPrompt: func() string {
+			if req.OpenAISystemPrompt != nil {
+				return *req.OpenAISystemPrompt
+			}
+			return previousSettings.OpenAISystemPrompt
+		}(),
 		MinCodexVersion:       strings.TrimSpace(req.MinCodexVersion),
 		MaxCodexVersion:       strings.TrimSpace(req.MaxCodexVersion),
 		CodexCLIOnlyBlacklist: strings.TrimSpace(req.CodexCLIOnlyBlacklist),
@@ -1814,6 +1828,8 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		EnableClientDatelineNormalization:                      updatedSettings.EnableClientDatelineNormalization,
 		AntigravityUserAgentVersion:                            updatedSettings.AntigravityUserAgentVersion,
 		OpenAICodexUserAgent:                                   updatedSettings.OpenAICodexUserAgent,
+		EnableOpenAISystemPromptInjection:                      updatedSettings.EnableOpenAISystemPromptInjection,
+		OpenAISystemPrompt:                                     updatedSettings.OpenAISystemPrompt,
 		MinCodexVersion:                                        updatedSettings.MinCodexVersion,
 		MaxCodexVersion:                                        updatedSettings.MaxCodexVersion,
 		CodexCLIOnlyBlacklist:                                  updatedSettings.CodexCLIOnlyBlacklist,

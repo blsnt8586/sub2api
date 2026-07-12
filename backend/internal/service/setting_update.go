@@ -369,6 +369,8 @@ func (s *SettingService) buildSystemSettingsUpdates(ctx context.Context, setting
 	updates[SettingKeyEnableClientDatelineNormalization] = strconv.FormatBool(settings.EnableClientDatelineNormalization)
 	updates[SettingKeyAntigravityUserAgentVersion] = antigravity.NormalizeUserAgentVersion(settings.AntigravityUserAgentVersion)
 	updates[SettingKeyOpenAICodexUserAgent] = strings.TrimSpace(settings.OpenAICodexUserAgent)
+	updates[SettingKeyEnableOpenAISystemPromptInjection] = strconv.FormatBool(settings.EnableOpenAISystemPromptInjection)
+	updates[SettingKeyOpenAISystemPrompt] = settings.OpenAISystemPrompt
 	// codex_cli_only 加固
 	updates[SettingKeyMinCodexVersion] = strings.TrimSpace(settings.MinCodexVersion)
 	updates[SettingKeyMaxCodexVersion] = strings.TrimSpace(settings.MaxCodexVersion)
@@ -520,6 +522,8 @@ func (s *SettingService) refreshCachedSettings(settings *SystemSettings) {
 		clientDatelineNormalization:      settings.EnableClientDatelineNormalization,
 		expiresAt:                        time.Now().Add(gatewayForwardingCacheTTL).UnixNano(),
 	})
+	// [CUSTOM] OpenAI 全局 system prompt 注入缓存热更新（独立缓存，见 openai_system_prompt_inject.go）
+	storeOpenAISystemPromptInjectCache(settings.EnableOpenAISystemPromptInjection, settings.OpenAISystemPrompt)
 	s.antigravityUAVersionSF.Forget("antigravity_user_agent_version")
 	antigravityUserAgentVersion := antigravity.NormalizeUserAgentVersion(settings.AntigravityUserAgentVersion)
 	if antigravityUserAgentVersion == "" {

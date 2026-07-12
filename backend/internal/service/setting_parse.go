@@ -764,6 +764,9 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 	}
 	result.AntigravityUserAgentVersion = antigravity.NormalizeUserAgentVersion(settings[SettingKeyAntigravityUserAgentVersion])
 	result.OpenAICodexUserAgent = strings.TrimSpace(settings[SettingKeyOpenAICodexUserAgent])
+	// OpenAI/Codex 全局 system prompt 注入（默认关闭，opt-in）
+	result.EnableOpenAISystemPromptInjection = settings[SettingKeyEnableOpenAISystemPromptInjection] == "true"
+	result.OpenAISystemPrompt = settings[SettingKeyOpenAISystemPrompt]
 	// codex_cli_only 加固
 	result.MinCodexVersion = settings[SettingKeyMinCodexVersion]
 	result.MaxCodexVersion = settings[SettingKeyMaxCodexVersion]

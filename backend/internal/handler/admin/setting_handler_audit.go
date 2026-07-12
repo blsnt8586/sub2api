@@ -425,6 +425,12 @@ func diffSettings(before *service.SystemSettings, after *service.SystemSettings,
 	if before.OpenAICodexUserAgent != after.OpenAICodexUserAgent {
 		changed = append(changed, "openai_codex_user_agent")
 	}
+	if before.EnableOpenAISystemPromptInjection != after.EnableOpenAISystemPromptInjection {
+		changed = append(changed, "enable_openai_system_prompt_injection")
+	}
+	if before.OpenAISystemPrompt != after.OpenAISystemPrompt {
+		changed = append(changed, "openai_system_prompt")
+	}
 	if before.PaymentVisibleMethodAlipaySource != after.PaymentVisibleMethodAlipaySource {
 		changed = append(changed, "payment_visible_method_alipay_source")
 	}

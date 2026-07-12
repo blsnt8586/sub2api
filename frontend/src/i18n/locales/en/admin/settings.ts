@@ -349,6 +349,11 @@ export default {
         openaiCodexUserAgent: 'OpenAI Codex UA',
         openaiCodexUserAgentPlaceholder: 'codex-tui/0.125.0 (Ubuntu 22.4.0; x86_64) xterm-256color (codex-tui; 0.125.0)',
         openaiCodexUserAgentHint: 'Used to bypass Cloudflare browser-UA challenges on the OpenAI upstream. Only applies when the client User-Agent is detected as a browser (Mozilla/...). Leave empty to use the built-in default.',
+        openaiSystemPromptInjection: 'OpenAI System Injection',
+        openaiSystemPromptInjectionHint: 'Inject a global system prompt into all OpenAI/Codex requests (merged into the top-level instructions, preserving the client\'s original instructions). Disabled by default.',
+        openaiSystemPrompt: 'OpenAI Global System Prompt',
+        openaiSystemPromptPlaceholder: 'Leave empty to skip injection. The content is prepended before the client\'s instructions.',
+        openaiSystemPromptHint: 'Prepend-merge strategy: the global prompt goes first, the client instructions follow, separated by a blank line. Fixed content has minimal impact on upstream caching.',
         codexHardeningTitle: "Codex Settings",
         codexClientRestrictionTitle: "Codex client restriction",
         codexHardeningDesc:

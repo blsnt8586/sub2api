@@ -4599,6 +4599,56 @@
                 </p>
               </div>
 
+              <!-- OpenAI/Codex 全局 System Prompt 注入 -->
+              <div class="flex items-center justify-between">
+                <div>
+                  <label
+                    class="text-sm font-medium text-gray-700 dark:text-gray-300"
+                  >
+                    {{
+                      t(
+                        "admin.settings.gatewayForwarding.openaiSystemPromptInjection",
+                      )
+                    }}
+                  </label>
+                  <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                    {{
+                      t(
+                        "admin.settings.gatewayForwarding.openaiSystemPromptInjectionHint",
+                      )
+                    }}
+                  </p>
+                </div>
+                <Toggle
+                  v-model="form.enable_openai_system_prompt_injection"
+                />
+              </div>
+
+              <div v-show="form.enable_openai_system_prompt_injection">
+                <label
+                  class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  {{
+                    t("admin.settings.gatewayForwarding.openaiSystemPrompt")
+                  }}
+                </label>
+                <textarea
+                  v-model="form.openai_system_prompt"
+                  rows="6"
+                  class="input w-full resize-y font-mono text-xs leading-5"
+                  :placeholder="
+                    t(
+                      'admin.settings.gatewayForwarding.openaiSystemPromptPlaceholder',
+                    )
+                  "
+                />
+                <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                  {{
+                    t("admin.settings.gatewayForwarding.openaiSystemPromptHint")
+                  }}
+                </p>
+              </div>
+
             </div>
           </div>
 
@@ -8305,6 +8355,8 @@ const form = reactive<SettingsForm>({
   enable_client_dateline_normalization: true,
   antigravity_user_agent_version: "",
   openai_codex_user_agent: "",
+  enable_openai_system_prompt_injection: false,
+  openai_system_prompt: "",
   // codex_cli_only 加固
   min_codex_version: "",
   max_codex_version: "",
@@ -9611,6 +9663,9 @@ async function saveSettings() {
         form.antigravity_user_agent_version?.trim() || "",
       openai_codex_user_agent:
         form.openai_codex_user_agent?.trim() || "",
+      enable_openai_system_prompt_injection:
+        form.enable_openai_system_prompt_injection,
+      openai_system_prompt: form.openai_system_prompt?.trim() || "",
       min_codex_version: form.min_codex_version?.trim() || "",
       max_codex_version: form.max_codex_version?.trim() || "",
       codex_cli_only_allow_app_server_clients:

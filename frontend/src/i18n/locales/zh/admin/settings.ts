@@ -343,6 +343,11 @@ export default {
         openaiCodexUserAgent: 'OpenAI Codex UA',
         openaiCodexUserAgentPlaceholder: 'codex-tui/0.125.0 (Ubuntu 22.4.0; x86_64) xterm-256color (codex-tui; 0.125.0)',
         openaiCodexUserAgentHint: '用于规避 OpenAI 上游 Cloudflare 对浏览器 UA 的访问质询。仅在检测到客户端 User-Agent 为浏览器（Mozilla/...）时生效，其他客户端原样透传。留空使用内置默认值。',
+        openaiSystemPromptInjection: 'OpenAI System 注入',
+        openaiSystemPromptInjectionHint: '为所有 OpenAI/Codex 请求注入全局 system prompt（合并到顶层 instructions，保留客户端原有指令）。默认关闭。',
+        openaiSystemPrompt: 'OpenAI 全局 System Prompt',
+        openaiSystemPromptPlaceholder: '留空则不注入。内容会前置合并到客户端的 instructions 之前。',
+        openaiSystemPromptHint: '前置合并策略：全局提示词在前，客户端 instructions 在后，两者之间空一行。固定内容对上游缓存影响极小。',
         codexHardeningTitle: 'Codex 设置',
         codexClientRestrictionTitle: 'Codex 客户端限制',
         codexHardeningDesc:

@@ -19,6 +19,7 @@ fork 在上游之上叠加了三大功能块，外加一层解耦重构：
 | B. 即梦（jimeng）视频平台 | 新增视频生成平台，按次/按秒计费，走 OpenAI 网关链路 | 中（新增为主，少量上游文件插桩） |
 | C. 上游 Sub2API 管理 + 定时优化 | 管理端管理 `provider_type=sub2api` 上游实例，定时优化账号倍率区间 | 低（几乎全新增文件） |
 | D. 平台分支解耦重构 | 把散落各处的平台 `switch/if` 收敛到 `platformColors.ts` / `domain_constants.go` | 降低未来冲突 |
+| E. OpenAI/Codex 全局 system prompt 注入 | 管理端配置全局系统提示词，前置合并到 Responses `instructions`，覆盖 responses/codex/chat 三条路径 | 低（逻辑全在新增文件，上游纯追加 + 2 处网关钩子） |
 
 > 注：**Grok 平台是上游自带**，非本 fork 新增。fork 唯一新增的平台是**即梦（jimeng）**。
 
@@ -183,6 +184,42 @@ cd backend && make build            # 产出 backend/bin/server
 
 ---
 
+## 五之二、OpenAI/Codex 全局 system prompt 注入（功能块 E）
+
+管理端可配置一段全局 system prompt，注入到所有 OpenAI/Codex 请求。用于统一下发平台级规则（如禁止讨论竞品、固定角色设定等）。
+
+### E.1 注入原理
+
+- **目标字段**：顶层 `instructions`（string）。Codex（`/backend-api/codex/responses`）与 chat/completions 进网关后都转成 Responses 格式，系统指令统一走 `instructions`——ChatGPT 内部 Codex 端点不接受 `role:"system"`。
+- **合并策略**：前置合并 `全局prompt + "\n\n" + 客户端原instructions`。保留客户端自己的指令，全局规则在前。客户端无 instructions 时直接设为全局 prompt。
+- **幂等**：`instructions` 已以全局 prompt 开头则跳过，防止重试/多次调用重复注入。
+- **缓存影响**：全局 prompt 固定不变→前缀稳定→同对话第二轮起正常命中上游 prompt cache，不破坏缓存。
+- **默认关闭**（opt-in）：`enable_openai_system_prompt_injection` 默认 false，不改变既有行为。
+
+### E.2 新增文件（低冲突，直接保留）
+
+- `backend/internal/service/openai_system_prompt_inject.go` — 核心：`GetOpenAISystemPromptInjection`（60s TTL atomic 缓存 + singleflight）、`injectOpenAIGlobalInstructions`（gjson/sjson 合并）、`storeOpenAISystemPromptInjectCache` / `InvalidateOpenAISystemPromptInjectionCache`（保存后热更新）。只引用自身符号 + stdlib/gjson/sjson，零上游依赖。
+- `backend/internal/service/openai_system_prompt_inject_test.go` — 6 用例（空值/合并/幂等）。
+
+### E.3 上游钩子（2 处，纯新增，[§7 MEDIUM](#七冲突面分级high-conflict-必查) 已登记）
+
+- `openai_gateway_forward.go`：`Forward` body 定稿后（image billing / WS / HTTP 转发之前）注入，覆盖 responses HTTP+WS 两条子路径。注入后重置 `requestView`/`reqBody` 让下游重新读取。`compatMessagesBridge`（messages 格式）跳过。
+- `openai_gateway_chat_completions.go`：`ForwardAsChatCompletions` 的 `responsesBody = updatedBody` 后注入，覆盖 chat/completions。
+
+> 未覆盖路径：passthrough 透传（设计即原样转发）、APIKey 不支持 Responses 的 raw chat completions 回退（messages 格式）。需要时另补。
+
+### E.4 设置存储链路（8 文件，各 2~16 行纯新增，照抄 Claude OAuth 简版模式）
+
+`domain_constants.go`（2 常量）、`settings_view.go` + `dto/settings.go`（各 2 字段）、`setting_parse.go` / `setting_update.go`（解析+写入+缓存热更新）、`setting_handler.go` / `setting_handler_update.go` / `setting_handler_audit.go`（DTO 映射+合并+审计）。
+
+### E.5 前端（3 文件）
+
+- `api/admin/settings.ts` — `SystemSettings` + `UpdateSettingsRequest` 各加 2 字段。
+- `views/admin/SettingsView.vue` — 网关服务 tab 加 Toggle + textarea（form 默认值 + save payload）。
+- `i18n/locales/{zh,en}/admin/settings.ts` — 各 5 条文案。
+
+---
+
 ## 六、解耦策略：降低上游同步冲突
 
 fork 初期散落的平台分支（jimeng/grok 等）遍布 41 个文件，每次同步上游都与其文件拆分/重构冲突。
@@ -243,11 +280,15 @@ fork 初期散落的平台分支（jimeng/grok 等）遍布 41 个文件，每�
 | `group.go` Ent schema | `video_price_*` 字段 | 上游若改 Group schema，冲突时保留 video 字段 |
 | `platformColors.ts` | `jimeng` 条目 + Phase 1 收敛 | 上游若改颜色 token，需合并 jimeng 并保留 accessor 函数 |
 | `HomeView.vue` / `CustomPageView.vue` / `RiskControlView.vue` | iframe `allow` 属性 | 上游若改 iframe 结构，需补回剪贴板授权 |
+| `openai_gateway_forward.go` | `Forward` body 定稿后的 `[CUSTOM]` 注入钩子（15 行，覆盖 responses HTTP+WS） | 上游高频重构 OpenAI 网关；若改 `if bodyModified` 块或重命名 `requestView`/`reqBody`/`compatMessagesBridge`，需重新贴钩子并核对变量名 |
+| `openai_gateway_chat_completions.go` | `ForwardAsChatCompletions` 的 `[CUSTOM]` 注入钩子（7 行，锚点 `responsesBody = updatedBody` 后） | 上游若重构 chat→responses 转换流程，需重新定位注入点 |
 
 ### 🟢 LOW — 一般无冲突（fork 新增文件为主）
 
 - Sub2API 管理全套文件（`sub2api_provider*`、`sub2api_optimize*`）— 上游未涉及，直接保留
 - jimeng 平台客户端（`pkg/jimeng/`、`jimeng_video_*.go`）— 新增文件，直接保留
+- **OpenAI/Codex 全局 system prompt 注入**（功能块 E）：核心逻辑全在新增文件 `openai_system_prompt_inject.go`(+test)，只引用自身符号 + stdlib/gjson/sjson，零上游依赖，直接保留
+- 设置存储链路（功能块 E 的 setting 接入）：`domain_constants.go` / `settings_view.go` / `setting_parse.go` / `setting_update.go` / `dto/settings.go` / `setting_handler{,_update,_audit}.go` 各 2~16 行**纯新增**，与 Claude OAuth/Codex UA 等既有设置同模式；追加式改动，冲突概率低，冲突时照抄相邻设置的写法即可
 - 开发脚本（`start-*.sh`）— 新增文件
 
 ---
@@ -274,6 +315,8 @@ fork 初期散落的平台分支（jimeng/grok 等）遍布 41 个文件，每�
 - ✅ `domain_constants.go` / `channel.go` / `group.go` 的 jimeng/video 相关常量/字段
 - ✅ iframe View 的 `allow` 属性
 - ✅ `platformColors.ts` 的 jimeng 条目 + accessor 函数
+- ✅ `openai_gateway_forward.go` / `openai_gateway_chat_completions.go` 的 `[CUSTOM]` system prompt 注入钩子（搜 `injectOpenAIGlobalInstructions`）
+- ✅ 设置链路 8 文件的 `OpenAISystemPrompt` / `EnableOpenAISystemPromptInjection` 字段（搜 `OpenAISystemPrompt`）
 
 ### 8.3 编译 + 测试
 
@@ -302,6 +345,7 @@ fork 提交历史清晰记录了各功能块的合入点：
 - `f01b5f1d` — 即梦视频 + 计费（功能块 B）
 - `48da50eb` / `1a7d895b` — Sub2API 管理（功能块 C）
 - **Phase 1 前端收敛**（本批次）— 平台分支解耦（功能块 D）
+- **OpenAI/Codex 全局 system prompt 注入**（本批次）— 功能块 E
 
 若需回退某功能块，可 `git revert <commit-hash>`。复原时可 `git cherry-pick` 对应提交（注意冲突）。
 
@@ -315,7 +359,8 @@ fork 提交历史清晰记录了各功能块的合入点：
 - 新增计费模式：`video` / `video_per_second`
 - 新增上游类型：`sub2api` provider（Ent 实体 + 完整 CRUD + 定时优化 runner）
 - 前端解耦进度：Phase 1 完成（platformColors 收敛），Phase 2~3 待启动
+- 功能块 E：OpenAI/Codex 全局 system prompt 注入（合并到顶层 `instructions`，前置合并策略，默认 opt-in 关闭）
 
 ---
 
-**最后更新**：2026-07-08（合并上游 144 commits + Phase 1 前端收敛）
+**最后更新**：2026-07-12（合并上游至 v0.1.151 + 功能块 E：OpenAI 全局 system prompt 注入）

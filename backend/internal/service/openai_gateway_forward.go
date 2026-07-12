@@ -444,6 +444,21 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 			requestView = newOpenAIRequestView(body)
 		}
 	}
+
+	// [CUSTOM] OpenAI/Codex 全局 system prompt 注入（前置合并到顶层 instructions）。
+	// 放在 body 定稿之后、下游读取（image billing / WS ensureReqBody / HTTP 转发）之前，
+	// 覆盖原生 /v1/responses 与 /backend-api/codex/responses 的 HTTP 与 WS 两条子路径。
+	// compatMessagesBridge 场景 body 是 messages 格式（走 chat 回退），不注入 instructions。
+	if !compatMessagesBridge && s != nil && s.settingService != nil {
+		if enabled, prompt := s.settingService.GetOpenAISystemPromptInjection(ctx); enabled {
+			if injected, changed := injectOpenAIGlobalInstructions(body, prompt); changed {
+				body = injected
+				requestView = newOpenAIRequestView(body)
+				reqBody = nil
+			}
+		}
+	}
+
 	imageBillingModel := ""
 	imageSizeTier := ""
 	imageInputSize := ""
