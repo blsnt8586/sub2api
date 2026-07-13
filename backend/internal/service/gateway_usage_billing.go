@@ -784,14 +784,14 @@ func (s *GatewayService) calculateVideoCost(
 	apiKey *APIKey,
 	multiplier float64,
 ) *CostBreakdown {
-	var groupConfig *VideoPriceConfig
+	var groupConfig *JimengVideoPriceConfig
 	if apiKey.Group != nil {
-		groupConfig = &VideoPriceConfig{
+		groupConfig = &JimengVideoPriceConfig{
 			PricePerCount:  apiKey.Group.VideoPricePerCount,
 			PricePerSecond: apiKey.Group.VideoPricePerSecond,
 		}
 	}
-	return s.billingService.CalculateVideoCost(result.VideoCount, result.VideoSeconds, groupConfig, multiplier)
+	return s.billingService.CalculateJimengVideoCost(result.VideoCount, result.VideoSeconds, groupConfig, multiplier)
 }
 
 // resolveChannelPricing 检查指定模型是否存在渠道级别定价。

@@ -901,6 +901,8 @@ func TestAPIContracts(t *testing.T) {
 					"openai_advanced_scheduler_effective_weight_previous_response": "5",
 					"openai_advanced_scheduler_effective_weight_session_sticky": "3",
 					"openai_codex_user_agent":           "",
+					"enable_openai_system_prompt_injection": false,
+					"openai_system_prompt":               "",
 					"openai_fast_policy_settings": {
 						"rules": []
 					},
@@ -1173,6 +1175,8 @@ func TestAPIContracts(t *testing.T) {
 					"openai_advanced_scheduler_effective_weight_previous_response": "5",
 					"openai_advanced_scheduler_effective_weight_session_sticky": "3",
 					"openai_codex_user_agent":           "",
+					"enable_openai_system_prompt_injection": false,
+					"openai_system_prompt":               "",
 					"openai_fast_policy_settings": {
 						"rules": []
 					},
