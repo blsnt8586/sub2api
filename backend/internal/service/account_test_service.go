@@ -770,37 +770,21 @@ func (s *AccountTestService) testOpenAIAccountConnection(c *gin.Context, account
 	return s.processOpenAIStream(c, resp.Body)
 }
 
-// testGrokAccountConnection dispatches Grok account tests by account type.
-// - OAuth 账号走 xAI 官方 Responses API（订阅 token 鉴权）
-// - API Key 账号走第三方兼容端点（base_url + Bearer api_key）
+// testGrokAccountConnection tests a Grok OAuth or API-key account through xAI's Responses API.
 func (s *AccountTestService) testGrokAccountConnection(c *gin.Context, account *Account, modelID string) error {
-	if account.Type == AccountTypeAPIKey {
-		return s.testGrokAPIKeyAccountConnection(c, account, modelID)
-	}
-	return s.testGrokOAuthAccountConnection(c, account, modelID)
-}
-
-// resolveGrokTestModelID 解析 Grok 测试用的 model ID：若空则回退到 grok-4.3，再应用账号级模型映射。
-func resolveGrokTestModelID(account *Account, modelID string) string {
-	id := strings.TrimSpace(modelID)
-	if id == "" {
-		id = "grok-4.5"
-	}
-	if mapped := strings.TrimSpace(account.GetMappedModel(id)); mapped != "" {
-		return mapped
-	}
-	return id
-}
-
-// testGrokOAuthAccountConnection tests a Grok OAuth account through xAI's Responses API.
-func (s *AccountTestService) testGrokOAuthAccountConnection(c *gin.Context, account *Account, modelID string) error {
 	ctx := c.Request.Context()
 
 	if s.httpUpstream == nil {
 		return s.sendErrorAndEnd(c, "HTTP upstream not configured")
 	}
 
-	testModelID := resolveGrokTestModelID(account, modelID)
+	testModelID := strings.TrimSpace(modelID)
+	if testModelID == "" {
+		testModelID = "grok-4.3"
+	}
+	if mapped := strings.TrimSpace(account.GetMappedModel(testModelID)); mapped != "" {
+		testModelID = mapped
+	}
 
 	var authToken string
 	switch account.Type {
@@ -882,73 +866,6 @@ func (s *AccountTestService) testGrokOAuthAccountConnection(c *gin.Context, acco
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
 		return s.sendErrorAndEnd(c, fmt.Sprintf("Grok Responses API returned %d: %s", resp.StatusCode, string(body)))
-	}
-
-	return s.processOpenAIStream(c, resp.Body)
-}
-
-// testGrokAPIKeyAccountConnection tests a Grok API Key account through a third-party
-// xAI-compatible /responses endpoint, using base_url + Bearer api_key auth.
-func (s *AccountTestService) testGrokAPIKeyAccountConnection(c *gin.Context, account *Account, modelID string) error {
-	ctx := c.Request.Context()
-
-	if s.httpUpstream == nil {
-		return s.sendErrorAndEnd(c, "HTTP upstream not configured")
-	}
-
-	apiKey := strings.TrimSpace(account.GetCredential("api_key"))
-	if apiKey == "" {
-		return s.sendErrorAndEnd(c, "Grok API Key account missing api_key credential")
-	}
-
-	baseURL := strings.TrimSpace(account.GetGrokBaseURL())
-	apiURL, err := xai.BuildResponsesURL(baseURL)
-	if err != nil {
-		return s.sendErrorAndEnd(c, fmt.Sprintf("Invalid Grok base URL: %s", err.Error()))
-	}
-
-	testModelID := resolveGrokTestModelID(account, modelID)
-
-	c.Writer.Header().Set("Content-Type", "text/event-stream")
-	c.Writer.Header().Set("Cache-Control", "no-cache")
-	c.Writer.Header().Set("Connection", "keep-alive")
-	c.Writer.Header().Set("X-Accel-Buffering", "no")
-	c.Writer.Flush()
-
-	payloadBytes, err := json.Marshal(map[string]any{
-		"model":  testModelID,
-		"input":  "hi",
-		"stream": true,
-	})
-	if err != nil {
-		return s.sendErrorAndEnd(c, "Failed to create Grok API Key test payload")
-	}
-
-	s.sendEvent(c, TestEvent{Type: "test_start", Model: testModelID})
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, apiURL, bytes.NewReader(payloadBytes))
-	if err != nil {
-		return s.sendErrorAndEnd(c, "Failed to create Grok API Key request")
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json, text/event-stream")
-	req.Header.Set("Authorization", "Bearer "+apiKey)
-	req.Header.Set("User-Agent", "sub2api-grok/1.0")
-
-	proxyURL := ""
-	if account.ProxyID != nil && account.Proxy != nil {
-		proxyURL = account.Proxy.URL()
-	}
-
-	resp, err := s.httpUpstream.Do(req, proxyURL, account.ID, account.Concurrency)
-	if err != nil {
-		return s.sendErrorAndEnd(c, fmt.Sprintf("Grok API Key request failed: %s", err.Error()))
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return s.sendErrorAndEnd(c, fmt.Sprintf("Grok API Key returned %d: %s", resp.StatusCode, string(body)))
 	}
 
 	return s.processOpenAIStream(c, resp.Body)

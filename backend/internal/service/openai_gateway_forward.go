@@ -50,11 +50,9 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 
 	if account.Platform == PlatformGrok {
 		_ = promptCacheKey
-		// api_key 类型走第三方兼容端点（forwardGrokResponsesViaAPIKey）；
-		// OAuth 订阅类型走 xAI 官方端点（forwardGrokResponses）。
-		if account.Type == AccountTypeAPIKey {
-			return s.forwardGrokResponsesViaAPIKey(ctx, c, account, body, originalModel, reqStream, startTime)
-		}
+		// 上游 v0.1.152 起 forwardGrokResponses 原生支持 api_key 账号
+		//（GetAccessToken 对 api_key 直接返回 credential，URL 走可配置 GetGrokBaseURL），
+		// 故 OAuth 与 api_key 统一走此路径，不再需要 fork 独有的 forwardGrokResponsesViaAPIKey。
 		return s.forwardGrokResponses(ctx, c, account, body, originalModel, reqStream, startTime)
 	}
 
