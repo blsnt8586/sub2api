@@ -365,7 +365,7 @@
         </div>
       </div>
 
-      <!-- Account Type Selection (Grok - OAuth or API Key) -->
+<!-- Account Type Selection (Grok - OAuth or API Key) -->
       <div v-if="form.platform === 'grok'">
         <label class="input-label">{{ t('admin.accounts.accountType') }}</label>
         <div class="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2" data-tour="account-form-type">
@@ -397,6 +397,7 @@
 
           <button
             type="button"
+            data-testid="grok-account-type-api-key"
             @click="accountCategory = 'apikey'"
             :class="[
               'flex items-center gap-3 rounded-lg border-2 p-3 text-left transition-all',
@@ -1147,10 +1148,12 @@
                   ? 'https://generativelanguage.googleapis.com'
                   : form.platform === 'jimeng'
                     ? 'https://api.example.com/v1'
+                  : form.platform === 'grok'
+                    ? 'https://api.x.ai/v1'
                     : 'https://api.anthropic.com'
             "
           />
-          <p class="input-hint">{{ baseUrlHint }}</p>
+          <p v-if="baseUrlHint" class="input-hint">{{ baseUrlHint }}</p>
         </div>
         <div>
           <label class="input-label">{{ t('admin.accounts.apiKeyRequired') }}</label>
@@ -1166,10 +1169,12 @@
                   ? 'AIza...'
                   : form.platform === 'jimeng'
                     ? 'sk-...'
+                  : form.platform === 'grok'
+                    ? 'xai-...'
                     : 'sk-ant-...'
             "
           />
-          <p class="input-hint">{{ apiKeyHint }}</p>
+          <p v-if="apiKeyHint" class="input-hint">{{ apiKeyHint }}</p>
         </div>
 
         <!-- Gemini API Key tier selection -->
