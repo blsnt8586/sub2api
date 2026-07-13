@@ -365,7 +365,7 @@
         </div>
       </div>
 
-<!-- Account Type Selection (Grok - OAuth or API Key) -->
+      <!-- Account Type Selection (Grok) -->
       <div v-if="form.platform === 'grok'">
         <label class="input-label">{{ t('admin.accounts.accountType') }}</label>
         <div class="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2" data-tour="account-form-type">
@@ -418,15 +418,10 @@
             </div>
             <div>
               <span class="block text-sm font-medium text-gray-900 dark:text-white">API Key</span>
-              <span class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.accounts.types.upstreamDesc') }}</span>
+              <span class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.accounts.types.responsesApi') }}</span>
             </div>
           </button>
         </div>
-        <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-          {{ accountCategory === 'apikey'
-            ? t('admin.accounts.grok.apiKeyHint')
-            : t('admin.accounts.oauth.grok.oauthOnlyHint') }}
-        </p>
       </div>
 
       <!-- Account Type (Jimeng - API Key only, third-party base_url + api_key) -->
@@ -3550,7 +3545,7 @@ const oauthStepTitle = computed(() => {
 const baseUrlHint = computed(() => {
   if (form.platform === 'openai') return t('admin.accounts.openai.baseUrlHint')
   if (form.platform === 'gemini') return t('admin.accounts.gemini.baseUrlHint')
-  if (form.platform === 'grok') return t('admin.accounts.grok.baseUrlHint')
+  if (form.platform === 'grok') return ''
   if (form.platform === 'jimeng') return t('admin.accounts.jimeng.baseUrlHint')
   return t('admin.accounts.baseUrlHint')
 })
@@ -3558,7 +3553,7 @@ const baseUrlHint = computed(() => {
 const apiKeyHint = computed(() => {
   if (form.platform === 'openai') return t('admin.accounts.openai.apiKeyHint')
   if (form.platform === 'gemini') return t('admin.accounts.gemini.apiKeyHint')
-  if (form.platform === 'grok') return t('admin.accounts.grok.apiKeyHint')
+  if (form.platform === 'grok') return ''
   if (form.platform === 'jimeng') return t('admin.accounts.jimeng.apiKeyHint')
   return t('admin.accounts.apiKeyHint')
 })
