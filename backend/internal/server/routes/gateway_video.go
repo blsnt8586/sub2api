@@ -45,6 +45,24 @@ func registerVideoRoutes(
 		videoUnsupported(c)
 	}
 
+	// videoEditHandler 处理 POST /v1/videos/edits（目前仅 Grok）。
+	videoEditHandler := func(c *gin.Context) {
+		if getGroupPlatform(c) == service.PlatformGrok {
+			h.OpenAIGateway.GrokVideoEdit(c)
+			return
+		}
+		videoUnsupported(c)
+	}
+
+	// videoExtensionHandler 处理 POST /v1/videos/extensions（目前仅 Grok）。
+	videoExtensionHandler := func(c *gin.Context) {
+		if getGroupPlatform(c) == service.PlatformGrok {
+			h.OpenAIGateway.GrokVideoExtension(c)
+			return
+		}
+		videoUnsupported(c)
+	}
+
 	// videoStatusHandler 处理 GET /v1/videos/{id}：按平台分流。
 	videoStatusHandler := func(c *gin.Context) {
 		switch getGroupPlatform(c) {
@@ -77,6 +95,8 @@ func registerVideoRoutes(
 
 	// /v1 分组路由（middleware 已由 gateway RouterGroup 统一应用）
 	gateway.POST("/videos/generations", videoGenerationHandler)
+	gateway.POST("/videos/edits", videoEditHandler)
+	gateway.POST("/videos/extensions", videoExtensionHandler)
 	// 即梦固定接口：POST /v1/videos（创建）与 /v1/videos/{id}/content（下载）
 	gateway.POST("/videos", jimengVideoCreateHandler)
 	gateway.GET("/videos/:request_id", videoStatusHandler)
@@ -84,6 +104,8 @@ func registerVideoRoutes(
 
 	// 根路径别名（不带 /v1 前缀，需显式挂中间件）
 	r.POST("/videos/generations", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, requireGroup, videoGenerationHandler)
+	r.POST("/videos/edits", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, requireGroup, videoEditHandler)
+	r.POST("/videos/extensions", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, requireGroup, videoExtensionHandler)
 	r.POST("/videos", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, requireGroup, jimengVideoCreateHandler)
 	r.GET("/videos/:request_id", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, requireGroup, videoStatusHandler)
 	r.GET("/videos/:request_id/content", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, requireGroup, jimengVideoContentHandler)

@@ -131,14 +131,14 @@ func (s *AccountTestService) buildUpstreamModelsRequest(ctx context.Context, acc
 	switch {
 	case account.Platform == PlatformAntigravity:
 		return s.buildAntigravityAPIKeyModelsRequest(ctx, account)
+	case account.IsGrok():
+		return s.buildGrokUpstreamModelsRequest(ctx, account)
 	case account.IsOpenAI():
 		return s.buildOpenAIUpstreamModelsRequest(ctx, account)
 	case account.IsGemini():
 		return s.buildGeminiUpstreamModelsRequest(ctx, account)
 	case account.IsAnthropic():
 		return s.buildAnthropicUpstreamModelsRequest(ctx, account)
-	case account.IsGrok():
-		return s.buildGrokUpstreamModelsRequest(ctx, account)
 	case account.IsJimeng():
 		return s.buildJimengUpstreamModelsRequest(ctx, account)
 	default:
@@ -479,44 +479,35 @@ func dedupeAndSortModelIDs(models []string) []string {
 }
 
 // buildGrokUpstreamModelsRequest 构建 Grok 平台的 GET /v1/models 请求。
-// api_key 账号走第三方兼容端点（base_url + Bearer api_key）；
-// OAuth 账号走 xAI 官方端点（获取 access_token 作 Bearer）。
+// 仅支持 api_key 账号（第三方兼容端点：base_url + Bearer api_key）；
+// OAuth 账号不支持上游模型同步（与上游行为对齐）。
 func (s *AccountTestService) buildGrokUpstreamModelsRequest(ctx context.Context, account *Account) (*http.Request, error) {
-	baseURL := strings.TrimSpace(account.GetGrokBaseURL())
+	if account.Type != AccountTypeAPIKey {
+		return nil, newUpstreamModelSyncUnsupportedError(
+			fmt.Sprintf("Unsupported Grok account type for upstream model sync: %s", account.Type), nil,
+		)
+	}
+	apiKey := strings.TrimSpace(account.GetCredential("api_key"))
+	if apiKey == "" {
+		return nil, newUpstreamModelSyncConfigError("No Grok API key is available", nil)
+	}
+
+	baseURL := strings.TrimSpace(account.GetCredential("base_url"))
+	if baseURL == "" {
+		baseURL = "https://api.x.ai"
+	}
 	normalizedBaseURL, err := s.validateUpstreamBaseURL(baseURL)
 	if err != nil {
 		return nil, newUpstreamModelSyncConfigError("Invalid Grok base URL", err)
 	}
 
-	var authHeader string
-	if account.Type == AccountTypeAPIKey {
-		apiKey := strings.TrimSpace(account.GetCredential("api_key"))
-		if apiKey == "" {
-			return nil, newUpstreamModelSyncConfigError("No Grok API key is available", nil)
-		}
-		authHeader = "Bearer " + apiKey
-	} else if account.Type == AccountTypeOAuth {
-		if s.grokTokenProvider == nil {
-			return nil, newUpstreamModelSyncConfigError("Token provider is not configured for Grok OAuth", nil)
-		}
-		token, tokenErr := s.grokTokenProvider.GetAccessToken(ctx, account)
-		if tokenErr != nil {
-			return nil, newUpstreamModelSyncUpstreamError("Failed to get Grok OAuth access token", tokenErr)
-		}
-		authHeader = "Bearer " + strings.TrimSpace(token)
-	} else {
-		return nil, newUpstreamModelSyncUnsupportedError(
-			fmt.Sprintf("Unsupported Grok account type for model sync: %s", account.Type), nil,
-		)
-	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, buildV1ModelsURL(normalizedBaseURL), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, buildOpenAIModelsURL(normalizedBaseURL), nil)
 	if err != nil {
 		return nil, newUpstreamModelSyncConfigError("Invalid Grok model list URL", err)
 	}
-	req.Header.Set("Authorization", authHeader)
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("User-Agent", "sub2api-grok/1.0")
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+	account.ApplyHeaderOverrides(req.Header)
 	return req, nil
 }
 
