@@ -499,6 +499,27 @@ export default {
     }
   },
 
+  codexRadar: {
+    title: 'Codex 雷达',
+    subtitle: 'Codex 额度重置、降智与社区体感的第三方观测数据',
+    updatedAt: '数据更新于 {time}',
+    imageAlt: 'Codex 雷达摘要图',
+    unavailable: '暂无雷达数据，请稍后刷新',
+    loadError: '加载 Codex 雷达数据失败',
+    disclaimer: {
+      title: '数据来源说明',
+      body: '本页数据非本站提供，来源于第三方社区站点 codexradar.com，仅作参考，本站不对其准确性、时效性负责。',
+      viewSource: '查看第三方雷达站详情',
+      attributionFallback: '数据来自 Codex 雷达 codexradar.com'
+    },
+    metrics: {
+      window: '重置窗口',
+      prediction: '硬重置预测',
+      prob24h: '24h 概率 {p}',
+      modelIq: '降智分（最新）'
+    }
+  },
+
   affiliate: {
     title: '邀请返利',
     description: '邀请新用户注册，并将返利额度转入账户余额',

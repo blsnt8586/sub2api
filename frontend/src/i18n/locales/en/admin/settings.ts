@@ -30,6 +30,13 @@ export default {
           enabled: 'Enable Available Channels',
           enabledHint: 'When off, the sidebar entry is hidden and the endpoint returns an empty list.',
         },
+        codexRadar: {
+          title: 'Codex Radar',
+          description: 'Show users and admins Codex observation data (quota resets, degradation, community sentiment) from the third-party site codexradar.com. Disabled by default.',
+          sourceLink: 'Visit the third-party data source codexradar.com',
+          enabled: 'Enable Codex Radar',
+          enabledHint: 'When off, the sidebar entry (user and admin) is hidden and the proxy endpoint returns disabled. Data comes from a third party; the page shows a disclaimer.',
+        },
         riskControl: {
           title: 'Risk Control',
           description: 'Enable the content moderation menu and gateway audit entry point. Disabled by default.',

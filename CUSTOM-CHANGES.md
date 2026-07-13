@@ -20,6 +20,7 @@ fork 在上游之上叠加了三大功能块，外加一层解耦重构：
 | C. 上游 Sub2API 管理 + 定时优化 | 管理端管理 `provider_type=sub2api` 上游实例，定时优化账号倍率区间 | 低（几乎全新增文件） |
 | D. 平台分支解耦重构 | 把散落各处的平台 `switch/if` 收敛到 `platformColors.ts` / `domain_constants.go` | 降低未来冲突 |
 | E. OpenAI/Codex 全局 system prompt 注入 | 管理端配置全局系统提示词，前置合并到 Responses `instructions`，覆盖 responses/codex/chat 三条路径 | 低（逻辑全在新增文件，上游纯追加 + 2 处网关钩子） |
+| F. Codex 雷达（第三方数据代理） | 代理缓存第三方站点 codexradar.com 的 Codex 观测数据，用户+管理员共用页面，带第三方来源免责说明 | 极低（全新增文件 + opt-in 功能开关，零上游钩子） |
 
 > 注：**Grok 平台是上游自带**，非本 fork 新增。fork 唯一新增的平台是**即梦（jimeng）**。
 
@@ -217,6 +218,47 @@ cd backend && make build            # 产出 backend/bin/server
 - `api/admin/settings.ts` — `SystemSettings` + `UpdateSettingsRequest` 各加 2 字段。
 - `views/admin/SettingsView.vue` — 网关服务 tab 加 Toggle + textarea（form 默认值 + save payload）。
 - `i18n/locales/{zh,en}/admin/settings.ts` — 各 5 条文案。
+
+---
+
+## 五之三、Codex 雷达（第三方数据代理，功能块 F）
+
+用户端 + 管理端共用一个页面，展示第三方社区站点 codexradar.com 的 Codex 观测数据（额度重置窗口、24/48h 预测、降智分、漫画摘要图）。本平台仅做代理缓存 + 署名转载，页面醒目标注「数据非本站提供、来源第三方」并提供跳转原站的详情链接。**默认关闭（opt-in）**，第三方数据来源需管理员显式启用。
+
+### F.1 设计要点
+
+- **数据源**：图用稳定别名 `https://codexradar.com/assets/radar-high-readout-comic.png`（无时间戳，日更两次，CDN 4h 缓存）；摘要用公开 `https://codexradar.com/current.json`（`CORS:*`）。完整 API `/api/v1/current` 需授权（401），不使用。
+- **后端代理缓存**：不让终端用户浏览器直连第三方（省对方带宽、不受其抖动影响、图走本平台域名）。进程内 `atomic.Value` 缓存，30 分钟 TTL。
+- **纯懒加载 + stale-while-revalidate**：无后台 goroutine，请求命中时按需刷新；缓存过期时先返回旧数据、后台异步刷新，不阻塞请求；失败按 30s 节流，绝不打爆对方。
+- **鉴权**：图片接口需 JWT（Bearer 头），故前端用 axios 拉 blob → `URL.createObjectURL`，而非 `<img src>`（后者带不了 Authorization 头）。
+- **合规**：对方 `current.json` 要求署名「数据来自 Codex 雷达 codexradar.com」，接口 + 页面均已带；「二次开发使用需授权」一节由用户自行决定是否走对方授权流程，代码侧仅做免责标注 + 署名。
+
+### F.2 新增文件（零上游依赖，直接保留）
+
+- `backend/internal/service/codexradar_service.go` — 核心：`NewCodexRadarService`、`EnsureFresh`（懒加载+SWR）、`ImageSnapshot`/`SummarySnapshot`（只读快照）。仅引用 stdlib + `singleflight`，零上游符号。
+- `backend/internal/service/codexradar_service_test.go` — 4 用例（拉取缓存/空态/SWR/上游报错保留旧数据）。
+- `backend/internal/handler/codexradar_handler.go` — `Image`（ETag 协商缓存 + 私有 5min 缓存）、`Summary`（原始 JSON + source/attribution/fetched_at 元信息）。开关关闭返回 403。
+- `frontend/src/api/codexradar.ts` — `getCodexRadarSummary` + `fetchCodexRadarImageObjectURL`。
+- `frontend/src/views/user/CodexRadarView.vue` — 页面：头部 + 免责说明块（跳转原站）+ 关键指标卡片 + 漫画图 + 底部署名。
+
+### F.3 上游钩子
+
+**零网关钩子。** 仅在以下上游文件做纯追加式接线（无逻辑侵入）：
+
+- `service/wire.go`：`NewCodexRadarService` 加入 ProviderSet。
+- `handler/wire.go` + `handler/handler.go`：`CodexRadarHandler` 加入 `Handlers` 结构体与 `ProvideHandlers`。
+- `cmd/server/wire_gen.go`：手动补 `codexRadarService`/`codexRadarHandler` 两行构造 + `ProvideHandlers` 传参（wire 工具有类型检查 bug，手改）。
+- `server/routes/user.go`：已认证组下新增 `/codexradar/{image,summary}` 两条 GET（用户+管理员共用）。
+
+### F.4 功能开关（opt-in 全链路，照抄 available_channels 模式）
+
+`domain_constants.go`（`SettingKeyCodexRadarEnabled`）、`setting_public.go`（`IsCodexRadarEnabled` 运行时读取 + 公开注入 payload 字段）、`settings_view.go` + `dto/settings.go`（`SystemSettings`/`PublicSettings` 各加字段）、`setting_parse.go`（默认 false + 解析）、`setting_update.go`（写入）、`setting_handler.go` / `setting_handler_update.go` / `setting_handler_audit.go`（DTO 映射 + 合并 + 审计）、`api_contract_test.go`（快照补 `codex_radar_enabled`）。
+
+前端功能开关：`utils/featureFlags.ts`（注册 `codexRadar` opt-in flag）、`types/index.ts` + `api/admin/settings.ts`（类型）、`stores/app.ts`（默认值）、`components/layout/AppSidebar.vue`（`buildSelfNavItems` 加入口，用户主菜单 + 管理员"我的账户"子菜单共享）、`router/index.ts`（`/codex-radar` 路由）、`views/admin/SettingsView.vue`（Toggle + form 默认值 + save payload）、`i18n/locales/{zh,en}`（`nav.codexRadar` + `codexRadar.*` 页面文案 + `admin.settings.features.codexRadar.*`）。
+
+### F.5 恢复要点（换机/重装）
+
+全部为新增文件 + opt-in 开关，上游同步几乎不冲突。若 `wire_gen.go` 被 `make generate` 覆盖，重新补 `codexRadarService`/`codexRadarHandler` 两行即可（见 F.3）。功能默认关闭，启用入口：系统设置 > 功能开关 > Codex 雷达。
 
 ---
 

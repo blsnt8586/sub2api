@@ -30,6 +30,13 @@ export default {
           enabled: '启用可用渠道',
           enabledHint: '关闭后用户端侧边栏入口隐藏，接口返回空数组。',
         },
+        codexRadar: {
+          title: 'Codex 雷达',
+          description: '为用户和管理员展示第三方站点 codexradar.com 的 Codex 观测数据（额度重置、降智、社区体感）。默认关闭。',
+          sourceLink: '访问第三方数据来源 codexradar.com',
+          enabled: '启用 Codex 雷达',
+          enabledHint: '关闭后用户端与管理端侧边栏入口隐藏，代理接口返回禁用。数据来源为第三方，页面已标注免责说明。',
+        },
         riskControl: {
           title: '风控中心',
           description: '启用内容审计菜单和全端点请求审核入口。默认关闭。',

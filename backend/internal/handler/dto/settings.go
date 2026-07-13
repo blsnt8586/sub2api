@@ -277,6 +277,9 @@ type SystemSettings struct {
 	// Available Channels feature switch (user-facing aggregate view)
 	AvailableChannelsEnabled bool `json:"available_channels_enabled"`
 
+	// Codex 雷达功能开关（二开）
+	CodexRadarEnabled bool `json:"codex_radar_enabled"`
+
 	// 风控中心功能开关
 	RiskControlEnabled bool `json:"risk_control_enabled"`
 
@@ -359,6 +362,8 @@ type PublicSettings struct {
 	ChannelMonitorDefaultIntervalSeconds int  `json:"channel_monitor_default_interval_seconds"`
 
 	AvailableChannelsEnabled bool `json:"available_channels_enabled"`
+
+	CodexRadarEnabled bool `json:"codex_radar_enabled"`
 
 	AffiliateEnabled bool `json:"affiliate_enabled"`
 

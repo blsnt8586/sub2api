@@ -267,6 +267,18 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/codex-radar',
+    name: 'CodexRadar',
+    component: () => import('@/views/user/CodexRadarView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'Codex Radar',
+      titleKey: 'codexRadar.title',
+      descriptionKey: 'codexRadar.subtitle'
+    }
+  },
+  {
     path: '/profile',
     name: 'Profile',
     component: () => import('@/views/user/ProfileView.vue'),

@@ -494,6 +494,27 @@ export default {
     }
   },
 
+  codexRadar: {
+    title: 'Codex Radar',
+    subtitle: 'Third-party observations of Codex quota resets, degradation, and community sentiment',
+    updatedAt: 'Updated at {time}',
+    imageAlt: 'Codex radar summary graphic',
+    unavailable: 'No radar data yet, please refresh later',
+    loadError: 'Failed to load Codex radar data',
+    disclaimer: {
+      title: 'Data source notice',
+      body: 'This data is not provided by this site. It comes from the third-party community site codexradar.com and is for reference only; this site is not responsible for its accuracy or timeliness.',
+      viewSource: 'View details on the third-party radar site',
+      attributionFallback: 'Data from Codex Radar codexradar.com'
+    },
+    metrics: {
+      window: 'Reset window',
+      prediction: 'Hard-reset forecast',
+      prob24h: '24h probability {p}',
+      modelIq: 'Degradation score (latest)'
+    }
+  },
+
   affiliate: {
     title: 'Affiliate Rebates',
     description: 'Invite new users and convert your rebate quota into account balance',

@@ -78,6 +78,14 @@ func RegisterUserRoutes(
 			channels.GET("/available", h.AvailableChannel.List)
 		}
 
+		// Codex 雷达（二开：第三方 codexradar.com 数据代理，用户+管理员共用）。
+		// 挂在已认证组下，两类角色均可访问；功能开关关闭时接口返回 403。
+		codexRadar := authenticated.Group("/codexradar")
+		{
+			codexRadar.GET("/image", h.CodexRadar.Image)
+			codexRadar.GET("/summary", h.CodexRadar.Summary)
+		}
+
 		// 使用记录
 		usage := authenticated.Group("/usage")
 		{

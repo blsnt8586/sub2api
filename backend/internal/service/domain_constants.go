@@ -361,6 +361,10 @@ const (
 	// sidebar entry is hidden. Defaults to false (opt-in feature).
 	SettingKeyAvailableChannelsEnabled = "available_channels_enabled"
 
+	// SettingKeyCodexRadarEnabled 是二开新增的「Codex 雷达」功能软开关（用户+管理员共用页面）。
+	// 关闭时：代理接口返回禁用、侧边栏入口隐藏。默认 false（opt-in，第三方数据来源需显式启用）。
+	SettingKeyCodexRadarEnabled = "codex_radar_enabled"
+
 	// =========================
 	// Overload Cooldown (529)
 	// =========================

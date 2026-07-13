@@ -104,6 +104,11 @@ export const FeatureFlags = {
     mode: 'opt-in',
     label: 'Available Channels',
   }),
+  codexRadar: defineFlag({
+    key: 'codex_radar_enabled',
+    mode: 'opt-in',
+    label: 'Codex Radar',
+  }),
   payment: defineFlag({
     key: 'payment_enabled',
     mode: 'opt-out',

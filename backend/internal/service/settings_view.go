@@ -179,6 +179,9 @@ type SystemSettings struct {
 	// Available Channels feature (user-facing aggregate view)
 	AvailableChannelsEnabled bool `json:"available_channels_enabled"`
 
+	// Codex 雷达功能（二开：第三方 codexradar.com 数据代理，用户+管理员共用页面）
+	CodexRadarEnabled bool `json:"codex_radar_enabled"`
+
 	// Claude Code version check
 	MinClaudeCodeVersion string
 	MaxClaudeCodeVersion string
@@ -325,6 +328,9 @@ type PublicSettings struct {
 
 	// Available Channels feature (user-facing aggregate view)
 	AvailableChannelsEnabled bool `json:"available_channels_enabled"`
+
+	// Codex 雷达功能（二开：第三方数据代理，用户+管理员共用页面）
+	CodexRadarEnabled bool `json:"codex_radar_enabled"`
 
 	// Affiliate (邀请返利) feature toggle
 	AffiliateEnabled bool `json:"affiliate_enabled"`
