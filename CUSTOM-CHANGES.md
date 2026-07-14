@@ -229,14 +229,15 @@ cd backend && make build            # 产出 backend/bin/server
 
 - **数据源**：图用稳定别名 `https://codexradar.com/assets/radar-high-readout-comic.png`（无时间戳，日更两次，CDN 4h 缓存）；摘要用公开 `https://codexradar.com/current.json`（`CORS:*`）。完整 API `/api/v1/current` 需授权（401），不使用。
 - **后端代理缓存**：不让终端用户浏览器直连第三方（省对方带宽、不受其抖动影响、图走本平台域名）。进程内 `atomic.Value` 缓存，30 分钟 TTL。
-- **纯懒加载 + stale-while-revalidate**：无后台 goroutine，请求命中时按需刷新；缓存过期时先返回旧数据、后台异步刷新，不阻塞请求；失败按 30s 节流，绝不打爆对方。
+- **懒加载 + stale-while-revalidate**：请求命中时按需刷新；缓存过期时先返回旧数据、后台异步刷新，不阻塞请求；失败按 30s 节流，绝不打爆对方。
+- **定时预热（治冷启动加载失败）**：cron `0 7-15 * * *`（时区取 `cfg.Timezone`，默认 Asia/Shanghai），07:00–15:00 每小时整点各拉一次（共 9 次），整点覆盖对方两段日更期（上午 7–9 / 下午 13–15）；另在进程启动后延迟 5s 做一次启动预热，治「重启后缓存空、首个用户吃 30s 同步阻塞导致前端超时/404」。预热走 `forceRefresh`（绕 TTL，仍受 singleflight + 30s 节流保护），且**仅在功能开关开启时**才拉取第三方（关闭时 cron 触发即跳过，不打对方）。与上游解耦：只注入「功能是否开启」只读回调 + 时区，不持有 `SettingService` 引用。
 - **鉴权**：图片接口需 JWT（Bearer 头），故前端用 axios 拉 blob → `URL.createObjectURL`，而非 `<img src>`（后者带不了 Authorization 头）。
 - **合规**：对方 `current.json` 要求署名「数据来自 Codex 雷达 codexradar.com」，接口 + 页面均已带；「二次开发使用需授权」一节由用户自行决定是否走对方授权流程，代码侧仅做免责标注 + 署名。
 
 ### F.2 新增文件（零上游依赖，直接保留）
 
-- `backend/internal/service/codexradar_service.go` — 核心：`NewCodexRadarService`、`EnsureFresh`（懒加载+SWR）、`ImageSnapshot`/`SummarySnapshot`（只读快照）。仅引用 stdlib + `singleflight`，零上游符号。
-- `backend/internal/service/codexradar_service_test.go` — 4 用例（拉取缓存/空态/SWR/上游报错保留旧数据）。
+- `backend/internal/service/codexradar_service.go` — 核心：`NewCodexRadarService`、`EnsureFresh`（懒加载+SWR）、`ImageSnapshot`/`SummarySnapshot`（只读快照）、`ConfigureScheduler`/`Start`/`Stop`/`warmup`/`forceRefresh`（定时预热）。仅引用 stdlib + `singleflight` + `robfig/cron`，零上游符号；定时预热只依赖一个「功能是否开启」的只读回调，与 `SettingService` 解耦。
+- `backend/internal/service/codexradar_service_test.go` — 8 用例（拉取缓存/空态/SWR/上游报错保留旧数据 + 预热开关关闭跳过/开启拉取/forceRefresh 绕过 TTL/Start-Stop 幂等）。
 - `backend/internal/handler/codexradar_handler.go` — `Image`（ETag 协商缓存 + 私有 5min 缓存）、`Summary`（原始 JSON + source/attribution/fetched_at 元信息）。开关关闭返回 403。
 - `frontend/src/api/codexradar.ts` — `getCodexRadarSummary` + `fetchCodexRadarImageObjectURL`。
 - `frontend/src/views/user/CodexRadarView.vue` — 页面：头部 + 免责说明块（跳转原站）+ 关键指标卡片 + 漫画图 + 底部署名。
@@ -245,9 +246,9 @@ cd backend && make build            # 产出 backend/bin/server
 
 **零网关钩子。** 仅在以下上游文件做纯追加式接线（无逻辑侵入）：
 
-- `service/wire.go`：`NewCodexRadarService` 加入 ProviderSet。
+- `service/wire.go`：`ProvideCodexRadarService`（原 `NewCodexRadarService`）加入 ProviderSet——该 provider 注入功能开关回调 + 时区（取 `cfg.Timezone`，默认 Asia/Shanghai）并 `Start()` 定时预热。
 - `handler/wire.go` + `handler/handler.go`：`CodexRadarHandler` 加入 `Handlers` 结构体与 `ProvideHandlers`。
-- `cmd/server/wire_gen.go`：手动补 `codexRadarService`/`codexRadarHandler` 两行构造 + `ProvideHandlers` 传参（wire 工具有类型检查 bug，手改）。
+- `cmd/server/wire_gen.go`：手动补 `codexRadarService`（改用 `ProvideCodexRadarService(settingService, configConfig)`）/`codexRadarHandler` 两行构造 + `ProvideHandlers` 传参（wire 工具有类型检查 bug，手改）。**仅此一行替换**，不碰 `provideCleanup`——为保持上游足迹最小，定时预热不接入优雅关闭链路（缓存加热器，进程退出时 goroutine 随进程终止即可，无资源泄漏）。`cmd/server/wire.go`（wireinject）保持零改动。
 - `server/routes/user.go`：已认证组下新增 `/codexradar/{image,summary}` 两条 GET（用户+管理员共用）。
 
 ### F.4 功能开关（opt-in 全链路，照抄 available_channels 模式）
@@ -258,7 +259,7 @@ cd backend && make build            # 产出 backend/bin/server
 
 ### F.5 恢复要点（换机/重装）
 
-全部为新增文件 + opt-in 开关，上游同步几乎不冲突。若 `wire_gen.go` 被 `make generate` 覆盖，重新补 `codexRadarService`/`codexRadarHandler` 两行即可（见 F.3）。功能默认关闭，启用入口：系统设置 > 功能开关 > Codex 雷达。
+全部为新增文件 + opt-in 开关，上游同步几乎不冲突。若 `wire_gen.go` 被 `make generate` 覆盖，只需重新补 `codexRadarService`（用 `ProvideCodexRadarService(settingService, configConfig)`）/`codexRadarHandler` 两行构造 + `ProvideHandlers` 传参（见 F.3）——不涉及 `provideCleanup`。功能默认关闭，启用入口：系统设置 > 功能开关 > Codex 雷达。定时预热仅在开关开启时拉取第三方，07:00–15:00 每小时整点各一次（时区取 `config.timezone`，默认 Asia/Shanghai）。
 
 ---
 

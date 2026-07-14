@@ -6,9 +6,12 @@ package service
 //
 // 设计要点：
 //   - 数据源为第三方社区站点，本平台仅做代理缓存 + 署名转载，不对数据准确性负责。
-//   - 纯懒加载：无后台 goroutine，请求命中时按需刷新，进程内 atomic.Value 缓存。
+//   - 懒加载 + 定时预热：请求命中时按需刷新；另有定时器在 07:00–15:00 每小时整点预热，
+//     使缓存常年温热，用户不再吃「进程重启 / 缓存过期无人访问」时的冷启动阻塞。
+//     预热仅在功能开关（codex_radar_enabled）开启时拉取第三方数据。
 //   - stale-while-revalidate：缓存过期时先返回旧数据、后台异步刷新，避免请求阻塞。
 //   - 失败节流：上游抖动时按 minRetry 间隔重试，绝不打爆对方服务器。
+// 定时预热与上游解耦：只依赖一个「功能是否开启」的只读回调，不 hook 任何上游流程。
 // 详见 CUSTOM-CHANGES.md。
 
 import (
@@ -16,9 +19,11 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"sync"
 	"sync/atomic"
 	"time"
 
+	"github.com/robfig/cron/v3"
 	"golang.org/x/sync/singleflight"
 )
 
@@ -42,6 +47,16 @@ const (
 	codexRadarMaxImageBytes = 10 << 20
 	// codexRadarMaxSummaryBytes 摘要 JSON 大小上限，2MB。
 	codexRadarMaxSummaryBytes = 2 << 20
+
+	// codexRadarWarmupSchedule 定时预热计划：07:00–15:00 每小时整点各拉一次（共 9 次）。
+	// 对方日更两次（上午 7–9、下午 13–15），此窗口整点覆盖两段更新期且对对方友好。
+	// 5 段 cron：分 时 日 月 周。
+	codexRadarWarmupSchedule = "0 7-15 * * *"
+	// codexRadarStartupDelay 启动预热延迟：给 DB/迁移留出就绪时间后再读开关并拉取一次，
+	// 解决「进程重启后缓存为空、首个用户吃冷启动阻塞」的问题。
+	codexRadarStartupDelay = 5 * time.Second
+	// codexRadarCronStopTimeout 关闭 cron 时等待在途任务的最长时间。
+	codexRadarCronStopTimeout = 3 * time.Second
 )
 
 // codexRadarSnapshot 是进程内缓存的一份不可变快照，通过 atomic.Value 零锁读取。
@@ -54,7 +69,8 @@ type codexRadarSnapshot struct {
 	ok           bool // 是否含至少一项可用数据
 }
 
-// CodexRadarService 代理并缓存 codexradar.com 的公开数据。纯懒加载，无后台任务。
+// CodexRadarService 代理并缓存 codexradar.com 的公开数据。
+// 懒加载（请求命中时刷新）+ 定时预热（07:00–15:00 每小时整点后台拉取，保持缓存温热）。
 type CodexRadarService struct {
 	httpClient      *http.Client
 	cache           atomic.Value // *codexRadarSnapshot
@@ -65,6 +81,20 @@ type CodexRadarService struct {
 	summaryURL string
 	ttl        time.Duration
 	minRetry   time.Duration
+
+	// —— 定时预热（可选，通过 ConfigureScheduler 注入；未配置则退化为纯懒加载）——
+	// enabledFn 是「功能开关是否开启」的只读回调，与上游 SettingService 解耦。
+	enabledFn func(ctx context.Context) bool
+	location  *time.Location // 预热计划所用时区（默认 time.Local）
+
+	mu       sync.Mutex // 守护 cron 生命周期字段
+	cron     *cron.Cron
+	rootCtx  context.Context    // 预热任务的根 ctx，Stop 时取消以中断在途拉取
+	cancel   context.CancelFunc // rootCtx 的取消函数
+	started  bool
+	stopped  bool
+	stopOnce sync.Once
+	wg       sync.WaitGroup // 等待启动预热 goroutine 退出
 }
 
 // NewCodexRadarService 创建 Codex 雷达代理服务（wire 注入）。
@@ -75,7 +105,111 @@ func NewCodexRadarService() *CodexRadarService {
 		summaryURL: CodexRadarSummaryURL,
 		ttl:        codexRadarCacheTTL,
 		minRetry:   codexRadarMinRetry,
+		location:   time.Local,
 	}
+}
+
+// ConfigureScheduler 注入定时预热所需依赖：功能开关回调 + 时区。
+// 与上游解耦——只收一个只读回调，不持有任何上游 service 引用。
+// 传入 nil enabledFn 时预热永不拉取（等价于功能关闭）；loc 为 nil 时用 time.Local。
+func (s *CodexRadarService) ConfigureScheduler(enabledFn func(ctx context.Context) bool, loc *time.Location) {
+	if s == nil {
+		return
+	}
+	s.enabledFn = enabledFn
+	if loc != nil {
+		s.location = loc
+	}
+}
+
+// Start 启动定时预热：注册 07:00–15:00 每小时整点的 cron 任务，并在延迟后做一次启动预热。
+// 幂等；未配置 enabledFn 时不启动（保持纯懒加载行为，主要用于测试）。
+func (s *CodexRadarService) Start() {
+	if s == nil {
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.started || s.stopped {
+		return
+	}
+	if s.enabledFn == nil {
+		// 无开关回调：不启动定时器，退化为纯懒加载。
+		return
+	}
+	s.started = true
+	s.rootCtx, s.cancel = context.WithCancel(context.Background())
+
+	c := cron.New(cron.WithLocation(s.location))
+	if _, err := c.AddFunc(codexRadarWarmupSchedule, func() { s.warmup(s.rootCtx, "cron") }); err != nil {
+		// schedule 是硬编码常量，理论上不会出错；出错则放弃定时器但不影响懒加载。
+		slog.Warn("codexradar: invalid warmup schedule, scheduler disabled", "schedule", codexRadarWarmupSchedule, "error", err)
+		s.started = false
+		s.cancel()
+		return
+	}
+	c.Start()
+	s.cron = c
+	slog.Info("codexradar: warmup scheduler started", "schedule", codexRadarWarmupSchedule, "tz", s.location.String())
+
+	// 启动预热：延迟片刻（等 DB/迁移就绪）后异步拉一次，治「重启后缓存空」的冷启动。
+	// 用 rootCtx 以便 Stop 时能中断在途拉取，避免拖慢关闭。
+	s.wg.Add(1)
+	go func() {
+		defer s.wg.Done()
+		select {
+		case <-time.After(codexRadarStartupDelay):
+			s.warmup(s.rootCtx, "startup")
+		case <-s.rootCtx.Done():
+		}
+	}()
+}
+
+// Stop 停止定时预热：取消在途拉取、关闭 cron、等待启动预热 goroutine 退出。幂等。
+func (s *CodexRadarService) Stop() {
+	if s == nil {
+		return
+	}
+	s.stopOnce.Do(func() {
+		s.mu.Lock()
+		s.stopped = true
+		c := s.cron
+		s.cron = nil
+		if s.cancel != nil {
+			s.cancel()
+		}
+		s.mu.Unlock()
+
+		if c != nil {
+			ctx := c.Stop() // 停止调度，返回的 ctx 在在途任务结束后 Done
+			select {
+			case <-ctx.Done():
+			case <-time.After(codexRadarCronStopTimeout):
+				slog.Warn("codexradar: warmup scheduler stop timed out")
+			}
+		}
+		s.wg.Wait()
+	})
+}
+
+// warmup 执行一次预热拉取：功能开关关闭则跳过（不打第三方），否则强制刷新一次
+// （绕过 TTL 新鲜度检查，但仍受 singleflight 去重与 minRetry 失败节流保护）。
+// reason 仅用于日志区分触发来源（cron / startup）。
+func (s *CodexRadarService) warmup(ctx context.Context, reason string) {
+	if s == nil || s.enabledFn == nil {
+		return
+	}
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if ctx.Err() != nil {
+		return
+	}
+	if !s.enabledFn(ctx) {
+		return // 功能关闭：不拉取第三方数据（opt-in 策略）
+	}
+	slog.Debug("codexradar: warmup fetch", "reason", reason)
+	s.forceRefresh(ctx)
 }
 
 // EnsureFresh 按需保证缓存新鲜：
@@ -109,6 +243,24 @@ func (s *CodexRadarService) refreshOnce(ctx context.Context) {
 		}
 		s.lastAttemptNano.Store(time.Now().UnixNano())
 		if next := s.fetch(ctx, snap); next != nil {
+			s.cache.Store(next)
+		}
+		return nil, nil
+	})
+}
+
+// forceRefresh 由定时预热调用：绕过 TTL 新鲜度检查强制拉取一次，
+// 以便及时拿到对方日更两次的最新数据。仍受 singleflight 去重与 minRetry 失败节流保护。
+func (s *CodexRadarService) forceRefresh(ctx context.Context) {
+	_, _, _ = s.sf.Do("refresh", func() (any, error) {
+		if last := s.lastAttemptNano.Load(); last != 0 {
+			if time.Since(time.Unix(0, last)) < s.minRetry {
+				return nil, nil // 距上次尝试太近，节流跳过
+			}
+		}
+		s.lastAttemptNano.Store(time.Now().UnixNano())
+		prev, _ := s.cache.Load().(*codexRadarSnapshot)
+		if next := s.fetch(ctx, prev); next != nil {
 			s.cache.Store(next)
 		}
 		return nil, nil

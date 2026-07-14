@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"database/sql"
+	"strings"
 	"time"
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
@@ -666,8 +667,26 @@ var ProviderSet = wire.NewSet(
 	ProvideChannelMonitorRunner,
 	NewChannelMonitorRequestTemplateService,
 	ProvideUserPlatformQuotaUsageFlusher,
-	NewCodexRadarService,
+	ProvideCodexRadarService,
 )
+
+// ProvideCodexRadarService 创建 Codex 雷达代理服务并启动定时预热（二开）。
+// 预热与上游解耦：只注入「功能开关是否开启」的只读回调 + 时区，不持有 SettingService 引用。
+// 时区取 cfg.Timezone（默认 Asia/Shanghai），解析失败回退 time.Local。
+func ProvideCodexRadarService(settingService *SettingService, cfg *config.Config) *CodexRadarService {
+	svc := NewCodexRadarService()
+	loc := time.Local
+	if cfg != nil {
+		if tz := strings.TrimSpace(cfg.Timezone); tz != "" {
+			if parsed, err := time.LoadLocation(tz); err == nil && parsed != nil {
+				loc = parsed
+			}
+		}
+	}
+	svc.ConfigureScheduler(settingService.IsCodexRadarEnabled, loc)
+	svc.Start()
+	return svc
+}
 
 // ProvideUserPlatformQuotaUsageFlusher 创建并启动 UserPlatformQuotaUsageFlusher。
 func ProvideUserPlatformQuotaUsageFlusher(cfg *config.Config, cache BillingCache, quotaRepo UserPlatformQuotaRepository, tw *TimingWheelService) *UserPlatformQuotaUsageFlusher {

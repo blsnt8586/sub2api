@@ -155,3 +155,103 @@ func (s *CodexRadarService) fetchNowForTest(ctx context.Context) {
 		s.cache.Store(next)
 	}
 }
+
+func TestCodexRadarService_WarmupSkipsWhenDisabled(t *testing.T) {
+	var hits atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits.Add(1)
+		w.Header().Set("Content-Type", "image/png")
+		_, _ = w.Write([]byte("PNG"))
+	}))
+	defer srv.Close()
+
+	s := newTestRadarService(srv.URL+"/image", srv.URL+"/summary")
+	s.ConfigureScheduler(func(context.Context) bool { return false }, nil)
+
+	// 功能开关关闭：预热不得触碰第三方。
+	s.warmup(context.Background(), "test")
+	if hits.Load() != 0 {
+		t.Fatalf("expected no fetch when disabled, got %d hits", hits.Load())
+	}
+	if s.ImageSnapshot().Available {
+		t.Fatal("expected no cached image when disabled")
+	}
+}
+
+func TestCodexRadarService_WarmupFetchesWhenEnabled(t *testing.T) {
+	var hits atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits.Add(1)
+		w.Header().Set("Content-Type", "image/png")
+		_, _ = w.Write([]byte("PNG"))
+	}))
+	defer srv.Close()
+
+	s := newTestRadarService(srv.URL+"/image", srv.URL+"/summary")
+	s.minRetry = 0
+	s.ConfigureScheduler(func(context.Context) bool { return true }, nil)
+
+	s.warmup(context.Background(), "test")
+	if hits.Load() == 0 {
+		t.Fatal("expected fetch when enabled")
+	}
+	if got := string(s.ImageSnapshot().Bytes); got != "PNG" {
+		t.Fatalf("expected cached PNG, got %q", got)
+	}
+}
+
+func TestCodexRadarService_ForceRefreshBypassesTTL(t *testing.T) {
+	var version atomic.Int32
+	version.Store(1)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/image" {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		w.Header().Set("Content-Type", "image/png")
+		if version.Load() == 1 {
+			_, _ = w.Write([]byte("V1"))
+		} else {
+			_, _ = w.Write([]byte("V2"))
+		}
+	}))
+	defer srv.Close()
+
+	s := newTestRadarService(srv.URL+"/image", srv.URL+"/summary")
+	s.minRetry = 0
+	// TTL 很长：EnsureFresh 会认为新鲜而跳过；forceRefresh 应无视 TTL 强拉新版本。
+	s.ttl = time.Hour
+
+	s.EnsureFresh(context.Background())
+	if got := string(s.ImageSnapshot().Bytes); got != "V1" {
+		t.Fatalf("expected V1, got %q", got)
+	}
+
+	version.Store(2)
+	// EnsureFresh 因缓存新鲜跳过，仍是 V1。
+	s.EnsureFresh(context.Background())
+	if got := string(s.ImageSnapshot().Bytes); got != "V1" {
+		t.Fatalf("expected EnsureFresh to honor TTL and keep V1, got %q", got)
+	}
+	// forceRefresh 绕过 TTL，拿到 V2。
+	s.forceRefresh(context.Background())
+	if got := string(s.ImageSnapshot().Bytes); got != "V2" {
+		t.Fatalf("expected forceRefresh to bypass TTL and fetch V2, got %q", got)
+	}
+}
+
+func TestCodexRadarService_StartStopIdempotent(t *testing.T) {
+	s := NewCodexRadarService()
+	s.ConfigureScheduler(func(context.Context) bool { return false }, nil)
+
+	// 重复 Start/Stop 不得 panic 或死锁。
+	s.Start()
+	s.Start()
+	s.Stop()
+	s.Stop()
+
+	// 未配置 enabledFn 时 Start 应退化为纯懒加载（不启动 cron）。
+	s2 := NewCodexRadarService()
+	s2.Start()
+	s2.Stop()
+}
