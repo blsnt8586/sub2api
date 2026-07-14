@@ -68,11 +68,11 @@ const (
 	codexRadarCronStopTimeout = 3 * time.Second
 
 	// codexRadarMaxImageDimension 优化后图片最长边上限（px）。源站漫画图约 2.2MB、
-	// 分辨率远超前端视口显示所需；限到 1600px 既够清晰又能大幅缩小体积。
-	codexRadarMaxImageDimension = 1600
-	// codexRadarJPEGQuality JPEG 重编码质量。88 对这种大字漫画图几乎无可见损失，
+	// 分辨率远超前端视口显示所需；限到 1280px 在清晰度与体积间取均衡（跨境链路更快）。
+	codexRadarMaxImageDimension = 1280
+	// codexRadarJPEGQuality JPEG 重编码质量。82 对这种大字漫画图仍基本无可见损失，
 	// 且体积远小于同内容 PNG。最终会在 JPEG/PNG/原图三者里取最小的那个。
-	codexRadarJPEGQuality = 88
+	codexRadarJPEGQuality = 82
 )
 
 // codexRadarSnapshot 是进程内缓存的一份不可变快照，通过 atomic.Value 零锁读取。
