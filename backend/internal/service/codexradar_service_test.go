@@ -3,7 +3,12 @@
 package service
 
 import (
+	"bytes"
 	"context"
+	"image"
+	"image/color"
+	"image/png"
+	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"sync/atomic"
@@ -46,7 +51,9 @@ func TestCodexRadarService_FetchAndCache(t *testing.T) {
 	if !img.Available || string(img.Bytes) != "PNGDATA" {
 		t.Fatalf("image snapshot not available: %+v", img)
 	}
-	if img.ContentType != "image/png" || img.ETag != `"abc123"` {
+	// 非可解码图（"PNGDATA"）：optimize 原样透传、类型回退 image/png；
+	// ETag 改为按优化后字节内容派生的弱 ETag（不再是上游 "abc123"）。
+	if img.ContentType != "image/png" || img.ETag != weakETag([]byte("PNGDATA")) {
 		t.Fatalf("unexpected image meta: type=%q etag=%q", img.ContentType, img.ETag)
 	}
 	sum := s.SummarySnapshot()
@@ -254,4 +261,57 @@ func TestCodexRadarService_StartStopIdempotent(t *testing.T) {
 	s2 := NewCodexRadarService()
 	s2.Start()
 	s2.Stop()
+}
+
+func TestOptimizeCodexRadarImage_DownscalesAndShrinks(t *testing.T) {
+	// 造一张 2400x1800 的大 PNG（伪随机噪声，PNG 难压缩，原图体积大），
+	// 验证优化会等比缩放到上限内并显著变小。固定种子保证可复现。
+	const w, h = 2400, 1800
+	rng := rand.New(rand.NewSource(1))
+	src := image.NewRGBA(image.Rect(0, 0, w, h))
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			src.Set(x, y, color.RGBA{R: uint8(rng.Intn(256)), G: uint8(rng.Intn(256)), B: uint8(rng.Intn(256)), A: 255})
+		}
+	}
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, src); err != nil {
+		t.Fatalf("encode source png: %v", err)
+	}
+	orig := buf.Bytes()
+
+	opt, ctype := optimizeCodexRadarImage(orig, "image/png")
+
+	if len(opt) >= len(orig) {
+		t.Fatalf("expected optimized smaller than original: orig=%d opt=%d", len(orig), len(opt))
+	}
+	if ctype != "image/jpeg" && ctype != "image/png" {
+		t.Fatalf("unexpected content-type %q", ctype)
+	}
+
+	// 优化结果必须仍可解码，且最长边被压到上限内。
+	decoded, _, err := image.Decode(bytes.NewReader(opt))
+	if err != nil {
+		t.Fatalf("optimized image not decodable: %v", err)
+	}
+	b := decoded.Bounds()
+	longest := b.Dx()
+	if b.Dy() > longest {
+		longest = b.Dy()
+	}
+	if longest > codexRadarMaxImageDimension {
+		t.Fatalf("expected longest side <= %d, got %d", codexRadarMaxImageDimension, longest)
+	}
+}
+
+func TestOptimizeCodexRadarImage_NonImagePassthrough(t *testing.T) {
+	// 非可解码内容：原样透传，不丢数据、类型走缺省回退。
+	orig := []byte("not-an-image")
+	opt, ctype := optimizeCodexRadarImage(orig, "image/png")
+	if !bytes.Equal(opt, orig) {
+		t.Fatalf("expected passthrough of undecodable bytes")
+	}
+	if ctype != "image/png" {
+		t.Fatalf("expected fallback image/png, got %q", ctype)
+	}
 }

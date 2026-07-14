@@ -15,7 +15,15 @@ package service
 // 详见 CUSTOM-CHANGES.md。
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"image"
+	"image/color"
+	stddraw "image/draw"
+	"image/jpeg"
+	"image/png"
 	"io"
 	"log/slog"
 	"net/http"
@@ -24,6 +32,7 @@ import (
 	"time"
 
 	"github.com/robfig/cron/v3"
+	xdraw "golang.org/x/image/draw"
 	"golang.org/x/sync/singleflight"
 )
 
@@ -57,6 +66,13 @@ const (
 	codexRadarStartupDelay = 5 * time.Second
 	// codexRadarCronStopTimeout 关闭 cron 时等待在途任务的最长时间。
 	codexRadarCronStopTimeout = 3 * time.Second
+
+	// codexRadarMaxImageDimension 优化后图片最长边上限（px）。源站漫画图约 2.2MB、
+	// 分辨率远超前端视口显示所需；限到 1600px 既够清晰又能大幅缩小体积。
+	codexRadarMaxImageDimension = 1600
+	// codexRadarJPEGQuality JPEG 重编码质量。88 对这种大字漫画图几乎无可见损失，
+	// 且体积远小于同内容 PNG。最终会在 JPEG/PNG/原图三者里取最小的那个。
+	codexRadarJPEGQuality = 88
 )
 
 // codexRadarSnapshot 是进程内缓存的一份不可变快照，通过 atomic.Value 零锁读取。
@@ -274,10 +290,14 @@ func (s *CodexRadarService) fetch(ctx context.Context, prev *codexRadarSnapshot)
 
 	next := &codexRadarSnapshot{fetchedAt: time.Now()}
 
-	if body, ctype, etag, err := s.get(fetchCtx, s.imageURL, codexRadarMaxImageBytes); err == nil && len(body) > 0 {
-		next.imageBytes = body
-		next.imageType = ctype
-		next.imageETag = etag
+	if body, ctype, _, err := s.get(fetchCtx, s.imageURL, codexRadarMaxImageBytes); err == nil && len(body) > 0 {
+		// 后端侧优化：降分辨率 + 重编码，把 ~2.2MB 压到几百 KB，显著缩短跨境下载耗时。
+		// 优化在拉取时做一次（不在请求热路径），失败则原样保留，绝不因优化而丢图。
+		optBytes, optType := optimizeCodexRadarImage(body, ctype)
+		next.imageBytes = optBytes
+		next.imageType = optType
+		// ETag 由优化后字节内容派生（弱校验），内容不变则 ETag 不变，支持 304 协商缓存。
+		next.imageETag = weakETag(optBytes)
 	} else {
 		if err != nil {
 			slog.Warn("codexradar: fetch image failed", "error", err)
@@ -327,6 +347,86 @@ func (s *CodexRadarService) get(ctx context.Context, url string, limit int64) (b
 		return nil, "", "", err
 	}
 	return data, resp.Header.Get("Content-Type"), resp.Header.Get("ETag"), nil
+}
+
+// optimizeCodexRadarImage 把源站的大图压小：若最长边超过上限则等比缩放，再在
+// JPEG(q88) / PNG 两种编码里取更小的一份。任何环节失败都原样返回入参（绝不丢图）。
+// 返回优化后的字节与对应 Content-Type。
+func optimizeCodexRadarImage(orig []byte, origType string) ([]byte, string) {
+	if len(orig) == 0 {
+		return orig, fallbackImageType(origType)
+	}
+	src, _, err := image.Decode(bytes.NewReader(orig))
+	if err != nil {
+		// 非可解码图（或异常内容）：原样透传，不阻断功能。
+		slog.Warn("codexradar: decode image for optimize failed, serving original", "error", err)
+		return orig, fallbackImageType(origType)
+	}
+
+	// 等比缩放：仅在最长边超过上限时缩小（绝不放大）。
+	b := src.Bounds()
+	w, h := b.Dx(), b.Dy()
+	longest := w
+	if h > longest {
+		longest = h
+	}
+	dst := src
+	if longest > codexRadarMaxImageDimension {
+		scale := float64(codexRadarMaxImageDimension) / float64(longest)
+		nw, nh := int(float64(w)*scale), int(float64(h)*scale)
+		if nw < 1 {
+			nw = 1
+		}
+		if nh < 1 {
+			nh = 1
+		}
+		resized := image.NewRGBA(image.Rect(0, 0, nw, nh))
+		xdraw.CatmullRom.Scale(resized, resized.Bounds(), src, b, xdraw.Over, nil)
+		dst = resized
+	}
+
+	// JPEG 编码需铺白底（源图可能带透明通道，否则透明处会变黑）。
+	best := orig
+	bestType := fallbackImageType(origType)
+
+	rgb := image.NewRGBA(dst.Bounds())
+	stddraw.Draw(rgb, rgb.Bounds(), image.NewUniform(color.White), image.Point{}, stddraw.Src)
+	stddraw.Draw(rgb, rgb.Bounds(), dst, dst.Bounds().Min, stddraw.Over)
+	var jpgBuf bytes.Buffer
+	if err := jpeg.Encode(&jpgBuf, rgb, &jpeg.Options{Quality: codexRadarJPEGQuality}); err == nil && jpgBuf.Len() > 0 && jpgBuf.Len() < len(best) {
+		best = jpgBuf.Bytes()
+		bestType = "image/jpeg"
+	}
+
+	// PNG 编码（缩放后往往也比原图小；文字类图无损更清晰）。取更小者。
+	var pngBuf bytes.Buffer
+	enc := png.Encoder{CompressionLevel: png.BestCompression}
+	if err := enc.Encode(&pngBuf, dst); err == nil && pngBuf.Len() > 0 && pngBuf.Len() < len(best) {
+		best = pngBuf.Bytes()
+		bestType = "image/png"
+	}
+
+	if len(best) < len(orig) {
+		slog.Info("codexradar: image optimized", "orig_bytes", len(orig), "opt_bytes", len(best), "type", bestType)
+	}
+	return best, bestType
+}
+
+// fallbackImageType 归一化 Content-Type，缺省 image/png。
+func fallbackImageType(ctype string) string {
+	if ctype == "" {
+		return "image/png"
+	}
+	return ctype
+}
+
+// weakETag 由字节内容派生一个弱 ETag（W/"<sha256前16位>"），内容不变则值稳定。
+func weakETag(b []byte) string {
+	if len(b) == 0 {
+		return ""
+	}
+	sum := sha256.Sum256(b)
+	return `W/"` + hex.EncodeToString(sum[:8]) + `"`
 }
 
 // codexRadarHTTPError 表示上游返回非 200。

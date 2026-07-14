@@ -96,7 +96,8 @@ func (h *CodexRadarHandler) Image(c *gin.Context) {
 			return
 		}
 	}
-	// 私有短缓存：数据日更两次，浏览器/中间层缓存 5 分钟足够，且随开关关闭快速失效。
-	c.Header("Cache-Control", "private, max-age=300")
+	// 私有缓存：数据日更两次，缓存 1 小时避免重复下载大图（跨境链路下载 2.2MB 很慢）；
+	// 配合上面的 ETag 协商，过期后也多半回 304 而非重传整图。随开关关闭自然失效。
+	c.Header("Cache-Control", "private, max-age=3600")
 	c.Data(http.StatusOK, img.ContentType, img.Bytes)
 }
