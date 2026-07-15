@@ -407,4 +407,11 @@ fork 提交历史清晰记录了各功能块的合入点：
 
 ---
 
-**最后更新**：2026-07-12（合并上游至 v0.1.151 + 功能块 E：OpenAI 全局 system prompt 注入）
+**最后更新**：2026-07-15（合并上游至 v0.1.156）
+
+同步 v0.1.156 时的两处冲突/收敛决议（供下次同步参考）：
+
+- **Grok base_url 路由收敛到上游**：`openai_gateway_chat_completions_raw.go` 的 `rawChatCompletionsURL` 原有二开（OAuth 走 xAI 官方白名单、api_key 放行第三方）与上游新增的 `grok_upstream_url.go`（`buildGrokChatCompletionsURL` + `grokBaseURLValidator`）冲突。上游实现是我方二开的**超集**（OAuth 官方恒信任 + 自定义域名按运营策略校验、api_key 走策略校验放行第三方，且带 OAuth token 防泄漏守卫），故**取上游版**，删除我方分支。延续 `29b0d5257`/`f181ab378` 的 Grok 向上游收敛趋势。
+- **删除本地 `min` helper**：`sub2api_provider_service.go` 里 fork 自加的 `func min(a, b int) int` 遮蔽了 Go 1.21+ 内置泛型 `min`，导致上游新代码 `min(time.Duration, ...)` 编译失败。已删除，所有旧 `min(int,int)` 调用无缝落到内置 min。
+
+**功能块 E（system prompt 注入，即 Grok「fufu」人设注入的载体）验证存活**：核心文件 `openai_system_prompt_inject.go` + 两处 `[CUSTOM]` 钩子（`openai_gateway_forward.go` / `openai_gateway_chat_completions.go`）+ 8 文件设置链路，合并后全部完好，锚点语义正确，单测通过。Grok 走 `OpenAIGatewayService`，注入照常生效。

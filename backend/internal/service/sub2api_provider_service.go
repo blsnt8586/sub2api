@@ -531,13 +531,6 @@ func (s *Sub2APIProviderService) UnlinkAccount(
 	return nil
 }
 
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
 // LinkedAccountInfo 关联账号的详细信息（含远端分组缓存）
 type LinkedAccountInfo struct {
 	ID                    int64    `json:"id"`
