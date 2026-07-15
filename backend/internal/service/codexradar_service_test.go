@@ -315,3 +315,39 @@ func TestOptimizeCodexRadarImage_NonImagePassthrough(t *testing.T) {
 		t.Fatalf("expected fallback image/png, got %q", ctype)
 	}
 }
+
+func TestOptimizeCodexRadarImage_MeetsTargetBudget(t *testing.T) {
+	// 造一张"半真实"图：大色块 + 若干矩形（可压缩，贴近漫画图特征），
+	// 验证自适应优化把体积压到目标预算以内、类型为 jpeg、且仍可解码。
+	const w, h = 2400, 1800
+	src := image.NewRGBA(image.Rect(0, 0, w, h))
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			// 平滑渐变背景 + 网格块，制造既非纯噪声也非纯平面的真实感。
+			r := uint8((x / 8) % 256)
+			g := uint8((y / 8) % 256)
+			bl := uint8(((x + y) / 16) % 256)
+			if (x/120+y/120)%2 == 0 {
+				r, g, bl = 240, 240, 240
+			}
+			src.Set(x, y, color.RGBA{R: r, G: g, B: bl, A: 255})
+		}
+	}
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, src); err != nil {
+		t.Fatalf("encode source png: %v", err)
+	}
+	orig := buf.Bytes()
+
+	opt, ctype := optimizeCodexRadarImage(orig, "image/png")
+
+	if len(opt) > codexRadarTargetImageBytes {
+		t.Fatalf("expected optimized within target %d bytes, got %d", codexRadarTargetImageBytes, len(opt))
+	}
+	if ctype != "image/jpeg" {
+		t.Fatalf("expected jpeg after optimize, got %q", ctype)
+	}
+	if _, _, err := image.Decode(bytes.NewReader(opt)); err != nil {
+		t.Fatalf("optimized image not decodable: %v", err)
+	}
+}

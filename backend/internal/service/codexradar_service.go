@@ -23,7 +23,7 @@ import (
 	"image/color"
 	stddraw "image/draw"
 	"image/jpeg"
-	"image/png"
+	_ "image/png" // 注册 PNG 解码器，供 image.Decode 解源站 PNG
 	"io"
 	"log/slog"
 	"net/http"
@@ -67,12 +67,17 @@ const (
 	// codexRadarCronStopTimeout 关闭 cron 时等待在途任务的最长时间。
 	codexRadarCronStopTimeout = 3 * time.Second
 
-	// codexRadarMaxImageDimension 优化后图片最长边上限（px）。源站漫画图约 2.2MB、
-	// 分辨率远超前端视口显示所需；限到 1280px 在清晰度与体积间取均衡（跨境链路更快）。
-	codexRadarMaxImageDimension = 1280
-	// codexRadarJPEGQuality JPEG 重编码质量。82 对这种大字漫画图仍基本无可见损失，
-	// 且体积远小于同内容 PNG。最终会在 JPEG/PNG/原图三者里取最小的那个。
-	codexRadarJPEGQuality = 82
+	// codexRadarTargetImageBytes 优化目标体积（字节）：把图压到该值以内，跨境链路下载更快。
+	// 95KB 留出余量确保 UI/DevTools 显示「<100KB」。按体积自适应，比固定分辨率/质量更稳。
+	codexRadarTargetImageBytes = 95 << 10
+	// codexRadarMaxImageDimension 优化起始最长边上限（px）：先在此分辨率下逐级降质量，
+	// 压不到目标再降一档分辨率。1080 对大字漫画图足够清晰。
+	codexRadarMaxImageDimension = 1080
+	// codexRadarMinImageDimension 分辨率下探下限（px）：再小文字就糊了，到此为止取最小结果。
+	codexRadarMinImageDimension = 720
+	// codexRadarMaxJPEGQuality / codexRadarMinJPEGQuality JPEG 质量的上下探边界。
+	codexRadarMaxJPEGQuality = 82
+	codexRadarMinJPEGQuality = 45
 )
 
 // codexRadarSnapshot 是进程内缓存的一份不可变快照，通过 atomic.Value 零锁读取。
@@ -349,8 +354,9 @@ func (s *CodexRadarService) get(ctx context.Context, url string, limit int64) (b
 	return data, resp.Header.Get("Content-Type"), resp.Header.Get("ETag"), nil
 }
 
-// optimizeCodexRadarImage 把源站的大图压小：若最长边超过上限则等比缩放，再在
-// JPEG(q88) / PNG 两种编码里取更小的一份。任何环节失败都原样返回入参（绝不丢图）。
+// optimizeCodexRadarImage 把源站的大图压到 codexRadarTargetImageBytes 以内（跨境下载更快）：
+// 从 codexRadarMaxImageDimension 起，先逐级降 JPEG 质量；到最低质量仍超标就降一档分辨率再试，
+// 直到命中目标或触及分辨率下限（取过程中最小的一份）。任何环节失败都原样透传原图（绝不丢图）。
 // 返回优化后的字节与对应 Content-Type。
 func optimizeCodexRadarImage(orig []byte, origType string) ([]byte, string) {
 	if len(orig) == 0 {
@@ -363,53 +369,82 @@ func optimizeCodexRadarImage(orig []byte, origType string) ([]byte, string) {
 		return orig, fallbackImageType(origType)
 	}
 
-	// 等比缩放：仅在最长边超过上限时缩小（绝不放大）。
-	b := src.Bounds()
-	w, h := b.Dx(), b.Dy()
-	longest := w
-	if h > longest {
-		longest = h
-	}
-	dst := src
-	if longest > codexRadarMaxImageDimension {
-		scale := float64(codexRadarMaxImageDimension) / float64(longest)
-		nw, nh := int(float64(w)*scale), int(float64(h)*scale)
-		if nw < 1 {
-			nw = 1
-		}
-		if nh < 1 {
-			nh = 1
-		}
-		resized := image.NewRGBA(image.Rect(0, 0, nw, nh))
-		xdraw.CatmullRom.Scale(resized, resized.Bounds(), src, b, xdraw.Over, nil)
-		dst = resized
-	}
-
-	// JPEG 编码需铺白底（源图可能带透明通道，否则透明处会变黑）。
 	best := orig
 	bestType := fallbackImageType(origType)
-
-	rgb := image.NewRGBA(dst.Bounds())
-	stddraw.Draw(rgb, rgb.Bounds(), image.NewUniform(color.White), image.Point{}, stddraw.Src)
-	stddraw.Draw(rgb, rgb.Bounds(), dst, dst.Bounds().Min, stddraw.Over)
-	var jpgBuf bytes.Buffer
-	if err := jpeg.Encode(&jpgBuf, rgb, &jpeg.Options{Quality: codexRadarJPEGQuality}); err == nil && jpgBuf.Len() > 0 && jpgBuf.Len() < len(best) {
-		best = jpgBuf.Bytes()
-		bestType = "image/jpeg"
+	consider := func(buf []byte) {
+		if len(buf) > 0 && len(buf) < len(best) {
+			best = buf
+			bestType = "image/jpeg"
+		}
 	}
 
-	// PNG 编码（缩放后往往也比原图小；文字类图无损更清晰）。取更小者。
-	var pngBuf bytes.Buffer
-	enc := png.Encoder{CompressionLevel: png.BestCompression}
-	if err := enc.Encode(&pngBuf, dst); err == nil && pngBuf.Len() > 0 && pngBuf.Len() < len(best) {
-		best = pngBuf.Bytes()
-		bestType = "image/png"
+	b := src.Bounds()
+	srcLongest := b.Dx()
+	if b.Dy() > srcLongest {
+		srcLongest = b.Dy()
+	}
+
+	// 分辨率外层、质量内层：优先在较高分辨率下降质量（大字漫画高分辨率+中质量更耐看）。
+	for dim := codexRadarMaxImageDimension; dim >= codexRadarMinImageDimension; dim -= 180 {
+		// 绝不放大：目标分辨率不超过源图最长边。
+		target := dim
+		if target > srcLongest {
+			target = srcLongest
+		}
+		rgb := s2iScaleToWhiteRGBA(src, b, target)
+		for q := codexRadarMaxJPEGQuality; q >= codexRadarMinJPEGQuality; q -= 8 {
+			var buf bytes.Buffer
+			if err := jpeg.Encode(&buf, rgb, &jpeg.Options{Quality: q}); err != nil {
+				continue
+			}
+			consider(buf.Bytes())
+			if buf.Len() <= codexRadarTargetImageBytes {
+				slog.Info("codexradar: image optimized",
+					"orig_bytes", len(orig), "opt_bytes", buf.Len(), "dim", target, "quality", q)
+				return best, bestType
+			}
+		}
+		// 源图本就比起始上限小：再降分辨率无意义，跳出用当前最优。
+		if target >= srcLongest {
+			break
+		}
 	}
 
 	if len(best) < len(orig) {
-		slog.Info("codexradar: image optimized", "orig_bytes", len(orig), "opt_bytes", len(best), "type", bestType)
+		slog.Info("codexradar: image optimized (target not reached, smallest kept)",
+			"orig_bytes", len(orig), "opt_bytes", len(best), "target_bytes", codexRadarTargetImageBytes)
 	}
 	return best, bestType
+}
+
+// s2iScaleToWhiteRGBA 把 src 等比缩放到「最长边 = longest」并铺白底（JPEG 无透明通道，
+// 否则源图透明处会变黑）。longest 不超过源图最长边时即为原尺寸铺底。返回 *image.RGBA。
+func s2iScaleToWhiteRGBA(src image.Image, b image.Rectangle, longest int) *image.RGBA {
+	w, h := b.Dx(), b.Dy()
+	srcLongest := w
+	if h > srcLongest {
+		srcLongest = h
+	}
+	nw, nh := w, h
+	if longest < srcLongest && srcLongest > 0 {
+		scale := float64(longest) / float64(srcLongest)
+		nw = int(float64(w) * scale)
+		nh = int(float64(h) * scale)
+	}
+	if nw < 1 {
+		nw = 1
+	}
+	if nh < 1 {
+		nh = 1
+	}
+	rgb := image.NewRGBA(image.Rect(0, 0, nw, nh))
+	stddraw.Draw(rgb, rgb.Bounds(), image.NewUniform(color.White), image.Point{}, stddraw.Src)
+	if nw == w && nh == h {
+		stddraw.Draw(rgb, rgb.Bounds(), src, b.Min, stddraw.Over)
+	} else {
+		xdraw.CatmullRom.Scale(rgb, rgb.Bounds(), src, b, xdraw.Over, nil)
+	}
+	return rgb
 }
 
 // fallbackImageType 归一化 Content-Type，缺省 image/png。
