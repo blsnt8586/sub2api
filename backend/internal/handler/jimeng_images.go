@@ -164,6 +164,7 @@ func (h *OpenAIGatewayHandler) runJimengImagesForwardLoop(
 			"",
 			false,
 			false,
+			false,
 			service.PlatformJimeng,
 		)
 		if err != nil {
@@ -232,7 +233,7 @@ func (h *OpenAIGatewayHandler) runJimengImagesForwardLoop(
 		if err != nil {
 			var failoverErr *service.UpstreamFailoverError
 			if errors.As(err, &failoverErr) {
-				h.gatewayService.ReportOpenAIAccountScheduleResult(account.ID, false, nil)
+				h.gatewayService.ReportOpenAIAccountScheduleResult(account.ID, requestModel, false, nil)
 				if c.Writer.Size() != writerSizeBeforeForward {
 					h.handleFailoverExhausted(c, failoverErr, true)
 					return
@@ -264,7 +265,7 @@ func (h *OpenAIGatewayHandler) runJimengImagesForwardLoop(
 				)
 				continue
 			}
-			h.gatewayService.ReportOpenAIAccountScheduleResult(account.ID, false, nil)
+			h.gatewayService.ReportOpenAIAccountScheduleResult(account.ID, requestModel, false, nil)
 			if c.Writer.Size() == writerSizeBeforeForward {
 				h.errorResponse(c, http.StatusBadGateway, "upstream_error", "Upstream request failed")
 			}
@@ -275,7 +276,7 @@ func (h *OpenAIGatewayHandler) runJimengImagesForwardLoop(
 			return
 		}
 
-		h.gatewayService.ReportOpenAIAccountScheduleResult(account.ID, true, nil)
+		h.gatewayService.ReportOpenAIAccountScheduleResult(account.ID, requestModel, true, nil)
 		recordJimengImagesUsage(c, h, reqLog, apiKey, subject, subscription, account, result, requestModel, body)
 		reqLog.Debug("jimeng_images.request_completed",
 			zap.Int64("account_id", account.ID),
