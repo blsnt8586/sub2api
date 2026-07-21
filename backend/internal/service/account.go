@@ -1345,6 +1345,24 @@ func (a *Account) GetJimengAPIKey() string {
 	return strings.TrimSpace(a.GetCredential("api_key"))
 }
 
+// JimengVendorLeonardo 是即梦平台下 Leonardo 上游的 vendor 标识。
+// 对外仍伪装为 platform=jimeng，仅在 credentials.vendor 中区分实际上游协议。
+const JimengVendorLeonardo = "leonardo"
+
+// GetJimengVendor 返回即梦账号的 vendor 子类型（credentials.vendor）。
+// 空串表示原生即梦上游；"leonardo" 表示 Leonardo 上游（OpenAI 兼容图像 + 异步视频）。
+func (a *Account) GetJimengVendor() string {
+	if !a.IsJimeng() {
+		return ""
+	}
+	return strings.ToLower(strings.TrimSpace(a.GetCredential("vendor")))
+}
+
+// IsJimengLeonardo 报告账号是否为即梦平台下的 Leonardo vendor 账号。
+func (a *Account) IsJimengLeonardo() bool {
+	return a.GetJimengVendor() == JimengVendorLeonardo
+}
+
 func (a *Account) GetGrokRefreshToken() string {
 	if !a.IsGrokOAuth() {
 		return ""

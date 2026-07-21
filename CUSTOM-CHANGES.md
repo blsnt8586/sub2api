@@ -16,7 +16,7 @@ fork 在上游之上叠加了三大功能块，外加一层解耦重构：
 | 功能块 | 说明 | 冲突面 |
 |--------|------|--------|
 | A. Nova Image Studio iframe 对接 | 用户端 iframe 嵌入 Nova，含剪贴板授权、导航联动、`/v1/models` 免计费 | 中（改上游 View + 中间件） |
-| B. 即梦（jimeng）视频平台 | 新增视频生成平台，按次/按秒计费，走 OpenAI 网关链路 | 中（新增为主，少量上游文件插桩） |
+| B. 即梦（jimeng）视频平台 + Leonardo vendor | 新增视频生成平台，按次/按秒计费，走 OpenAI 网关链路；`credentials.vendor=leonardo` 子类型再叠加 OpenAI 兼容图像 + 异步视频（对外仍伪装为即梦） | 中（新增为主，少量上游文件插桩） |
 | C. 上游 Sub2API 管理 + 定时优化 | 管理端管理 `provider_type=sub2api` 上游实例，定时优化账号倍率区间 | 低（几乎全新增文件） |
 | D. 平台分支解耦重构 | 把散落各处的平台 `switch/if` 收敛到 `platformColors.ts` / `domain_constants.go` | 降低未来冲突 |
 | E. OpenAI/Codex 全局 system prompt 注入 | 管理端配置全局系统提示词，前置合并到 Responses `instructions`，覆盖 responses/codex/chat 三条路径 | 低（逻辑全在新增文件，上游纯追加 + 2 处网关钩子） |
@@ -115,6 +115,37 @@ field.Float("video_price_per_second")  // 每秒视频价格 USD/秒，非 nil �
 
 > ⚠️ **两套 ForwardResult**：`ForwardResult`（GatewayService）与 `OpenAIForwardResult`（OpenAIGatewayService）都加了
 > `VideoCount`/`VideoSeconds` 字段。即梦走 OpenAI 路径，改计费务必两边同步。
+
+### 3.4 即梦平台下的 Leonardo vendor 子类型（图像 + 视频）
+
+**设计目标**：接入一个 OpenAI 兼容的第三方图像/视频网关，但**对外不暴露其真名**——伪装成即梦（`platform=jimeng`）下的一个 **vendor 子类型**，客户端只见 `platform=jimeng`。管理端建号时该子类型显示为 **Leonardo**。
+
+**核心机制**：即梦账号的 `credentials.vendor` 字段区分上游协议——空串 = 原生即梦（视频 `/v1/videos`）；`"leonardo"` = Leonardo 上游（OpenAI 兼容图像 + 异步视频）。vendor 分流点在**选号之后的转发层**，因此一个即梦分组可同时挂原生即梦号和 Leonardo 号，原生即梦逻辑零改动。
+
+> **混合分组的图像 failover**：调度器只按 `platform=jimeng` 选号、不区分 vendor。若图像请求被调度到原生即梦号（无图像接口）或缺 `api_key` 的号，`ForwardJimengImages` 返回 **account 级 `UpstreamFailoverError`**（触碰上游前拒绝），failover 循环跳过该号继续调度同组的 Leonardo 号；整组均无可用 Leonardo 号时才耗尽退出（映射 502 "Upstream service temporarily unavailable"）。这样图像专用分组即便混入原生即梦号也不会随机 502。
+
+**新增文件（低冲突，直接保留）**：
+- `backend/internal/pkg/leonardo/` — 协议客户端（`url.go` 图像/视频 URL 构建 + `models.go` **图像**请求/响应解析：`ParseImageRequest`/`CountImages`/`ExtractImageModel` + 测试）。视频请求/响应解析复用原生 `jimeng.ParseVideoRequest`（已兼容 `duration` 整数），leonardo 包不重复实现视频解析。
+- `backend/internal/service/leonardo_image_service.go` — `ForwardJimengImages`（图像转发，仿 `ForwardJimengVideo`）+ 测试 `leonardo_image_service_test.go`
+- `backend/internal/handler/jimeng_images.go` — `JimengImages` handler + 转发循环（仿 `jimeng_video.go`，选号用 `SelectAccountWithSchedulerForCapability(..., PlatformJimeng)`）
+
+**上游/既有文件插桩（少量，注意冲突）**：
+- `backend/internal/service/account.go` — 新增 `GetJimengVendor()` / `IsJimengLeonardo()` + `JimengVendorLeonardo` 常量（紧挨 `GetJimengAPIKey`）
+- `backend/internal/service/jimeng_video_service.go` `jimengVideoURL` — Leonardo vendor 分支：创建走 `/v1/videos/generations`，状态走 `/v1/videos/{id}`，**无 `/content` 端点**（MP4 直接在状态响应 `data[0].url`）
+- `backend/internal/server/routes/gateway.go` `imagesHandler` — 新增 `case service.PlatformJimeng: h.OpenAIGateway.JimengImages(c)`
+- 前端 `frontend/src/components/account/CreateAccountModal.vue` — 即梦建号块加 vendor 选择器（`jimengVendor` ref），提交时写 `credentials.vendor`，`resetForm` 重置
+- 前端 `frontend/src/views/admin/groupsImagePricing.ts` — `imagePricingPlatforms` 加 `"jimeng"`，让即梦分组显示图片价格 UI + `allow_image_generation` 开关
+- i18n `zh|en/admin/accounts.ts` 的 `jimeng` 块 — 加 `vendorLabel`/`vendorNative`/`vendorLeonardo`/`vendorLeonardoHint`
+
+**计费**：图像走既有 `CalculateImageCost`（`OpenAIForwardResult.ImageCount` + `ImageSize` 1K/2K/4K 档位，分组 `image_price_1k/2k/4k`）；视频复用即梦 `CalculateJimengVideoCost`（按次/按秒）。**无新增 schema 字段、无新增迁移**——vendor 存 `credentials` JSONB，图像价格复用既有 group 字段。
+
+**客户端契约（对外统一，与原生即梦一致）**：
+- 图像：`POST /v1/images/generations`、`POST /v1/images/edits`（OpenAI Images 格式，body 透传）
+- 视频：`POST /v1/videos`（创建）+ `GET /v1/videos/{id}`（轮询，成功后 `data[0].url` 取 MP4），内部翻译到上游 `/v1/videos/generations`
+
+**Leonardo 上游接口契约**（`base_url` + `api_key` 由管理员后续填入）：
+- 图像模型：`gpt-image-2`、`nano-banana-2`、`nano-banana-pro`、`seedream-4.5`（同步返回 `{created,data:[{url|b64_json}]}`）
+- 视频模型：`seedance-2.0`/`-fast`/`-mini`、`gemini-omni-flash`（异步任务，提交返回 `{id,status}`，轮询终态 succeeded/failed）
 
 ---
 

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/jimeng"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/leonardo"
 	"github.com/Wei-Shaw/sub2api/internal/util/urlvalidator"
 	"github.com/gin-gonic/gin"
 )
@@ -165,6 +166,21 @@ func (s *OpenAIGatewayService) jimengVideoURL(account *Account, endpoint JimengV
 	validated, err := s.validateJimengBaseURL(baseURL)
 	if err != nil {
 		return "", fmt.Errorf("invalid jimeng base_url: %w", err)
+	}
+	// Leonardo vendor：视频接口与原生即梦不同（创建走 /v1/videos/generations，
+	// 无 /content 端点——MP4 直接在状态响应的 data[0].url 中）。对外客户端契约
+	// 仍是即梦的 POST /v1/videos + GET /v1/videos/{id}，此处仅翻译上游真实路径。
+	if account.IsJimengLeonardo() {
+		switch endpoint {
+		case JimengVideoEndpointCreate:
+			return leonardo.BuildVideosGenerationsURL(validated)
+		case JimengVideoEndpointStatus:
+			return leonardo.BuildVideoStatusURL(validated, taskID)
+		case JimengVideoEndpointContent:
+			return "", fmt.Errorf("leonardo vendor does not support the video content endpoint; read the MP4 URL from data[0].url in the status response")
+		default:
+			return "", fmt.Errorf("unsupported jimeng video endpoint: %s", endpoint)
+		}
 	}
 	switch endpoint {
 	case JimengVideoEndpointCreate:

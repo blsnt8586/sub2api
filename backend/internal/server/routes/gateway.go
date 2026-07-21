@@ -55,6 +55,10 @@ func RegisterGatewayRoutes(
 			h.OpenAIGateway.Images(c)
 		case service.PlatformGrok:
 			h.OpenAIGateway.GrokImages(c)
+		case service.PlatformJimeng:
+			// 即梦平台的图像仅 Leonardo vendor 账号支持（对外仍伪装为即梦）；
+			// 原生即梦无图像 API，转发层会按 vendor 校验并返回明确错误。
+			h.OpenAIGateway.JimengImages(c)
 		default:
 			service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonLocalFeatureGate)
 			c.JSON(http.StatusNotFound, gin.H{

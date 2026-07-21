@@ -3,6 +3,8 @@ export const imagePricingPlatforms = new Set([
   "gemini",
   "grok",
   "openai",
+  // 即梦 jimeng：Leonardo vendor 账号支持图像生成，分组需显示图片价格配置。
+  "jimeng",
 ]);
 
 export const supportsImagePricingPlatform = (platform: string): boolean =>

@@ -436,8 +436,16 @@
             <span class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.accounts.types.upstreamDesc') }}</span>
           </div>
         </div>
+
+        <!-- 上游子类型（vendor）：原生即梦 / Leonardo -->
+        <label class="input-label mt-4">{{ t('admin.accounts.jimeng.vendorLabel') }}</label>
+        <select v-model="jimengVendor" class="input mt-2">
+          <option value="">{{ t('admin.accounts.jimeng.vendorNative') }}</option>
+          <option value="leonardo">{{ t('admin.accounts.jimeng.vendorLeonardo') }}</option>
+        </select>
+
         <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-          {{ t('admin.accounts.jimeng.apiKeyHint') }}
+          {{ jimengVendor === 'leonardo' ? t('admin.accounts.jimeng.vendorLeonardoHint') : t('admin.accounts.jimeng.apiKeyHint') }}
         </p>
       </div>
 
@@ -3697,6 +3705,8 @@ const accountCategory = ref<'oauth-based' | 'apikey' | 'bedrock' | 'service_acco
 const addMethod = ref<AddMethod>('oauth') // For oauth-based: 'oauth' or 'setup-token'
 const apiKeyBaseUrl = ref('https://api.anthropic.com')
 const apiKeyValue = ref('')
+// 即梦 vendor 子类型：'' = 原生即梦上游；'leonardo' = Leonardo 上游（OpenAI 兼容图像 + 异步视频）
+const jimengVendor = ref<'' | 'leonardo'>('')
 
 const syncPreviewCredentials = computed(() => {
   if (!apiKeyValue.value) return undefined
@@ -4633,6 +4643,7 @@ const resetForm = () => {
   addMethod.value = 'oauth'
   apiKeyBaseUrl.value = 'https://api.anthropic.com'
   apiKeyValue.value = ''
+  jimengVendor.value = ''
   editQuotaLimit.value = null
   editQuotaDailyLimit.value = null
   editQuotaWeeklyLimit.value = null
@@ -5075,6 +5086,11 @@ const handleSubmit = async () => {
   }
   if (form.platform === 'gemini') {
     credentials.tier_id = geminiTierAIStudio.value
+  }
+  // 即梦上游子类型（vendor）：'leonardo' 走 Leonardo 上游（OpenAI 兼容图像 + 异步视频），
+  // 空串为原生即梦。对外仍伪装为 platform=jimeng，仅在 credentials.vendor 区分。
+  if (form.platform === 'jimeng' && jimengVendor.value) {
+    credentials.vendor = jimengVendor.value
   }
 
   // Add model mapping if configured（OpenAI 开启自动透传时不应用）

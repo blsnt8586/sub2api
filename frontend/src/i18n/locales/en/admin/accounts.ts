@@ -504,7 +504,11 @@ export default {
       jimeng: {
         name: 'Jimeng',
         baseUrlHint: 'Third-party Jimeng video endpoint, e.g. https://api.example.com/v1 (requests forward to {baseUrl}/videos).',
-        apiKeyHint: 'Jimeng supports API Key access only (third-party compatible endpoint, requires Base URL + API Key) for video generation at /v1/videos.'
+        apiKeyHint: 'Jimeng supports API Key access only (third-party compatible endpoint, requires Base URL + API Key) for video generation at /v1/videos.',
+        vendorLabel: 'Upstream sub-type',
+        vendorNative: 'Native Jimeng (video /v1/videos)',
+        vendorLeonardo: 'Leonardo (image + video)',
+        vendorLeonardoHint: 'Leonardo upstream: images via /v1/images/generations and /v1/images/edits, video via /v1/videos (internally translated to the upstream task API). Fill in Base URL + API Key to connect.'
       },
       anthropic: {
         apiKeyPassthrough: 'Auto passthrough (auth only)',

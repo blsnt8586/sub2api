@@ -602,7 +602,11 @@ export default {
       jimeng: {
         name: '即梦',
         baseUrlHint: '即梦视频第三方端点地址，例如：https://api.example.com/v1（会转发到 {baseUrl}/videos）。',
-        apiKeyHint: '即梦仅支持 API Key 接入（第三方兼容端点，需填写 Base URL + API Key），用于视频生成 /v1/videos。'
+        apiKeyHint: '即梦仅支持 API Key 接入（第三方兼容端点，需填写 Base URL + API Key），用于视频生成 /v1/videos。',
+        vendorLabel: '上游子类型',
+        vendorNative: '原生即梦（视频 /v1/videos）',
+        vendorLeonardo: 'Leonardo（图像 + 视频）',
+        vendorLeonardoHint: 'Leonardo 上游：图像走 /v1/images/generations 与 /v1/images/edits，视频走 /v1/videos（内部翻译到上游任务接口）。填写 Base URL + API Key 即可接入。'
       },
       anthropic: {
         apiKeyPassthrough: '自动透传（仅替换认证）',
