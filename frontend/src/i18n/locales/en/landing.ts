@@ -17,6 +17,47 @@ export default {
     // User-focused value proposition
     heroSubtitle: 'One Key, All AI Models',
     heroDescription: 'No need to manage multiple subscriptions. Access Claude, GPT, Gemini and more with a single API key',
+    // New home page (ElevenLabs style)
+    heroTaglinePrefix: 'Connect to global ',
+    heroTaglineAccent: 'AI capacity',
+    baseUrlLabel: 'Swap the base URL to start integrating',
+    baseUrlCopied: 'Copied',
+    flowTitle: 'One key routes to every model',
+    flowYourApp: 'Your App',
+    compat: {
+      title: 'Switch in one line, fully compatible',
+      anthropicSdk: 'Anthropic SDK',
+      anthropicSdkSub: 'Fully compatible',
+      openaiSdk: 'OpenAI SDK',
+      openaiSdkSub: 'Works out of the box',
+      geminiNative: 'Gemini Native',
+      geminiNativeSub: 'v1beta endpoint',
+      streaming: 'Streaming',
+      streamingSub: 'Full SSE support',
+      functionCalling: 'Function Calling',
+      functionCallingSub: 'Tool use passthrough',
+      promptCache: 'Prompt Cache',
+      promptCacheSub: 'Cache-aware billing'
+    },
+    faq: {
+      title: 'Frequently asked questions',
+      q1: 'What is this service?',
+      a1: 'An AI API gateway: it wraps multi-platform AI subscription accounts into unified API keys, handling auth, account scheduling, load balancing, and usage billing automatically.',
+      q2: 'Which AI models are supported?',
+      a2: 'Claude, GPT, Gemini, Antigravity, Grok and other major platforms via one unified endpoint, with more being added over time.',
+      q3: 'How does billing work?',
+      a3: 'Pay per actual token usage. Both balance top-up and subscription plans are supported. Each key can have rate and quota limits, with real-time usage details.',
+      q4: 'How do I integrate? How much code changes?',
+      a4: 'Just point the base_url in your SDK or request to this site and use your assigned API key. Compatible with both Anthropic SDK and OpenAI SDK — nothing else changes.',
+      q5: 'Is my data safe?',
+      a5: 'Requests are forwarded only — never stored or used for training. Credentials are encrypted at rest, and logs keep only the usage metadata needed for billing.',
+      q6: 'What happens when a request fails or an account is rate-limited?',
+      a6: 'The gateway has a multi-account pool with automatic failover: when an upstream account is throttled or errors, it retries on a healthy one, transparently to the caller.'
+    },
+    capabilitiesTitle: 'Core Capabilities',
+    quickstartTitle: 'Integrate in 30 Seconds',
+    finalCtaTitle: 'Ready to start?',
+    finalCtaDesc: 'One API key for every major AI model.',
     tags: {
       subscriptionToApi: 'Subscription to API',
       stickySession: 'Session Persistence',
@@ -110,7 +151,9 @@ export default {
       button: 'Sign Up Free'
     },
     footer: {
-      allRightsReserved: 'All rights reserved.'
+      allRightsReserved: 'All rights reserved.',
+      disclaimer:
+        '{siteName} is an independently operated third-party AI gateway service, with no affiliation, partnership, or endorsement from Anthropic, OpenAI, Google, or any other AI model provider. All third-party trademarks and product names are the property of their respective owners.'
     }
   },
 

@@ -17,6 +17,47 @@ export default {
     // 新增：面向用户的价值主张
     heroSubtitle: '一个密钥，畅用多个 AI 模型',
     heroDescription: '无需管理多个订阅账号，一站式接入 Claude、GPT、Gemini 等主流 AI 服务',
+    // 新版首页（ElevenLabs 风格）
+    heroTaglinePrefix: '连接全球 ',
+    heroTaglineAccent: 'AI 能力',
+    baseUrlLabel: '替换 Base URL 即可接入',
+    baseUrlCopied: '已复制',
+    flowTitle: '一个 Key，路由所有模型',
+    flowYourApp: '你的应用',
+    compat: {
+      title: '一行切换，全面兼容',
+      anthropicSdk: 'Anthropic SDK',
+      anthropicSdkSub: '完全兼容',
+      openaiSdk: 'OpenAI SDK',
+      openaiSdkSub: '开箱即用',
+      geminiNative: 'Gemini 原生',
+      geminiNativeSub: 'v1beta 接口',
+      streaming: '流式响应',
+      streamingSub: 'SSE 全程支持',
+      functionCalling: 'Function Calling',
+      functionCallingSub: '工具调用透传',
+      promptCache: 'Prompt 缓存',
+      promptCacheSub: '缓存计费更省'
+    },
+    faq: {
+      title: '常见问题',
+      q1: '这是什么服务？',
+      a1: '这是一个 AI API 网关：把多平台的 AI 订阅账号封装成统一的 API Key 对外提供服务，自动完成鉴权、账号调度、负载均衡和用量计费。',
+      q2: '支持哪些 AI 模型？',
+      a2: '目前支持 Claude、GPT、Gemini、Antigravity、Grok 等主流平台，通过统一入口调用，后续会持续接入更多平台。',
+      q3: '如何计费？',
+      a3: '按实际用量计费（token 计费），支持余额充值与订阅套餐两种方式，可为每个 Key 设置速率与额度上限，用量明细实时可查。',
+      q4: '如何接入？需要改多少代码？',
+      a4: '只需把 SDK 或请求里的 base_url 换成本站地址、填入分配的 API Key 即可，兼容 Anthropic SDK 与 OpenAI SDK，无需其他改动。',
+      q5: '我的数据安全吗？',
+      a5: '请求仅做转发，不存储、不用于训练。密钥加密存储，日志仅保留计费所需的用量元数据。',
+      q6: '请求失败或账号被限流怎么办？',
+      a6: '网关内置多账号池与自动故障切换：某个上游账号限流或报错时自动切换到健康账号重试，对调用方透明。'
+    },
+    capabilitiesTitle: '核心能力',
+    quickstartTitle: '30 秒接入',
+    finalCtaTitle: '准备好了吗？',
+    finalCtaDesc: '一个 API Key，接入全部主流 AI 模型。',
     tags: {
       subscriptionToApi: '订阅转 API',
       stickySession: '会话保持',
@@ -110,7 +151,9 @@ export default {
       button: '免费注册'
     },
     footer: {
-      allRightsReserved: '保留所有权利。'
+      allRightsReserved: '保留所有权利。',
+      disclaimer:
+        '{siteName} 是独立运营的第三方 AI 网关服务，与 Anthropic、OpenAI、Google 等任何 AI 模型提供商均无隶属、合作或授权关系。所有第三方商标、产品名称均归各自所有者所有。'
     }
   },
 

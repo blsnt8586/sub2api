@@ -733,12 +733,13 @@ const routes: RouteRecordRaw[] = [
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
-  scrollBehavior(_to, _from, savedPosition) {
-    // Scroll to saved position when using browser back/forward
-    if (savedPosition) {
+  scrollBehavior(_to, from, savedPosition) {
+    // Restore position only for in-app back/forward navigation.
+    // On page reload the initial navigation has an empty `from.matched`,
+    // so we ignore savedPosition and always start at the top.
+    if (savedPosition && from.matched.length > 0) {
       return savedPosition
     }
-    // Scroll to top for new routes
     return { top: 0 }
   }
 })
