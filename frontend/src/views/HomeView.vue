@@ -14,8 +14,7 @@
     <div class="bg-aurora bg-aurora-2" aria-hidden="true" />
     <div class="bg-grid" aria-hidden="true" />
     <canvas ref="starRef" class="bg-stars" aria-hidden="true" />
-    <canvas ref="globeLRef" class="el-globe el-globe-l" aria-hidden="true" />
-    <canvas ref="globeRRef" class="el-globe el-globe-r" aria-hidden="true" />
+    <SplitGlobe />
 
     <!-- ── NAV ── -->
     <header class="el-nav">
@@ -264,6 +263,7 @@ import { useAuthStore, useAppStore } from '@/stores'
 import LocaleSwitcher from '@/components/common/LocaleSwitcher.vue'
 import Icon from '@/components/icons/Icon.vue'
 import { sanitizeUrl } from '@/utils/url'
+import SplitGlobe from '@/components/common/SplitGlobe.vue'
 
 const { t, locale } = useI18n()
 const authStore = useAuthStore()
@@ -415,7 +415,7 @@ function toggleTheme() {
   isDark.value = !isDark.value
   applyTheme()
   // reduced-motion 下 canvas 不循环，主题切换后手动重画一帧
-  if (reducedMotion) { redrawWave?.(); redrawStars?.(); globeRedraws.forEach(fn => fn()) }
+  if (reducedMotion) { redrawWave?.(); redrawStars?.() }
 }
 
 // 系统开启「减弱动态效果」时：canvas 只画静态首帧，轮换/循环动画不启动
@@ -456,110 +456,6 @@ function initStars(cv: HTMLCanvasElement) {
     if (!reducedMotion) starRaf = requestAnimationFrame(draw)
   }
   redrawStars = draw
-  draw()
-}
-
-// ── 3D dot globe（Hero 两侧的半球点阵，左右各一）──
-const globeLRef = ref<HTMLCanvasElement | null>(null)
-const globeRRef = ref<HTMLCanvasElement | null>(null)
-const globeRafs: number[] = []
-const globeRedraws: (() => void)[] = []
-function initGlobe(cv: HTMLCanvasElement, phase = 0) {
-  const ctx = cv.getContext('2d')!
-  const dpr = Math.min(devicePixelRatio, 2)
-  const fit = () => {
-    cv.width = cv.offsetWidth * dpr
-    cv.height = cv.offsetHeight * dpr
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-  }
-  fit(); addEventListener('resize', fit)
-
-  // fibonacci 球面均匀布点
-  const N = 560
-  const pts: [number, number, number][] = []
-  const ga = Math.PI * (3 - Math.sqrt(5))
-  for (let i = 0; i < N; i++) {
-    const y = 1 - (i / (N - 1)) * 2
-    const r = Math.sqrt(1 - y * y)
-    pts.push([Math.cos(ga * i) * r, y, Math.sin(ga * i) * r])
-  }
-  // 连接弧线：固定挑几对点，脉冲沿弧移动
-  const arcs = [
-    [12, 200], [45, 310], [88, 260], [140, 395], [30, 170], [230, 60],
-  ].map(([a, b], i) => ({ a: pts[a], b: pts[b], off: i / 6 }))
-
-  const slerp = (a: number[], b: number[], t: number): [number, number, number] => {
-    const d = Math.min(1, Math.max(-1, a[0]*b[0] + a[1]*b[1] + a[2]*b[2]))
-    const th = Math.acos(d)
-    if (th < 1e-4) return a as [number, number, number]
-    const s = Math.sin(th), w1 = Math.sin((1 - t) * th) / s, w2 = Math.sin(t * th) / s
-    return [a[0]*w1 + b[0]*w2, a[1]*w1 + b[1]*w2, a[2]*w1 + b[2]*w2]
-  }
-
-  const TILT = 0.42
-  let rot = phase
-  const project = (p: number[], R: number, cx: number, cy: number) => {
-    const cosR = Math.cos(rot), sinR = Math.sin(rot)
-    const x = p[0] * cosR + p[2] * sinR
-    const z = -p[0] * sinR + p[2] * cosR
-    const cosT = Math.cos(TILT), sinT = Math.sin(TILT)
-    const y = p[1] * cosT - z * sinT
-    const z2 = p[1] * sinT + z * cosT
-    return { x: cx + x * R, y: cy + y * R, z: z2 }
-  }
-
-  const draw = () => {
-    const W = cv.offsetWidth, H = cv.offsetHeight
-    ctx.clearRect(0, 0, W, H)
-    const R = Math.min(W, H) * 0.42
-    const cx = W / 2, cy = H / 2
-    const dark = isDark.value
-    // 点
-    for (const p of pts) {
-      const q = project(p, R, cx, cy)
-      const front = q.z > 0
-      const alpha = front ? 0.38 + q.z * 0.55 : 0.07
-      ctx.fillStyle = dark
-        ? `hsla(195, 90%, 72%, ${alpha})`
-        : `hsla(212, 60%, 32%, ${alpha})`
-      ctx.beginPath()
-      ctx.arc(q.x, q.y, front ? 2 : 1.2, 0, Math.PI * 2)
-      ctx.fill()
-    }
-    // 弧线 + 脉冲
-    for (const arc of arcs) {
-      ctx.beginPath()
-      let visible = false
-      for (let s = 0; s <= 24; s++) {
-        const t = s / 24
-        const m = slerp(arc.a, arc.b, t)
-        const lift = 1 + 0.22 * Math.sin(Math.PI * t)
-        const q = project([m[0]*lift, m[1]*lift, m[2]*lift], R, cx, cy)
-        if (q.z > -0.15) visible = true
-        if (s === 0) ctx.moveTo(q.x, q.y); else ctx.lineTo(q.x, q.y)
-      }
-      if (!visible) continue
-      ctx.strokeStyle = dark ? 'hsla(265, 85%, 72%, 0.28)' : 'hsla(255, 60%, 50%, 0.22)'
-      ctx.lineWidth = 1
-      ctx.stroke()
-      // 脉冲点
-      const pt = ((performance.now() / 3200) + arc.off) % 1
-      const m = slerp(arc.a, arc.b, pt)
-      const lift = 1 + 0.22 * Math.sin(Math.PI * pt)
-      const q = project([m[0]*lift, m[1]*lift, m[2]*lift], R, cx, cy)
-      if (q.z > -0.15) {
-        ctx.fillStyle = dark ? 'hsla(300, 90%, 75%, 0.9)' : 'hsla(280, 70%, 50%, 0.85)'
-        ctx.shadowBlur = 8
-        ctx.shadowColor = dark ? 'hsla(300, 90%, 70%, 0.8)' : 'hsla(280, 70%, 50%, 0.5)'
-        ctx.beginPath(); ctx.arc(q.x, q.y, 2.4, 0, Math.PI * 2); ctx.fill()
-        ctx.shadowBlur = 0
-      }
-    }
-    rot += 0.0016
-    if (!reducedMotion) globeRafs[idx] = requestAnimationFrame(draw)
-  }
-  const idx = globeRedraws.length
-  globeRedraws.push(draw)
   draw()
 }
 
@@ -625,8 +521,6 @@ onMounted(() => {
   if (waveRef.value) initWave(waveRef.value)
   if (starRef.value) initStars(starRef.value)
   // 两半相位一致 —— 是同一颗地球被剖开分置左右边界
-  if (globeLRef.value) initGlobe(globeLRef.value, 0)
-  if (globeRRef.value) initGlobe(globeRRef.value, 0)
   initReveal()
   if (!reducedMotion) {
     pathTimer = window.setInterval(() => {
@@ -640,7 +534,6 @@ onMounted(() => {
 onUnmounted(() => {
   cancelAnimationFrame(waveRaf)
   cancelAnimationFrame(starRaf)
-  globeRafs.forEach(id => cancelAnimationFrame(id))
   clearInterval(pathTimer)
 })
 </script>
@@ -791,23 +684,6 @@ onUnmounted(() => {
   text-align: center;
   position: relative;
 }
-/* 旋转点阵半球：固定于视口左右边界、垂直居中，随滚动全程陪伴
-   球心恰好压在边界线上：左边缘露出右半球、右边缘露出左半球，
-   两半相位相同 —— 视觉上是同一颗地球被从中剖开分置两侧 */
-.el-globe {
-  position: fixed;
-  top: 50%;
-  width: min(880px, 78vw);
-  height: min(880px, 78vw);
-  pointer-events: none;
-  opacity: 0.75;
-  -webkit-mask-image: radial-gradient(circle at 50% 50%, black 45%, transparent 74%);
-  mask-image: radial-gradient(circle at 50% 50%, black 45%, transparent 74%);
-}
-.el-globe-l { left: 0; transform: translate(-50%, -50%); }
-.el-globe-r { right: 0; transform: translate(50%, -50%); }
-.light .el-globe { opacity: 0.6; }
-@media (max-width: 900px) { .el-globe { display: none; } }
 .el-h1 {
   font-size: clamp(3rem, 8vw, 6.5rem);
   font-weight: 800;
