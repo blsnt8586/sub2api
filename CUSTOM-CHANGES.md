@@ -21,6 +21,7 @@ fork 在上游之上叠加了三大功能块，外加一层解耦重构：
 | D. 平台分支解耦重构 | 把散落各处的平台 `switch/if` 收敛到 `platformColors.ts` / `domain_constants.go` | 降低未来冲突 |
 | E. OpenAI/Codex 全局 system prompt 注入 | 管理端配置全局系统提示词，前置合并到 Responses `instructions`，覆盖 responses/codex/chat 三条路径 | 低（逻辑全在新增文件，上游纯追加 + 2 处网关钩子） |
 | F. Codex 雷达（第三方数据代理） | 代理缓存第三方站点 codexradar.com 的 Codex 观测数据，用户+管理员共用页面，带第三方来源免责说明 | 极低（全新增文件 + opt-in 功能开关，零上游钩子） |
+| G. 首页整体重构（2026-07 提交 `0f60c3edd`） | `HomeView.vue` 全量重写为深空网关风格：明暗双主题（默认亮色）、canvas 波形/星尘/剖半点阵地球、Base URL 复制组件、SDK 兼容徽章、终端三 Tab、FAQ；`landing.ts`(zh/en) 新增大量 key；`site_subtitle` 支持 JSON 多语言；router `scrollBehavior` 刷新不恢复滚动位置 | **高（HomeView.vue 与上游完全分叉，同步时保留本 fork 版本）** |
 
 > 注：**Grok 平台是上游自带**，非本 fork 新增。fork 唯一新增的平台是**即梦（jimeng）**。
 
@@ -345,6 +346,8 @@ fork 初期散落的平台分支（jimeng/grok 等）遍布 41 个文件，每�
 | `openai_gateway_usage.go` | video 分支**置于 image 之前** | 上游若重构计费顺序，需保持 video > image 优先级 |
 | `billing_service.go` | `CalculateVideoCost` 函数 | 上游若拆分文件，需迁移该函数 |
 | `admin_group.go` | video 字段映射 | 上游若改 CreateGroup DTO，需同步 video 字段 |
+| `HomeView.vue` | **全量重写**（功能块 G：深空风格首页，与上游完全分叉） | 同步冲突时整文件保留 fork 版本（`git checkout --ours`）；再人工核对上游是否新增了 `appStore`/公共设置字段需要接入 |
+| `landing.ts`（zh/en） | 功能块 G 新增 compat/faq/heroTagline/footer.disclaimer 等 key | 冲突时保留双方 key 合并；fork 新增 key 不可丢 |
 
 ### 🟡 MEDIUM — 关注（上游可能重构）
 
@@ -354,7 +357,7 @@ fork 初期散落的平台分支（jimeng/grok 等）遍布 41 个文件，每�
 | `channel.go` | `BillingModeVideo*` 常量 | 上游若改计费模式枚举，需补回 video 模式 |
 | `group.go` Ent schema | `video_price_*` 字段 | 上游若改 Group schema，冲突时保留 video 字段 |
 | `platformColors.ts` | `jimeng` 条目 + Phase 1 收敛 | 上游若改颜色 token，需合并 jimeng 并保留 accessor 函数 |
-| `HomeView.vue` / `CustomPageView.vue` / `RiskControlView.vue` | iframe `allow` 属性 | 上游若改 iframe 结构，需补回剪贴板授权 |
+| `CustomPageView.vue` / `RiskControlView.vue` | iframe `allow` 属性 | 上游若改 iframe 结构，需补回剪贴板授权（HomeView 的 iframe 授权已随功能块 G 整文件保留） |
 | `openai_gateway_forward.go` | `Forward` body 定稿后的 `[CUSTOM]` 注入钩子（15 行，覆盖 responses HTTP+WS） | 上游高频重构 OpenAI 网关；若改 `if bodyModified` 块或重命名 `requestView`/`reqBody`/`compatMessagesBridge`，需重新贴钩子并核对变量名 |
 | `openai_gateway_chat_completions.go` | `ForwardAsChatCompletions` 的 `[CUSTOM]` 注入钩子（7 行，锚点 `responsesBody = updatedBody` 后） | 上游若重构 chat→responses 转换流程，需重新定位注入点 |
 
