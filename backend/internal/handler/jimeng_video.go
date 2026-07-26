@@ -95,6 +95,14 @@ func (h *OpenAIGatewayHandler) handleJimengVideo(c *gin.Context, endpoint servic
 	setOpsEndpointContext(c, "", int16(service.RequestTypeSync))
 
 	if isCreate {
+		// Prompt security audit — mirrors grok_media.go's image-generation gate.
+		if moderationBody := body; len(moderationBody) > 0 {
+			decision := h.checkSecurityAudit(c, reqLog, apiKey, subject, service.ContentModerationProtocolOpenAIImages, requestModel, moderationBody)
+			if decision != nil && !decision.AllowNextStage {
+				h.openAISecurityAuditError(c, decision)
+				return
+			}
+		}
 		imageReleaseFunc, acquired := h.acquireImageGenerationSlot(c, streamStarted)
 		if !acquired {
 			return

@@ -1,0 +1,36 @@
+- generic [ref=f14e3]:
+  - generic [ref=f14e7]:
+    - generic:
+      - link "PackyAPI":
+        - /url: /
+        - img "PackyAPI"
+    - generic [ref=f14e10]:
+      - button "System Notice" [ref=f14e11] [cursor=pointer]
+      - button "Switch Theme" [ref=f14e16] [cursor=pointer]
+      - button "Change Language" [ref=f14e20] [cursor=pointer]
+  - generic [ref=f14e34]:
+    - main [ref=f14e35]
+    - generic [ref=f14e45]:
+      - generic [ref=f14e47]:
+        - link "About" [ref=f14e48] [cursor=pointer]:
+          - /url: /about
+        - link "Terms of Service" [ref=f14e50] [cursor=pointer]:
+          - /url: /terms
+        - link "Usage Policy" [ref=f14e51] [cursor=pointer]:
+          - /url: /usage-policy
+        - link "Supported Countries and Regions" [ref=f14e52] [cursor=pointer]:
+          - /url: /supported-regions
+        - link "Service-Specific Terms" [ref=f14e53] [cursor=pointer]:
+          - /url: /service-specific-terms
+      - generic [ref=f14e55]:
+        - generic [ref=f14e56]:
+          - generic [ref=f14e57]: © 2026 PackyMe. All rights reserved
+          - generic [ref=f14e58]:
+            - img "branch" [ref=f14e59]
+            - generic [ref=f14e62]: v1.0.120
+        - generic [ref=f14e63]:
+          - link "Telegram" [ref=f14e64] [cursor=pointer]:
+            - /url: https://t.me/Packycode
+          - generic [ref=f14e67]: Designed & Developed by
+          - link "PackyMe" [ref=f14e68] [cursor=pointer]:
+            - /url: https://www.packyme.com

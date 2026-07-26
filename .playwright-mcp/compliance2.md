@@ -1,0 +1,163 @@
+- generic [ref=f2e1]:
+  - generic [ref=f2e28]:
+    - complementary [ref=f2e29]:
+      - generic [ref=f2e30]:
+        - link [ref=f2e31] [cursor=pointer]:
+          - /url: /admin/dashboard
+          - img "Logo" [ref=f2e32]
+        - generic [ref=f2e33]:
+          - link "Sub2API" [ref=f2e34] [cursor=pointer]:
+            - /url: /admin/dashboard
+          - button "v0.1.162" [ref=f2e36] [cursor=pointer]
+      - navigation [ref=f2e38]:
+        - generic [ref=f2e39]:
+          - link "Dashboard" [ref=f2e40] [cursor=pointer]:
+            - /url: /admin/dashboard
+          - link "Ops" [ref=f2e44] [cursor=pointer]:
+            - /url: /admin/ops
+          - link "Users" [ref=f2e48] [cursor=pointer]:
+            - /url: /admin/users
+          - link "Groups" [ref=f2e52] [cursor=pointer]:
+            - /url: /admin/groups
+          - button "Channels" [ref=f2e56] [cursor=pointer]
+          - link "Subscriptions" [ref=f2e63] [cursor=pointer]:
+            - /url: /admin/subscriptions
+          - link "Accounts" [ref=f2e67] [cursor=pointer]:
+            - /url: /admin/accounts
+          - link "Upstream" [ref=f2e71] [cursor=pointer]:
+            - /url: /admin/sub2api-providers
+          - link "Announcements" [ref=f2e75] [cursor=pointer]:
+            - /url: /admin/announcements
+          - link "Proxies" [ref=f2e79] [cursor=pointer]:
+            - /url: /admin/proxies
+          - link "Redeem Codes" [ref=f2e83] [cursor=pointer]:
+            - /url: /admin/redeem
+          - link "Promo Codes" [ref=f2e87] [cursor=pointer]:
+            - /url: /admin/promo-codes
+          - link "Usage" [ref=f2e91] [cursor=pointer]:
+            - /url: /admin/usage
+          - link "Audit Logs" [ref=f2e95] [cursor=pointer]:
+            - /url: /admin/audit-logs
+          - link "Settings" [ref=f2e99] [cursor=pointer]:
+            - /url: /admin/settings
+        - generic [ref=f2e104]:
+          - generic [ref=f2e105]: My Account
+          - link "API Keys" [ref=f2e107] [cursor=pointer]:
+            - /url: /keys
+          - link "Usage" [ref=f2e111] [cursor=pointer]:
+            - /url: /usage
+          - link "Channel Status" [ref=f2e115] [cursor=pointer]:
+            - /url: /monitor
+          - link "My Subscriptions" [ref=f2e119] [cursor=pointer]:
+            - /url: /subscriptions
+          - link "Redeem" [ref=f2e123] [cursor=pointer]:
+            - /url: /redeem
+          - link "Profile" [ref=f2e127] [cursor=pointer]:
+            - /url: /profile
+          - link "Studio" [ref=f2e131] [cursor=pointer]:
+            - /url: /studio
+      - generic [ref=f2e136]:
+        - button "Dark Mode" [ref=f2e137] [cursor=pointer]
+        - button "Collapse" [ref=f2e141] [cursor=pointer]
+    - generic [ref=f2e145]:
+      - banner [ref=f2e146]:
+        - generic [ref=f2e147]:
+          - generic [ref=f2e149]:
+            - heading "API Keys" [level=1] [ref=f2e150]
+            - paragraph [ref=f2e151]: Manage your API keys and access tokens
+          - generic [ref=f2e152]:
+            - button "Announcements" [ref=f2e154] [cursor=pointer]
+            - button "🇺🇸 EN" [ref=f2e158] [cursor=pointer]:
+              - generic [ref=f2e159]: 🇺🇸
+              - generic [ref=f2e160]: EN
+            - generic [ref=f2e163]: $0.00
+            - button "User menu" [ref=f2e168] [cursor=pointer]:
+              - generic [ref=f2e169]: AD
+              - generic [ref=f2e171]:
+                - generic [ref=f2e172]: admin
+                - generic [ref=f2e173]: admin
+      - main [ref=f2e176]:
+        - generic [ref=f2e177]:
+          - generic [ref=f2e179]:
+            - button "Refresh" [ref=f2e180] [cursor=pointer]
+            - button "Column Settings" [ref=f2e184] [cursor=pointer]
+            - button "Create API Key" [ref=f2e188] [cursor=pointer]
+          - generic [ref=f2e193]:
+            - textbox "Search name or key..." [ref=f2e195]
+            - button "Select option" [ref=f2e197] [cursor=pointer]:
+              - generic [ref=f2e198]: All Groups
+            - button "Select option" [ref=f2e203] [cursor=pointer]:
+              - generic [ref=f2e204]: All Status
+          - table [ref=f2e211]:
+            - rowgroup [ref=f2e212]:
+              - row [ref=f2e213]:
+                - columnheader "Name" [ref=f2e214] [cursor=pointer]
+                - columnheader "API Key" [ref=f2e222]
+                - columnheader "Group" [ref=f2e225]
+                - columnheader "Current Concurrency" [ref=f2e228] [cursor=pointer]
+                - columnheader "Usage" [ref=f2e236]
+                - columnheader "Expires" [ref=f2e239] [cursor=pointer]
+                - columnheader "Status" [ref=f2e247] [cursor=pointer]
+                - columnheader "Created" [ref=f2e255] [cursor=pointer]
+                - columnheader "Actions" [ref=f2e263]
+            - rowgroup [ref=f2e266]:
+              - row [ref=f2e267]:
+                - cell [ref=f2e268]:
+                  - generic [ref=f2e269]:
+                    - heading "No API keys yet" [level=3] [ref=f2e273]
+                    - paragraph [ref=f2e274]: Create your first API key to get started with the API.
+                    - button "Create API Key" [ref=f2e276] [cursor=pointer]
+  - dialog [ref=f2e279]:
+    - generic [ref=f2e280]:
+      - heading "Deployment and Operation Compliance Acknowledgment" [level=3] [ref=f2e282]
+      - generic [ref=f2e284]:
+        - generic [ref=f2e289]:
+          - paragraph [ref=f2e290]: Deployment and operation compliance acknowledgment is required before continuing to use the console.
+          - paragraph [ref=f2e291]: This acknowledgment provides clear, conspicuous, and reproducible notice of compliance obligations and operation risks for self-hosted instances.
+        - generic [ref=f2e292]:
+          - generic [ref=f2e294]:
+            - heading "Sub2API Deployment and Operation Compliance Commitment" [level=1] [ref=f2e295]
+            - paragraph [ref=f2e296]: "Version: v2026.06.10"
+            - paragraph [ref=f2e297]: This document applies to any individual, organization, or authorized representative that deploys, configures, manages, operates, or effectively controls a Sub2API instance. Before continuing to access or use console functions, the acknowledging party must read, understand, and accept this document in full.
+            - heading "1. Scope" [level=2] [ref=f2e298]
+            - paragraph [ref=f2e299]: Sub2API is open-source software. Any self-hosted deployment, modification, hosted operation, external service, commercial use, user management, content processing, data processing, payment settlement, customer support, or upstream account/API usage based on Sub2API is the sole responsibility of the party that deploys, operates, or controls the relevant instance.
+            - paragraph [ref=f2e300]: This document does not replace the open-source license, upstream terms of service, user agreements, privacy policies, data processing agreements, commercial contracts, regulatory filings, administrative permits, security assessments, or any other documents, procedures, or obligations required by applicable law or contract.
+            - heading "2. Responsibility of the Deploying or Operating Party" [level=2] [ref=f2e301]
+            - paragraph [ref=f2e302]: The acknowledging party must independently assess and continuously comply with the laws, regulations, regulatory requirements, industry rules, contractual obligations, and platform policies that may apply in its location, server location, target-user location, place of actual business operation, and the locations of upstream service providers.
+            - paragraph [ref=f2e303]: The acknowledging party must ensure that it has all authorizations, qualifications, filings, permits, assessments, contracts, risk-control capabilities, content-safety capabilities, data-protection capabilities, complaint-handling mechanisms, and emergency-response capabilities required for deploying and operating the relevant instance. Such obligations are not transferred, waived, or reduced by the use of open-source software.
+            - heading "3. No Affiliation and Allocation of Responsibility" [level=2] [ref=f2e304]
+            - paragraph [ref=f2e305]: Any third-party instance, commercial service, paid plan, user solicitation, content processing, data processing, account usage, API call, payment settlement, customer support, or promotional activity is independently carried out by the corresponding deploying, operating, or controlling party. The open-source nature of this project, code contributions, issue discussions, documentation maintenance, version releases, bug fixes, community communications, or general technical explanations do not create participation in, authorization of, approval of, warranty for, joint operation, agency, partnership, employment, authorized operation, joint control, revenue sharing, joint tort, or any other joint-and-several liability relationship between the open-source project, copyright holders, contributors, or maintainers and such activities.
+            - paragraph [ref=f2e306]: The acknowledging party must not use the project name, marks, documentation, screenshots, community content, or open-source repository information to state or imply that its third-party instance, commercial service, paid plan, or operation is participated in, authorized, approved, warranted, or endorsed by the open-source project, copyright holders, contributors, maintainers, or community.
+            - paragraph [ref=f2e307]: The acknowledging party is independently responsible for consequences arising from its deployment, configuration, operation, promotion, charging, user-behavior management, content processing, data processing, account usage, API calls, or violations of laws, regulations, regulatory requirements, contractual obligations, or upstream rules.
+            - paragraph [ref=f2e308]: Any mandatory liability that cannot be excluded or limited by agreement shall be handled according to applicable law. Such statutory exception does not constitute participation in, authorization of, approval of, warranty for, or endorsement of any third-party deployment, operation, or commercial activity.
+            - heading "4. Compliance Commitments" [level=2] [ref=f2e309]
+            - paragraph [ref=f2e310]: "By continuing to use console functions, the acknowledging party makes the following commitments:"
+            - list [ref=f2e311]:
+              - listitem [ref=f2e312]: It has independently reviewed and will continuously comply with the terms of service, acceptable use policies, supported countries and regions, account/API key rules, commercial-use requirements, resale restrictions, risk-control requirements, and technical restrictions of OpenAI, Anthropic, Google, and any other upstream service providers.
+              - listitem [ref=f2e313]: It will not use this project to bypass, or assist others in bypassing, upstream regional restrictions, access restrictions, account restrictions, risk controls, billing restrictions, identity verification, usage limits, or terms of service.
+              - listitem [ref=f2e314]: It will not provide API relay, model-call resale, account quota distribution, shared subscriptions, paid calls, top-up/payment agency, or similar services to the public or an indefinite group of users unless all necessary authorizations, qualifications, filings, permits, assessments, or contractual arrangements have been obtained.
+              - listitem [ref=f2e315]: If it provides generative AI services, deep synthesis services, algorithm-related services, API relay, paid calls, or other potentially regulated services within Mainland China or to the Mainland China public, it will independently complete all potentially applicable obligations regarding internet information services, generative AI services, deep synthesis, algorithm filing, security assessment, cybersecurity, data security, personal information protection, content safety, payment settlement, taxes, and upstream authorization.
+              - listitem [ref=f2e316]: It will maintain user management, access control, content review, abuse handling, log retention, privacy protection, data deletion, complaint handling, emergency takedown, and security incident response mechanisms appropriate to the scale and risk of its business.
+              - listitem [ref=f2e317]: It will not make any statement, commitment, marketing representation, or warranty to any user, customer, partner, channel, regulator, or third party that conflicts with Section 3 of this document.
+              - listitem [ref=f2e318]: It will be independently responsible for consequences arising from its deployment, operation, promotion, charging, user-behavior management, content processing, data processing, account usage, API calls, or violations of laws, regulations, regulatory requirements, contractual obligations, or upstream rules.
+            - heading "5. Risk and Responsibility Notice" [level=2] [ref=f2e319]
+            - paragraph [ref=f2e320]: Using Sub2API for public API services, commercial relay, quota distribution, team sharing, paid calls, or similar purposes may involve risks relating to terms of service, contractual breach, data protection, content safety, consumer protection, payment settlement, taxes, export controls, sanctions compliance, cybersecurity, industry access, and administrative regulation. Requirements vary by jurisdiction and business model and may change over time.
+            - paragraph [ref=f2e321]: The mandatory notice, document link, exact-phrase acknowledgment, and local acknowledgment record in the console are intended to provide clear, conspicuous, and reproducible notice of deployment and operation risks, confirm that the console user has read the current version of this document, and create a clear responsibility-separation record between the open-source project, copyright holders, contributors, maintainers and any third-party deploying, operating, or controlling party.
+            - heading "6. Electronic Acknowledgment" [level=2] [ref=f2e322]
+            - paragraph [ref=f2e323]: By continuing to use the console, opening the document link, reading this document, and typing the required confirmation phrase exactly as displayed, the acknowledging party electronically confirms that it has read, understood, and agreed to this document, and agrees that the system may record necessary evidence including the acknowledged version, acknowledgment time, console account identifier, IP address, and User-Agent.
+          - complementary [ref=f2e324]:
+            - generic [ref=f2e325]:
+              - paragraph [ref=f2e326]: Document Version
+              - paragraph [ref=f2e327]: v2026.06.10
+            - link "Open the GitHub document" [active] [ref=f2e328] [cursor=pointer]:
+              - /url: https://github.com/Wei-Shaw/sub2api/blob/main/docs/legal/admin-compliance.en.md
+            - paragraph [ref=f2e331]: The agreement text comes from Markdown files in this project repository. When the agreement content changes, the document version must be incremented; acknowledgments of older versions become invalid and console users must acknowledge again.
+        - generic [ref=f2e332]:
+          - generic [ref=f2e333]: Type the following confirmation phrase exactly
+          - generic [ref=f2e334]: I have read, understood, and agree to the Sub2API Deployment and Operation Compliance Commitment
+          - textbox "Type the following confirmation phrase exactly" [ref=f2e337]:
+            - /placeholder: Type the confirmation phrase to continue
+        - paragraph [ref=f2e338]: This acknowledgment defines the no-affiliation relationship and responsibility boundary between self-hosted instances and the open-source project, copyright holders, contributors, and maintainers. The party that deploys, operates, or controls the relevant instance remains independently responsible for its applicable obligations.
+      - generic [ref=f2e340]:
+        - button "Log out" [ref=f2e341] [cursor=pointer]
+        - button "Acknowledge and Continue" [disabled] [ref=f2e342]

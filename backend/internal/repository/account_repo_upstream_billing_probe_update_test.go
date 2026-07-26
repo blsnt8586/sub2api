@@ -81,8 +81,8 @@ func TestLockAndMergeAccountProbeExtraUsesCurrentDatabaseSnapshot(t *testing.T) 
 
 			mock.ExpectQuery(`(?s)`+regexp.QuoteMeta("SELECT")+`.*`+regexp.QuoteMeta("FOR NO KEY UPDATE")).
 				WithArgs(int64(27), service.PlatformOpenAI, service.AccountTypeAPIKey, `{"api_key":"sk-test"}`, nil).
-				WillReturnRows(sqlmock.NewRows([]string{"identity_unchanged", "enabled", "snapshot"}).
-					AddRow(tt.identityUnchanged, tt.databaseEnabled, tt.databaseSnapshot))
+				WillReturnRows(sqlmock.NewRows([]string{"identity_unchanged", "ollama_group_unchanged", "ollama_proxy_unchanged", "enabled", "snapshot", "ollama_session", "ollama_auto", "ollama_snapshot"}).
+					AddRow(tt.identityUnchanged, false, true, tt.databaseEnabled, tt.databaseSnapshot, nil, nil, nil))
 
 			account := &service.Account{
 				ID:          27,
@@ -99,6 +99,45 @@ func TestLockAndMergeAccountProbeExtraUsesCurrentDatabaseSnapshot(t *testing.T) 
 				require.Equal(t, tt.wantSnapshot, got[service.UpstreamBillingProbeExtraKey])
 			}
 			require.Equal(t, tt.wantEnabled, got[service.UpstreamBillingProbeEnabledExtraKey])
+			require.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+func TestLockAndMergeAccountProbeExtraProtectsOllamaManagedFields(t *testing.T) {
+	for _, identityUnchanged := range []bool{true, false} {
+		t.Run(map[bool]string{true: "same identity keeps snapshot", false: "changed identity clears snapshot"}[identityUnchanged], func(t *testing.T) {
+			db, mock, err := sqlmock.New()
+			require.NoError(t, err)
+			t.Cleanup(func() { _ = db.Close() })
+			client := dbent.NewClient(dbent.Driver(entsql.OpenDB(dialect.Postgres, db)))
+			t.Cleanup(func() { _ = client.Close() })
+
+			mock.ExpectQuery(`(?s)`+regexp.QuoteMeta("SELECT")+`.*`+regexp.QuoteMeta("FOR NO KEY UPDATE")).
+				WithArgs(int64(29), service.PlatformAnthropic, service.AccountTypeAPIKey, `{"api_key":"key","base_url":"https://ollama.com"}`, nil).
+				WillReturnRows(sqlmock.NewRows([]string{"identity_unchanged", "ollama_group_unchanged", "ollama_proxy_unchanged", "enabled", "snapshot", "ollama_session", "ollama_auto", "ollama_snapshot"}).
+					AddRow(identityUnchanged, identityUnchanged, true, nil, nil, []byte(`"local-ciphertext"`), []byte(`true`), []byte(`{"status":"ok"}`)))
+
+			account := &service.Account{
+				ID: 29, Platform: service.PlatformAnthropic, Type: service.AccountTypeAPIKey,
+				Credentials: map[string]any{"api_key": "key", "base_url": "https://ollama.com"},
+				Extra: map[string]any{
+					service.OllamaCloudUsageSessionExtraKey:     "forged-ciphertext",
+					service.OllamaCloudUsageAutoRefreshExtraKey: false,
+					service.OllamaCloudUsageSnapshotExtraKey:    map[string]any{"status": "forged"},
+				},
+			}
+			got, err := lockAndMergeAccountProbeExtra(context.Background(), client, account, nil)
+			require.NoError(t, err)
+			if identityUnchanged {
+				require.Equal(t, "local-ciphertext", got[service.OllamaCloudUsageSessionExtraKey])
+				require.Equal(t, true, got[service.OllamaCloudUsageAutoRefreshExtraKey])
+				require.Equal(t, map[string]any{"status": "ok"}, got[service.OllamaCloudUsageSnapshotExtraKey])
+			} else {
+				require.NotContains(t, got, service.OllamaCloudUsageSessionExtraKey)
+				require.NotContains(t, got, service.OllamaCloudUsageAutoRefreshExtraKey)
+				require.NotContains(t, got, service.OllamaCloudUsageSnapshotExtraKey)
+			}
 			require.NoError(t, mock.ExpectationsWereMet())
 		})
 	}
@@ -236,8 +275,8 @@ func TestUpdateWithUpstreamBillingProbeEnabledRollsBackWhenOutboxFails(t *testin
 	mock.ExpectBegin()
 	mock.ExpectQuery(`(?s)`+regexp.QuoteMeta("SELECT")+`.*`+regexp.QuoteMeta("FOR NO KEY UPDATE")).
 		WithArgs(int64(27), service.PlatformOpenAI, service.AccountTypeAPIKey, `{"api_key":"sk-test"}`, nil).
-		WillReturnRows(sqlmock.NewRows([]string{"identity_unchanged", "enabled", "snapshot"}).
-			AddRow(true, []byte(`true`), []byte(`{"status":"ok"}`)))
+		WillReturnRows(sqlmock.NewRows([]string{"identity_unchanged", "ollama_group_unchanged", "ollama_proxy_unchanged", "enabled", "snapshot", "ollama_session", "ollama_auto", "ollama_snapshot"}).
+			AddRow(true, false, true, []byte(`true`), []byte(`{"status":"ok"}`), nil, nil, nil))
 	mock.ExpectExec(`(?s)UPDATE .*accounts.*SET.*WHERE .*id.*`).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectQuery(`(?s)SELECT .* FROM "accounts" WHERE "id" = \$1`).
@@ -341,6 +380,10 @@ func updatedAccountRows(id int64, extra string) *sqlmock.Rows {
 		id, now, now, nil, "test", nil, service.PlatformOpenAI, service.AccountTypeAPIKey,
 		[]byte(`{"api_key":"sk-test"}`), []byte(extra), nil, nil, 1, nil, 1, 1.0,
 		service.StatusActive, nil, nil, nil, false, true, nil, nil, nil, nil, nil, nil,
-		nil, nil, nil, service.QuotaDimensionGlobal,
+		nil, nil,
+		// fork 新增的 Sub2API provider 列（provider_id … sub2api_test_model）：
+		// 顺序必须与 dbaccount.Columns 一致；sub2api_optimize_enabled 非 nillable 故给 false。
+		nil, nil, nil, nil, nil, false, nil, nil, nil,
+		nil, service.QuotaDimensionGlobal,
 	)
 }

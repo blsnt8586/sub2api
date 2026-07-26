@@ -18,10 +18,26 @@ var VideoPlatforms = []string{
 	PlatformJimeng,
 }
 
-// IsValidPlatform 报告 p 是否为合法的平台标识。
+// GroupPlatforms 允许作为分组（group.platform）取值的平台列表。
+// 比 AllPlatforms 多一个 composite：复合分组把多个平台的账号挂在同一分组下，
+// 按 model/endpoint 路由到具体平台。composite 只是分组的调度模式，不是账号平台，
+// 因此不进 AllPlatforms（否则会多出一个无意义的账号平台与 user×platform 配额维度）。
+var GroupPlatforms = append(append([]string{}, AllPlatforms...), PlatformComposite)
+
+// IsValidPlatform 报告 p 是否为合法的平台标识（账号平台，不含 composite）。
 func IsValidPlatform(p string) bool {
 	for _, ap := range AllPlatforms {
 		if p == ap {
+			return true
+		}
+	}
+	return false
+}
+
+// IsValidGroupPlatform 报告 p 是否为合法的分组平台标识（含 composite）。
+func IsValidGroupPlatform(p string) bool {
+	for _, gp := range GroupPlatforms {
+		if p == gp {
 			return true
 		}
 	}

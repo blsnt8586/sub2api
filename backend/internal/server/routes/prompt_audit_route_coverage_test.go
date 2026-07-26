@@ -18,10 +18,16 @@ import (
 )
 
 func TestEveryGatewayPOSTRouteIsClassifiedForPromptAuditCoverage(t *testing.T) {
-	routeSource, err := os.ReadFile("gateway.go")
-	require.NoError(t, err)
+	// Scan both gateway.go and gateway_video.go — the fork extracted video routes
+	// into a separate file; both must be audited for completeness.
+	var combined []byte
+	for _, fname := range []string{"gateway.go", "gateway_video.go"} {
+		src, err := os.ReadFile(fname)
+		require.NoError(t, err)
+		combined = append(combined, src...)
+	}
 	pattern := regexp.MustCompile(`(?:gateway|gemini|r|codexDirect|antigravityV1|antigravityV1Beta)\.POST\("([^"]+)"`)
-	matches := pattern.FindAllStringSubmatch(string(routeSource), -1)
+	matches := pattern.FindAllStringSubmatch(string(combined), -1)
 	actual := map[string]struct{}{}
 	for _, match := range matches {
 		actual[match[1]] = struct{}{}
@@ -34,6 +40,8 @@ func TestEveryGatewayPOSTRouteIsClassifiedForPromptAuditCoverage(t *testing.T) {
 		"/chat/completions":         {"gateway_handler_chat_completions.go", "openai_chat_completions.go"},
 		"/embeddings":               {"openai_embeddings.go"},
 		"/alpha/search":             {"openai_alpha_search.go"},
+		"/live":                     {"openai_live.go"},
+		"/realtime/calls":           {"openai_live.go"},
 		"/images/generations":       {"openai_images.go", "grok_media.go"},
 		"/images/edits":             {"openai_images.go", "grok_media.go"},
 		"/images/generations/async": {"image_task_handler.go"},
@@ -42,6 +50,7 @@ func TestEveryGatewayPOSTRouteIsClassifiedForPromptAuditCoverage(t *testing.T) {
 		"/videos/generations":       {"grok_media.go"},
 		"/videos/edits":             {"grok_media.go"},
 		"/videos/extensions":        {"grok_media.go"},
+		"/videos":                   {"jimeng_video.go"},
 		"/models/*modelAction":      {"gemini_v1beta_handler.go"},
 	}
 	excluded := map[string]string{

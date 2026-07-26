@@ -1,0 +1,144 @@
+- generic [ref=f2e1]:
+  - generic [ref=f2e28]:
+    - complementary [ref=f2e29]:
+      - generic [ref=f2e30]:
+        - link [ref=f2e31] [cursor=pointer]:
+          - /url: /admin/dashboard
+          - img "Logo" [ref=f2e32]
+        - generic [ref=f2e33]:
+          - link "Sub2API" [ref=f2e34] [cursor=pointer]:
+            - /url: /admin/dashboard
+          - button "v0.1.162" [ref=f2e36] [cursor=pointer]
+      - navigation [ref=f2e38]:
+        - generic [ref=f2e39]:
+          - link "Dashboard" [ref=f2e40] [cursor=pointer]:
+            - /url: /admin/dashboard
+          - link "Ops" [ref=f2e44] [cursor=pointer]:
+            - /url: /admin/ops
+          - link "Users" [ref=f2e48] [cursor=pointer]:
+            - /url: /admin/users
+          - link "Groups" [ref=f2e52] [cursor=pointer]:
+            - /url: /admin/groups
+          - button "Channels" [ref=f2e56] [cursor=pointer]
+          - link "Subscriptions" [ref=f2e63] [cursor=pointer]:
+            - /url: /admin/subscriptions
+          - link "Accounts" [ref=f2e67] [cursor=pointer]:
+            - /url: /admin/accounts
+          - link "Upstream" [ref=f2e71] [cursor=pointer]:
+            - /url: /admin/sub2api-providers
+          - link "Announcements" [ref=f2e75] [cursor=pointer]:
+            - /url: /admin/announcements
+          - link "Proxies" [ref=f2e79] [cursor=pointer]:
+            - /url: /admin/proxies
+          - link "Redeem Codes" [ref=f2e83] [cursor=pointer]:
+            - /url: /admin/redeem
+          - link "Promo Codes" [ref=f2e87] [cursor=pointer]:
+            - /url: /admin/promo-codes
+          - link "Usage" [ref=f2e91] [cursor=pointer]:
+            - /url: /admin/usage
+          - link "Audit Logs" [ref=f2e95] [cursor=pointer]:
+            - /url: /admin/audit-logs
+          - link "Settings" [ref=f2e99] [cursor=pointer]:
+            - /url: /admin/settings
+        - generic [ref=f2e104]:
+          - generic [ref=f2e105]: My Account
+          - link "API Keys" [ref=f2e107] [cursor=pointer]:
+            - /url: /keys
+          - link "Usage" [ref=f2e111] [cursor=pointer]:
+            - /url: /usage
+          - link "Channel Status" [ref=f2e115] [cursor=pointer]:
+            - /url: /monitor
+          - link "My Subscriptions" [ref=f2e119] [cursor=pointer]:
+            - /url: /subscriptions
+          - link "Redeem" [ref=f2e123] [cursor=pointer]:
+            - /url: /redeem
+          - link "Profile" [ref=f2e127] [cursor=pointer]:
+            - /url: /profile
+          - link "Studio" [ref=f2e131] [cursor=pointer]:
+            - /url: /studio
+      - generic [ref=f2e136]:
+        - button "Dark Mode" [ref=f2e137] [cursor=pointer]
+        - button "Collapse" [ref=f2e141] [cursor=pointer]
+    - generic [ref=f2e145]:
+      - banner [ref=f2e146]:
+        - generic [ref=f2e147]:
+          - generic [ref=f2e149]:
+            - heading "API Keys" [level=1] [ref=f2e150]
+            - paragraph [ref=f2e151]: Manage your API keys and access tokens
+          - generic [ref=f2e152]:
+            - button "Announcements" [ref=f2e154] [cursor=pointer]
+            - button "🇺🇸 EN" [ref=f2e158] [cursor=pointer]:
+              - generic [ref=f2e159]: 🇺🇸
+              - generic [ref=f2e160]: EN
+            - generic [ref=f2e163]: $0.00
+            - button "User menu" [ref=f2e168] [cursor=pointer]:
+              - generic [ref=f2e169]: AD
+              - generic [ref=f2e171]:
+                - generic [ref=f2e172]: admin
+                - generic [ref=f2e173]: admin
+      - main [ref=f2e176]:
+        - generic [ref=f2e177]:
+          - generic [ref=f2e179]:
+            - button "Refresh" [ref=f2e180] [cursor=pointer]
+            - button "Column Settings" [ref=f2e184] [cursor=pointer]
+            - button "Create API Key" [ref=f2e188] [cursor=pointer]
+          - generic [ref=f2e193]:
+            - textbox "Search name or key..." [ref=f2e195]
+            - button "Select option" [ref=f2e197] [cursor=pointer]:
+              - generic [ref=f2e198]: All Groups
+            - button "Select option" [ref=f2e203] [cursor=pointer]:
+              - generic [ref=f2e204]: All Status
+          - table [ref=f2e211]:
+            - rowgroup [ref=f2e212]:
+              - row [ref=f2e213]:
+                - columnheader "Name" [ref=f2e214] [cursor=pointer]
+                - columnheader "API Key" [ref=f2e222]
+                - columnheader "Group" [ref=f2e225]
+                - columnheader "Current Concurrency" [ref=f2e228] [cursor=pointer]
+                - columnheader "Usage" [ref=f2e236]
+                - columnheader "Expires" [ref=f2e239] [cursor=pointer]
+                - columnheader "Status" [ref=f2e247] [cursor=pointer]
+                - columnheader "Created" [ref=f2e255] [cursor=pointer]
+                - columnheader "Actions" [ref=f2e263]
+            - rowgroup [ref=f2e266]:
+              - row [ref=f2e267]:
+                - cell [ref=f2e268]:
+                  - generic [ref=f2e269]:
+                    - heading "No API keys yet" [level=3] [ref=f2e273]
+                    - paragraph [ref=f2e274]: Create your first API key to get started with the API.
+                    - button "Create API Key" [ref=f2e276] [cursor=pointer]
+  - dialog [ref=f2e357]:
+    - generic [ref=f2e358]:
+      - generic [ref=f2e359]:
+        - heading "Create API Key" [level=3] [ref=f2e360]
+        - button "Close modal" [active] [ref=f2e361] [cursor=pointer]
+      - generic [ref=f2e365]:
+        - generic [ref=f2e366]:
+          - generic [ref=f2e367]: Name
+          - textbox "My API Key" [ref=f2e368]
+        - generic [ref=f2e369]:
+          - generic [ref=f2e370]: Group
+          - button "Select option" [ref=f2e372] [cursor=pointer]:
+            - generic [ref=f2e373]: Select a group
+        - generic [ref=f2e378]:
+          - generic [ref=f2e379]: Custom Key
+          - button [ref=f2e380] [cursor=pointer]
+        - generic [ref=f2e382]:
+          - generic [ref=f2e383]: IP Restriction
+          - button [ref=f2e384] [cursor=pointer]
+        - generic [ref=f2e385]:
+          - generic [ref=f2e386]: Quota Limit
+          - generic [ref=f2e388]:
+            - generic [ref=f2e389]:
+              - generic [ref=f2e390]: $
+              - spinbutton "Enter quota limit in USD" [ref=f2e391]
+            - paragraph [ref=f2e392]: Set the maximum amount this key can spend. 0 = unlimited.
+        - generic [ref=f2e394]:
+          - generic [ref=f2e395]: Rate Limit
+          - button [ref=f2e396] [cursor=pointer]
+        - generic [ref=f2e398]:
+          - generic [ref=f2e399]: Expiration
+          - button [ref=f2e400] [cursor=pointer]
+      - generic [ref=f2e402]:
+        - button "Cancel" [ref=f2e403] [cursor=pointer]
+        - button "Create" [ref=f2e404] [cursor=pointer]

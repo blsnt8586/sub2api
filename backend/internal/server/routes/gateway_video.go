@@ -24,6 +24,7 @@ func registerVideoRoutes(
 	opsErrorLogger gin.HandlerFunc,
 	endpointNorm gin.HandlerFunc,
 	apiKeyAuth gin.HandlerFunc,
+	compositeTarget gin.HandlerFunc,
 	requireGroup gin.HandlerFunc,
 ) {
 	videoUnsupported := func(c *gin.Context) {
@@ -64,9 +65,11 @@ func registerVideoRoutes(
 	}
 
 	// videoStatusHandler 处理 GET /v1/videos/{id}：按平台分流。
+	// composite 分组走 Grok：状态查询请求不带 model，compositeTargetPlatformMiddleware
+	// 无法解析出目标平台，交给调度器/选号阶段去校验容量（与上游一致）。
 	videoStatusHandler := func(c *gin.Context) {
 		switch getGroupPlatform(c) {
-		case service.PlatformGrok:
+		case service.PlatformGrok, service.PlatformComposite:
 			h.OpenAIGateway.GrokVideoStatus(c)
 		case service.PlatformJimeng:
 			h.OpenAIGateway.JimengVideoStatus(c)
@@ -84,13 +87,18 @@ func registerVideoRoutes(
 		videoUnsupported(c)
 	}
 
-	// jimengVideoContentHandler 处理即梦的 GET /v1/videos/{id}/content 视频下载。
-	jimengVideoContentHandler := func(c *gin.Context) {
-		if getGroupPlatform(c) == service.PlatformJimeng {
+	// videoContentHandler 处理 GET /v1/videos/{id}/content 视频下载：按平台分流。
+	// 与 videoStatusHandler 同口径（含 composite 走 Grok）——两者必须成对维护，
+	// 否则某个平台会「查得到状态但下不了片」。
+	videoContentHandler := func(c *gin.Context) {
+		switch getGroupPlatform(c) {
+		case service.PlatformGrok, service.PlatformComposite:
+			h.OpenAIGateway.GrokVideoContent(c)
+		case service.PlatformJimeng:
 			h.OpenAIGateway.JimengVideoContent(c)
-			return
+		default:
+			videoUnsupported(c)
 		}
-		videoUnsupported(c)
 	}
 
 	// /v1 分组路由（middleware 已由 gateway RouterGroup 统一应用）
@@ -100,13 +108,13 @@ func registerVideoRoutes(
 	// 即梦固定接口：POST /v1/videos（创建）与 /v1/videos/{id}/content（下载）
 	gateway.POST("/videos", jimengVideoCreateHandler)
 	gateway.GET("/videos/:request_id", videoStatusHandler)
-	gateway.GET("/videos/:request_id/content", jimengVideoContentHandler)
+	gateway.GET("/videos/:request_id/content", videoContentHandler)
 
 	// 根路径别名（不带 /v1 前缀，需显式挂中间件）
-	r.POST("/videos/generations", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, requireGroup, videoGenerationHandler)
-	r.POST("/videos/edits", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, requireGroup, videoEditHandler)
-	r.POST("/videos/extensions", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, requireGroup, videoExtensionHandler)
-	r.POST("/videos", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, requireGroup, jimengVideoCreateHandler)
-	r.GET("/videos/:request_id", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, requireGroup, videoStatusHandler)
-	r.GET("/videos/:request_id/content", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, requireGroup, jimengVideoContentHandler)
+	r.POST("/videos/generations", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, videoGenerationHandler)
+	r.POST("/videos/edits", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, videoEditHandler)
+	r.POST("/videos/extensions", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, videoExtensionHandler)
+	r.POST("/videos", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, jimengVideoCreateHandler)
+	r.GET("/videos/:request_id", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, videoStatusHandler)
+	r.GET("/videos/:request_id/content", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, videoContentHandler)
 }

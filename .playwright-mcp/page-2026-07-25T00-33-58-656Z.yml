@@ -1,0 +1,198 @@
+- generic [ref=f10e4]:
+  - generic [ref=f10e5]:
+    - banner [ref=f10e6]:
+      - generic [ref=f10e7]:
+        - generic [ref=f10e8]:
+          - link "无限画布" [ref=f10e9] [cursor=pointer]:
+            - /url: /image
+          - navigation [ref=f10e12]:
+            - link "生图工作台" [ref=f10e13] [cursor=pointer]:
+              - /url: /image
+            - link "视频工作台" [ref=f10e19] [cursor=pointer]:
+              - /url: /video
+            - link "无限画布" [ref=f10e24] [cursor=pointer]:
+              - /url: /canvas
+            - link "提示词库" [ref=f10e31] [cursor=pointer]:
+              - /url: /prompts
+            - link "我的资产" [ref=f10e36] [cursor=pointer]:
+              - /url: /assets
+            - link "配置" [ref=f10e43] [cursor=pointer]:
+              - /url: /config
+        - generic [ref=f10e48]:
+          - button "打开 Agent" [ref=f10e49] [cursor=pointer]
+          - generic [ref=f10e54]:
+            - link "文档" [ref=f10e55] [cursor=pointer]:
+              - /url: https://docs.canvas.best
+            - button "配置" [ref=f10e58]
+            - button "切换到浅色主题" [ref=f10e62]
+            - button "v0.9.0" [ref=f10e70] [cursor=pointer]
+            - link "GitHub" [ref=f10e72] [cursor=pointer]:
+              - /url: https://github.com/basketikun/infinite-canvas
+              - img "github" [ref=f10e73]
+    - main [ref=f10e77]:
+      - generic [ref=f10e78]:
+        - generic [ref=f10e79]:
+          - heading "配置与用户偏好" [level=1] [ref=f10e80]
+          - paragraph [ref=f10e81]: 渠道聚合、模型选择和同步偏好
+        - generic [ref=f10e82]:
+          - tablist [ref=f10e83]:
+            - generic [ref=f10e85]:
+              - tab "偏好设置" [selected] [ref=f10e87] [cursor=pointer]
+              - tab "提示词来源" [ref=f10e89] [cursor=pointer]
+              - tab "WebDAV" [ref=f10e91] [cursor=pointer]
+          - tabpanel "偏好设置" [ref=f10e94]:
+            - generic [ref=f10e95]:
+              - generic [ref=f10e96]:
+                - generic [ref=f10e97]: 默认模型
+                - generic [ref=f10e98]:
+                  - generic [ref=f10e99]:
+                    - generic [ref=f10e100]: 默认生图模型
+                    - generic [ref=f10e101]:
+                      - generic [ref=f10e102] [cursor=pointer]:
+                        - generic [ref=f10e103]:
+                          - generic: 选择 API Key
+                          - combobox [ref=f10e104]
+                        - img "down" [ref=f10e106]
+                      - generic [ref=f10e109]:
+                        - generic [ref=f10e110]:
+                          - generic: 请先选择 API Key
+                          - combobox [disabled] [ref=f10e111]
+                        - img "down" [ref=f10e113]
+                  - generic [ref=f10e116]:
+                    - generic [ref=f10e117]: 默认视频模型
+                    - generic [ref=f10e118]:
+                      - generic [ref=f10e119] [cursor=pointer]:
+                        - generic [ref=f10e120]:
+                          - generic: 选择 API Key
+                          - combobox [ref=f10e121]
+                        - img "down" [ref=f10e123]
+                      - generic [ref=f10e126]:
+                        - generic [ref=f10e127]:
+                          - generic: 请先选择 API Key
+                          - combobox [disabled] [ref=f10e128]
+                        - img "down" [ref=f10e130]
+                  - generic [ref=f10e133]:
+                    - generic [ref=f10e134]: 默认文本模型
+                    - generic [ref=f10e135]:
+                      - generic [ref=f10e136] [cursor=pointer]:
+                        - generic "当前已配置 Key" [ref=f10e137]:
+                          - text: 当前已配置 Key
+                          - combobox [ref=f10e138]
+                        - img "down" [ref=f10e140]
+                      - generic [ref=f10e143] [cursor=pointer]:
+                        - generic "claude-fable-5" [ref=f10e144]:
+                          - text: claude-fable-5
+                          - combobox [ref=f10e145]
+                        - img "down" [ref=f10e147]
+                  - generic [ref=f10e150]:
+                    - generic [ref=f10e151]: 默认音频模型
+                    - generic [ref=f10e152]:
+                      - generic [ref=f10e153] [cursor=pointer]:
+                        - generic [ref=f10e154]:
+                          - generic: 选择 API Key
+                          - combobox [ref=f10e155]
+                        - img "down" [ref=f10e157]
+                      - generic [ref=f10e160]:
+                        - generic [ref=f10e161]:
+                          - generic: 请先选择 API Key
+                          - combobox [disabled] [ref=f10e162]
+                        - img "down" [ref=f10e164]
+              - generic [ref=f10e167]: 生成偏好
+              - generic [ref=f10e168]:
+                - generic [ref=f10e170]:
+                  - generic "画布默认生图张数" [ref=f10e172]
+                  - generic [ref=f10e173]:
+                    - spinbutton [ref=f10e176]: "3"
+                    - generic [ref=f10e177]: 新建画布生图和配置节点默认使用，单个节点仍可单独覆盖。
+                - generic [ref=f10e180]:
+                  - generic "默认音频声音" [ref=f10e182]
+                  - generic [ref=f10e186] [cursor=pointer]:
+                    - generic "Alloy" [ref=f10e187]:
+                      - text: Alloy
+                      - combobox [ref=f10e188]
+                    - img "down" [ref=f10e190]
+                - generic [ref=f10e194]:
+                  - generic "默认音频格式" [ref=f10e196]
+                  - generic [ref=f10e200] [cursor=pointer]:
+                    - generic "MP3" [ref=f10e201]:
+                      - text: MP3
+                      - combobox [ref=f10e202]
+                    - img "down" [ref=f10e204]
+                - generic [ref=f10e208]:
+                  - generic "默认音频语速" [ref=f10e210]
+                  - spinbutton [ref=f10e214]: "1"
+              - generic [ref=f10e216]:
+                - generic "默认音频指令" [ref=f10e218]
+                - textbox "例如：自然、温暖、适合旁白。" [ref=f10e222]
+              - generic [ref=f10e224]:
+                - generic "系统提示词" [ref=f10e226]
+                - textbox "例如：你是一位擅长电影感写实摄影的视觉导演。" [ref=f10e230]
+  - complementary [ref=f10e231]:
+    - button "调整右侧面板宽度" [ref=f10e232]
+    - generic [ref=f10e233]:
+      - generic [ref=f10e239]:
+        - generic [ref=f10e240]: Agent
+        - generic [ref=f10e241]: 全站助手
+      - generic [ref=f10e242]:
+        - generic [ref=f10e243]:
+          - switch "工具确认" [checked] [ref=f10e244] [cursor=pointer]
+          - text: 工具确认
+        - button [ref=f10e247] [cursor=pointer]
+    - generic [ref=f10e253]:
+      - tablist "Agent 面板" [ref=f10e254]:
+        - tab "连接" [selected] [ref=f10e255]
+        - tab "对话" [ref=f10e262]
+        - tab "历史" [ref=f10e263]
+        - tab "日志" [ref=f10e268]
+      - button "新对话" [disabled] [ref=f10e272]
+    - generic [ref=f10e274]:
+      - generic [ref=f10e275]:
+        - generic [ref=f10e276]: 连接本地 Agent
+        - generic [ref=f10e277]: 按使用场景选择一种连接方式。
+      - generic [ref=f10e278]:
+        - generic [ref=f10e279]:
+          - generic [ref=f10e280]: 方式一：在 Codex 中使用插件
+          - generic [ref=f10e281]: 在 Codex app 安装 Infinite Canvas 插件后，通过插件启动画布，插件会自动启动本地 Agent 并带上连接信息。
+        - generic [ref=f10e282]:
+          - generic [ref=f10e283]: Codex 插件提醒
+          - generic [ref=f10e284]: "只有安装 Codex 插件或手动添加 MCP 后，工具列表才会进入 Codex 上下文并增加 token 消耗；仅运行 `npx -y @basketikun/canvas-agent` 启动本地 Agent 不会安装 MCP。"
+          - generic [ref=f10e285]:
+            - generic [ref=f10e286]:
+              - generic [ref=f10e287]: 移除插件
+              - code [ref=f10e288]: codex plugin remove infinite-canvas
+              - button [ref=f10e289] [cursor=pointer]
+            - generic [ref=f10e294]:
+              - generic [ref=f10e295]: 移除手动 MCP
+              - code [ref=f10e296]: codex mcp remove infinite-canvas
+              - button [ref=f10e297] [cursor=pointer]
+        - generic [ref=f10e302]:
+          - generic [ref=f10e303]: 方式二：直接运行 Agent
+          - generic [ref=f10e304]: 不使用 Codex 插件时，在终端运行下面命令，再回到网页里连接或手动填入 Local URL 和 Connect token。
+          - generic [ref=f10e305]:
+            - code [ref=f10e306]: npx -y @basketikun/canvas-agent
+            - button [ref=f10e307] [cursor=pointer]
+      - generic [ref=f10e312]:
+        - generic [ref=f10e313]:
+          - generic [ref=f10e314]:
+            - generic [ref=f10e315]:
+              - generic [ref=f10e316]: 网页连接
+              - generic [ref=f10e317]: 未连接
+            - generic [ref=f10e320]: 默认自动读取 Local URL 和 Connect token，失败时再手动填写。
+          - button "连接" [ref=f10e321] [cursor=pointer]
+        - generic [ref=f10e330]:
+          - generic [ref=f10e331]:
+            - generic [ref=f10e332]:
+              - text: 本地地址
+              - generic [ref=f10e336]: Local URL
+            - textbox "本地地址 Local URL" [ref=f10e342]:
+              - /placeholder: 例如 http://127.0.0.1:17371
+              - text: http://127.0.0.1:17371
+          - generic [ref=f10e343]:
+            - generic [ref=f10e344]:
+              - text: 连接 Token
+              - generic [ref=f10e348]: Connect token
+            - generic [ref=f10e349]:
+              - textbox "连接 Token Connect token 显示" [ref=f10e354]:
+                - /placeholder: 自动发现，或手动填入 Connect token
+              - button "显示" [ref=f10e356] [cursor=pointer]:
+                - img "eye-invisible" [ref=f10e357]

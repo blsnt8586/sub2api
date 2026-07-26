@@ -48,8 +48,10 @@ func ProvideAdminHandlers(
 	sub2apiOptimizeScheduleHandler *admin.Sub2APIOptimizeScheduleHandler,
 	auditLogHandler *admin.AuditLogHandler,
 	upstreamBillingProbe *service.UpstreamBillingProbeService,
+	ollamaCloudUsage *service.OllamaCloudUsageService,
 ) *AdminHandlers {
 	accountHandler.SetUpstreamBillingProbeService(upstreamBillingProbe)
+	accountHandler.SetOllamaCloudUsageService(ollamaCloudUsage)
 	return &AdminHandlers{
 		Dashboard:              dashboardHandler,
 		User:                   userHandler,
@@ -231,7 +233,8 @@ var ProviderSet = wire.NewSet(
 	NewPaymentHandler,
 	NewPaymentWebhookHandler,
 	NewAvailableChannelHandler,
-	NewBatchImageHandler,
+	// 注意：不要在此加 NewBatchImageHandler——ProvideBatchImageHandler 已包装它，
+	// 两者同返回 *BatchImageHandler，wire 会报 duplicate provider 导致 make generate 失败。
 	NewCodexRadarHandler,
 	NewAsyncImageHandler,
 	ProvideBatchImageHandler,

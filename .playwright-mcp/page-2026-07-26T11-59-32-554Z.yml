@@ -1,0 +1,343 @@
+- generic [ref=f4e4]:
+  - banner [ref=f4e5]:
+    - generic [ref=f4e6]:
+      - link "BUZZ BUZZ" [ref=f4e7] [cursor=pointer]:
+        - /url: /
+        - img "BUZZ" [ref=f4e8]
+        - generic [ref=f4e9]: BUZZ
+      - navigation [ref=f4e10]:
+        - button "Pricing" [ref=f4e11]
+        - button "Integrations" [ref=f4e12]
+        - button "Docs" [ref=f4e13]
+        - button "Blog" [ref=f4e14]
+        - button "Enterprise" [ref=f4e15]
+        - button "Get Started" [ref=f4e18]
+  - generic [ref=f4e20]:
+    - generic [ref=f4e21]:
+      - generic [ref=f4e22]: AI Gateway · Low-latency Edge Access
+      - heading "Leave no trace." [level=1] [ref=f4e24]:
+        - generic [ref=f4e25]:
+          - generic [ref=f4e26]: Leave
+          - generic [ref=f4e28]: "no"
+        - generic [ref=f4e30]: trace.
+      - paragraph [ref=f4e35]: Your prompts are forwarded, never stored — not logged, not trained on.One API for every leading model. Switch base URL in one line.
+      - generic [ref=f4e37]:
+        - button "Sign Up Free · Try Now" [ref=f4e38]
+        - button "View Integration Guide" [ref=f4e41]
+      - generic [ref=f4e45]:
+        - generic [ref=f4e46]: Anthropic SDK compatible
+        - generic [ref=f4e48]: OpenAI SDK compatible
+        - generic [ref=f4e50]: Native Prompt Cache
+    - generic [ref=f4e56]:
+      - generic [ref=f4e57]:
+        - generic [ref=f4e58]: API · /v1/messages
+        - generic [ref=f4e64]: claude-sonnet-4-6
+      - generic [ref=f4e65]:
+        - generic [ref=f4e66]:
+          - generic [ref=f4e67]: $
+          - generic [ref=f4e68]: curl https://buzzai.cc/v1/messages \
+        - generic [ref=f4e69]:
+          - generic [ref=f4e70]: ">"
+          - generic [ref=f4e71]: "-H 'x-api-key: sk-buzz-…' \\"
+        - generic [ref=f4e72]:
+          - generic [ref=f4e73]: ">"
+          - generic [ref=f4e74]: "-H 'anth"
+  - generic [ref=f4e77]:
+    - paragraph [ref=f4e79]: Switch in one line · Full SDK compatibility
+    - generic [ref=f4e81]:
+      - generic [ref=f4e82]:
+        - generic [ref=f4e83]: Anthropic SDK
+        - generic [ref=f4e84]: Compatible
+      - generic [ref=f4e85]:
+        - generic [ref=f4e86]: Claude Code
+        - generic [ref=f4e87]: Out of the box
+      - generic [ref=f4e88]:
+        - generic [ref=f4e89]: OpenAI SDK
+        - generic [ref=f4e90]: Compatible
+      - generic [ref=f4e91]:
+        - generic [ref=f4e92]: Prompt Cache
+        - generic [ref=f4e93]: Native support
+      - generic [ref=f4e94]:
+        - generic [ref=f4e95]: Streaming
+        - generic [ref=f4e96]: All modes
+      - generic [ref=f4e97]:
+        - generic [ref=f4e98]: Function Calling
+        - generic [ref=f4e99]: Tool Use
+    - generic [ref=f4e101]:
+      - generic [ref=f4e102]:
+        - generic [ref=f4e103]: Forwarded, not stored
+        - generic [ref=f4e104]: Never written to disk
+      - generic [ref=f4e105]:
+        - generic [ref=f4e106]: Never trained on
+        - generic [ref=f4e107]: Your prompts stay yours
+      - generic [ref=f4e108]:
+        - generic [ref=f4e109]: Byte-for-byte
+        - generic [ref=f4e110]: No trimming, no injection
+      - generic [ref=f4e111]:
+        - generic [ref=f4e112]: Encrypted in transit
+        - generic [ref=f4e113]: End-to-end TLS
+  - generic [ref=f4e115]:
+    - generic [ref=f4e116]:
+      - generic [ref=f4e117]: Why BUZZ
+      - heading "Not a single byte changed" [level=2] [ref=f4e120]
+      - paragraph [ref=f4e122]: What you send and what the upstream model receives are byte-for-byte identical.
+    - generic [ref=f4e123]:
+      - generic [ref=f4e125]:
+        - generic [ref=f4e126]:
+          - paragraph [ref=f4e127]: Transparent Forwarding
+          - heading "Request forwarding · Response fidelity" [level=3] [ref=f4e128]
+          - paragraph [ref=f4e129]: No model swapping, no context trimming, no hidden prompt injection. What you send is what the model receives; what the model returns is what you get.
+        - generic [ref=f4e130]:
+          - generic [ref=f4e132]:
+            - generic [ref=f4e133]: Your App
+            - generic [ref=f4e134]: SDK · curl · LangChain
+          - generic [ref=f4e138]:
+            - generic [ref=f4e139]: BUZZ Gateway
+            - generic [ref=f4e140]: Forward · Cache · Auth
+          - generic [ref=f4e144]:
+            - generic [ref=f4e145]: Upstream Models
+            - generic [ref=f4e146]: Opus · Sonnet · Haiku
+      - generic [ref=f4e148]:
+        - generic [ref=f4e149]:
+          - paragraph [ref=f4e150]: Uptime
+          - heading "Multi-node capacity pool" [level=3] [ref=f4e151]
+        - generic [ref=f4e152]:
+          - generic [ref=f4e154]:
+            - generic [ref=f4e155]: Gateway
+            - generic [ref=f4e156]: 0.00 %
+          - generic [ref=f4e161]:
+            - generic [ref=f4e162]: Cache hit
+            - generic [ref=f4e163]: 0 %
+          - generic [ref=f4e167]: Automatic failover
+      - generic [ref=f4e172]:
+        - generic [ref=f4e173]:
+          - paragraph [ref=f4e174]: Prompt Cache
+          - heading "Long sessions, dramatically lower cost" [level=3] [ref=f4e175]
+        - paragraph [ref=f4e176]: Long Claude Code sessions, system prompt reuse, multi-turn support — major cost reductions.
+      - generic [ref=f4e178]:
+        - generic [ref=f4e179]:
+          - paragraph [ref=f4e180]: Pay-as-you-go
+          - heading "Billed by token" [level=3] [ref=f4e181]
+        - generic [ref=f4e182]:
+          - generic [ref=f4e183]:
+            - generic [ref=f4e184]: Opus 4.8
+            - generic [ref=f4e186]:
+              - img [ref=f4e187]:
+                - generic [ref=f4e188]: $
+              - text: "0.20"
+          - generic [ref=f4e189]:
+            - generic [ref=f4e190]: Sonnet 4.6
+            - generic [ref=f4e192]:
+              - img [ref=f4e193]:
+                - generic [ref=f4e194]: $
+              - text: "0.12"
+          - generic [ref=f4e195]:
+            - generic [ref=f4e196]: Haiku 4.5
+            - generic [ref=f4e198]:
+              - img [ref=f4e199]:
+                - generic [ref=f4e200]: $
+              - text: "0.04"
+        - paragraph [ref=f4e201]: per 1M input tokens · no monthly fee
+      - generic [ref=f4e203]:
+        - generic [ref=f4e204]:
+          - paragraph [ref=f4e205]: Privacy
+          - heading "Zero data retention" [level=3] [ref=f4e206]
+        - paragraph [ref=f4e211]: Request bodies are never stored or used for training. Only token counts and latency are logged.
+      - generic [ref=f4e213]:
+        - generic [ref=f4e214]:
+          - paragraph [ref=f4e215]: Claude Code
+          - heading "One environment variable" [level=3] [ref=f4e216]
+        - generic [ref=f4e217]:
+          - generic [ref=f4e218]: export ANTHROPIC_BASE_URL=https://buzzai.cc
+          - button "Copy" [ref=f4e219]
+  - generic [ref=f4e223]:
+    - generic [ref=f4e224]:
+      - generic [ref=f4e225]: Transparent Pricing
+      - heading "Pay only for what you use" [level=2] [ref=f4e228]
+      - paragraph [ref=f4e230]: Real-time per-token billing. No monthly fees, no subscriptions, no minimums.
+    - generic [ref=f4e231]:
+      - generic [ref=f4e232]:
+        - generic [ref=f4e233]:
+          - heading "Claude Opus 4.8" [level=3] [ref=f4e234]
+          - paragraph [ref=f4e235]: Flagship reasoning · ideal for deep analysis and complex tasks
+        - generic [ref=f4e236]:
+          - generic [ref=f4e237]:
+            - generic [ref=f4e238]: Input
+            - generic [ref=f4e239]:
+              - img [ref=f4e240]:
+                - generic [ref=f4e241]: $
+              - generic [ref=f4e242]: "0.00"
+          - generic [ref=f4e243]:
+            - generic [ref=f4e244]: Output
+            - generic [ref=f4e245]:
+              - img [ref=f4e246]:
+                - generic [ref=f4e247]: $
+              - generic [ref=f4e248]: "0.00"
+          - paragraph [ref=f4e249]: / 1M tokens
+        - button "Get Started" [ref=f4e250]
+      - generic [ref=f4e251]:
+        - generic [ref=f4e252]: Recommended
+        - generic [ref=f4e253]:
+          - heading "Claude Sonnet 4.6" [level=3] [ref=f4e254]
+          - paragraph [ref=f4e255]: Best performance-to-cost ratio · the daily-driver choice
+        - generic [ref=f4e256]:
+          - generic [ref=f4e257]:
+            - generic [ref=f4e258]: Input
+            - generic [ref=f4e259]:
+              - img [ref=f4e260]:
+                - generic [ref=f4e261]: $
+              - generic [ref=f4e262]: "0.00"
+          - generic [ref=f4e263]:
+            - generic [ref=f4e264]: Output
+            - generic [ref=f4e265]:
+              - img [ref=f4e266]:
+                - generic [ref=f4e267]: $
+              - generic [ref=f4e268]: "0.00"
+          - paragraph [ref=f4e269]: / 1M tokens
+        - button "Get Started" [ref=f4e270]
+      - generic [ref=f4e271]:
+        - generic [ref=f4e272]:
+          - heading "Claude Haiku 4.5" [level=3] [ref=f4e273]
+          - paragraph [ref=f4e274]: Lightning-fast responses · perfect for batch processing and lightweight tasks
+        - generic [ref=f4e275]:
+          - generic [ref=f4e276]:
+            - generic [ref=f4e277]: Input
+            - generic [ref=f4e278]:
+              - img [ref=f4e279]:
+                - generic [ref=f4e280]: $
+              - generic [ref=f4e281]: "0.00"
+          - generic [ref=f4e282]:
+            - generic [ref=f4e283]: Output
+            - generic [ref=f4e284]:
+              - img [ref=f4e285]:
+                - generic [ref=f4e286]: $
+              - generic [ref=f4e287]: "0.00"
+          - paragraph [ref=f4e288]: / 1M tokens
+        - button "Get Started" [ref=f4e289]
+    - generic [ref=f4e291]:
+      - generic [ref=f4e292]:
+        - paragraph [ref=f4e293]: Cost Estimator
+        - heading "Run the numbers yourself" [level=3] [ref=f4e294]
+        - paragraph [ref=f4e295]: All models bill in real time per token. Below is a monthly reference.
+      - generic [ref=f4e296]:
+        - generic [ref=f4e297]:
+          - generic [ref=f4e298]:
+            - paragraph [ref=f4e299]: Model
+            - generic [ref=f4e300]:
+              - button "Opus 4.8" [ref=f4e301]
+              - button "Sonnet 4.6" [ref=f4e302]
+              - button "Haiku 4.5" [ref=f4e303]
+          - generic [ref=f4e304]:
+            - generic [ref=f4e305]: Requests per day
+            - spinbutton "Requests per day" [ref=f4e306]: "2000"
+          - generic [ref=f4e307]:
+            - generic [ref=f4e308]: Input tokens per request
+            - spinbutton "Input tokens per request" [ref=f4e309]: "1500"
+          - generic [ref=f4e310]:
+            - generic [ref=f4e311]: Output tokens per request
+            - spinbutton "Output tokens per request" [ref=f4e312]: "600"
+        - generic [ref=f4e313]:
+          - generic [ref=f4e314]:
+            - paragraph [ref=f4e315]: Monthly estimate · Sonnet 4.6
+            - paragraph [ref=f4e316]:
+              - img [ref=f4e317]:
+                - generic [ref=f4e318]: $
+              - text: "32.40"
+            - paragraph [ref=f4e319]: ≈ 1.08 / day
+          - generic [ref=f4e320]:
+            - term [ref=f4e321]: Input tokens
+            - definition [ref=f4e322]: 90.0M / month
+            - term [ref=f4e323]: Output tokens
+            - definition [ref=f4e324]: 36.0M / month
+            - term [ref=f4e325]: Input rate
+            - definition [ref=f4e326]:
+              - generic [ref=f4e327]:
+                - img [ref=f4e328]:
+                  - generic [ref=f4e329]: $
+                - text: 0.1200 / 1M
+            - term [ref=f4e330]: Output rate
+            - definition [ref=f4e331]:
+              - generic [ref=f4e332]:
+                - img [ref=f4e333]:
+                  - generic [ref=f4e334]: $
+                - text: 0.6000 / 1M
+    - button "View all model pricing →" [ref=f4e337]:
+      - text: View all model pricing
+      - generic [ref=f4e338]: →
+  - generic [ref=f4e340]:
+    - generic [ref=f4e341]:
+      - generic [ref=f4e342]: Two-minute setup
+      - heading "Just change one base_url" [level=2] [ref=f4e345]
+      - paragraph [ref=f4e347]: Keep the rest of your code · Compatible with Anthropic SDK and OpenAI SDK
+    - generic [ref=f4e351]:
+      - text: Claude Code users:one-line script·
+      - link "More tools (Codex / Cherry Studio ...)" [ref=f4e352] [cursor=pointer]:
+        - /url: /integrations
+      - generic [ref=f4e353]:
+        - code [ref=f4e354]: curl -fsSL https://buzzai.cc/sh/claudecode.sh | bash
+        - button "Copy" [ref=f4e355]
+    - generic [ref=f4e358]:
+      - generic [ref=f4e359]:
+        - generic [ref=f4e360]:
+          - button "Anthropic SDK" [ref=f4e361]
+          - button "OpenAI SDK" [ref=f4e362]
+        - generic [ref=f4e363]:
+          - generic [ref=f4e364]:
+            - button "Python" [ref=f4e365]
+            - button "curl" [ref=f4e366]
+            - button "Node.js" [ref=f4e367]
+          - button "Copy" [ref=f4e368]
+      - code [ref=f4e372]: "from anthropic import Anthropic client = Anthropic( api_key=\"sk-your-token\", base_url=\"https://buzzai.cc/v1\" ) message = client.messages.create( model=\"claude-sonnet-4-6\", max_tokens=1024, messages=[{\"role\": \"user\", \"content\": \"Hello!\"}] ) print(message.content[0].text)"
+  - generic [ref=f4e374]:
+    - generic [ref=f4e375]:
+      - generic [ref=f4e376]: FAQ
+      - heading "Frequently asked questions" [level=2] [ref=f4e379]
+    - generic [ref=f4e380]:
+      - button "What is BUZZ?" [ref=f4e383]
+      - button "Which AI models does BUZZ support?" [ref=f4e389]
+      - button "How is BUZZ priced?" [ref=f4e395]
+      - button "How do I integrate BUZZ?" [ref=f4e401]
+      - button "Can I use Claude Code with BUZZ?" [ref=f4e407]
+      - button "Is my data safe?" [ref=f4e413]
+  - generic [ref=f4e418]:
+    - heading "Ready to ship faster?" [level=2] [ref=f4e419]
+    - paragraph [ref=f4e420]: Trial credits on signup · switch base URL in one line · low-latency access
+    - button "Sign Up Free · Get Started" [ref=f4e422]
+  - contentinfo [ref=f4e425]:
+    - generic [ref=f4e426]:
+      - generic [ref=f4e427]:
+        - generic [ref=f4e428]:
+          - generic [ref=f4e429]:
+            - img "BUZZ" [ref=f4e430]
+            - generic [ref=f4e431]: BUZZ
+          - paragraph [ref=f4e432]: Unified AI Gateway · transparent forwarding · per-token billing
+        - navigation [ref=f4e433]:
+          - paragraph [ref=f4e434]: Product
+          - generic [ref=f4e435]:
+            - button "Model Pricing" [ref=f4e436]
+            - button "Integrations" [ref=f4e437]
+            - button "Docs" [ref=f4e438]
+            - button "Blog" [ref=f4e439]
+            - button "Sign Up" [ref=f4e440]
+        - navigation [ref=f4e441]:
+          - paragraph [ref=f4e442]: Support
+          - generic [ref=f4e443]:
+            - button "Support Tickets" [ref=f4e444]
+            - button "Terms of Service" [ref=f4e445]
+            - button "Privacy Policy" [ref=f4e446]
+            - button "Acceptable Use" [ref=f4e447]
+            - button "Refund Policy" [ref=f4e448]
+        - navigation [ref=f4e449]:
+          - paragraph [ref=f4e450]: Business
+          - generic [ref=f4e451]:
+            - button "Enterprise" [ref=f4e452]
+            - button "Contact Sales" [ref=f4e453]
+      - generic [ref=f4e454]:
+        - paragraph [ref=f4e455]: © 2026 BUZZ · All rights reserved
+        - paragraph [ref=f4e456]: This service is operated by CyanWave Technology Limited.
+        - paragraph [ref=f4e457]:
+          - text: ROOM 18, 2/F, Tuspark, 118 Wai Yip Street, Kwun Tong, Kowloon, Hong Kong ·
+          - link "support@buzzai.cc" [ref=f4e458] [cursor=pointer]:
+            - /url: mailto:support@buzzai.cc
+        - paragraph [ref=f4e459]: BUZZ is the operator of this Service and is not affiliated with, partnered with, endorsed by, or sponsored by any AI model provider, including Anthropic, OpenAI, or Google. All product names and trademarks belong to their respective owners; references are for compatibility description only.
+        - paragraph [ref=f4e460]: Service intended for developers worldwide. Users are responsible for compliance with their local laws.

@@ -1,0 +1,214 @@
+- generic [ref=f2e1]:
+  - generic:
+    - generic:
+      - complementary:
+        - generic:
+          - link "Logo":
+            - /url: /admin/dashboard
+            - img "Logo"
+          - generic:
+            - link "Sub2API":
+              - /url: /admin/dashboard
+            - generic:
+              - button "v0.1.162"
+        - navigation:
+          - generic:
+            - link "Dashboard":
+              - /url: /admin/dashboard
+            - link "Ops":
+              - /url: /admin/ops
+            - link "Users":
+              - /url: /admin/users
+            - link "Groups":
+              - /url: /admin/groups
+            - button "Channels"
+            - link "Subscriptions":
+              - /url: /admin/subscriptions
+            - link "Accounts":
+              - /url: /admin/accounts
+            - link "Upstream":
+              - /url: /admin/sub2api-providers
+            - link "Announcements":
+              - /url: /admin/announcements
+            - link "Proxies":
+              - /url: /admin/proxies
+            - link "Redeem Codes":
+              - /url: /admin/redeem
+            - link "Promo Codes":
+              - /url: /admin/promo-codes
+            - link "Usage":
+              - /url: /admin/usage
+            - link "Audit Logs":
+              - /url: /admin/audit-logs
+            - link "Settings":
+              - /url: /admin/settings
+          - generic:
+            - generic: My Account
+            - link "API Keys":
+              - /url: /keys
+            - link "Usage":
+              - /url: /usage
+            - link "Channel Status":
+              - /url: /monitor
+            - link "My Subscriptions":
+              - /url: /subscriptions
+            - link "Redeem":
+              - /url: /redeem
+            - link "Profile":
+              - /url: /profile
+            - link "Studio":
+              - /url: /studio
+        - generic:
+          - button "Dark Mode"
+          - button "Collapse"
+      - generic:
+        - banner:
+          - generic:
+            - generic:
+              - generic:
+                - heading "API Keys" [level=1]
+                - paragraph: Manage your API keys and access tokens
+            - generic:
+              - generic:
+                - button "Announcements"
+              - generic:
+                - button "🇺🇸 EN":
+                  - generic: 🇺🇸
+                  - generic: EN
+              - generic: $0.00
+              - generic:
+                - button "User menu":
+                  - generic: AD
+                  - generic:
+                    - generic: admin
+                    - generic: admin
+        - main:
+          - generic:
+            - generic:
+              - generic:
+                - button "Refresh"
+                - generic:
+                  - button "Column Settings"
+                - button "Create API Key"
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - textbox "Search name or key..."
+                  - generic:
+                    - button "Select option":
+                      - generic: All Groups
+                  - generic:
+                    - button "Select option":
+                      - generic: All Status
+            - generic:
+              - generic:
+                - generic:
+                  - table:
+                    - rowgroup:
+                      - row "Name API Key Group Current Concurrency Usage Expires Status Created Actions":
+                        - columnheader "Name"
+                        - columnheader "API Key"
+                        - columnheader "Group"
+                        - columnheader "Current Concurrency"
+                        - columnheader "Usage"
+                        - columnheader "Expires"
+                        - columnheader "Status"
+                        - columnheader "Created"
+                        - columnheader "Actions"
+                    - rowgroup:
+                      - row "No API keys yet Create your first API key to get started with the API. Create API Key":
+                        - cell "No API keys yet Create your first API key to get started with the API. Create API Key":
+                          - generic:
+                            - heading "No API keys yet" [level=3]
+                            - paragraph: Create your first API key to get started with the API.
+                            - generic:
+                              - button "Create API Key"
+  - dialog "Deployment and Operation Compliance Acknowledgment":
+    - generic:
+      - generic:
+        - heading "Deployment and Operation Compliance Acknowledgment" [level=3]
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - paragraph: Deployment and operation compliance acknowledgment is required before continuing to use the console.
+                - paragraph: This acknowledgment provides clear, conspicuous, and reproducible notice of compliance obligations and operation risks for self-hosted instances.
+          - generic:
+            - generic:
+              - generic:
+                - heading "Sub2API Deployment and Operation Compliance Commitment" [level=1]
+                - paragraph: "Version: v2026.06.10"
+                - paragraph: This document applies to any individual, organization, or authorized representative that deploys, configures, manages, operates, or effectively controls a Sub2API instance. Before continuing to access or use console functions, the acknowledging party must read, understand, and accept this document in full.
+                - heading "1. Scope" [level=2]
+                - paragraph: Sub2API is open-source software. Any self-hosted deployment, modification, hosted operation, external service, commercial use, user management, content processing, data processing, payment settlement, customer support, or upstream account/API usage based on Sub2API is the sole responsibility of the party that deploys, operates, or controls the relevant instance.
+                - paragraph: This document does not replace the open-source license, upstream terms of service, user agreements, privacy policies, data processing agreements, commercial contracts, regulatory filings, administrative permits, security assessments, or any other documents, procedures, or obligations required by applicable law or contract.
+                - heading "2. Responsibility of the Deploying or Operating Party" [level=2]
+                - paragraph: The acknowledging party must independently assess and continuously comply with the laws, regulations, regulatory requirements, industry rules, contractual obligations, and platform policies that may apply in its location, server location, target-user location, place of actual business operation, and the locations of upstream service providers.
+                - paragraph: The acknowledging party must ensure that it has all authorizations, qualifications, filings, permits, assessments, contracts, risk-control capabilities, content-safety capabilities, data-protection capabilities, complaint-handling mechanisms, and emergency-response capabilities required for deploying and operating the relevant instance. Such obligations are not transferred, waived, or reduced by the use of open-source software.
+                - heading "3. No Affiliation and Allocation of Responsibility" [level=2]
+                - paragraph: Any third-party instance, commercial service, paid plan, user solicitation, content processing, data processing, account usage, API call, payment settlement, customer support, or promotional activity is independently carried out by the corresponding deploying, operating, or controlling party. The open-source nature of this project, code contributions, issue discussions, documentation maintenance, version releases, bug fixes, community communications, or general technical explanations do not create participation in, authorization of, approval of, warranty for, joint operation, agency, partnership, employment, authorized operation, joint control, revenue sharing, joint tort, or any other joint-and-several liability relationship between the open-source project, copyright holders, contributors, or maintainers and such activities.
+                - paragraph: The acknowledging party must not use the project name, marks, documentation, screenshots, community content, or open-source repository information to state or imply that its third-party instance, commercial service, paid plan, or operation is participated in, authorized, approved, warranted, or endorsed by the open-source project, copyright holders, contributors, maintainers, or community.
+                - paragraph: The acknowledging party is independently responsible for consequences arising from its deployment, configuration, operation, promotion, charging, user-behavior management, content processing, data processing, account usage, API calls, or violations of laws, regulations, regulatory requirements, contractual obligations, or upstream rules.
+                - paragraph: Any mandatory liability that cannot be excluded or limited by agreement shall be handled according to applicable law. Such statutory exception does not constitute participation in, authorization of, approval of, warranty for, or endorsement of any third-party deployment, operation, or commercial activity.
+                - heading "4. Compliance Commitments" [level=2]
+                - paragraph: "By continuing to use console functions, the acknowledging party makes the following commitments:"
+                - list:
+                  - listitem: It has independently reviewed and will continuously comply with the terms of service, acceptable use policies, supported countries and regions, account/API key rules, commercial-use requirements, resale restrictions, risk-control requirements, and technical restrictions of OpenAI, Anthropic, Google, and any other upstream service providers.
+                  - listitem: It will not use this project to bypass, or assist others in bypassing, upstream regional restrictions, access restrictions, account restrictions, risk controls, billing restrictions, identity verification, usage limits, or terms of service.
+                  - listitem: It will not provide API relay, model-call resale, account quota distribution, shared subscriptions, paid calls, top-up/payment agency, or similar services to the public or an indefinite group of users unless all necessary authorizations, qualifications, filings, permits, assessments, or contractual arrangements have been obtained.
+                  - listitem: If it provides generative AI services, deep synthesis services, algorithm-related services, API relay, paid calls, or other potentially regulated services within Mainland China or to the Mainland China public, it will independently complete all potentially applicable obligations regarding internet information services, generative AI services, deep synthesis, algorithm filing, security assessment, cybersecurity, data security, personal information protection, content safety, payment settlement, taxes, and upstream authorization.
+                  - listitem: It will maintain user management, access control, content review, abuse handling, log retention, privacy protection, data deletion, complaint handling, emergency takedown, and security incident response mechanisms appropriate to the scale and risk of its business.
+                  - listitem: It will not make any statement, commitment, marketing representation, or warranty to any user, customer, partner, channel, regulator, or third party that conflicts with Section 3 of this document.
+                  - listitem: It will be independently responsible for consequences arising from its deployment, operation, promotion, charging, user-behavior management, content processing, data processing, account usage, API calls, or violations of laws, regulations, regulatory requirements, contractual obligations, or upstream rules.
+                - heading "5. Risk and Responsibility Notice" [level=2]
+                - paragraph: Using Sub2API for public API services, commercial relay, quota distribution, team sharing, paid calls, or similar purposes may involve risks relating to terms of service, contractual breach, data protection, content safety, consumer protection, payment settlement, taxes, export controls, sanctions compliance, cybersecurity, industry access, and administrative regulation. Requirements vary by jurisdiction and business model and may change over time.
+                - paragraph: The mandatory notice, document link, exact-phrase acknowledgment, and local acknowledgment record in the console are intended to provide clear, conspicuous, and reproducible notice of deployment and operation risks, confirm that the console user has read the current version of this document, and create a clear responsibility-separation record between the open-source project, copyright holders, contributors, maintainers and any third-party deploying, operating, or controlling party.
+                - heading "6. Electronic Acknowledgment" [level=2]
+                - paragraph: By continuing to use the console, opening the document link, reading this document, and typing the required confirmation phrase exactly as displayed, the acknowledging party electronically confirms that it has read, understood, and agreed to this document, and agrees that the system may record necessary evidence including the acknowledged version, acknowledgment time, console account identifier, IP address, and User-Agent.
+            - complementary:
+              - generic:
+                - paragraph: Document Version
+                - paragraph: v2026.06.10
+              - link "Open the GitHub document":
+                - /url: https://github.com/Wei-Shaw/sub2api/blob/main/docs/legal/admin-compliance.en.md
+              - paragraph: The agreement text comes from Markdown files in this project repository. When the agreement content changes, the document version must be incremented; acknowledgments of older versions become invalid and console users must acknowledge again.
+          - generic:
+            - generic: Type the following confirmation phrase exactly
+            - generic: I have read, understood, and agree to the Sub2API Deployment and Operation Compliance Commitment
+            - generic:
+              - generic:
+                - textbox "Type the following confirmation phrase exactly":
+                  - /placeholder: Type the confirmation phrase to continue
+          - paragraph: This acknowledgment defines the no-affiliation relationship and responsibility boundary between self-hosted instances and the open-source project, copyright holders, contributors, and maintainers. The party that deploys, operates, or controls the relevant instance remains independently responsible for its applicable obligations.
+      - generic:
+        - generic:
+          - button "Log out"
+          - button "Acknowledge and Continue" [disabled]
+  - dialog [ref=f2e2]:
+    - button "Close" [active] [ref=f2e3] [cursor=pointer]: ×
+    - banner [ref=f2e4]: 👋 Welcome to Sub2API
+    - generic [ref=f2e6]:
+      - paragraph [ref=f2e7]: Sub2API is a powerful AI service gateway platform that helps you easily manage and distribute AI services.
+      - paragraph [ref=f2e8]: "🎯 Core Features:"
+      - list [ref=f2e9]:
+        - listitem [ref=f2e10]: 📦 Group Management - Create service tiers (VIP, Free Trial, etc.)
+        - listitem [ref=f2e11]: 🔗 Account Pool - Connect multiple upstream AI service accounts
+        - listitem [ref=f2e12]: 🔑 Key Distribution - Generate independent API Keys for users
+        - listitem [ref=f2e13]: 💰 Billing Control - Flexible rate and quota management
+      - paragraph [ref=f2e14]: Let's complete the initial setup in 3 minutes →
+    - contentinfo [ref=f2e15]:
+      - generic [ref=f2e16]:
+        - generic [ref=f2e17]: 1 of 21
+        - generic [ref=f2e18]:
+          - generic [ref=f2e19]:
+            - generic [ref=f2e20]: ←
+            - generic [ref=f2e21]: →
+            - text: Flip Page
+          - generic [ref=f2e22]:
+            - generic [ref=f2e23]: ESC
+            - text: Exit
+      - generic [ref=f2e24]:
+        - button "Skip" [disabled]
+        - button "Start Setup 🚀" [ref=f2e25] [cursor=pointer]
