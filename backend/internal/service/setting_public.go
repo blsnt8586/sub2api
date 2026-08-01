@@ -164,6 +164,7 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		SettingKeyPasswordResetEnabled,
 		SettingKeyInvitationCodeEnabled,
 		SettingKeyTotpEnabled,
+		SettingKeyPasskeyEnabled,
 		SettingKeyLoginAgreementEnabled,
 		SettingKeyLoginAgreementMode,
 		SettingKeyLoginAgreementUpdatedAt,
@@ -178,6 +179,7 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		SettingKeyContactInfo,
 		SettingKeyDocURL,
 		SettingKeyHomeContent,
+		SettingKeyCompactHomeEnabled,
 		SettingKeyHideCcsImportButton,
 		SettingKeyPurchaseSubscriptionEnabled,
 		SettingKeyPurchaseSubscriptionURL,
@@ -220,7 +222,9 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		SettingKeyChannelMonitorEnabled,
 		SettingKeyChannelMonitorDefaultIntervalSeconds,
 		SettingKeyAvailableChannelsEnabled,
-		SettingKeyCodexRadarEnabled,
+		SettingKeyModelPlazaEnabled,
+		SettingKeyModelPlazaRequireAuth,
+		SettingKeyCodexRadarEnabled, // [CUSTOM]
 		SettingKeyAffiliateEnabled,
 		SettingKeyRiskControlEnabled,
 		SettingKeyAllowUserViewErrorRequests,
@@ -290,6 +294,7 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		PasswordResetEnabled:             passwordResetEnabled,
 		InvitationCodeEnabled:            settings[SettingKeyInvitationCodeEnabled] == "true",
 		TotpEnabled:                      settings[SettingKeyTotpEnabled] == "true",
+		PasskeyEnabled:                   s.passkeyConfigured() && s.passkeySettingEnabled(settings),
 		LoginAgreementEnabled:            settings[SettingKeyLoginAgreementEnabled] == "true" && len(loginAgreementDocuments) > 0,
 		LoginAgreementMode:               normalizeLoginAgreementMode(settings[SettingKeyLoginAgreementMode]),
 		LoginAgreementUpdatedAt:          loginAgreementUpdatedAt,
@@ -304,6 +309,7 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 		ContactInfo:                      settings[SettingKeyContactInfo],
 		DocURL:                           settings[SettingKeyDocURL],
 		HomeContent:                      settings[SettingKeyHomeContent],
+		CompactHomeEnabled:               settings[SettingKeyCompactHomeEnabled] == "true",
 		HideCcsImportButton:              settings[SettingKeyHideCcsImportButton] == "true",
 		PurchaseSubscriptionEnabled:      settings[SettingKeyPurchaseSubscriptionEnabled] == "true",
 		PurchaseSubscriptionURL:          strings.TrimSpace(settings[SettingKeyPurchaseSubscriptionURL]),
@@ -333,7 +339,9 @@ func (s *SettingService) GetPublicSettings(ctx context.Context) (*PublicSettings
 
 		AvailableChannelsEnabled: settings[SettingKeyAvailableChannelsEnabled] == "true",
 
-		CodexRadarEnabled: settings[SettingKeyCodexRadarEnabled] == "true",
+		ModelPlazaEnabled:     settings[SettingKeyModelPlazaEnabled] == "true",
+		ModelPlazaRequireAuth: settings[SettingKeyModelPlazaRequireAuth] == "true",
+		CodexRadarEnabled:     settings[SettingKeyCodexRadarEnabled] == "true", // [CUSTOM]
 
 		AffiliateEnabled: settings[SettingKeyAffiliateEnabled] == "true",
 
@@ -417,18 +425,31 @@ func (s *SettingService) GetAvailableChannelsRuntime(ctx context.Context) Availa
 	}
 }
 
-// IsCodexRadarEnabled reads the二开 Codex-radar feature switch directly from the
-// settings store. Fail-closed: on error returns false (opt-in default), matching
-// the third-party data-source policy (unknown ↔ disabled).
-func (s *SettingService) IsCodexRadarEnabled(ctx context.Context) bool {
-	if s == nil || s.settingRepo == nil {
-		return false
-	}
-	vals, err := s.settingRepo.GetMultiple(ctx, []string{SettingKeyCodexRadarEnabled})
+// ModelPlazaRuntime is the lightweight view of the model-plaza feature consumed
+// by the public plaza handler.
+type ModelPlazaRuntime struct {
+	Enabled     bool
+	RequireAuth bool
+	Description string
+}
+
+// GetModelPlazaRuntime reads the model-plaza feature switches directly from the
+// settings store. Fail-closed: on error returns Enabled=false, matching the
+// opt-in default (unknown ↔ disabled).
+func (s *SettingService) GetModelPlazaRuntime(ctx context.Context) ModelPlazaRuntime {
+	vals, err := s.settingRepo.GetMultiple(ctx, []string{
+		SettingKeyModelPlazaEnabled,
+		SettingKeyModelPlazaRequireAuth,
+		SettingKeyModelPlazaDescription,
+	})
 	if err != nil {
-		return false
+		return ModelPlazaRuntime{Enabled: false}
 	}
-	return vals[SettingKeyCodexRadarEnabled] == "true"
+	return ModelPlazaRuntime{
+		Enabled:     vals[SettingKeyModelPlazaEnabled] == "true",
+		RequireAuth: vals[SettingKeyModelPlazaRequireAuth] == "true",
+		Description: vals[SettingKeyModelPlazaDescription],
+	}
 }
 
 // IsUserErrorViewAllowed reads the user-facing error-requests visibility switch
@@ -440,6 +461,16 @@ func (s *SettingService) IsUserErrorViewAllowed(ctx context.Context) bool {
 		return false
 	}
 	return vals[SettingKeyAllowUserViewErrorRequests] == "true"
+}
+
+// IsCodexRadarEnabled reads the [CUSTOM] Codex-radar feature switch directly from the
+// settings store. Fail-closed: on error returns false (opt-in, third-party data source).
+func (s *SettingService) IsCodexRadarEnabled(ctx context.Context) bool {
+	vals, err := s.settingRepo.GetMultiple(ctx, []string{SettingKeyCodexRadarEnabled})
+	if err != nil {
+		return false
+	}
+	return vals[SettingKeyCodexRadarEnabled] == "true"
 }
 
 // PublicSettingsInjectionPayload is the JSON shape embedded into HTML as
@@ -463,6 +494,7 @@ type PublicSettingsInjectionPayload struct {
 	PasswordResetEnabled             bool                     `json:"password_reset_enabled"`
 	InvitationCodeEnabled            bool                     `json:"invitation_code_enabled"`
 	TotpEnabled                      bool                     `json:"totp_enabled"`
+	PasskeyEnabled                   bool                     `json:"passkey_enabled"`
 	LoginAgreementEnabled            bool                     `json:"login_agreement_enabled"`
 	LoginAgreementMode               string                   `json:"login_agreement_mode"`
 	LoginAgreementUpdatedAt          string                   `json:"login_agreement_updated_at"`
@@ -477,6 +509,7 @@ type PublicSettingsInjectionPayload struct {
 	ContactInfo                      string                   `json:"contact_info"`
 	DocURL                           string                   `json:"doc_url"`
 	HomeContent                      string                   `json:"home_content"`
+	CompactHomeEnabled               bool                     `json:"compact_home_enabled"`
 	HideCcsImportButton              bool                     `json:"hide_ccs_import_button"`
 	PurchaseSubscriptionEnabled      bool                     `json:"purchase_subscription_enabled"`
 	PurchaseSubscriptionURL          string                   `json:"purchase_subscription_url"`
@@ -511,7 +544,9 @@ type PublicSettingsInjectionPayload struct {
 	ChannelMonitorEnabled                bool `json:"channel_monitor_enabled"`
 	ChannelMonitorDefaultIntervalSeconds int  `json:"channel_monitor_default_interval_seconds"`
 	AvailableChannelsEnabled             bool `json:"available_channels_enabled"`
-	CodexRadarEnabled                    bool `json:"codex_radar_enabled"`
+	ModelPlazaEnabled                    bool `json:"model_plaza_enabled"`
+	CodexRadarEnabled                    bool `json:"codex_radar_enabled"` // [CUSTOM]
+	ModelPlazaRequireAuth                bool `json:"model_plaza_require_auth"`
 	AffiliateEnabled                     bool `json:"affiliate_enabled"`
 	RiskControlEnabled                   bool `json:"risk_control_enabled"`
 	AllowUserViewErrorRequests           bool `json:"allow_user_view_error_requests"`
@@ -533,6 +568,7 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		PasswordResetEnabled:             settings.PasswordResetEnabled,
 		InvitationCodeEnabled:            settings.InvitationCodeEnabled,
 		TotpEnabled:                      settings.TotpEnabled,
+		PasskeyEnabled:                   settings.PasskeyEnabled,
 		LoginAgreementEnabled:            settings.LoginAgreementEnabled,
 		LoginAgreementMode:               settings.LoginAgreementMode,
 		LoginAgreementUpdatedAt:          settings.LoginAgreementUpdatedAt,
@@ -547,6 +583,7 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		ContactInfo:                      settings.ContactInfo,
 		DocURL:                           settings.DocURL,
 		HomeContent:                      settings.HomeContent,
+		CompactHomeEnabled:               settings.CompactHomeEnabled,
 		HideCcsImportButton:              settings.HideCcsImportButton,
 		PurchaseSubscriptionEnabled:      settings.PurchaseSubscriptionEnabled,
 		PurchaseSubscriptionURL:          settings.PurchaseSubscriptionURL,
@@ -577,7 +614,9 @@ func (s *SettingService) GetPublicSettingsForInjection(ctx context.Context) (any
 		ChannelMonitorEnabled:                settings.ChannelMonitorEnabled,
 		ChannelMonitorDefaultIntervalSeconds: settings.ChannelMonitorDefaultIntervalSeconds,
 		AvailableChannelsEnabled:             settings.AvailableChannelsEnabled,
-		CodexRadarEnabled:                    settings.CodexRadarEnabled,
+		ModelPlazaEnabled:                    settings.ModelPlazaEnabled,
+		ModelPlazaRequireAuth:                settings.ModelPlazaRequireAuth,
+		CodexRadarEnabled:                    settings.CodexRadarEnabled, // [CUSTOM]
 		AffiliateEnabled:                     settings.AffiliateEnabled,
 		RiskControlEnabled:                   settings.RiskControlEnabled,
 		AllowUserViewErrorRequests:           settings.AllowUserViewErrorRequests,

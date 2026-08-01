@@ -87,7 +87,7 @@ func TestForwardJimengVideoStatusUsesGetAndTaskID(t *testing.T) {
 	require.Equal(t, "https://zz1cc.cc.cd/v1/videos/task_abc", upstream.lastReq.URL.String())
 	require.Equal(t, http.MethodGet, upstream.lastReq.Method)
 	require.Equal(t, "Bearer jm-secret", upstream.lastReq.Header.Get("Authorization"))
-	require.Contains(t, recorder.Body.String(), "succeeded")
+	require.Contains(t, recorder.Body.String(), "completed") // [CUSTOM] normalizeJimengVideoResponse converts "succeeded" → "completed"
 }
 
 func TestForwardJimengVideoContentUsesContentPath(t *testing.T) {

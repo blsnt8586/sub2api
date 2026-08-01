@@ -44,8 +44,8 @@ func ProvideAdminHandlers(
 	paymentHandler *admin.PaymentHandler,
 	affiliateHandler *admin.AffiliateHandler,
 	complianceHandler *admin.ComplianceHandler,
-	sub2apiProviderHandler *admin.Sub2APIProviderHandler,
-	sub2apiOptimizeScheduleHandler *admin.Sub2APIOptimizeScheduleHandler,
+	sub2APIProviderHandler *admin.Sub2APIProviderHandler,             // [CUSTOM]
+	sub2APIOptimizeScheduleHandler *admin.Sub2APIOptimizeScheduleHandler, // [CUSTOM]
 	auditLogHandler *admin.AuditLogHandler,
 	upstreamBillingProbe *service.UpstreamBillingProbeService,
 	ollamaCloudUsage *service.OllamaCloudUsageService,
@@ -86,8 +86,8 @@ func ProvideAdminHandlers(
 		Payment:                paymentHandler,
 		Affiliate:              affiliateHandler,
 		Compliance:             complianceHandler,
-		Sub2APIProvider:        sub2apiProviderHandler,
-		Sub2APIOptimize:        sub2apiOptimizeScheduleHandler,
+		Sub2APIProvider:        sub2APIProviderHandler,       // [CUSTOM]
+		Sub2APIOptimize:        sub2APIOptimizeScheduleHandler, // [CUSTOM]
 		AuditLog:               auditLogHandler,
 	}
 }
@@ -183,12 +183,14 @@ func ProvideHandlers(
 	openaiGatewayHandler *OpenAIGatewayHandler,
 	settingHandler *SettingHandler,
 	totpHandler *TotpHandler,
+	passkeyHandler *PasskeyHandler,
 	paymentHandler *PaymentHandler,
 	paymentWebhookHandler *PaymentWebhookHandler,
 	availableChannelHandler *AvailableChannelHandler,
+	modelPlazaHandler *ModelPlazaHandler,
 	asyncImageHandler *AsyncImageHandler,
 	batchImageHandler *BatchImageHandler,
-	codexRadarHandler *CodexRadarHandler,
+	codexRadarHandler *CodexRadarHandler, // [CUSTOM]
 	_ *service.IdempotencyCoordinator,
 	_ *service.IdempotencyCleanupService,
 ) *Handlers {
@@ -206,12 +208,14 @@ func ProvideHandlers(
 		OpenAIGateway:    openaiGatewayHandler,
 		Setting:          settingHandler,
 		Totp:             totpHandler,
+		Passkey:          passkeyHandler,
 		Payment:          paymentHandler,
 		PaymentWebhook:   paymentWebhookHandler,
 		AvailableChannel: availableChannelHandler,
+		ModelPlaza:       modelPlazaHandler,
 		AsyncImage:       asyncImageHandler,
 		BatchImage:       batchImageHandler,
-		CodexRadar:       codexRadarHandler,
+		CodexRadar:       codexRadarHandler, // [CUSTOM]
 	}
 }
 
@@ -229,13 +233,12 @@ var ProviderSet = wire.NewSet(
 	ProvideGatewayHandler,
 	ProvideOpenAIGatewayHandler,
 	NewTotpHandler,
+	NewPasskeyHandler,
 	ProvideSettingHandler,
 	NewPaymentHandler,
 	NewPaymentWebhookHandler,
 	NewAvailableChannelHandler,
-	// 注意：不要在此加 NewBatchImageHandler——ProvideBatchImageHandler 已包装它，
-	// 两者同返回 *BatchImageHandler，wire 会报 duplicate provider 导致 make generate 失败。
-	NewCodexRadarHandler,
+	NewModelPlazaHandler,
 	NewAsyncImageHandler,
 	ProvideBatchImageHandler,
 
@@ -272,8 +275,6 @@ var ProviderSet = wire.NewSet(
 	admin.NewPaymentHandler,
 	admin.NewAffiliateHandler,
 	admin.NewComplianceHandler,
-	admin.NewSub2APIProviderHandler,
-	admin.NewSub2APIOptimizeScheduleHandler,
 	admin.NewAuditLogHandler,
 
 	// AdminHandlers and Handlers constructors

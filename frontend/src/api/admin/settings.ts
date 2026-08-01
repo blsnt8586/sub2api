@@ -366,6 +366,10 @@ export interface SystemSettings {
   invitation_code_enabled: boolean;
   totp_enabled: boolean; // TOTP 双因素认证
   totp_encryption_key_configured: boolean; // TOTP 加密密钥是否已配置
+  passkey_enabled: boolean;
+  passkey_configured: boolean;
+  passkey_rp_id: string;
+  passkey_rp_origins: string[];
   session_binding_enabled: boolean; // 会话 IP/UA 绑定
   step_up_enabled: boolean; // 敏感操作 step-up 2FA
   audit_log_retention_days: number; // 审计日志保留天数
@@ -436,6 +440,7 @@ export interface SystemSettings {
   contact_info: string;
   doc_url: string;
   home_content: string;
+  compact_home_enabled: boolean;
   hide_ccs_import_button: boolean;
   table_default_page_size: number;
   table_page_size_options: number[];
@@ -569,8 +574,6 @@ export interface SystemSettings {
   enable_client_dateline_normalization: boolean;
   antigravity_user_agent_version: string;
   openai_codex_user_agent: string;
-  enable_openai_system_prompt_injection: boolean;
-  openai_system_prompt: string;
   // codex_cli_only 加固
   min_codex_version: string;
   max_codex_version: string;
@@ -657,8 +660,10 @@ export interface SystemSettings {
   // Available Channels feature switch
   available_channels_enabled: boolean;
 
-  // Codex 雷达功能开关（二开）
-  codex_radar_enabled: boolean;
+  // Model Plaza feature switches + description
+  model_plaza_enabled: boolean;
+  model_plaza_require_auth: boolean;
+  model_plaza_description: string;
 
   // Affiliate (邀请返利) feature switch
   affiliate_enabled: boolean;
@@ -679,6 +684,7 @@ export interface UpdateSettingsRequest {
   frontend_url?: string;
   invitation_code_enabled?: boolean;
   totp_enabled?: boolean; // TOTP 双因素认证
+  passkey_enabled?: boolean;
   session_binding_enabled?: boolean; // 会话 IP/UA 绑定
   step_up_enabled?: boolean; // 敏感操作 step-up 2FA
   audit_log_retention_days?: number; // 审计日志保留天数
@@ -747,6 +753,7 @@ export interface UpdateSettingsRequest {
   contact_info?: string;
   doc_url?: string;
   home_content?: string;
+  compact_home_enabled?: boolean;
   hide_ccs_import_button?: boolean;
   table_default_page_size?: number;
   table_page_size_options?: number[];
@@ -858,8 +865,6 @@ export interface UpdateSettingsRequest {
   enable_client_dateline_normalization?: boolean;
   antigravity_user_agent_version?: string;
   openai_codex_user_agent?: string;
-  enable_openai_system_prompt_injection?: boolean;
-  openai_system_prompt?: string;
   // codex_cli_only 加固
   min_codex_version?: string;
   max_codex_version?: string;
@@ -932,8 +937,10 @@ export interface UpdateSettingsRequest {
   // Available Channels feature switch
   available_channels_enabled?: boolean;
 
-  // Codex 雷达功能开关（二开）
-  codex_radar_enabled?: boolean;
+  // Model Plaza feature switches + description
+  model_plaza_enabled?: boolean;
+  model_plaza_require_auth?: boolean;
+  model_plaza_description?: string;
 
   // Affiliate (邀请返利) feature switch
   affiliate_enabled?: boolean;
@@ -1216,6 +1223,38 @@ export async function updateRateLimit429CooldownSettings(
   return data;
 }
 
+// ==================== Panel Rate Limit Settings ====================
+
+/**
+ * Panel API rate limit settings.
+ * Authenticated panel endpoints are limited per user account (reverse-proxy
+ * safe); public endpoints are limited per publicly routable client IP.
+ */
+export interface PanelRateLimitSettings {
+  enabled: boolean;
+  user_rpm: number;
+  heavy_rpm: number;
+  exempt_admin: boolean;
+  public_ip_rpm: number;
+}
+
+export async function getPanelRateLimitSettings(): Promise<PanelRateLimitSettings> {
+  const { data } = await apiClient.get<PanelRateLimitSettings>(
+    "/admin/settings/panel-rate-limit",
+  );
+  return data;
+}
+
+export async function updatePanelRateLimitSettings(
+  settings: PanelRateLimitSettings,
+): Promise<PanelRateLimitSettings> {
+  const { data } = await apiClient.put<PanelRateLimitSettings>(
+    "/admin/settings/panel-rate-limit",
+    settings,
+  );
+  return data;
+}
+
 // ==================== Stream Timeout Settings ====================
 
 /**
@@ -1443,6 +1482,8 @@ export const settingsAPI = {
   updateOverloadCooldownSettings,
   getRateLimit429CooldownSettings,
   updateRateLimit429CooldownSettings,
+  getPanelRateLimitSettings,
+  updatePanelRateLimitSettings,
   getStreamTimeoutSettings,
   updateStreamTimeoutSettings,
   getRectifierSettings,

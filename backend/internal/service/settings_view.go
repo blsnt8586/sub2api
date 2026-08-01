@@ -20,6 +20,7 @@ type SystemSettings struct {
 	FrontendURL                      string
 	InvitationCodeEnabled            bool
 	TotpEnabled                      bool // TOTP 双因素认证
+	PasskeyEnabled                   bool // Passkey 登录
 	SessionBindingEnabled            bool // 会话 IP/UA 绑定（变更即失效）
 	StepUpEnabled                    bool // 敏感操作 step-up 2FA 门控
 	AuditLogRetentionDays            int  // 审计日志保留天数（<=0 永久保留）
@@ -138,6 +139,7 @@ type SystemSettings struct {
 	ContactInfo                 string
 	DocURL                      string
 	HomeContent                 string
+	CompactHomeEnabled          bool
 	HideCcsImportButton         bool
 	PurchaseSubscriptionEnabled bool
 	PurchaseSubscriptionURL     string
@@ -184,7 +186,12 @@ type SystemSettings struct {
 	// Available Channels feature (user-facing aggregate view)
 	AvailableChannelsEnabled bool `json:"available_channels_enabled"`
 
-	// Codex 雷达功能（二开：第三方 codexradar.com 数据代理，用户+管理员共用页面）
+	// Model Plaza feature (public group/model pricing showcase)
+	ModelPlazaEnabled     bool   `json:"model_plaza_enabled"`
+	ModelPlazaRequireAuth bool   `json:"model_plaza_require_auth"`
+	ModelPlazaDescription string `json:"model_plaza_description"`
+
+	// [CUSTOM] Codex Radar feature switch
 	CodexRadarEnabled bool `json:"codex_radar_enabled"`
 
 	// Claude Code version check
@@ -209,8 +216,6 @@ type SystemSettings struct {
 	RewriteMessageCacheControl             bool   // 是否改写 messages[*].content[*].cache_control（默认 false）
 	AntigravityUserAgentVersion            string // Antigravity 上游 User-Agent 版本号；空值使用配置/默认值
 	OpenAICodexUserAgent                   string // OpenAI Codex 上游完整 User-Agent；空值使用内置默认
-	EnableOpenAISystemPromptInjection      bool   // 是否对 OpenAI/Codex 请求注入全局系统提示词（instructions，默认 false）
-	OpenAISystemPrompt                     string // OpenAI/Codex 全局注入的系统提示词；空值不注入
 	MinCodexVersion                        string // codex_cli_only 最低 Codex 引擎版本；空=不检查
 	MaxCodexVersion                        string // codex_cli_only 最高 Codex 引擎版本；空=不检查
 	CodexCLIOnlyBlacklist                  string // codex_cli_only 全局黑名单 JSON（[]AllowedClientEntry，OR deny）
@@ -289,6 +294,7 @@ type PublicSettings struct {
 	PasswordResetEnabled             bool
 	InvitationCodeEnabled            bool
 	TotpEnabled                      bool // TOTP 双因素认证
+	PasskeyEnabled                   bool
 	LoginAgreementEnabled            bool
 	LoginAgreementMode               string
 	LoginAgreementUpdatedAt          string
@@ -303,6 +309,7 @@ type PublicSettings struct {
 	ContactInfo                      string
 	DocURL                           string
 	HomeContent                      string
+	CompactHomeEnabled               bool
 	HideCcsImportButton              bool
 
 	PurchaseSubscriptionEnabled bool
@@ -338,7 +345,11 @@ type PublicSettings struct {
 	// Available Channels feature (user-facing aggregate view)
 	AvailableChannelsEnabled bool `json:"available_channels_enabled"`
 
-	// Codex 雷达功能（二开：第三方数据代理，用户+管理员共用页面）
+	// Model Plaza feature (public group/model pricing showcase)
+	ModelPlazaEnabled     bool `json:"model_plaza_enabled"`
+	ModelPlazaRequireAuth bool `json:"model_plaza_require_auth"`
+
+	// [CUSTOM] Codex Radar feature switch
 	CodexRadarEnabled bool `json:"codex_radar_enabled"`
 
 	// Affiliate (邀请返利) feature toggle

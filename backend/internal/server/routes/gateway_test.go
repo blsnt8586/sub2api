@@ -333,74 +333,31 @@ func TestGatewayRoutesGrokAllowsCLICompatibilityEntrypoints(t *testing.T) {
 	}
 }
 
-func TestGatewayRoutesJimengVideoPathsAreRegistered(t *testing.T) {
-	router := newGatewayRoutesTestRouter(service.PlatformJimeng)
+// TestGatewayRoutesResponsesSubpathRejectsNonConformingSubpaths 端到端锁定不变式：
+// /responses/*subpath 的子路径会被转发到上游同名端点之后，因此不合规的子路径必须
+// 在入口就被拒绝，不得进入调度与转发流程。
+func TestGatewayRoutesResponsesSubpathRejectsNonConformingSubpaths(t *testing.T) {
+	router := newGatewayRoutesTestRouter()
 
-	// 创建任务：POST /v1/videos 与根别名 /videos
-	for _, path := range []string{"/v1/videos", "/videos"} {
-		req := httptest.NewRequest(http.MethodPost, path, strings.NewReader(`{"model":"video-ds-2.0-fast","prompt":"x","seconds":"15","aspect_ratio":"9:16"}`))
-		req.Header.Set("Content-Type", "application/json")
-		w := httptest.NewRecorder()
-
-		router.ServeHTTP(w, req)
-		require.NotEqual(t, http.StatusNotFound, w.Code, "path=%s should hit Jimeng create handler", path)
-		require.NotContains(t, w.Body.String(), "not supported for this platform")
-	}
-
-	// 状态查询 + 内容下载：GET /v1/videos/{id} 与 /v1/videos/{id}/content
 	for _, path := range []string{
-		"/v1/videos/task-123",
-		"/videos/task-123",
-		"/v1/videos/task-123/content",
-		"/videos/task-123/content",
+		"/v1/responses/../../x/y",
+		"/v1/responses/..%2f..%2fx/y",
+		"/v1/responses/%2e%2e/%2e%2e/x",
+		"/responses/%2e%2e%2fx",
+		"/backend-api/codex/responses/..%2f..%2fx",
+		`/v1/responses/..\..\x`,
+		"/v1/responses/%3fa=b",
+		"/v1/responses/x%23frag",
+		"/v1/responses/compact%2f..",
 	} {
-		req := httptest.NewRequest(http.MethodGet, path, nil)
-		w := httptest.NewRecorder()
-
-		router.ServeHTTP(w, req)
-		require.NotEqual(t, http.StatusNotFound, w.Code, "path=%s should hit Jimeng video handler", path)
-		require.NotContains(t, w.Body.String(), "not supported for this platform")
-	}
-}
-
-func TestGatewayRoutesNonJimengVideoCreateRejectedAtPlatformGate(t *testing.T) {
-	router := newGatewayRoutesTestRouter(service.PlatformOpenAI)
-
-	for _, tc := range []struct {
-		method string
-		path   string
-	}{
-		{http.MethodPost, "/v1/videos"},
-		{http.MethodPost, "/videos"},
-		{http.MethodGet, "/v1/videos/task-123/content"},
-		{http.MethodGet, "/videos/task-123/content"},
-	} {
-		req := httptest.NewRequest(tc.method, tc.path, strings.NewReader(`{"model":"video-ds-2.0"}`))
+		req := httptest.NewRequest(http.MethodPost, path, strings.NewReader(`{"model":"gpt-5"}`))
 		req.Header.Set("Content-Type", "application/json")
 		w := httptest.NewRecorder()
 
 		router.ServeHTTP(w, req)
-		require.Equal(t, http.StatusNotFound, w.Code, "method=%s path=%s", tc.method, tc.path)
-		require.Contains(t, w.Body.String(), "Videos API is not supported for this platform")
+		require.Equal(t, http.StatusNotFound, w.Code, "path=%s must be rejected at the edge", path)
+		require.Contains(t, w.Body.String(), "Unsupported responses subpath", "path=%s", path)
 	}
-}
-
-func TestGatewayRoutesGrokVideoStillWorksAlongsideJimeng(t *testing.T) {
-	router := newGatewayRoutesTestRouter(service.PlatformGrok)
-
-	// Grok 的 /videos/generations 与 /videos/{id} 不受即梦新增路由影响
-	req := httptest.NewRequest(http.MethodPost, "/v1/videos/generations", strings.NewReader(`{"model":"grok-imagine-video-1.5","prompt":"waves"}`))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
-	require.NotEqual(t, http.StatusNotFound, w.Code)
-	require.NotContains(t, w.Body.String(), "not supported for this platform")
-
-	reqStatus := httptest.NewRequest(http.MethodGet, "/v1/videos/req-1", nil)
-	wStatus := httptest.NewRecorder()
-	router.ServeHTTP(wStatus, reqStatus)
-	require.NotEqual(t, http.StatusNotFound, wStatus.Code)
-	require.NotContains(t, wStatus.Body.String(), "not supported for this platform")
 }
 
 func TestGatewayRoutesOpenAICountTokensPathIsRegistered(t *testing.T) {

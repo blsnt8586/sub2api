@@ -104,7 +104,12 @@ export const FeatureFlags = {
     mode: 'opt-in',
     label: 'Available Channels',
   }),
-  codexRadar: defineFlag({
+  modelPlaza: defineFlag({
+    key: 'model_plaza_enabled',
+    mode: 'opt-in',
+    label: 'Model Plaza',
+  }),
+  codexRadar: defineFlag({ // [CUSTOM]
     key: 'codex_radar_enabled',
     mode: 'opt-in',
     label: 'Codex Radar',

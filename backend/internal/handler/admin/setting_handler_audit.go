@@ -56,6 +56,9 @@ func diffSettings(before *service.SystemSettings, after *service.SystemSettings,
 	if before.TotpEnabled != after.TotpEnabled {
 		changed = append(changed, "totp_enabled")
 	}
+	if before.PasskeyEnabled != after.PasskeyEnabled {
+		changed = append(changed, "passkey_enabled")
+	}
 	if before.SessionBindingEnabled != after.SessionBindingEnabled {
 		changed = append(changed, "session_binding_enabled")
 	}
@@ -296,6 +299,9 @@ func diffSettings(before *service.SystemSettings, after *service.SystemSettings,
 	if before.HomeContent != after.HomeContent {
 		changed = append(changed, "home_content")
 	}
+	if before.CompactHomeEnabled != after.CompactHomeEnabled {
+		changed = append(changed, "compact_home_enabled")
+	}
 	if before.HideCcsImportButton != after.HideCcsImportButton {
 		changed = append(changed, "hide_ccs_import_button")
 	}
@@ -437,12 +443,6 @@ func diffSettings(before *service.SystemSettings, after *service.SystemSettings,
 	if before.OpenAICodexUserAgent != after.OpenAICodexUserAgent {
 		changed = append(changed, "openai_codex_user_agent")
 	}
-	if before.EnableOpenAISystemPromptInjection != after.EnableOpenAISystemPromptInjection {
-		changed = append(changed, "enable_openai_system_prompt_injection")
-	}
-	if before.OpenAISystemPrompt != after.OpenAISystemPrompt {
-		changed = append(changed, "openai_system_prompt")
-	}
 	if before.PaymentVisibleMethodAlipaySource != after.PaymentVisibleMethodAlipaySource {
 		changed = append(changed, "payment_visible_method_alipay_source")
 	}
@@ -531,8 +531,14 @@ func diffSettings(before *service.SystemSettings, after *service.SystemSettings,
 	if before.AvailableChannelsEnabled != after.AvailableChannelsEnabled {
 		changed = append(changed, "available_channels_enabled")
 	}
-	if before.CodexRadarEnabled != after.CodexRadarEnabled {
-		changed = append(changed, "codex_radar_enabled")
+	if before.ModelPlazaEnabled != after.ModelPlazaEnabled {
+		changed = append(changed, "model_plaza_enabled")
+	}
+	if before.ModelPlazaRequireAuth != after.ModelPlazaRequireAuth {
+		changed = append(changed, "model_plaza_require_auth")
+	}
+	if before.ModelPlazaDescription != after.ModelPlazaDescription {
+		changed = append(changed, "model_plaza_description")
 	}
 	if before.AffiliateEnabled != after.AffiliateEnabled {
 		changed = append(changed, "affiliate_enabled")

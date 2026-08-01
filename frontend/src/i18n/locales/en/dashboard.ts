@@ -520,24 +520,51 @@ export default {
     }
   },
 
-  codexRadar: {
-    title: 'Codex Radar',
-    subtitle: 'Third-party observations of Codex quota resets, degradation, and community sentiment',
-    updatedAt: 'Updated at {time}',
-    imageAlt: 'Codex radar summary graphic',
-    unavailable: 'No radar data yet, please refresh later',
-    loadError: 'Failed to load Codex radar data',
-    disclaimer: {
-      title: 'Data source notice',
-      body: 'This data is not provided by this site. It comes from the third-party community site codexradar.com and is for reference only; this site is not responsible for its accuracy or timeliness.',
-      viewSource: 'View details on the third-party radar site',
-      attributionFallback: 'Data from Codex Radar codexradar.com'
+  // Model Plaza (public group/model pricing showcase)
+  modelPlaza: {
+    title: 'Model Plaza',
+    description: 'Browse available models and pricing by group',
+    loading: 'Loading...',
+    empty: 'No groups to display',
+    loadFailed: 'Failed to load model plaza',
+    noSearchResult: 'No matching models',
+    anonymousHint: 'Sign in to see your exclusive groups and personal rates',
+    filters: {
+      platformLabel: 'Platform',
+      groupLabel: 'Group',
+      rateLabel: 'Rate',
+      modelLabel: 'Model',
+      searchPlaceholder: 'Search models',
+      all: 'All'
     },
-    metrics: {
-      window: 'Reset window',
-      prediction: 'Hard-reset forecast',
-      prob24h: '24h probability {p}',
-      modelIq: 'Degradation score (latest)'
+    badges: {
+      exclusive: 'Exclusive',
+      subscription: 'Subscription'
+    },
+    detail: {
+      noModels: 'No models configured for this group',
+      noPricing: 'Pricing not configured',
+      peakNote: 'Peak hours {window}: billing rate ×{multiplier}'
+    },
+    table: {
+      model: 'Model',
+      input: 'Input',
+      output: 'Output',
+      cache: 'Cache',
+      cacheWrite: 'Write',
+      cacheRead: 'Read',
+      paidPrice: 'Your Price (Discounted)',
+      officialPrice: 'Official Price',
+      rate: 'Rate',
+      unitPerMillion: '$ / 1M tokens',
+      perUnitRequest: '/ request',
+      perUnitImage: '/ image',
+      perRequest: 'Per request',
+      perImage: 'Per image'
+    },
+    nav: {
+      login: 'Sign In',
+      backToDashboard: 'Back to Console'
     }
   },
 
@@ -710,6 +737,31 @@ export default {
       sendCode: 'Send Code',
       codeSent: 'Verification code sent to your email',
       sendCodeFailed: 'Failed to send verification code'
+    },
+    passkey: {
+      title: 'Passkeys',
+      description: 'Use Face ID, Touch ID, Windows Hello, or a security key to sign in without a password.',
+      add: 'Add passkey',
+      continue: 'Create passkey',
+      name: 'Passkey name',
+      namePlaceholder: 'For example, MacBook Touch ID',
+      passwordPlaceholder: 'Enter your current password to confirm',
+      empty: 'No passkeys are registered yet.',
+      synced: 'Synced',
+      createdAt: 'Created {date}',
+      lastUsed: 'Last used {date}',
+      featureDisabled: 'Passkeys have not been configured by the administrator.',
+      unsupported: 'This browser or device does not support passkeys.',
+      loadFailed: 'Failed to load passkeys.',
+      added: 'Passkey added.',
+      addFailed: 'Failed to add passkey.',
+      renamePrompt: 'Enter a new name for this passkey',
+      renamed: 'Passkey renamed.',
+      renameFailed: 'Failed to rename passkey.',
+      deleteTitle: 'Delete passkey',
+      deleteConfirm: 'Delete “{name}”? You will no longer be able to sign in with it.',
+      deleted: 'Passkey deleted.',
+      deleteFailed: 'Failed to delete passkey.'
     },
     balanceNotify: {
       title: 'Balance Low Notification',

@@ -201,6 +201,7 @@ export interface PublicSettings {
   login_agreement_revision?: string
   login_agreement_documents?: LoginAgreementDocument[]
   turnstile_enabled: boolean
+  passkey_enabled?: boolean
   turnstile_site_key: string
   site_name: string
   site_logo: string
@@ -209,6 +210,7 @@ export interface PublicSettings {
   contact_info: string
   doc_url: string
   home_content: string
+  compact_home_enabled: boolean
   hide_ccs_import_button: boolean
   payment_enabled: boolean
   risk_control_enabled: boolean
@@ -238,7 +240,9 @@ export interface PublicSettings {
   channel_monitor_enabled: boolean
   channel_monitor_default_interval_seconds: number
   available_channels_enabled: boolean
-  codex_radar_enabled: boolean
+  model_plaza_enabled: boolean
+  codex_radar_enabled: boolean // [CUSTOM]
+  model_plaza_require_auth: boolean
   service_quota_enabled: boolean
   affiliate_enabled: boolean
   allow_user_view_error_requests?: boolean
@@ -493,14 +497,7 @@ export interface PaginationConfig {
 
 // ==================== API Key & Group Types ====================
 
-export type GroupPlatform =
-  | 'anthropic'
-  | 'openai'
-  | 'gemini'
-  | 'antigravity'
-  | 'grok'
-  | 'jimeng'
-  | 'composite'
+export type GroupPlatform = 'anthropic' | 'openai' | 'gemini' | 'antigravity' | 'grok' | 'composite' | 'jimeng' // [CUSTOM] jimeng added
 
 export type SubscriptionType = 'standard' | 'subscription'
 
@@ -541,14 +538,13 @@ export interface Group {
   image_price_1k: number | null
   image_price_2k: number | null
   image_price_4k: number | null
-  // 视频计费配置（即梦 jimeng 平台）
-  video_price_per_count: number | null
-  video_price_per_second: number | null
   video_rate_independent: boolean
   video_rate_multiplier: number
   video_price_480p: number | null
   video_price_720p: number | null
   video_price_1080p: number | null
+  video_price_per_second: number | null // [CUSTOM]
+  video_price_per_count: number | null  // [CUSTOM]
   // Codex 网页搜索单次价格（USD/次）；null 表示使用默认价 0.01
   web_search_price_per_call: number | null
   // 高峰时段倍率配置
@@ -738,9 +734,6 @@ export interface CreateGroupRequest {
   image_price_1k?: number | null
   image_price_2k?: number | null
   image_price_4k?: number | null
-  // 视频计费配置（即梦 jimeng 平台）
-  video_price_per_count?: number | null
-  video_price_per_second?: number | null
   video_rate_independent?: boolean
   video_rate_multiplier?: number
   video_price_480p?: number | null
@@ -792,9 +785,6 @@ export interface UpdateGroupRequest {
   image_price_1k?: number | null
   image_price_2k?: number | null
   image_price_4k?: number | null
-  // 视频计费配置（即梦 jimeng 平台）
-  video_price_per_count?: number | null
-  video_price_per_second?: number | null
   video_rate_independent?: boolean
   video_rate_multiplier?: number
   video_price_480p?: number | null
@@ -827,7 +817,7 @@ export interface UpdateGroupRequest {
 
 // ==================== Account & Proxy Types ====================
 
-export type AccountPlatform = 'anthropic' | 'openai' | 'gemini' | 'antigravity' | 'grok' | 'jimeng'
+export type AccountPlatform = 'anthropic' | 'openai' | 'gemini' | 'antigravity' | 'grok' | 'jimeng' // [CUSTOM] jimeng added
 export type AccountType = 'oauth' | 'setup-token' | 'apikey' | 'upstream' | 'bedrock' | 'service_account'
 export type OAuthAddMethod = 'oauth' | 'setup-token'
 export type ProxyProtocol = 'http' | 'https' | 'socks5' | 'socks5h'
