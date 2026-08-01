@@ -196,6 +196,13 @@ func normalizeOpenAICompatiblePlatform(platform string) string {
 	if platform == PlatformGrok {
 		return PlatformGrok
 	}
+	// [CUSTOM] jimeng 走 OpenAI 兼容调度链路，但账号在库中以 platform=jimeng 独立存储
+	// （见 Account.IsOpenAICompatible 同样把 jimeng 列为兼容平台）。此处必须保留原值，
+	// 否则 listSchedulableAccounts 会按 platform=openai 去查，jimeng 账号一个都命中不了，
+	// 图像与视频两条链路都会退化成 "no available accounts"。
+	if platform == PlatformJimeng {
+		return PlatformJimeng
+	}
 	return PlatformOpenAI
 }
 

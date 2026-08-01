@@ -5,9 +5,10 @@ func imagePriceConfigFromAPIKey(apiKey *APIKey) *ImagePriceConfig {
 		return nil
 	}
 	return &ImagePriceConfig{
-		Price1K: apiKey.Group.ImagePrice1K,
-		Price2K: apiKey.Group.ImagePrice2K,
-		Price4K: apiKey.Group.ImagePrice4K,
+		Price1K:      apiKey.Group.ImagePrice1K,
+		Price2K:      apiKey.Group.ImagePrice2K,
+		Price4K:      apiKey.Group.ImagePrice4K,
+		ModelPricing: apiKey.Group.ModelPricing,
 	}
 }
 

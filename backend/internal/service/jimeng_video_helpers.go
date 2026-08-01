@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -45,7 +46,79 @@ func extractJimengVideoTaskID(body []byte) string {
 	return ""
 }
 
-// writeJimengVideoResponse 将上游响应（JSON 状态或二进制视频内容）透传给客户端。
+// normalizeJimengVideoResponse 将 AIV2API（Leonardo）的响应格式规范化为 OpenAI-compatible 格式。
+//
+// 新状态模型（2026-07-29）：
+//   queued     → 本地排队，透传
+//   processing → 准备/提交/查询中（合并原 reserving/uploading/submitted/polling），透传
+//   succeeded  → 映射为 completed（infinite-canvas 识别 completed）
+//   failed / cancelled → 透传
+func normalizeJimengVideoResponse(body []byte) []byte {
+	if len(body) == 0 || !gjson.ValidBytes(body) {
+		return body // 非 JSON，直接返回
+	}
+
+	parsed := gjson.ParseBytes(body)
+
+	// 只对包含 status 字段的响应做规范化（任务状态查询/创建响应）
+	status := parsed.Get("status").String()
+	if status == "" {
+		return body // 无 status 字段，可能是其他类型响应
+	}
+
+	// 构建规范化后的 map（保留原字段 + 添加标准字段）
+	var original map[string]interface{}
+	if err := json.Unmarshal(body, &original); err != nil {
+		return body // 解析失败，返回原样
+	}
+
+	normalized := make(map[string]interface{})
+	for k, v := range original {
+		normalized[k] = v
+	}
+
+	// 1. 状态映射：succeeded → completed（infinite-canvas 用 completed 判断完成）
+	//    queued / processing / failed / cancelled 直接透传
+	if status == "succeeded" {
+		normalized["status"] = "completed"
+	}
+
+	// 2. URL 提取：result.data[0].url → 顶层 video_url（OpenAI 标准字段）
+	//    同时保留 result 结构以兼容 AIV2API 原生客户端
+	resultDataURL := parsed.Get("result.data.0.url").String()
+	if resultDataURL != "" {
+		normalized["video_url"] = resultDataURL
+		// 同时添加 result_url 别名（某些客户端可能用这个）
+		normalized["result_url"] = resultDataURL
+	}
+
+	// 3. 添加 object 字段（OpenAI 风格）
+	if _, exists := normalized["object"]; !exists {
+		normalized["object"] = "video.task"
+	}
+
+	// 4. Seedance（Ark Plan v3）兼容：把 URL 同时挂到 content.video_url。
+	//    按 Ark Plan 协议轮询的客户端（如 infinite-canvas 的 seedance 分支）只认
+	//    这个位置或顶层 video_url；顶层已在步骤 2 写入，这里补齐嵌套形状。
+	//    上游若自带 content 字段则不覆盖，避免破坏原生语义。
+	if resultDataURL != "" {
+		if _, exists := normalized["content"]; !exists {
+			normalized["content"] = map[string]interface{}{
+				"video_url": resultDataURL,
+			}
+		}
+	}
+
+	// 5. 重新序列化
+	result, err := json.Marshal(normalized)
+	if err != nil {
+		return body // 序列化失败，返回原样
+	}
+
+	return result
+}
+
+// writeJimengVideoResponse 将上游响应写回客户端，JSON 响应会先做 OpenAI 兼容性规范化。
 func writeJimengVideoResponse(c *gin.Context, resp *http.Response, body []byte, filter *responseheaders.CompiledHeaderFilter) {
 	if c == nil || resp == nil {
 		return
@@ -55,6 +128,12 @@ func writeJimengVideoResponse(c *gin.Context, resp *http.Response, body []byte, 
 	if contentType == "" {
 		contentType = "application/json"
 	}
+
+	// 对 JSON 响应做格式规范化（二进制视频内容直接透传）
+	if strings.Contains(contentType, "application/json") || contentType == "" {
+		body = normalizeJimengVideoResponse(body)
+	}
+
 	c.Data(resp.StatusCode, contentType, body)
 }
 

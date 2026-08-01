@@ -1366,6 +1366,8 @@ type ImagePriceConfig struct {
 	Price1K *float64 // 1K 尺寸价格（nil 表示使用默认值）
 	Price2K *float64 // 2K 尺寸价格（nil 表示使用默认值）
 	Price4K *float64 // 4K 尺寸价格（nil 表示使用默认值）
+	// ModelPricing 模型定价配置（优先级最高）
+	ModelPricing *ModelPricingConfig
 }
 
 // JimengVideoPriceConfig 视频计费配置（即梦 jimeng 平台）
@@ -1374,6 +1376,8 @@ type JimengVideoPriceConfig struct {
 	// 两者均为 nil 时按内置默认 0.05 USD/次 计费。
 	PricePerCount  *float64 // USD/次
 	PricePerSecond *float64 // USD/秒
+	// ModelPricing 模型定价配置（优先级最高）
+	ModelPricing *ModelPricingConfig
 }
 
 // DefaultVideoPricePerCount 默认视频按次单价（USD），无分组配置时使用。
@@ -1381,16 +1385,19 @@ const DefaultVideoPricePerCount = 0.05
 
 // CalculateJimengVideoCost 计算即梦视频生成费用。
 //
+// model:        视频生成模型（如 "seedance-v1"，用于查找模型专属定价）。
 // videoCount:   生成的视频数量（通常为 1）。
 // videoSeconds: 视频时长（秒，来自请求体的 duration 字段）。
 // groupConfig:  分组级价格配置，nil 时使用内置默认值。
 // rateMultiplier: 费率倍数（0 按 0 处理，< 0 视为 0）。
 //
 // 计费优先级：
-//  1. groupConfig.PricePerSecond != nil → 按秒计费（videoSeconds × 单价 × count）
-//  2. groupConfig.PricePerCount != nil  → 按次计费（count × 单价）
-//  3. 默认按次计费（count × DefaultVideoPricePerCount）
-func (s *BillingService) CalculateJimengVideoCost(videoCount int, videoSeconds int, groupConfig *JimengVideoPriceConfig, rateMultiplier float64) *CostBreakdown {
+//  1. groupConfig.ModelPricing[model].PricePerSecond != nil → 模型专属按秒计费
+//  2. groupConfig.ModelPricing[model].PricePerCount != nil  → 模型专属按次计费
+//  3. groupConfig.PricePerSecond != nil → 分组全局按秒计费
+//  4. groupConfig.PricePerCount != nil  → 分组全局按次计费
+//  5. 默认按次计费（count × DefaultVideoPricePerCount）
+func (s *BillingService) CalculateJimengVideoCost(model string, videoCount int, videoSeconds int, groupConfig *JimengVideoPriceConfig, rateMultiplier float64) *CostBreakdown {
 	if videoCount <= 0 {
 		return &CostBreakdown{}
 	}
@@ -1401,6 +1408,29 @@ func (s *BillingService) CalculateJimengVideoCost(videoCount int, videoSeconds i
 	var totalCost float64
 	var billingMode BillingMode
 
+	// 1. 优先查找模型专属定价
+	if groupConfig != nil && groupConfig.ModelPricing != nil {
+		if modelPrice := groupConfig.ModelPricing.GetModelVideoPrice(model); modelPrice != nil {
+			if modelPrice.PricePerSecond != nil && videoSeconds > 0 {
+				totalCost = *modelPrice.PricePerSecond * float64(videoSeconds) * float64(videoCount)
+				billingMode = BillingModeVideoPerSecond
+			} else if modelPrice.PricePerCount != nil {
+				totalCost = *modelPrice.PricePerCount * float64(videoCount)
+				billingMode = BillingModeVideo
+			} else {
+				// 模型配置存在但未设置价格，回退到分组全局定价
+				goto fallbackToGroupPricing
+			}
+			return &CostBreakdown{
+				TotalCost:   totalCost,
+				ActualCost:  totalCost * rateMultiplier,
+				BillingMode: string(billingMode),
+			}
+		}
+	}
+
+fallbackToGroupPricing:
+	// 2. 回退到分组全局定价
 	if groupConfig != nil && groupConfig.PricePerSecond != nil && videoSeconds > 0 {
 		// 按秒计费：每次视频的时长 × 单价 × 次数
 		totalCost = *groupConfig.PricePerSecond * float64(videoSeconds) * float64(videoCount)
@@ -1535,7 +1565,14 @@ func (s *BillingService) CalculateVideoCost(model string, resolution string, vid
 
 // getImageUnitPrice 获取图片单价
 func (s *BillingService) getImageUnitPrice(model string, imageSize string, groupConfig *ImagePriceConfig) float64 {
-	// 优先使用分组配置的价格
+	// 1. 优先查找模型专属定价
+	if groupConfig != nil && groupConfig.ModelPricing != nil {
+		if modelPrice := groupConfig.ModelPricing.GetModelImagePrice(model, imageSize); modelPrice != nil {
+			return *modelPrice
+		}
+	}
+
+	// 2. 回退到分组全局定价
 	if groupConfig != nil {
 		switch imageSize {
 		case "1K":
@@ -1553,7 +1590,7 @@ func (s *BillingService) getImageUnitPrice(model string, imageSize string, group
 		}
 	}
 
-	// 回退到 LiteLLM 默认价格
+	// 3. 回退到 LiteLLM 默认价格
 	return s.getDefaultImagePrice(model, imageSize)
 }
 

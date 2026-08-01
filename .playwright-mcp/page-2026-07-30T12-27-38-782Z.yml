@@ -1,0 +1,480 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - link "AIV2API 开发者文档" [ref=e5] [cursor=pointer]:
+      - /url: /docs
+      - generic [ref=e11]:
+        - strong [ref=e12]: AIV2API
+        - generic [ref=e13]: MULTI-PROVIDER GATEWAY
+      - generic [ref=e14]: 开发者文档
+    - navigation "文档链接" [ref=e15]:
+      - link "快速开始" [ref=e16] [cursor=pointer]:
+        - /url: "#quickstart"
+      - link "错误处理" [ref=e17] [cursor=pointer]:
+        - /url: "#errors"
+      - link "OpenAPI JSON" [ref=e18] [cursor=pointer]:
+        - /url: /openapi.json
+      - link "管理后台" [ref=e19] [cursor=pointer]:
+        - /url: /
+  - main [ref=e20]:
+    - generic [ref=e21]:
+      - generic [ref=e22]:
+        - generic [ref=e23]: Multi-provider AI Gateway / API v1
+        - heading "AIV2API 开发者文档" [level=1] [ref=e25]
+        - paragraph [ref=e26]: 统一接入多渠道的图像、视频与音频生成接口、积分规则和错误处理。
+      - link "下载 OpenAPI 3.1" [ref=e27] [cursor=pointer]:
+        - /url: /openapi.json
+    - generic [ref=e31]:
+      - generic [ref=e32]:
+        - generic [ref=e33]: API Reference
+        - heading "开发者指南" [level=2] [ref=e34]
+        - link "快速开始" [ref=e35] [cursor=pointer]:
+          - /url: "#quickstart"
+        - link "任务状态" [ref=e36] [cursor=pointer]:
+          - /url: "#lifecycle"
+        - link "错误与重试" [ref=e37] [cursor=pointer]:
+          - /url: "#errors"
+        - generic [ref=e38]: 生成接口
+        - button "图像 API" [ref=e39] [cursor=pointer]
+        - button "视频 API" [ref=e44] [cursor=pointer]
+        - button "音频 API" [ref=e48] [cursor=pointer]
+        - generic [ref=e50]:
+          - generic [ref=e51]: 认证
+          - strong [ref=e52]: Bearer Token
+          - generic [ref=e53]: 协议
+          - strong [ref=e54]: Images / Chat 图像兼容 · 视频与音频异步扩展
+          - generic [ref=e55]: 规范
+          - link "OpenAPI 3.1 JSON" [ref=e56] [cursor=pointer]:
+            - /url: /openapi.json
+        - generic [ref=e57]:
+          - strong [ref=e58]: 参数表怎么看
+          - paragraph [ref=e59]: “含义”说明参数做什么，“可填内容”列出当前接口真实接受的值和限制。
+      - generic [ref=e60]:
+        - generic [ref=e61]:
+          - generic [ref=e62]:
+            - generic [ref=e63]:
+              - generic [ref=e64]:
+                - generic [ref=e65]: Start Here
+                - heading "五分钟快速开始" [level=2] [ref=e66]
+                - paragraph [ref=e67]: 管理员创建 API Key 后，完整密钥只显示一次。所有业务请求使用 Bearer Token。
+              - button "复制" [ref=e68] [cursor=pointer]
+            - code [ref=e73]: "export BASE_URL=\"http://186.241.72.237:18080\" export AIV2API_API_KEY=\"leo_your_api_key\" # 验证密钥并查看此密钥允许使用的模型 curl \"$BASE_URL/v1/models\" \\ -H \"Authorization: Bearer $AIV2API_API_KEY\""
+            - generic [ref=e74]:
+              - generic [ref=e75]:
+                - generic [ref=e76]: "01"
+                - strong [ref=e77]: 领取 API Key
+                - paragraph [ref=e78]: 由服务管理员在“API 密钥”页面创建，按需限制模型、并发和有效期。
+              - generic [ref=e79]:
+                - generic [ref=e80]: "02"
+                - strong [ref=e81]: 查询模型
+                - paragraph [ref=e82]:
+                  - text: 调用
+                  - code [ref=e83]: GET /v1/models
+                  - text: ，确认密钥允许使用的模型。
+              - generic [ref=e84]:
+                - generic [ref=e85]: "03"
+                - strong [ref=e86]: 提交生成
+                - paragraph [ref=e87]:
+                  - text: 为每次业务操作生成唯一
+                  - code [ref=e88]: Idempotency-Key
+                  - text: ，网络重试保持不变。
+              - generic [ref=e89]:
+                - generic [ref=e90]: "04"
+                - strong [ref=e91]: 读取结果
+                - paragraph [ref=e92]: 同步图片直接返回；异步图片、视频和音频每 3 秒轮询任务，终态后停止。
+          - generic [ref=e93]:
+            - generic [ref=e95]:
+              - generic [ref=e96]: Async Tasks
+              - heading "异步任务生命周期" [level=2] [ref=e97]
+              - paragraph [ref=e98]: 视频、音频及异步图片接口创建成功返回 HTTP 202；槽位已满时保持 queued 并返回 queue_position，同一幂等请求复用原任务时返回 HTTP 200。
+            - generic [ref=e99]:
+              - generic [ref=e100]:
+                - code [ref=e101]: queued
+                - generic [ref=e102]: 已创建并完成积分预留；正在 AIV2API 本地队列等待执行槽位
+              - generic [ref=e103]:
+                - code [ref=e104]: processing
+                - generic [ref=e105]: 正在准备媒体、提交上游或查询结果；不代表 Leonardo 正在排队。若 error_code 为 submission_uncertain，禁止重新提交
+              - generic [ref=e106]:
+                - code [ref=e107]: succeeded
+                - generic [ref=e108]: 成功；从 result.data 读取媒体。上游命中内容审核时，result 及对应媒体会返回 nsfw=true 和 moderation_classifications
+              - generic [ref=e109]:
+                - code [ref=e110]: failed
+                - generic [ref=e111]: 明确失败；查看 error_code、error_message 和 error_details
+              - generic [ref=e112]:
+                - code [ref=e113]: cancelled
+                - generic [ref=e114]: 已在本地排队阶段取消，未提交生成
+            - generic [ref=e115]:
+              - generic [ref=e116]:
+                - heading "创建任务响应" [level=3] [ref=e117]
+                - code [ref=e119]: "{ \"id\": \"2b42f834-15dd-49ce-9c75-854302db18d0\", \"kind\": \"video\", \"status\": \"queued\", \"progress\": 0, \"queue_position\": 6, \"model\": \"seedance-2.0-fast\", \"prompt\": \"一颗玻璃球缓慢旋转\", \"retry_count\": 0, \"cancel_requested\": false, \"created_at\": \"2026-07-24T08:00:00Z\", \"updated_at\": \"2026-07-24T08:00:00Z\" }"
+              - generic [ref=e120]:
+                - heading "成功任务响应" [level=3] [ref=e121]
+                - code [ref=e123]: "{ \"id\": \"2b42f834-15dd-49ce-9c75-854302db18d0\", \"kind\": \"video\", \"status\": \"succeeded\", \"progress\": 100, \"model\": \"seedance-2.0-fast\", \"prompt\": \"一颗玻璃球缓慢旋转\", \"result\": { \"created\": 1784851260, \"nsfw\": true, \"moderation_classifications\": [\"NSFW\", \"EXPLICIT\"], \"data\": [{\"url\": \"https://cdn.example.com/generated/video.mp4\", \"media_type\": \"video/mp4\", \"duration\": 8, \"width\": 1280, \"height\": 720, \"nsfw\": true, \"moderation_classifications\": [\"NSFW\", \"EXPLICIT\"]}] }, \"retry_count\": 0, \"cancel_requested\": false, \"created_at\": \"2026-07-24T08:00:00Z\", \"updated_at\": \"2026-07-24T08:01:00Z\", \"completed_at\": \"2026-07-24T08:01:00Z\" }"
+            - generic [ref=e127]:
+              - strong [ref=e128]: 轮询与取消
+              - paragraph [ref=e129]:
+                - text: 建议每 3 秒轮询，遇到 429/503 按
+                - code [ref=e130]: Retry-After
+                - text: 等待。只有
+                - code [ref=e131]: queued
+                - text: 任务可取消；进入
+                - code [ref=e132]: processing
+                - text: 后不可取消，也不要更换幂等键重复提交。
+              - paragraph [ref=e133]:
+                - code [ref=e134]: processing
+                - text: 且
+                - code [ref=e135]: error_code=submission_uncertain
+                - text: 表示上游可能已经接收任务；继续查询原任务或联系运营处理，禁止重新创建任务。
+              - paragraph [ref=e136]: 公共任务响应不暴露渠道账号、积分账本、上游任务 ID 或原始请求。
+          - generic [ref=e137]:
+            - generic [ref=e139]:
+              - generic [ref=e140]: Errors And Retries
+              - heading "错误码与重试策略" [level=2] [ref=e141]
+              - paragraph [ref=e142]:
+                - text: 非 2xx 响应统一使用 OpenAI 风格
+                - code [ref=e143]: error.message/type/code
+                - text: ；任务执行失败保存在任务对象中。
+            - generic [ref=e144]:
+              - code [ref=e146]: "{ \"error\": { \"message\": \"all eligible account queues are full\", \"type\": \"account_queue_full\", \"code\": \"account_queue_full\" } }"
+              - paragraph [ref=e147]:
+                - text: 对 429、503 和网络错误采用指数退避；带有
+                - code [ref=e148]: Retry-After
+                - text: 时优先服从该秒数。重试相同业务操作必须保留原
+                - code [ref=e149]: Idempotency-Key
+                - text: 和完全相同的请求体。
+            - table [ref=e151]:
+              - rowgroup [ref=e152]:
+                - row [ref=e153]:
+                  - columnheader "HTTP" [ref=e154]
+                  - columnheader "错误码" [ref=e155]
+                  - columnheader "含义" [ref=e156]
+                  - columnheader "客户端处理" [ref=e157]
+              - rowgroup [ref=e158]:
+                - row [ref=e159]:
+                  - cell "400" [ref=e160]
+                  - cell [ref=e161]:
+                    - code [ref=e162]: invalid_request / invalid_task_id
+                  - cell "参数、JSON、multipart 内容或任务 ID 不合法" [ref=e163]
+                  - cell "修正请求后重试" [ref=e164]
+                - row [ref=e165]:
+                  - cell "401" [ref=e166]
+                  - cell [ref=e167]:
+                    - code [ref=e168]: invalid_api_key
+                  - cell "API Key 缺失、无效或已停用" [ref=e169]
+                  - cell "更换有效密钥" [ref=e170]
+                - row [ref=e171]:
+                  - cell "402" [ref=e172]
+                  - cell [ref=e173]:
+                    - code [ref=e174]: insufficient_pool_balance
+                  - cell "账户池净可用积分不足" [ref=e175]
+                  - cell "等待补充积分" [ref=e176]
+                - row [ref=e177]:
+                  - cell "404" [ref=e178]
+                  - cell [ref=e179]:
+                    - code [ref=e180]: not_found
+                  - cell "当前 API Key 无权访问该任务，或任务不存在" [ref=e181]
+                  - cell "停止轮询并检查任务 ID" [ref=e182]
+                - row [ref=e183]:
+                  - cell "409" [ref=e184]
+                  - cell [ref=e185]:
+                    - code [ref=e186]: idempotency_conflict / not_cancellable
+                  - cell "幂等键请求体不同，或任务已不可取消" [ref=e187]
+                  - cell "复用原请求体，或停止取消" [ref=e188]
+                - row [ref=e189]:
+                  - cell "413 / 415" [ref=e190]
+                  - cell [ref=e191]:
+                    - code [ref=e192]: image_too_large / unsupported_image_type
+                  - cell "参考图过大或格式错误" [ref=e193]
+                  - cell "使用限制内的 PNG、JPEG、WebP" [ref=e194]
+                - row [ref=e195]:
+                  - cell "422" [ref=e196]
+                  - cell [ref=e197]:
+                    - code [ref=e198]: cost_unavailable / image_conversion_failed
+                  - cell "价格规则缺失，或同步图片无法转换为所请求格式" [ref=e199]
+                  - cell "更换已定价参数或输出格式" [ref=e200]
+                - row [ref=e201]:
+                  - cell "429" [ref=e202]
+                  - cell [ref=e203]:
+                    - code [ref=e204]: rate_limit_exceeded / daily_quota_exceeded
+                  - cell "API Key、IP 或每日图片配额触发限流" [ref=e205]
+                  - cell "按 Retry-After 等待并退避" [ref=e206]
+                - row [ref=e207]:
+                  - cell "502" [ref=e208]
+                  - cell [ref=e209]:
+                    - code [ref=e210]: upstream_failed / generate_failed / result_failed / empty_result / image_download_failed
+                  - cell "上游提交、生成、结果读取失败，或同步图片结果下载失败" [ref=e211]
+                  - cell "查看 error_message；确认可重试后保留原 Idempotency-Key 并退避" [ref=e212]
+                - row [ref=e213]:
+                  - cell "503" [ref=e214]
+                  - cell [ref=e215]:
+                    - code [ref=e216]: account_queue_full
+                  - cell "所有健康账号的任务容量均已满" [ref=e217]
+                  - cell "按 Retry-After，通常 8 秒" [ref=e218]
+                - row [ref=e219]:
+                  - cell "503" [ref=e220]
+                  - cell [ref=e221]:
+                    - code [ref=e222]: api_key_capacity_exhausted
+                  - cell "当前 API Key 的并发任务数已达到管理员配置上限" [ref=e223]
+                  - cell "等待已有任务结束后按 Retry-After 重试" [ref=e224]
+                - row [ref=e225]:
+                  - cell "503" [ref=e226]
+                  - cell [ref=e227]:
+                    - code [ref=e228]: no_account
+                  - cell "没有余额新鲜且健康的账号" [ref=e229]
+                  - cell "按 Retry-After，通常 60 秒" [ref=e230]
+                - row [ref=e231]:
+                  - cell "504" [ref=e232]
+                  - cell [ref=e233]:
+                    - code [ref=e234]: generation_timeout
+                  - cell "同步图片等待超时" [ref=e235]
+                  - cell "保持原 Idempotency-Key 查询或重试" [ref=e236]
+        - generic [ref=e238]:
+          - generic [ref=e239]:
+            - generic "图像接口" [ref=e240]:
+              - button "文生图" [ref=e241] [cursor=pointer]
+              - button "图生图" [ref=e246] [cursor=pointer]
+              - button "异步任务" [ref=e252] [cursor=pointer]
+            - code [ref=e255]: POST /v1/tasks/images
+          - generic [ref=e256]:
+            - generic [ref=e257]:
+              - generic [ref=e258]: 认证
+              - strong [ref=e259]: "Authorization: Bearer $AIV2API_API_KEY"
+            - generic [ref=e260]:
+              - generic [ref=e261]: 请求格式
+              - strong [ref=e262]: application/json
+            - generic [ref=e263]:
+              - generic [ref=e264]: 响应
+              - strong [ref=e265]: 异步 · HTTP 202 Task
+          - heading "选择模型" [level=2] [ref=e266]
+          - generic [ref=e267]:
+            - button "GPT Image 2 通用首选" [ref=e268] [cursor=pointer]:
+              - strong [ref=e269]: GPT Image 2
+              - generic [ref=e270]: 通用首选
+            - button "Nano Banana 2 文字与品牌" [ref=e271] [cursor=pointer]:
+              - strong [ref=e272]: Nano Banana 2
+              - generic [ref=e273]: 文字与品牌
+            - button "Nano Banana Pro 复杂品牌画面" [active] [ref=e274] [cursor=pointer]:
+              - strong [ref=e275]: Nano Banana Pro
+              - generic [ref=e276]: 复杂品牌画面
+            - button "Seedream 4.5 高分辨率与创意变化" [ref=e277] [cursor=pointer]:
+              - strong [ref=e278]: Seedream 4.5
+              - generic [ref=e279]: 高分辨率与创意变化
+          - generic [ref=e280]:
+            - generic [ref=e281]:
+              - text: 复杂品牌画面
+              - heading "Nano Banana Pro" [level=2] [ref=e567]
+              - paragraph [ref=e283]: 对外别名映射到 Leonardo 的 gemini-image-2，适合更复杂的版式、多个视觉元素和参考图组合。
+            - generic [ref=e284]:
+              - heading "适合" [level=3] [ref=e285]
+              - list [ref=e286]:
+                - listitem [ref=e568]: 复杂构图
+                - listitem [ref=e569]: 多元素组合
+                - listitem [ref=e570]: 最多 6 张参考图
+            - generic [ref=e290]:
+              - heading "注意" [level=3] [ref=e291]
+              - list [ref=e292]:
+                - listitem [ref=e571]: 当前代理不开放独立质量档位
+                - listitem [ref=e559]: 不接受 quality 参数
+          - generic [ref=e295]:
+            - paragraph [ref=e296]:
+              - strong [ref=e297]: 质量：
+              - text: 固定，由 Leonardo 模型决定
+            - paragraph [ref=e298]:
+              - strong [ref=e299]: 尺寸：
+              - text: 默认 1024x1024；使用与 Nano Banana 2 相同的平台尺寸体系
+          - generic [ref=e301]:
+            - heading "平台预估积分" [level=2] [ref=e302]
+            - paragraph [ref=e303]: 由后端启用的积分规则实时生成；用于账户余额预留。
+          - generic [ref=e499]:
+            - table [ref=e500]:
+              - rowgroup [ref=e501]:
+                - row [ref=e560]:
+                  - columnheader "参数" [ref=e503]
+                  - columnheader "4096x4096" [ref=e561]
+                  - columnheader "2048x2048" [ref=e505]
+                  - columnheader "1024x1024" [ref=e506]
+              - rowgroup [ref=e507]:
+                - row [ref=e572]:
+                  - rowheader "固定质量" [ref=e563]
+                  - cell "250" [ref=e573]
+                  - cell "140" [ref=e574]
+                  - cell "140" [ref=e575]
+            - paragraph [ref=e523]: 2026-07-15-ui · 单张，n 按数量乘算
+          - generic [ref=e305]:
+            - generic [ref=e306]:
+              - heading "完整请求示例" [level=2] [ref=e307]
+              - paragraph [ref=e308]: 创建异步图片任务；任务结果固定返回 URL
+            - button "复制" [ref=e309] [cursor=pointer]
+          - code [ref=e314]: "curl $BASE_URL/v1/tasks/images \\ -H \"Authorization: Bearer $AIV2API_API_KEY\" \\ -H \"Content-Type: application/json\" \\ -H \"Idempotency-Key: YOUR_IDEMPOTENCY_KEY\" \\ -d '{ \"model\": \"nano-banana-pro\", \"prompt\": \"一张白色背景上的产品摄影，柔和棚拍光线\", \"size\": \"1024x1024\", \"n\": 1, \"response_format\": \"url\", \"background\": \"opaque\", \"moderation\": \"auto\" }'"
+          - generic [ref=e315]:
+            - generic [ref=e316]:
+              - heading "成功响应示例" [level=2] [ref=e317]
+              - paragraph [ref=e318]:
+                - text: 返回 HTTP 202 Task；通过
+                - code [ref=e538]: queue_position
+                - text: 和
+                - code [ref=e539]: status
+                - text: 跟踪执行状态。
+            - button "复制" [ref=e321] [cursor=pointer]
+          - code [ref=e326]: "{ \"id\": \"2b42f834-15dd-49ce-9c75-854302db18d0\", \"kind\": \"image\", \"status\": \"queued\", \"progress\": 0, \"queue_position\": 2, \"model\": \"nano-banana-pro\", \"prompt\": \"一张白色背景上的产品摄影，柔和棚拍光线\", \"retry_count\": 0, \"cancel_requested\": false, \"created_at\": \"2026-07-24T08:00:00Z\", \"updated_at\": \"2026-07-24T08:00:00Z\" }"
+          - generic [ref=e540]:
+            - generic [ref=e541]:
+              - heading "查询与取消" [level=2] [ref=e542]
+              - paragraph [ref=e543]:
+                - text: 每 3 秒查询一次；仅
+                - code [ref=e544]: queued
+                - text: 状态可取消。
+            - button "复制" [ref=e545] [cursor=pointer]
+          - code [ref=e550]: "curl $BASE_URL/v1/tasks/TASK_ID \\ -H \"Authorization: Bearer $AIV2API_API_KEY\" # 仅 queued 任务可取消 curl -X POST $BASE_URL/v1/tasks/TASK_ID/cancel \\ -H \"Authorization: Bearer $AIV2API_API_KEY\""
+          - generic [ref=e328]:
+            - heading "参数" [level=2] [ref=e329]
+            - paragraph [ref=e330]: 按本服务真实校验列出；上游依据为 Leonardo schema 1.232.1 与已捕获 HAR。
+          - table [ref=e332]:
+            - rowgroup [ref=e333]:
+              - row [ref=e334]:
+                - columnheader "参数" [ref=e335]
+                - columnheader "类型" [ref=e336]
+                - columnheader "必填" [ref=e337]
+                - columnheader "含义" [ref=e338]
+                - columnheader "可填内容" [ref=e339]
+            - rowgroup [ref=e340]:
+              - row [ref=e341]:
+                - cell [ref=e342]:
+                  - code [ref=e343]: model
+                - cell "string" [ref=e344]
+                - cell "是" [ref=e345]
+                - cell "选择生成模型；模型会决定尺寸、质量、价格和画面能力。" [ref=e346]
+                - cell "gpt-image-2、nano-banana-2、nano-banana-pro、seedream-4.5" [ref=e347]
+              - row [ref=e348]:
+                - cell [ref=e349]:
+                  - code [ref=e350]: prompt
+                - cell "string" [ref=e351]
+                - cell "是" [ref=e352]
+                - cell "描述要生成的画面；图生图时描述希望怎样修改参考图。" [ref=e353]
+                - cell "非空文本，最多 10,000 字符" [ref=e354]
+              - row [ref=e355]:
+                - cell [ref=e356]:
+                  - code [ref=e357]: size
+                - cell "string" [ref=e358]
+                - cell "否" [ref=e359]
+                - cell "设置最终图片像素宽高；尺寸越大通常越耗积分。" [ref=e360]
+                - cell "auto 或 宽x高；默认 1024x1024。GPT Image 2 与 Nano Banana 系列必须命中 Leonardo 尺寸枚举；Seedream 本服务限制 64–4096" [ref=e361]
+              - row [ref=e362]:
+                - cell [ref=e363]:
+                  - code [ref=e364]: "n"
+                - cell "integer" [ref=e365]
+                - cell "否" [ref=e366]
+                - cell "设置一次请求生成的图片数量。" [ref=e367]
+                - cell "1–4；默认 1。gpt-image-2 在当前账号固定为 1；Leonardo 原始 schema 上限为 8，本服务为控费限制到 4" [ref=e368]
+              - row [ref=e551]:
+                - cell [ref=e370]:
+                  - code [ref=e371]: response_format
+                - cell "string" [ref=e372]
+                - cell "否" [ref=e373]
+                - cell "设置异步图片任务的结果交付方式。" [ref=e552]
+                - cell "仅 url；默认 url。异步任务不提供 b64_json 转码" [ref=e553]
+              - row [ref=e376]:
+                - cell [ref=e377]:
+                  - code [ref=e378]: quality
+                - cell "string" [ref=e379]
+                - cell "否" [ref=e380]
+                - cell "设置生成质量；质量越高，细节和积分消耗通常越高。" [ref=e381]
+                - cell "gpt-image-2：auto、low、medium、high；auto 在本服务按 low 执行。其他三个模型省略" [ref=e382]
+              - row [ref=e397]:
+                - cell [ref=e398]:
+                  - code [ref=e399]: background
+                - cell "string" [ref=e400]
+                - cell "否" [ref=e401]
+                - cell "保留 OpenAI Images 的背景参数；Leonardo 当前只产生不透明结果。" [ref=e402]
+                - cell "auto 或 opaque；两者在当前上游均为不透明。transparent 不支持" [ref=e403]
+              - row [ref=e404]:
+                - cell [ref=e405]:
+                  - code [ref=e406]: moderation
+                - cell "string" [ref=e407]
+                - cell "否" [ref=e408]
+                - cell "声明使用平台内容审核；本服务始终执行 Leonardo 审核。" [ref=e409]
+                - cell "仅 auto；不可关闭" [ref=e410]
+              - row [ref=e411]:
+                - cell [ref=e412]:
+                  - code [ref=e413]: Idempotency-Key
+                - cell "header" [ref=e414]
+                - cell "建议" [ref=e415]
+                - cell "让同一次业务请求在网络重试时复用原任务，避免重复提交和扣费。" [ref=e416]
+                - cell "客户端生成的非空唯一字符串；重试时必须保持相同" [ref=e417]
+          - generic [ref=e421]:
+            - strong [ref=e422]: 兼容边界
+            - paragraph [ref=e423]:
+              - code [ref=e424]: response_format
+              - text: 、
+              - code [ref=e425]: output_format
+              - text: 和
+              - code [ref=e426]: output_compression
+              - text: 由网关交付层处理；
+              - code [ref=e427]: background
+              - text: 与
+              - code [ref=e428]: moderation
+              - text: 受 Leonardo 能力限制。当前不开放 mask、stream、partial_images、user；gpt-image-2 的 input_fidelity 在 OpenAI 官方定义中固定为高保真，也不提供可调值。参考图单张默认上限为 25 MiB，部署配置可进一步收紧。
+          - generic [ref=e429]:
+            - generic [ref=e430]:
+              - heading "Chat Completions 兼容入口" [level=2] [ref=e431]
+              - paragraph [ref=e432]: 供只支持 OpenAI Chat Completions 的图片客户端使用；最后一条 user 消息作为提示词，参考图仅接受 Base64 data URL。
+            - button "复制" [ref=e433] [cursor=pointer]
+          - code [ref=e438]: "curl $BASE_URL/v1/chat/completions \\ -H \"Authorization: Bearer $AIV2API_API_KEY\" \\ -H \"Content-Type: application/json\" \\ -H \"Idempotency-Key: YOUR_IDEMPOTENCY_KEY\" \\ -d '{ \"model\": \"gpt-image-2\", \"stream\": false, \"messages\": [ { \"role\": \"user\", \"content\": \"生成一张白色背景上的红色陶瓷方块产品照\" } ] }'"
+          - table [ref=e440]:
+            - rowgroup [ref=e441]:
+              - row [ref=e442]:
+                - columnheader "参数" [ref=e443]
+                - columnheader "类型" [ref=e444]
+                - columnheader "必填" [ref=e445]
+                - columnheader "含义" [ref=e446]
+                - columnheader "可填内容" [ref=e447]
+            - rowgroup [ref=e448]:
+              - row [ref=e449]:
+                - cell [ref=e450]:
+                  - code [ref=e451]: model
+                - cell "string" [ref=e452]
+                - cell "否" [ref=e453]
+                - cell "选择用于生成图片的公开模型。" [ref=e454]
+                - cell "四个公开图片模型；默认 gpt-image-2" [ref=e455]
+              - row [ref=e456]:
+                - cell [ref=e457]:
+                  - code [ref=e458]: messages
+                - cell "object[]" [ref=e459]
+                - cell "是" [ref=e460]
+                - cell "提供对话上下文；网关使用最后一条 user 消息作为生成输入。" [ref=e461]
+                - cell "至少 1 条消息" [ref=e462]
+              - row [ref=e463]:
+                - cell [ref=e464]:
+                  - code [ref=e465]: messages[].role
+                - cell "string" [ref=e466]
+                - cell "是" [ref=e467]
+                - cell "声明消息角色。" [ref=e468]
+                - cell "system、user、assistant；必须存在 user 消息" [ref=e469]
+              - row [ref=e470]:
+                - cell [ref=e471]:
+                  - code [ref=e472]: messages[].content
+                - cell "string | part[]" [ref=e473]
+                - cell "是" [ref=e474]
+                - cell "提供文字提示词，可附带一张 Base64 参考图。" [ref=e475]
+                - cell "字符串，或 text / image_url 内容块；最多 1 个 image_url，格式为 PNG/JPEG/WebP data URL，解码后不超过 25 MiB" [ref=e476]
+              - row [ref=e477]:
+                - cell [ref=e478]:
+                  - code [ref=e479]: stream
+                - cell "boolean" [ref=e480]
+                - cell "否" [ref=e481]
+                - cell "控制是否通过 SSE 分段返回 Chat Completion。" [ref=e482]
+                - cell "true 或 false；默认 false" [ref=e483]
+              - row [ref=e484]:
+                - cell [ref=e485]:
+                  - code [ref=e486]: Idempotency-Key
+                - cell "header" [ref=e487]
+                - cell "建议" [ref=e488]
+                - cell "避免网络重试重复生成和扣费。" [ref=e489]
+                - cell "每次业务操作使用唯一值；重试相同请求时保持不变" [ref=e490]
+          - generic [ref=e494]:
+            - strong [ref=e495]: 响应兼容说明
+            - paragraph [ref=e496]:
+              - text: 非流式响应在
+              - code [ref=e497]: choices[0].message.content
+              - text: 中返回 Markdown 图片链接；
+              - code [ref=e498]: stream=true
+              - text: 返回 SSE，失败时在 [DONE] 前返回 error 对象。远程图片 URL 不接受，只接受一张 Base64 data URL。

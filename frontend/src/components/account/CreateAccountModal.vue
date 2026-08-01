@@ -437,7 +437,7 @@
           </div>
         </div>
 
-        <!-- 上游子类型（vendor）：原生即梦 / Leonardo -->
+        <!-- 上游子类型（vendor）：原生即梦 / AIV2API -->
         <label class="input-label mt-4">{{ t('admin.accounts.jimeng.vendorLabel') }}</label>
         <select v-model="jimengVendor" class="input mt-2">
           <option value="">{{ t('admin.accounts.jimeng.vendorNative') }}</option>
@@ -3730,7 +3730,7 @@ const accountCategory = ref<'oauth-based' | 'apikey' | 'bedrock' | 'service_acco
 const addMethod = ref<AddMethod>('oauth') // For oauth-based: 'oauth' or 'setup-token'
 const apiKeyBaseUrl = ref('https://api.anthropic.com')
 const apiKeyValue = ref('')
-// 即梦 vendor 子类型：'' = 原生即梦上游；'leonardo' = Leonardo 上游（OpenAI 兼容图像 + 异步视频）
+// 即梦 vendor 子类型：'' = 原生即梦上游；'leonardo' = AIV2API 上游（图像 + 异步视频 + 音频）
 const jimengVendor = ref<'' | 'leonardo'>('')
 const upstreamBillingAutoProbeEnabled = ref(true)
 
@@ -5125,7 +5125,7 @@ const handleSubmit = async () => {
   if (form.platform === 'gemini') {
     credentials.tier_id = geminiTierAIStudio.value
   }
-  // 即梦上游子类型（vendor）：'leonardo' 走 Leonardo 上游（OpenAI 兼容图像 + 异步视频），
+  // 即梦上游子类型（vendor）：'leonardo' 走 AIV2API（图像 + 视频 + 音频），
   // 空串为原生即梦。对外仍伪装为 platform=jimeng，仅在 credentials.vendor 区分。
   if (form.platform === 'jimeng' && jimengVendor.value) {
     credentials.vendor = jimengVendor.value

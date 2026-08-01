@@ -1,14 +1,19 @@
-// Package leonardo 实现 Leonardo 上游（对外伪装为即梦 jimeng 平台的一个 vendor 子类型）
+// Package leonardo 实现 AIV2API 上游（对外伪装为即梦 jimeng 平台的一个 vendor 子类型）
 // 的协议层：URL 构建与请求/响应解析。
 //
-// Leonardo 是 OpenAI Images 兼容的图像/视频生成网关，通过第三方 base_url + api_key 接入：
+// AIV2API 是图像/视频/音频生成网关，通过第三方 base_url + api_key 接入：
 //
 //	图像（同步，OpenAI 兼容）：
 //	  - POST /v1/images/generations   文生图
 //	  - POST /v1/images/edits         图生图（multipart，1-6 张参考图）
 //	视频（异步任务）：
-//	  - POST /v1/videos/generations   创建视频任务，返回 {id,status}
-//	  - GET  /v1/videos/{id}          轮询任务状态，成功后 data[0].url 为 MP4
+//	  - POST /v1/videos/generations   创建视频任务，返回 Task{id,status,...}
+//	  - GET  /v1/videos/{id}          轮询任务状态，成功后 result.data[0].url 为 MP4
+//	  - POST /v1/videos/{id}/cancel   取消排队中的视频任务
+//	音频（异步任务）：
+//	  - POST /v1/audio/generations    创建音频任务
+//	  - GET  /v1/audio/{id}           轮询音频任务状态
+//	  - POST /v1/audio/{id}/cancel    取消排队中的音频任务
 //
 // 本包只负责路径拼接与格式规范化；第三方 base_url 的 allowlist 安全校验由
 // service 层通过 Security.URLAllowlist 完成（对齐 Grok/OpenAI/即梦 api_key 路径）。
@@ -75,4 +80,52 @@ func BuildVideoStatusURL(baseURL, taskID string) (string, error) {
 		return "", fmt.Errorf("task id is required")
 	}
 	return base + "/videos/" + url.PathEscape(taskID), nil
+}
+
+// BuildVideoCancelURL 构建取消视频任务的 URL：{base}/v1/videos/{task_id}/cancel。
+func BuildVideoCancelURL(baseURL, taskID string) (string, error) {
+	base, err := normalizeBaseURL(baseURL)
+	if err != nil {
+		return "", err
+	}
+	taskID = strings.TrimSpace(taskID)
+	if taskID == "" {
+		return "", fmt.Errorf("task id is required")
+	}
+	return base + "/videos/" + url.PathEscape(taskID) + "/cancel", nil
+}
+
+// BuildAudioGenerationsURL 构建创建音频任务的 URL：{base}/v1/audio/generations。
+func BuildAudioGenerationsURL(baseURL string) (string, error) {
+	base, err := normalizeBaseURL(baseURL)
+	if err != nil {
+		return "", err
+	}
+	return base + "/audio/generations", nil
+}
+
+// BuildAudioStatusURL 构建查询音频任务状态的 URL：{base}/v1/audio/{task_id}。
+func BuildAudioStatusURL(baseURL, taskID string) (string, error) {
+	base, err := normalizeBaseURL(baseURL)
+	if err != nil {
+		return "", err
+	}
+	taskID = strings.TrimSpace(taskID)
+	if taskID == "" {
+		return "", fmt.Errorf("task id is required")
+	}
+	return base + "/audio/" + url.PathEscape(taskID), nil
+}
+
+// BuildAudioCancelURL 构建取消音频任务的 URL：{base}/v1/audio/{task_id}/cancel。
+func BuildAudioCancelURL(baseURL, taskID string) (string, error) {
+	base, err := normalizeBaseURL(baseURL)
+	if err != nil {
+		return "", err
+	}
+	taskID = strings.TrimSpace(taskID)
+	if taskID == "" {
+		return "", fmt.Errorf("task id is required")
+	}
+	return base + "/audio/" + url.PathEscape(taskID) + "/cancel", nil
 }

@@ -822,9 +822,11 @@ func (s *GatewayService) calculateVideoCost(
 		groupConfig = &JimengVideoPriceConfig{
 			PricePerCount:  apiKey.Group.VideoPricePerCount,
 			PricePerSecond: apiKey.Group.VideoPricePerSecond,
+			ModelPricing:   apiKey.Group.ModelPricing,
 		}
 	}
-	return s.billingService.CalculateJimengVideoCost(result.VideoCount, result.VideoSeconds, groupConfig, multiplier)
+	// 使用 result.Model 作为计费模型名
+	return s.billingService.CalculateJimengVideoCost(result.Model, result.VideoCount, result.VideoSeconds, groupConfig, multiplier)
 }
 
 // compositeBillableModel 决定 composite 分组请求的计费模型：来源覆盖把计费模型

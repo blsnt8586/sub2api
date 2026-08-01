@@ -25,19 +25,23 @@ const (
 	JimengVideoEndpointStatus JimengVideoEndpoint = "status"
 	// JimengVideoEndpointContent 下载视频内容：GET /v1/videos/{task_id}/content。
 	JimengVideoEndpointContent JimengVideoEndpoint = "content"
+	// JimengVideoEndpointCancel 取消视频任务：POST /v1/videos/{task_id}/cancel（Leonardo vendor 专用）。
+	JimengVideoEndpointCancel JimengVideoEndpoint = "cancel"
 )
 
 // httpMethod 返回该端点对应的 HTTP 方法。
 func (e JimengVideoEndpoint) httpMethod() string {
-	if e == JimengVideoEndpointCreate {
+	switch e {
+	case JimengVideoEndpointCreate, JimengVideoEndpointCancel:
 		return http.MethodPost
+	default:
+		return http.MethodGet
 	}
-	return http.MethodGet
 }
 
-// requiresRequestBody 仅创建任务需要携带请求体。
+// requiresRequestBody 创建任务与取消任务需要携带请求体（cancel 发空 body）。
 func (e JimengVideoEndpoint) requiresRequestBody() bool {
-	return e == JimengVideoEndpointCreate
+	return e == JimengVideoEndpointCreate || e == JimengVideoEndpointCancel
 }
 
 // isGeneration 标识是否为生成型请求（用于计费判定）。
@@ -97,6 +101,10 @@ func (s *OpenAIGatewayService) ForwardJimengVideo(
 	upstreamReq.Header.Set("Authorization", "Bearer "+apiKey)
 	upstreamReq.Header.Set("Accept", "application/json")
 	upstreamReq.Header.Set("User-Agent", "sub2api-jimeng/1.0")
+	// 透传 Idempotency-Key，防止 failover 重试重复创建付费任务
+	if idempotencyKey := c.GetHeader("Idempotency-Key"); idempotencyKey != "" {
+		upstreamReq.Header.Set("Idempotency-Key", idempotencyKey)
+	}
 	if endpoint.requiresRequestBody() {
 		ct := strings.TrimSpace(contentType)
 		if ct == "" {
@@ -167,17 +175,20 @@ func (s *OpenAIGatewayService) jimengVideoURL(account *Account, endpoint JimengV
 	if err != nil {
 		return "", fmt.Errorf("invalid jimeng base_url: %w", err)
 	}
-	// Leonardo vendor：视频接口与原生即梦不同（创建走 /v1/videos/generations，
-	// 无 /content 端点——MP4 直接在状态响应的 data[0].url 中）。对外客户端契约
-	// 仍是即梦的 POST /v1/videos + GET /v1/videos/{id}，此处仅翻译上游真实路径。
+	// Leonardo vendor（实为 AIV2API）：视频接口与原生即梦不同（创建走 /v1/videos/generations，
+	// 无 /content 端点——MP4 URL 在状态响应的 result.data[0].url 中）。对外客户端契约
+	// 仍是即梦的 POST /v1/videos + GET /v1/videos/{id} + POST /v1/videos/{id}/cancel，
+	// 此处仅翻译上游真实路径。
 	if account.IsJimengLeonardo() {
 		switch endpoint {
 		case JimengVideoEndpointCreate:
 			return leonardo.BuildVideosGenerationsURL(validated)
 		case JimengVideoEndpointStatus:
 			return leonardo.BuildVideoStatusURL(validated, taskID)
+		case JimengVideoEndpointCancel:
+			return leonardo.BuildVideoCancelURL(validated, taskID)
 		case JimengVideoEndpointContent:
-			return "", fmt.Errorf("leonardo vendor does not support the video content endpoint; read the MP4 URL from data[0].url in the status response")
+			return "", fmt.Errorf("leonardo vendor does not support the video content endpoint; read the MP4 URL from result.data[0].url in the status response")
 		default:
 			return "", fmt.Errorf("unsupported jimeng video endpoint: %s", endpoint)
 		}

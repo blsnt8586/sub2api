@@ -592,8 +592,8 @@ export default {
         apiKeyHint: 'Jimeng supports API Key access only (third-party compatible endpoint, requires Base URL + API Key) for video generation at /v1/videos.',
         vendorLabel: 'Upstream sub-type',
         vendorNative: 'Native Jimeng (video /v1/videos)',
-        vendorLeonardo: 'Leonardo (image + video)',
-        vendorLeonardoHint: 'Leonardo upstream: images via /v1/images/generations and /v1/images/edits, video via /v1/videos (internally translated to the upstream task API). Fill in Base URL + API Key to connect.'
+        vendorLeonardo: 'AIV2API (image + video + audio)',
+        vendorLeonardoHint: 'AIV2API upstream: images via /v1/images/generations and /v1/images/edits (synchronous); videos via /v1/videos/generations to create, /v1/videos/{id} to query status, /v1/videos/{id}/cancel to cancel; audio via /v1/audio/generations. Fill in Base URL + API Key to connect.'
       },
       anthropic: {
         apiKeyPassthrough: 'Auto passthrough (auth only)',

@@ -32,7 +32,6 @@ func ExtractVideoModel(body []byte) string {
 	return ParseVideoRequest(body).Model
 }
 
-
 // ParseVideoRequest 解析即梦视频请求体，兼容 duration（整数）和 seconds（字符串/数字）两种写法。
 func ParseVideoRequest(body []byte) VideoRequestInfo {
 	info := VideoRequestInfo{}
@@ -50,3 +49,19 @@ func ParseVideoRequest(body []byte) VideoRequestInfo {
 	}
 	return info
 }
+
+// ParseAudioRequest 解析即梦音频请求体
+func ParseAudioRequest(body []byte) VideoRequestInfo {
+	info := VideoRequestInfo{}
+	if len(body) == 0 || !gjson.ValidBytes(body) {
+		return info
+	}
+	info.Model = strings.TrimSpace(gjson.GetBytes(body, "model").String())
+	info.Prompt = strings.TrimSpace(gjson.GetBytes(body, "prompt").String())
+	// 音频可能也有 duration 字段
+	if d := gjson.GetBytes(body, "duration"); d.Exists() {
+		info.Seconds = strings.TrimSpace(d.String())
+	}
+	return info
+}
+

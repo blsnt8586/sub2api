@@ -413,9 +413,10 @@ func (s *OpenAIGatewayService) calculateOpenAIRecordUsageCost(
 			groupConfig = &JimengVideoPriceConfig{
 				PricePerCount:  apiKey.Group.VideoPricePerCount,
 				PricePerSecond: apiKey.Group.VideoPricePerSecond,
+				ModelPricing:   apiKey.Group.ModelPricing,
 			}
 		}
-		return s.billingService.CalculateJimengVideoCost(result.VideoCount, result.VideoSeconds, groupConfig, multiplier), nil
+		return s.billingService.CalculateJimengVideoCost(billingModel, result.VideoCount, result.VideoSeconds, groupConfig, multiplier), nil
 	}
 	if result != nil && result.WebSearchCalls > 0 {
 		// Codex alpha/search 网页搜索按次计费：上游不返回 usage/token 字段，单价只取

@@ -261,6 +261,9 @@ func RegisterGatewayRoutes(
 	// compositeTarget 与图片路由一致地挂在根路径别名上，让 composite 分组按 model 解析目标平台。
 	registerVideoRoutes(gateway, r, h, bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), compositeTarget, requireGroupAnthropic)
 
+	// 音频路由（即梦 jimeng 等）——新增音频平台只需修改 gateway_audio.go。
+	registerAudioRoutes(gateway, r, h, bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), compositeTarget, requireGroupAnthropic)
+
 	// Antigravity 模型列表
 	r.GET("/antigravity/models", gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, h.Gateway.AntigravityModels)
 

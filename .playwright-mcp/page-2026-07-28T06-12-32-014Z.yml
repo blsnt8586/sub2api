@@ -1,0 +1,29 @@
+- generic [ref=e253]:
+  - generic [ref=e254]:
+    - generic [ref=e255]:
+      - img "Logo" [ref=e257]
+      - heading "Sub2API" [level=1] [ref=e258]
+      - paragraph [ref=e259]: Subscription to API Conversion Platform
+    - generic [ref=e262]:
+      - generic [ref=e263]:
+        - heading "Welcome Back" [level=2] [ref=e264]
+        - paragraph [ref=e265]: Sign in to your account to continue
+      - generic [ref=e266]:
+        - generic [ref=e267]:
+          - generic [ref=e268]: Email
+          - textbox "Email" [ref=e270]:
+            - /placeholder: Enter your email
+        - generic [ref=e271]:
+          - generic [ref=e272]: Password
+          - generic [ref=e273]:
+            - textbox "Password" [ref=e274]:
+              - /placeholder: Enter your password
+            - button [ref=e275] [cursor=pointer]
+        - button "Sign In" [ref=e278] [cursor=pointer]
+    - paragraph [ref=e282]:
+      - text: Don't have an account?
+      - link "Sign up" [ref=e283] [cursor=pointer]:
+        - /url: /register
+  - contentinfo [ref=e284]:
+    - paragraph [ref=e285]: Sub2API is an independently operated third-party AI gateway service, with no affiliation, partnership, or endorsement from Anthropic, OpenAI, Google, or any other AI model provider. All third-party trademarks and product names are the property of their respective owners.
+    - generic [ref=e286]: © 2026 Sub2API

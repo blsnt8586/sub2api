@@ -652,8 +652,8 @@ export default {
         apiKeyHint: '即梦仅支持 API Key 接入（第三方兼容端点，需填写 Base URL + API Key），用于视频生成 /v1/videos。',
         vendorLabel: '上游子类型',
         vendorNative: '原生即梦（视频 /v1/videos）',
-        vendorLeonardo: 'Leonardo（图像 + 视频）',
-        vendorLeonardoHint: 'Leonardo 上游：图像走 /v1/images/generations 与 /v1/images/edits，视频走 /v1/videos（内部翻译到上游任务接口）。填写 Base URL + API Key 即可接入。'
+        vendorLeonardo: 'AIV2API（图像 + 视频 + 音频）',
+        vendorLeonardoHint: 'AIV2API 上游：图像走 /v1/images/generations 与 /v1/images/edits（同步）；视频走 /v1/videos/generations 创建任务、/v1/videos/{id} 查询状态、/v1/videos/{id}/cancel 取消；音频走 /v1/audio/generations。填写 Base URL + API Key 即可接入。'
       },
       anthropic: {
         apiKeyPassthrough: '自动透传（仅替换认证）',

@@ -32,6 +32,11 @@ func (h *OpenAIGatewayHandler) JimengVideoContent(c *gin.Context) {
 	h.handleJimengVideo(c, service.JimengVideoEndpointContent, c.Param("request_id"))
 }
 
+// JimengVideoCancel 处理即梦视频任务取消：POST /v1/videos/{task_id}/cancel（Leonardo vendor 专用）。
+func (h *OpenAIGatewayHandler) JimengVideoCancel(c *gin.Context) {
+	h.handleJimengVideo(c, service.JimengVideoEndpointCancel, c.Param("request_id"))
+}
+
 func (h *OpenAIGatewayHandler) handleJimengVideo(c *gin.Context, endpoint service.JimengVideoEndpoint, taskID string) {
 	streamStarted := false
 	defer h.recoverResponsesPanic(c, &streamStarted)
@@ -84,6 +89,11 @@ func (h *OpenAIGatewayHandler) handleJimengVideo(c *gin.Context, endpoint servic
 	}
 
 	contentType := c.GetHeader("Content-Type")
+	// Seedance（Ark Plan v3）格式自适应：把 content 数组体翻译成 OpenAI 风格 body，
+	// 使 infinite-canvas 等按火山引擎原生协议发起的请求无需 plugin 也能走通。
+	if isCreate {
+		body = service.ConvertSeedanceVideoCreateBody(body)
+	}
 	requestModel := service.ExtractJimengVideoModel(body)
 	if isCreate && strings.TrimSpace(requestModel) == "" {
 		h.errorResponse(c, http.StatusBadRequest, "invalid_request_error", "model is required")

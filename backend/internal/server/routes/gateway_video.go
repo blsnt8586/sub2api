@@ -78,6 +78,15 @@ func registerVideoRoutes(
 		}
 	}
 
+	// videoCancelHandler 处理 POST /v1/videos/{id}/cancel：目前仅 Leonardo vendor 支持。
+	videoCancelHandler := func(c *gin.Context) {
+		if getGroupPlatform(c) == service.PlatformJimeng {
+			h.OpenAIGateway.JimengVideoCancel(c)
+			return
+		}
+		videoUnsupported(c)
+	}
+
 	// jimengVideoCreateHandler 处理即梦的 POST /v1/videos（固定接口，非 /generations）。
 	jimengVideoCreateHandler := func(c *gin.Context) {
 		if getGroupPlatform(c) == service.PlatformJimeng {
@@ -105,9 +114,11 @@ func registerVideoRoutes(
 	gateway.POST("/videos/generations", videoGenerationHandler)
 	gateway.POST("/videos/edits", videoEditHandler)
 	gateway.POST("/videos/extensions", videoExtensionHandler)
-	// 即梦固定接口：POST /v1/videos（创建）与 /v1/videos/{id}/content（下载）
+	// 即梦固定接口：POST /v1/videos（创建）、GET /v1/videos/{id}（状态）、
+	// POST /v1/videos/{id}/cancel（取消，Leonardo vendor 专用）、GET /v1/videos/{id}/content（下载）
 	gateway.POST("/videos", jimengVideoCreateHandler)
 	gateway.GET("/videos/:request_id", videoStatusHandler)
+	gateway.POST("/videos/:request_id/cancel", videoCancelHandler)
 	gateway.GET("/videos/:request_id/content", videoContentHandler)
 
 	// 根路径别名（不带 /v1 前缀，需显式挂中间件）
@@ -116,5 +127,33 @@ func registerVideoRoutes(
 	r.POST("/videos/extensions", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, videoExtensionHandler)
 	r.POST("/videos", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, jimengVideoCreateHandler)
 	r.GET("/videos/:request_id", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, videoStatusHandler)
-	r.GET("/videos/:request_id/content", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, videoContentHandler)
+	r.POST("/videos/:request_id/cancel", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, videoCancelHandler)
+	// seedanceTasksHandler 处理 POST /v1/contents/generations/tasks（Seedance/Ark Plan v3 原生接口）。
+	// infinite-canvas 等客户端对含 "seedance" 的模型走此路径；body 在 handler 层自动转换成
+	// AIV2API 风格后沿 jimeng 通道转发。仅限 jimeng 平台。
+	seedanceTasksHandler := func(c *gin.Context) {
+		if getGroupPlatform(c) == service.PlatformJimeng {
+			h.OpenAIGateway.JimengVideoCreation(c)
+			return
+		}
+		videoUnsupported(c)
+	}
+
+	// seedanceTaskStatusHandler 处理 GET /v1/contents/generations/tasks/{id}（Seedance 状态查询）。
+	// 复用 jimeng 状态处理器；normalizeJimengVideoResponse 已补入 content.video_url，
+	// 使 infinite-canvas 的 Seedance 轮询路径能正确提取到视频 URL。
+	seedanceTaskStatusHandler := func(c *gin.Context) {
+		if getGroupPlatform(c) == service.PlatformJimeng {
+			h.OpenAIGateway.JimengVideoStatus(c)
+			return
+		}
+		videoUnsupported(c)
+	}
+
+	// Seedance/Ark Plan v3 兼容路由
+	gateway.POST("/contents/generations/tasks", seedanceTasksHandler)
+	gateway.GET("/contents/generations/tasks/:request_id", seedanceTaskStatusHandler)
+	// 根路径别名
+	r.POST("/contents/generations/tasks", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, seedanceTasksHandler)
+	r.GET("/contents/generations/tasks/:request_id", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, seedanceTaskStatusHandler)
 }

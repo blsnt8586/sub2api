@@ -17,64 +17,37 @@
         allow="clipboard-write; clipboard-read; fullscreen; microphone; camera"
         allowfullscreen
         title="视图工作台"
-        @load="sendKeysToIframe"
       />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref } from 'vue'
 import { useAppStore, useAuthStore } from '@/stores'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import AppHeader from '@/components/layout/AppHeader.vue'
-import { list as listKeys } from '@/api/keys'
-import type { ApiKey } from '@/types'
 
 const appStore = useAppStore()
 const authStore = useAuthStore()
 const sidebarCollapsed = computed(() => appStore.sidebarCollapsed)
-
 const iframeRef = ref<HTMLIFrameElement | null>(null)
-const platformKeys = ref<Array<{ id: number; name: string; key: string }>>([])
 
-// 优先读 Vite 环境变量，否则用同 hostname 的 3000 端口（开发/生产均适用）
+// Canvas URL：带上 token 和 src_host，让 infinite-canvas 自己调接口拿 keys
+// 优先级：VITE_CANVAS_URL（开发）→ /canvas/image（生产 nginx 反代）→ :3000（开发后备）
 const canvasUrl = computed(() => {
   const envUrl = import.meta.env.VITE_CANVAS_URL as string | undefined
-  if (envUrl) return envUrl
-  const { protocol, hostname } = window.location
-  // 直接打开生图工作台，跳过首页
-  return `${protocol}//${hostname}:3000/image`
-})
-
-/** 将当前用户的 active API Key 列表与 JWT token 推送给 infinite-canvas iframe */
-const sendKeysToIframe = () => {
-  // 用 map 拆成纯对象，避免 Vue reactive proxy 触发 postMessage 的 DataCloneError
-  const plainKeys = platformKeys.value.map((k) => ({ id: k.id, name: k.name, key: k.key }))
-  iframeRef.value?.contentWindow?.postMessage(
-    {
-      type: 'sub2api:init',
-      keys: plainKeys,
-      // JWT token 供 infinite-canvas 调用 canvas-api 做持久化存储
-      token: authStore.token ?? '',
-    },
-    '*',
-  )
-}
-
-onMounted(async () => {
+  const base = envUrl
+    ?? (import.meta.env.PROD
+      ? `${window.location.origin}/canvas/image`
+      : `${window.location.protocol}//${window.location.hostname}:3000/image`)
   try {
-    // 拉取全部 active key（最多 200 条，覆盖绝大多数场景）
-    const result = await listKeys(1, 200, { status: 'active' })
-    platformKeys.value = (result.items ?? []).map((k: ApiKey) => ({
-      id: k.id,
-      name: k.name,
-      key: k.key,
-    }))
-    // iframe 可能已加载完毕，立即推送一次
-    sendKeysToIframe()
+    const url = new URL(base)
+    if (authStore.token) url.searchParams.set('token', authStore.token)
+    url.searchParams.set('src_host', window.location.origin)
+    return url.toString()
   } catch {
-    // 拉取失败不影响 iframe 正常使用，用户可手动输入 key
+    return base
   }
 })
 </script>
