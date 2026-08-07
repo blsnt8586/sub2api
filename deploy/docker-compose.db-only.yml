@@ -16,12 +16,17 @@ services:
     ports:
       - "5434:5432"  # 映射到5434避免与本地PostgreSQL冲突
     volumes:
-      - ./postgres_data:/var/lib/postgresql/data:Z
+      # 必须挂父路径 /var/lib/postgresql（镜像的 VOLUME 声明就在这一级），
+      # 不能挂子路径 /var/lib/postgresql/data：那样 Docker 会为父路径另建匿名
+      # volume，而嵌套在其中的 bind 在 WSL2 挂起/恢复后会退化成 tmpfs，
+      # 把宿主数据整个遮蔽 —— 表现为「重启后 users 表为空、登录失败」，
+      # 且此后所有写入只进内存，容器一停就蒸发。PGDATA 因此放子目录 pgdata/。
+      - ./postgres_data:/var/lib/postgresql:Z
     environment:
       - POSTGRES_USER=sub2api
       - POSTGRES_PASSWORD=sub2api_dev_password
       - POSTGRES_DB=sub2api
-      - PGDATA=/var/lib/postgresql/data
+      - PGDATA=/var/lib/postgresql/pgdata
       - TZ=Asia/Shanghai
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U sub2api -d sub2api"]
