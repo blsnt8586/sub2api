@@ -154,3 +154,13 @@ backend/config.dev.yaml
 # 构建日志
 backend/build.err
 sub2api_linux_amd64
+
+# Vitest / Vite cache at repo root
+.vite/
+
+# 本地临时/备份产物(勿入库)[CUSTOM]
+.playwright-mcp/
+backend/.ace-tool/
+deploy/postgres_data*/
+deploy/*backup*/
+deploy/*.bak-*/
