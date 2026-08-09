@@ -154,3 +154,12 @@ backend/config.dev.yaml
 # 构建日志
 backend/build.err
 sub2api_linux_amd64
+.ace-tool/
+
+# Playwright MCP 截图/快照(调试产物,勿入库)
+.playwright-mcp/
+
+# 本地数据备份目录(勿入库)
+deploy/*backup*/
+deploy/*.bak-*/
+deploy/postgres_data*/
