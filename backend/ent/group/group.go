@@ -98,6 +98,8 @@ const (
 	FieldAudioTtsPricePerMillionChars = "audio_tts_price_per_million_chars"
 	// FieldAudioSttPricePerHour holds the string denoting the audio_stt_price_per_hour field in the database.
 	FieldAudioSttPricePerHour = "audio_stt_price_per_hour"
+	// FieldModelPricing holds the string denoting the model_pricing field in the database.
+	FieldModelPricing = "model_pricing"
 	// FieldClaudeCodeOnly holds the string denoting the claude_code_only field in the database.
 	FieldClaudeCodeOnly = "claude_code_only"
 	// FieldFallbackGroupID holds the string denoting the fallback_group_id field in the database.
@@ -256,6 +258,7 @@ var Columns = []string{
 	FieldAudioRealtimePricePerMin,
 	FieldAudioTtsPricePerMillionChars,
 	FieldAudioSttPricePerHour,
+	FieldModelPricing,
 	FieldClaudeCodeOnly,
 	FieldFallbackGroupID,
 	FieldFallbackGroupIDOnInvalidRequest,

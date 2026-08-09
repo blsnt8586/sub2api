@@ -23,7 +23,7 @@ const (
 	PlatformGemini      = "gemini"
 	PlatformAntigravity = "antigravity"
 	PlatformGrok        = "grok"
-	PlatformJimeng      = "jimeng" // 即梦视频生成平台（第三方 base_url + api_key）
+	PlatformCanvas      = "canvas" 
 	PlatformComposite   = "composite"
 )
 

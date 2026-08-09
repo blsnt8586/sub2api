@@ -44,7 +44,7 @@ func ProvideAdminHandlers(
 	paymentHandler *admin.PaymentHandler,
 	affiliateHandler *admin.AffiliateHandler,
 	complianceHandler *admin.ComplianceHandler,
-	sub2APIProviderHandler *admin.Sub2APIProviderHandler,             // [CUSTOM]
+	sub2APIProviderHandler *admin.Sub2APIProviderHandler, // [CUSTOM]
 	sub2APIOptimizeScheduleHandler *admin.Sub2APIOptimizeScheduleHandler, // [CUSTOM]
 	auditLogHandler *admin.AuditLogHandler,
 	upstreamBillingProbe *service.UpstreamBillingProbeService,
@@ -86,7 +86,7 @@ func ProvideAdminHandlers(
 		Payment:                paymentHandler,
 		Affiliate:              affiliateHandler,
 		Compliance:             complianceHandler,
-		Sub2APIProvider:        sub2APIProviderHandler,       // [CUSTOM]
+		Sub2APIProvider:        sub2APIProviderHandler,         // [CUSTOM]
 		Sub2APIOptimize:        sub2APIOptimizeScheduleHandler, // [CUSTOM]
 		AuditLog:               auditLogHandler,
 	}

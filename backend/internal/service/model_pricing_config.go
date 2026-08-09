@@ -22,6 +22,49 @@ type ModelImagePricing struct {
 	Price4K *float64 `json:"4k,omitempty"` // USD/张
 }
 
+// Clone 深拷贝定价配置。map 与内部指针都要复制，
+// 否则「复制分组」出来的新分组会和源分组共享同一份定价，改一边影响另一边。
+func (cfg *ModelPricingConfig) Clone() *ModelPricingConfig {
+	if cfg == nil {
+		return nil
+	}
+	out := &ModelPricingConfig{}
+	if cfg.Video != nil {
+		out.Video = make(map[string]*ModelVideoPricing, len(cfg.Video))
+		for model, price := range cfg.Video {
+			if price == nil {
+				continue
+			}
+			out.Video[model] = &ModelVideoPricing{
+				PricePerCount:  clonePricePointer(price.PricePerCount),
+				PricePerSecond: clonePricePointer(price.PricePerSecond),
+			}
+		}
+	}
+	if cfg.Image != nil {
+		out.Image = make(map[string]*ModelImagePricing, len(cfg.Image))
+		for model, price := range cfg.Image {
+			if price == nil {
+				continue
+			}
+			out.Image[model] = &ModelImagePricing{
+				Price1K: clonePricePointer(price.Price1K),
+				Price2K: clonePricePointer(price.Price2K),
+				Price4K: clonePricePointer(price.Price4K),
+			}
+		}
+	}
+	return out
+}
+
+func clonePricePointer(v *float64) *float64 {
+	if v == nil {
+		return nil
+	}
+	cloned := *v
+	return &cloned
+}
+
 // GetModelVideoPrice 从模型定价配置中获取指定模型的视频定价。
 // 返回 nil 表示该模型未配置专属定价，应回退到分组全局定价。
 func (cfg *ModelPricingConfig) GetModelVideoPrice(model string) *ModelVideoPricing {

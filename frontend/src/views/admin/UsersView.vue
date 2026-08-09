@@ -562,8 +562,8 @@
             <PlatformCostCell :usage="getPlatformUsage(row.id, 'antigravity')" />
           </template>
 
-          <template #cell-usage_jimeng="{ row }">
-            <PlatformCostCell :usage="getPlatformUsage(row.id, 'jimeng')" />
+          <template #cell-usage_canvas="{ row }">
+            <PlatformCostCell :usage="getPlatformUsage(row.id, 'canvas')" />
           </template>
 
           <template #cell-concurrency="{ row }">
@@ -881,7 +881,7 @@ const allColumns = computed<Column[]>(() => [
   { key: 'usage_openai', label: t('admin.users.columns.usageOpenAI'), sortable: false },
   { key: 'usage_gemini', label: t('admin.users.columns.usageGemini'), sortable: false },
   { key: 'usage_antigravity', label: t('admin.users.columns.usageAntigravity'), sortable: false },
-  { key: 'usage_jimeng', label: t('admin.users.columns.usageJimeng'), sortable: false },
+  { key: 'usage_canvas', label: t('admin.users.columns.usageJimeng'), sortable: false },
   { key: 'concurrency', label: t('admin.users.columns.concurrency'), sortable: true },
   { key: 'status', label: t('admin.users.columns.status'), sortable: true },
   { key: 'last_active_at', label: t('admin.users.columns.lastActive'), sortable: true },
@@ -902,7 +902,7 @@ const hiddenColumns = reactive<Set<string>>(new Set())
 // Default hidden columns (columns hidden by default on first load)
 const DEFAULT_HIDDEN_COLUMNS = [
   'notes', 'groups', 'subscriptions', 'usage', 'concurrency',
-  'usage_anthropic', 'usage_openai', 'usage_gemini', 'usage_antigravity', 'usage_jimeng',
+  'usage_anthropic', 'usage_openai', 'usage_gemini', 'usage_antigravity', 'usage_canvas',
   'balance_platform_quota'
 ]
 const REMOVED_COLUMNS = new Set(['last_login_at'])
@@ -920,7 +920,7 @@ const COLUMN_SETTINGS_VERSION = 4
 const VERSION_NEW_HIDDEN_COLUMNS: Record<number, string[]> = {
   2: ['usage_anthropic', 'usage_openai', 'usage_gemini', 'usage_antigravity'],
   3: ['balance_platform_quota'],
-  4: ['usage_jimeng']
+  4: ['usage_canvas']
 }
 
 // Load saved column settings
@@ -1000,14 +1000,14 @@ const isColumnVisible = (key: string) => !hiddenColumns.has(key)
 // 列 key → 平台名（'usage' 主列汇总所有平台时为 null）
 // 显式数组取代 Object.keys()：保证迭代顺序（决定列头排序按钮渲染顺序）
 // 不会因 JS 引擎差异或 USAGE_COLUMN_PLATFORMS 属性顺序调整而静默变化。
-const USAGE_COLUMN_KEYS: readonly string[] = ['usage', 'usage_anthropic', 'usage_openai', 'usage_gemini', 'usage_antigravity', 'usage_jimeng']
+const USAGE_COLUMN_KEYS: readonly string[] = ['usage', 'usage_anthropic', 'usage_openai', 'usage_gemini', 'usage_antigravity', 'usage_canvas']
 const USAGE_COLUMN_PLATFORMS: Record<string, string | null> = {
   usage: null,
   usage_anthropic: 'anthropic',
   usage_openai: 'openai',
   usage_gemini: 'gemini',
   usage_antigravity: 'antigravity',
-  usage_jimeng: 'jimeng'
+  usage_canvas: 'canvas'
 }
 const PLATFORM_USAGE_COLUMNS = USAGE_COLUMN_KEYS.filter((k) => k !== 'usage')
 const hasVisibleUsageColumn = computed(

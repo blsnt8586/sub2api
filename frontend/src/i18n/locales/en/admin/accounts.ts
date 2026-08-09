@@ -104,7 +104,7 @@ export default {
         gemini: 'Gemini',
         antigravity: 'Antigravity',
         grok: 'Grok',
-        jimeng: 'Jimeng',
+        canvas: 'Jimeng',
       },
       types: {
         oauth: 'OAuth',
@@ -507,7 +507,9 @@ export default {
       // OpenAI specific hints
       openai: {
         baseUrlHint: 'Leave default for official OpenAI API',
-        apiKeyHint: 'Your OpenAI API Key',
+        vendorLabel: 'Upstream vendor',
+        vendorAVI2API: 'AVI2API (image + video + audio)',
+                apiKeyHint: 'Your OpenAI API Key',
         oauthPassthrough: 'Auto passthrough (auth only)',
         oauthPassthroughDesc:
           'When enabled, this OpenAI account uses automatic passthrough: the gateway forwards request/response as-is and only swaps auth, while keeping billing/concurrency/audit and necessary safety filtering.',
@@ -658,14 +660,13 @@ export default {
         fileReadFailed: 'Failed to read the selected file',
         noResponseBody: 'No response body from server'
       },
-      jimeng: {
-        name: 'Jimeng',
-        baseUrlHint: 'Third-party Jimeng video endpoint, e.g. https://api.example.com/v1 (requests forward to {baseUrl}/videos).',
-        apiKeyHint: 'Jimeng supports API Key access only (third-party compatible endpoint, requires Base URL + API Key) for video generation at /v1/videos.',
-        vendorLabel: 'Upstream sub-type',
-        vendorNative: 'Native Jimeng (video /v1/videos)',
-        vendorLeonardo: 'AIV2API (image + video + audio)',
-        vendorLeonardoHint: 'AIV2API upstream: images via /v1/images/generations and /v1/images/edits (synchronous); videos via /v1/videos/generations to create, /v1/videos/{id} to query status, /v1/videos/{id}/cancel to cancel; audio via /v1/audio/generations. Fill in Base URL + API Key to connect.'
+      canvas: {
+        name: 'Canvas',
+        baseUrlHint: 'Canvas platform upstream endpoint, e.g. https://api.example.com/v1.',
+        vendorLabel: 'Upstream vendor',
+        vendorAVI2API: 'AVI2API (image + video + audio)',
+        apiKeyHint:
+          'AVI2API upstream: images via /v1/images/generations and /v1/images/edits (synchronous); videos via /v1/videos/generations to create (JSON without references, multipart with reference images / start-end frames / reference videos / reference audio), /v1/videos/{id} to query status, /v1/videos/{id}/cancel to cancel; audio via /v1/audio/generations. API Key access only, fill in Base URL + API Key.'
       },
       anthropic: {
         apiKeyPassthrough: 'Auto passthrough (auth only)',

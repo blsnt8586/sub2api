@@ -129,8 +129,20 @@
         </template>
 
         <template #cell-tokens="{ row }">
+          <!-- 视频生成请求 -->
+          <div v-if="isVideoUsage(row)" class="flex items-center gap-1.5">
+            <svg class="h-4 w-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+            <!-- 有秒数就显示秒数，否则 fallback 到条数 -->
+            <span class="font-medium text-gray-900 dark:text-white">
+              {{ row.video_duration_seconds != null
+                ? `${row.video_duration_seconds}${t('usage.secondsUnit')}`
+                : `${row.video_count > 0 ? row.video_count : 1}${t('usage.videoUnit')}` }}
+            </span>
+          </div>
           <!-- 图片生成请求（仅按次计费时显示图片格式） -->
-          <div v-if="isImageUsage(row)" class="flex items-center gap-1.5">
+          <div v-else-if="isImageUsage(row)" class="flex items-center gap-1.5">
             <svg class="h-4 w-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
@@ -496,9 +508,11 @@ import {
 } from '@/utils/latencyHealth'
 import {
   BILLING_MODE_TOKEN,
+  BILLING_MODE_VIDEO_PER_SECOND,
   getBillingModeLabel,
   getBillingModeBadgeClass,
   isImageUsage,
+  isVideoUsage,
   getDisplayBillingMode,
   imageUnitPrice,
 } from '@/utils/billingMode'

@@ -162,16 +162,16 @@
           </button>
           <button
             type="button"
-            @click="form.platform = 'jimeng'"
+            @click="form.platform = 'canvas'"
             :class="[
               'flex flex-1 items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-all',
-              form.platform === 'jimeng'
+              form.platform === 'canvas'
                 ? 'bg-white text-zinc-900 shadow-sm dark:bg-dark-600 dark:text-zinc-100'
                 : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200'
             ]"
           >
-            <PlatformIcon platform="jimeng" size="sm" />
-            {{ t('admin.accounts.jimeng.name') }}
+            <PlatformIcon platform="canvas" size="sm" />
+            {{ t('admin.accounts.canvas.name') }}
           </button>
         </div>
       </div>
@@ -424,29 +424,49 @@
         </div>
       </div>
 
-      <!-- Account Type (Jimeng - API Key only, third-party base_url + api_key) -->
-      <div v-if="form.platform === 'jimeng'">
+      <!-- Account Type (Canvas — API Key 通用 or AVI2API 专用) -->
+      <div v-if="form.platform === 'canvas'">
         <label class="input-label">{{ t('admin.accounts.accountType') }}</label>
-        <div class="mt-2 flex items-center gap-3 rounded-lg border-2 border-purple-500 bg-purple-50 p-3 dark:bg-purple-900/20">
-          <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-500 text-white">
-            <Icon name="key" size="sm" />
-          </div>
-          <div>
-            <span class="block text-sm font-medium text-gray-900 dark:text-white">API Key</span>
-            <span class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.accounts.types.upstreamDesc') }}</span>
-          </div>
+        <div class="mt-2 grid grid-cols-2 gap-3">
+          <!-- 通用 API Key -->
+          <button
+            type="button"
+            @click="canvasVendor = ''"
+            :class="[
+              'flex items-center gap-3 rounded-lg border-2 p-3 text-left transition-all',
+              canvasVendor === ''
+                ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                : 'border-gray-200 hover:border-purple-300 dark:border-dark-600 dark:hover:border-purple-700'
+            ]"
+          >
+            <div :class="['flex h-8 w-8 shrink-0 items-center justify-center rounded-lg', canvasVendor === '' ? 'bg-purple-500 text-white' : 'bg-gray-100 text-gray-500 dark:bg-dark-600 dark:text-gray-400']">
+              <Icon name="key" size="sm" />
+            </div>
+            <div>
+              <span class="block text-sm font-medium text-gray-900 dark:text-white">API Key</span>
+              <span class="text-xs text-gray-500 dark:text-gray-400">{{ t('admin.accounts.types.upstreamDesc') }}</span>
+            </div>
+          </button>
+          <!-- AVI2API 专用 -->
+          <button
+            type="button"
+            @click="canvasVendor = 'avi2api'"
+            :class="[
+              'flex items-center gap-3 rounded-lg border-2 p-3 text-left transition-all',
+              canvasVendor === 'avi2api'
+                ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                : 'border-gray-200 hover:border-purple-300 dark:border-dark-600 dark:hover:border-purple-700'
+            ]"
+          >
+            <div :class="['flex h-8 w-8 shrink-0 items-center justify-center rounded-lg', canvasVendor === 'avi2api' ? 'bg-purple-500 text-white' : 'bg-gray-100 text-gray-500 dark:bg-dark-600 dark:text-gray-400']">
+              <Icon name="play" size="sm" />
+            </div>
+            <div>
+              <span class="block text-sm font-medium text-gray-900 dark:text-white">AVI2API</span>
+              <span class="text-xs text-gray-500 dark:text-gray-400">图像 + 视频 + 音频生成</span>
+            </div>
+          </button>
         </div>
-
-        <!-- 上游子类型（vendor）：原生即梦 / AIV2API -->
-        <label class="input-label mt-4">{{ t('admin.accounts.jimeng.vendorLabel') }}</label>
-        <select v-model="jimengVendor" class="input mt-2">
-          <option value="">{{ t('admin.accounts.jimeng.vendorNative') }}</option>
-          <option value="leonardo">{{ t('admin.accounts.jimeng.vendorLeonardo') }}</option>
-        </select>
-
-        <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-          {{ jimengVendor === 'leonardo' ? t('admin.accounts.jimeng.vendorLeonardoHint') : t('admin.accounts.jimeng.apiKeyHint') }}
-        </p>
       </div>
 
       <!-- Account Type Selection (Gemini) -->
@@ -1163,7 +1183,7 @@
                 ? 'https://api.openai.com'
                 : form.platform === 'gemini'
                   ? 'https://generativelanguage.googleapis.com'
-                  : form.platform === 'jimeng'
+                  : form.platform === 'canvas'
                     ? 'https://api.example.com/v1'
                   : form.platform === 'grok'
                     ? 'https://api.x.ai/v1'
@@ -1189,7 +1209,7 @@
                 ? 'sk-proj-...'
                 : form.platform === 'gemini'
                   ? 'AIza...'
-                  : form.platform === 'jimeng'
+                  : form.platform === 'canvas'
                     ? 'sk-...'
                   : form.platform === 'grok'
                     ? 'xai-...'
@@ -3688,7 +3708,7 @@ const baseUrlHint = computed(() => {
   if (form.platform === 'openai') return t('admin.accounts.openai.baseUrlHint')
   if (form.platform === 'gemini') return t('admin.accounts.gemini.baseUrlHint')
   if (form.platform === 'grok') return ''
-  if (form.platform === 'jimeng') return t('admin.accounts.jimeng.baseUrlHint')
+  if (form.platform === 'canvas') return t('admin.accounts.canvas.baseUrlHint')
   return t('admin.accounts.baseUrlHint')
 })
 
@@ -3696,7 +3716,7 @@ const apiKeyHint = computed(() => {
   if (form.platform === 'openai') return t('admin.accounts.openai.apiKeyHint')
   if (form.platform === 'gemini') return t('admin.accounts.gemini.apiKeyHint')
   if (form.platform === 'grok') return ''
-  if (form.platform === 'jimeng') return t('admin.accounts.jimeng.apiKeyHint')
+  if (form.platform === 'canvas') return t('admin.accounts.canvas.apiKeyHint')
   return t('admin.accounts.apiKeyHint')
 })
 
@@ -3777,8 +3797,7 @@ const accountCategory = ref<'oauth-based' | 'apikey' | 'bedrock' | 'service_acco
 const addMethod = ref<AddMethod>('oauth') // For oauth-based: 'oauth' or 'setup-token'
 const apiKeyBaseUrl = ref('https://api.anthropic.com')
 const apiKeyValue = ref('')
-// 即梦 vendor 子类型：'' = 原生即梦上游；'leonardo' = AIV2API 上游（图像 + 异步视频 + 音频）
-const jimengVendor = ref<'' | 'leonardo'>('')
+const canvasVendor = ref('avi2api')
 const upstreamBillingAutoProbeEnabled = ref(true)
 
 const syncPreviewCredentials = computed(() => {
@@ -4176,8 +4195,8 @@ const isOAuthFlow = computed(() => {
   if (form.platform === 'anthropic' && accountCategory.value === 'bedrock') {
     return false
   }
-  // 即梦仅支持 api_key，不需要 OAuth 流程
-  if (form.platform === 'jimeng') {
+  // Canvas仅支持 api_key，不需要 OAuth 流程
+  if (form.platform === 'canvas') {
     return false
   }
   return accountCategory.value === 'oauth-based'
@@ -4247,7 +4266,7 @@ watch(
   [accountCategory, addMethod, antigravityAccountType, () => form.platform],
   ([category, method, agType]) => {
     // Jimeng 仅支持 api_key 第三方端点
-    if (form.platform === 'jimeng') {
+    if (form.platform === 'canvas') {
       form.type = 'apikey'
       return
     }
@@ -4284,7 +4303,7 @@ watch(
           ? 'https://generativelanguage.googleapis.com'
           : newPlatform === 'grok'
             ? 'https://api.x.ai/v1'
-            : newPlatform === 'jimeng'
+            : newPlatform === 'canvas'
               ? ''
               : 'https://api.anthropic.com'
     // Clear model-related settings
@@ -4729,7 +4748,7 @@ const resetForm = () => {
   addMethod.value = 'oauth'
   apiKeyBaseUrl.value = 'https://api.anthropic.com'
   apiKeyValue.value = ''
-  jimengVendor.value = ''
+  canvasVendor.value = 'avi2api'
   upstreamBillingAutoProbeEnabled.value = true
   editQuotaLimit.value = null
   editQuotaDailyLimit.value = null
@@ -5181,11 +5200,11 @@ const handleSubmit = async () => {
   if (form.platform === 'gemini') {
     credentials.tier_id = geminiTierAIStudio.value
   }
-  // 即梦上游子类型（vendor）：'leonardo' 走 AIV2API（图像 + 视频 + 音频），
-  // 空串为原生即梦。对外仍伪装为 platform=jimeng，仅在 credentials.vendor 区分。
-  if (form.platform === 'jimeng' && jimengVendor.value) {
-    credentials.vendor = jimengVendor.value
+  // Canvas 平台上游子类型（vendor），未来新增上游时在此追加
+  if (form.platform === 'canvas' && canvasVendor.value) {
+    credentials.vendor = canvasVendor.value
   }
+
 
   // Add model mapping if configured（OpenAI 开启自动透传时不应用）
   if (!isOpenAIModelRestrictionDisabled.value) {

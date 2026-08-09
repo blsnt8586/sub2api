@@ -263,11 +263,11 @@ func providerFromEnt(e *ent.Sub2APIProvider) *Provider {
 	accountsCount := len(e.Edges.Accounts)
 
 	return &Provider{
-		ID:           e.ID,
-		Name:         e.Name,
-		BaseURL:      e.BaseURL,
-		ProviderType: e.ProviderType,
-		Status:       e.Status,
+		ID:             e.ID,
+		Name:           e.Name,
+		BaseURL:        e.BaseURL,
+		ProviderType:   e.ProviderType,
+		Status:         e.Status,
 		Notes:          e.Notes,
 		Email:          e.Email,
 		Password:       e.PasswordEncrypted, // 阶段1明文，阶段7会解密
@@ -533,19 +533,19 @@ func (s *Sub2APIProviderService) UnlinkAccount(
 
 // LinkedAccountInfo 关联账号的详细信息（含远端分组缓存）
 type LinkedAccountInfo struct {
-	ID                    int64    `json:"id"`
-	Name                  string   `json:"name"`
-	Platform              string   `json:"platform"`
-	Status                string   `json:"status"`
-	ProviderID            int64    `json:"provider_id"`
-	ProviderAPIKeyID      *int64   `json:"provider_api_key_id,omitempty"`
-	RemoteGroupName       *string  `json:"remote_group_name,omitempty"`
-	RemoteGroupMultiplier *float64 `json:"remote_group_multiplier,omitempty"`
-	RemoteGroupSyncedAt   *string  `json:"remote_group_synced_at,omitempty"`
-	Sub2APIOptimizeEnabled bool    `json:"sub2api_optimize_enabled"`
-	Sub2APIMinMultiplier  *float64 `json:"sub2api_min_multiplier,omitempty"`
-	Sub2APIMaxMultiplier  *float64 `json:"sub2api_max_multiplier,omitempty"`
-	Sub2APITestModel      *string  `json:"sub2api_test_model,omitempty"`
+	ID                     int64    `json:"id"`
+	Name                   string   `json:"name"`
+	Platform               string   `json:"platform"`
+	Status                 string   `json:"status"`
+	ProviderID             int64    `json:"provider_id"`
+	ProviderAPIKeyID       *int64   `json:"provider_api_key_id,omitempty"`
+	RemoteGroupName        *string  `json:"remote_group_name,omitempty"`
+	RemoteGroupMultiplier  *float64 `json:"remote_group_multiplier,omitempty"`
+	RemoteGroupSyncedAt    *string  `json:"remote_group_synced_at,omitempty"`
+	Sub2APIOptimizeEnabled bool     `json:"sub2api_optimize_enabled"`
+	Sub2APIMinMultiplier   *float64 `json:"sub2api_min_multiplier,omitempty"`
+	Sub2APIMaxMultiplier   *float64 `json:"sub2api_max_multiplier,omitempty"`
+	Sub2APITestModel       *string  `json:"sub2api_test_model,omitempty"`
 }
 
 // GetLinkedAccounts 返回关联到指定 Provider 的所有账号信息。
@@ -574,18 +574,18 @@ func (s *Sub2APIProviderService) GetLinkedAccounts(ctx context.Context, provider
 	for i := range accounts {
 		acc := &accounts[i]
 		info := &LinkedAccountInfo{
-			ID:                    acc.ID,
-			Name:                  acc.Name,
-			Platform:              acc.Platform,
-			Status:                acc.Status,
-			ProviderID:            providerID,
-			ProviderAPIKeyID:      acc.ProviderAPIKeyID,
-			RemoteGroupName:       acc.RemoteGroupName,
-			RemoteGroupMultiplier: acc.RemoteGroupMultiplier,
+			ID:                     acc.ID,
+			Name:                   acc.Name,
+			Platform:               acc.Platform,
+			Status:                 acc.Status,
+			ProviderID:             providerID,
+			ProviderAPIKeyID:       acc.ProviderAPIKeyID,
+			RemoteGroupName:        acc.RemoteGroupName,
+			RemoteGroupMultiplier:  acc.RemoteGroupMultiplier,
 			Sub2APIOptimizeEnabled: acc.Sub2APIOptimizeEnabled,
-			Sub2APIMinMultiplier:  acc.Sub2APIMinMultiplier,
-			Sub2APIMaxMultiplier:  acc.Sub2APIMaxMultiplier,
-			Sub2APITestModel:      acc.Sub2APITestModel,
+			Sub2APIMinMultiplier:   acc.Sub2APIMinMultiplier,
+			Sub2APIMaxMultiplier:   acc.Sub2APIMaxMultiplier,
+			Sub2APITestModel:       acc.Sub2APITestModel,
 		}
 		if acc.RemoteGroupSyncedAt != nil {
 			t := acc.RemoteGroupSyncedAt.Format("2006-01-02T15:04:05Z07:00")

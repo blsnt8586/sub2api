@@ -878,7 +878,7 @@ export default {
         gemini: 'Gemini',
         antigravity: 'Antigravity',
         grok: 'Grok',
-        jimeng: '即梦',
+        canvas: 'Canvas',
         composite: 'Composite',
       },
       saving: '保存中...',
@@ -992,7 +992,16 @@ export default {
           '视频按秒计费：费用 = 每秒价格 × 时长（1-15 秒，未指定默认 8 秒）。默认叠加当前分组有效倍率；开启独立倍率后改用视频独立倍率。',
         finalPricePreview: '最终每秒价格预览',
         notConfigured: '未配置',
-        jimengVideoBilling: {
+        hint: '配置 Canvas 视频生成的计费方式，两项均为空时使用内置默认价格（$0.05/次）',
+        perCount: '按次计费',
+        perSecond: '按秒计费',
+        priorityHint: '优先级：按秒计费 > 按次计费 > 内置默认。设置"按秒计费"后，费用 = 时长(秒) × 单价；否则费用 = 次数 × 单价。',
+        mode: '计费方式',
+        modeCount: '按次计费（$/次）',
+        modeSecond: '按秒计费（$/秒）',
+        modeHintCount: '费用 = 生成次数 × 单价。留空则用内置默认价 $0.05/次。',
+        modeHintSecond: '费用 = 视频时长(秒) × 单价。时长取自请求的 duration，缺失时用模型默认时长（4~8 秒不等）。留空则回落到按次默认价 $0.05/次。',
+        canvasVideoBilling: {
           title: '视频计费配置',
           hint: '配置即梦视频生成的计费方式，两项均为空时使用内置默认价格（$0.05/次）',
           perCount: '按次计费',
@@ -1013,6 +1022,25 @@ export default {
         audioTtsPerMillionChars: 'TTS 每百万字符价格（USD）',
         audioSttPerHour: 'STT 每小时价格（USD）',
         pricePlaceholder: '可选'
+      },
+      canvasBilling: {
+        title: 'Canvas 计费配置',
+        hint: '配置 Canvas 平台的图片和视频基础单价（全局兜底价），留空则使用内置默认值；下方"按模型定价"可对单个模型单独覆盖。',
+        videoSection: '视频基础价',
+        imageSection: '图片基础价（回退）',
+        imageFallbackHint: '留空的模型自动回退到此档位价格；设置了"按模型定价"的模型优先使用模型专属价。',
+      },
+      modelPricing: {
+        title: 'Canvas 模型定价',
+        hint: '为每个模型单独配置单价；留空则使用内置默认价，不会按 $0 计费。',
+        model: '模型',
+        videoSection: '视频模型',
+        imageSection: '图像模型',
+        unitPrice: '单价',
+        videoPriorityHint: '每个模型单独选按次或按秒，再填对应单价。切换方式会清空已填单价（同一数字在两种方式下相差近一个数量级，避免误收费）。',
+        emptyMeansFallback: '留空 = 使用内置默认价，不会按 $0 计费。',
+        clearAll: '清空全部模型定价',
+        loadFailed: '加载模型列表失败'
       },
       webSearchPricing: {
         title: 'Codex 网页搜索计费',

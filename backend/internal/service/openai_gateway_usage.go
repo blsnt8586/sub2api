@@ -320,6 +320,14 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 		videoDurationSeconds := NormalizeVideoBillingDurationSecondsOrDefault(result.VideoDurationSeconds)
 		usageLog.VideoDurationSeconds = &videoDurationSeconds
 	}
+	// canvas 视频（minimax-h3 / seedance 等）：VideoSeconds 存入 VideoDurationSeconds 供使用记录展示
+	if result != nil && result.VideoCount > 0 && !isVideoUsage {
+		usageLog.VideoCount = result.VideoCount
+		if result.VideoSeconds > 0 {
+			secs := result.VideoSeconds
+			usageLog.VideoDurationSeconds = &secs
+		}
+	}
 	if cost != nil {
 		usageLog.InputCost = cost.InputCost
 		usageLog.ImageInputCost = cost.ImageInputCost
@@ -447,7 +455,7 @@ func (s *OpenAIGatewayService) calculateOpenAIRecordUsageCost(
 	longContextBillingEnabled bool,
 ) (*CostBreakdown, error) {
 	billingModel := firstUsageBillingModel(billingModels)
-	// 视频生成（即梦 jimeng）：按秒/按次计费，优先于图片与 token 路径。
+	// 视频生成（Canvas canvas）：按秒/按次计费，优先于图片与 token 路径。
 	if result != nil && result.VideoCount > 0 && !isGrokVideoUsageResult(result, billingModels) {
 		var groupConfig *JimengVideoPriceConfig
 		if apiKey != nil && apiKey.Group != nil {

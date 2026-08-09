@@ -120,6 +120,27 @@ export async function getModelsListCandidates(
 }
 
 /**
+ * Canvas 平台可配置定价的模型，按媒体类型分类。[CUSTOM]
+ * 由后端模型注册表供给，前端不维护副本。
+ */
+export interface CanvasPricingModels {
+  video: string[]
+  image: string[]
+  audio: string[]
+}
+
+export async function getCanvasPricingModels(): Promise<CanvasPricingModels> {
+  const { data } = await apiClient.get<CanvasPricingModels>(
+    '/admin/groups/canvas-pricing-models'
+  )
+  return {
+    video: data.video || [],
+    image: data.image || [],
+    audio: data.audio || []
+  }
+}
+
+/**
  * Create new group
  * @param groupData - Group data
  * @returns Created group

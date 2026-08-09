@@ -27,9 +27,9 @@ import (
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/avi2api"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/claude"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/geminicli"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/jimeng"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/openai"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/openai_compat"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/xai"
@@ -302,25 +302,25 @@ func (s *AccountTestService) TestAccountConnection(c *gin.Context, accountID int
 		return s.routeAntigravityTest(c, account, modelID, prompt)
 	}
 
-	if account.IsJimeng() {
+	if account.IsCanvas() {
 		return s.testJimengAccountConnection(c, account, modelID, prompt)
 	}
 
 	return s.testClaudeAccountConnection(c, account, modelID)
 }
 
-// testJimengAccountConnection 测试即梦视频账号连接。
+// testJimengAccountConnection 测试Canvas视频账号连接。
 // 向 POST /v1/videos 发起一次创建任务请求，验证鉴权与接口可达性。
 // 若上游返回 task_id / id / request_id，则说明账号正常；任务无需真正等待完成。
 func (s *AccountTestService) testJimengAccountConnection(c *gin.Context, account *Account, modelID string, prompt string) error {
 	ctx := c.Request.Context()
 
-	apiKey := account.GetJimengAPIKey()
+	apiKey := account.GetCanvasAPIKey()
 	if apiKey == "" {
-		return s.sendErrorAndEnd(c, "即梦账号缺少 api_key")
+		return s.sendErrorAndEnd(c, "Canvas账号缺少 api_key")
 	}
 
-	baseURL := account.GetJimengBaseURL()
+	baseURL := account.GetCanvasBaseURL()
 	normalizedBaseURL, err := s.validateUpstreamBaseURL(baseURL)
 	if err != nil {
 		return s.sendErrorAndEnd(c, fmt.Sprintf("无效的 base URL: %s", err.Error()))
@@ -347,7 +347,7 @@ func (s *AccountTestService) testJimengAccountConnection(c *gin.Context, account
 	}
 	payloadBytes, _ := json.Marshal(payload)
 
-	videosURL, err := jimeng.BuildVideosURL(normalizedBaseURL)
+	videosURL, err := avi2api.BuildVideosGenerationsURL(normalizedBaseURL)
 	if err != nil {
 		return s.sendErrorAndEnd(c, fmt.Sprintf("构建 URL 失败: %s", err.Error()))
 	}

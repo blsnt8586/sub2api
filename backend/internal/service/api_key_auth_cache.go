@@ -84,6 +84,9 @@ type APIKeyAuthGroupSnapshot struct {
 	AudioRealtimePricePerMin        *float64                      `json:"audio_realtime_price_per_min,omitempty"`
 	AudioTTSPricePerMillionChars    *float64                      `json:"audio_tts_price_per_million_chars,omitempty"`
 	AudioSTTPricePerHour            *float64                      `json:"audio_stt_price_per_hour,omitempty"`
+	// Canvas 平台模型专属定价。计费发生在网关热路径上，若不进快照，
+	// 缓存命中的请求会全部回退到分组全局价。[CUSTOM]
+	ModelPricing                    *ModelPricingConfig           `json:"model_pricing,omitempty"`
 	ClaudeCodeOnly                  bool                          `json:"claude_code_only"`
 	FallbackGroupID                 *int64                        `json:"fallback_group_id,omitempty"`
 	FallbackGroupIDOnInvalidRequest *int64                        `json:"fallback_group_id_on_invalid_request,omitempty"`

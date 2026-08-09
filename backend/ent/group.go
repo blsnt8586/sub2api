@@ -101,6 +101,8 @@ type Group struct {
 	AudioTtsPricePerMillionChars *float64 `json:"audio_tts_price_per_million_chars,omitempty"`
 	// STT 每小时价格（USD）
 	AudioSttPricePerHour *float64 `json:"audio_stt_price_per_hour,omitempty"`
+	// Canvas 平台模型专属定价（JSONB），按模型覆盖分组全局定价
+	ModelPricing *[]byte `json:"model_pricing,omitempty"`
 	// 是否仅允许 Claude Code 客户端
 	ClaudeCodeOnly bool `json:"claude_code_only,omitempty"`
 	// 非 Claude Code 请求降级使用的分组 ID
@@ -249,7 +251,7 @@ func (*Group) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case group.FieldVideoModelPrices, group.FieldModelRouting, group.FieldSupportedModelScopes, group.FieldMessagesDispatchModelConfig, group.FieldModelsListConfig, group.FieldReasoningEffortMappings:
+		case group.FieldVideoModelPrices, group.FieldModelPricing, group.FieldModelRouting, group.FieldSupportedModelScopes, group.FieldMessagesDispatchModelConfig, group.FieldModelsListConfig, group.FieldReasoningEffortMappings:
 			values[i] = new([]byte)
 		case group.FieldPeakRateEnabled, group.FieldIsExclusive, group.FieldAllowImageGeneration, group.FieldAllowBatchImageGeneration, group.FieldImageRateIndependent, group.FieldVideoRateIndependent, group.FieldClaudeCodeOnly, group.FieldModelRoutingEnabled, group.FieldMcpXMLInject, group.FieldAllowMessagesDispatch, group.FieldAllowLive, group.FieldRequireOauthOnly, group.FieldRequirePrivacySet, group.FieldProfitControlEnabled:
 			values[i] = new(sql.NullBool)
@@ -548,6 +550,12 @@ func (_m *Group) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.AudioSttPricePerHour = new(float64)
 				*_m.AudioSttPricePerHour = value.Float64
+			}
+		case group.FieldModelPricing:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field model_pricing", values[i])
+			} else if value != nil {
+				_m.ModelPricing = value
 			}
 		case group.FieldClaudeCodeOnly:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -921,6 +929,11 @@ func (_m *Group) String() string {
 	builder.WriteString(", ")
 	if v := _m.AudioSttPricePerHour; v != nil {
 		builder.WriteString("audio_stt_price_per_hour=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.ModelPricing; v != nil {
+		builder.WriteString("model_pricing=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")

@@ -11,6 +11,7 @@ import (
 
 	"github.com/Wei-Shaw/sub2api/internal/domain"
 	"github.com/Wei-Shaw/sub2api/internal/handler/dto"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/avi2api"
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/timezone"
@@ -97,8 +98,8 @@ func NewGroupHandler(adminService service.AdminService, dashboardService *servic
 
 // CreateGroupRequest represents create group request
 type CreateGroupRequest struct {
-	Name             string             `json:"name" binding:"required"`
-	Description      string             `json:"description"`
+	Name        string `json:"name" binding:"required"`
+	Description string `json:"description"`
 	// 平台白名单不写死在 binding tag 里，由 domain.IsValidGroupPlatform 校验（见 CreateGroup）——
 	// 新增平台只改 domain.AllPlatforms 一处。
 	Platform         string             `json:"platform" binding:"omitempty"`
@@ -127,7 +128,7 @@ type CreateGroupRequest struct {
 	ImagePrice1K                    *float64                      `json:"image_price_1k"`
 	ImagePrice2K                    *float64                      `json:"image_price_2k"`
 	ImagePrice4K                    *float64                      `json:"image_price_4k"`
-	// 视频生成计费配置（即梦 jimeng 平台）[CUSTOM]
+	// 视频生成计费配置（Canvas canvas 平台）[CUSTOM]
 	VideoPricePerCount              *float64                      `json:"video_price_per_count"`
 	VideoPricePerSecond             *float64                      `json:"video_price_per_second"`
 	VideoPrice480P                  *float64                      `json:"video_price_480p"`
@@ -139,6 +140,8 @@ type CreateGroupRequest struct {
 	AudioRealtimePricePerMin        *float64                      `json:"audio_realtime_price_per_min"`
 	AudioTtsPricePerMillionChars    *float64                      `json:"audio_tts_price_per_million_chars"`
 	AudioSttPricePerHour            *float64                      `json:"audio_stt_price_per_hour"`
+	// Canvas 平台模型专属定价（按模型覆盖分组全局价）[CUSTOM]
+	ModelPricing                    *service.ModelPricingConfig   `json:"model_pricing,omitempty"`
 	ClaudeCodeOnly                  bool                          `json:"claude_code_only"`
 	FallbackGroupID                 *int64                        `json:"fallback_group_id"`
 	FallbackGroupIDOnInvalidRequest *int64                        `json:"fallback_group_id_on_invalid_request"`
@@ -168,8 +171,8 @@ type CreateGroupRequest struct {
 
 // UpdateGroupRequest represents update group request
 type UpdateGroupRequest struct {
-	Name             string             `json:"name"`
-	Description      *string            `json:"description"`
+	Name        string  `json:"name"`
+	Description *string `json:"description"`
 	// 同 CreateGroupRequest.Platform：校验走 domain.IsValidGroupPlatform（见 UpdateGroup）。
 	Platform         string             `json:"platform" binding:"omitempty"`
 	RateMultiplier   *float64           `json:"rate_multiplier"`
@@ -198,7 +201,7 @@ type UpdateGroupRequest struct {
 	ImagePrice1K                    *float64                      `json:"image_price_1k"`
 	ImagePrice2K                    *float64                      `json:"image_price_2k"`
 	ImagePrice4K                    *float64                      `json:"image_price_4k"`
-	// 视频生成计费配置（即梦 jimeng 平台）[CUSTOM]
+	// 视频生成计费配置（Canvas canvas 平台）[CUSTOM]
 	VideoPricePerCount              *float64                      `json:"video_price_per_count"`
 	VideoPricePerSecond             *float64                      `json:"video_price_per_second"`
 	VideoPrice480P                  *float64                      `json:"video_price_480p"`
@@ -210,6 +213,8 @@ type UpdateGroupRequest struct {
 	AudioRealtimePricePerMin        *float64                      `json:"audio_realtime_price_per_min"`
 	AudioTtsPricePerMillionChars    *float64                      `json:"audio_tts_price_per_million_chars"`
 	AudioSttPricePerHour            *float64                      `json:"audio_stt_price_per_hour"`
+	// Canvas 平台模型专属定价；nil 表示不修改，空对象表示清空 [CUSTOM]
+	ModelPricing                    *service.ModelPricingConfig   `json:"model_pricing,omitempty"`
 	ClaudeCodeOnly                  *bool                         `json:"claude_code_only"`
 	FallbackGroupID                 *int64                        `json:"fallback_group_id"`
 	FallbackGroupIDOnInvalidRequest *int64                        `json:"fallback_group_id_on_invalid_request"`
@@ -487,6 +492,18 @@ func (h *GroupHandler) GetModelsListCandidates(c *gin.Context) {
 	response.Success(c, gin.H{"models": models})
 }
 
+// GetCanvasPricingModels 返回 canvas 平台可配置定价的模型，按媒体类型分类。
+// 前端按模型定价的编辑器需要知道「哪些是视频模型、哪些是图像模型」，
+// 由后端注册表统一供给，避免前端维护一份会漂移的硬编码副本。
+// GET /api/v1/admin/groups/canvas-pricing-models
+func (h *GroupHandler) GetCanvasPricingModels(c *gin.Context) {
+	response.Success(c, gin.H{
+		"video": avi2api.AllVideoModels(),
+		"image": avi2api.AllImageModels(),
+		"audio": avi2api.AllAudioModels(),
+	})
+}
+
 // Create handles creating a new group
 // POST /api/v1/admin/groups
 func (h *GroupHandler) Create(c *gin.Context) {
@@ -552,6 +569,7 @@ func (h *GroupHandler) Create(c *gin.Context) {
 		AudioRealtimePricePerMin:        req.AudioRealtimePricePerMin,
 		AudioTTSPricePerMillionChars:    req.AudioTtsPricePerMillionChars,
 		AudioSTTPricePerHour:            req.AudioSttPricePerHour,
+		ModelPricing:                    req.ModelPricing, // [CUSTOM] canvas
 		ClaudeCodeOnly:                  req.ClaudeCodeOnly,
 		FallbackGroupID:                 req.FallbackGroupID,
 		FallbackGroupIDOnInvalidRequest: req.FallbackGroupIDOnInvalidRequest,
@@ -686,6 +704,7 @@ func (h *GroupHandler) Update(c *gin.Context) {
 		AudioRealtimePricePerMin:        req.AudioRealtimePricePerMin,
 		AudioTTSPricePerMillionChars:    req.AudioTtsPricePerMillionChars,
 		AudioSTTPricePerHour:            req.AudioSttPricePerHour,
+		ModelPricing:                    req.ModelPricing, // [CUSTOM] canvas
 		ClaudeCodeOnly:                  req.ClaudeCodeOnly,
 		FallbackGroupID:                 req.FallbackGroupID,
 		FallbackGroupIDOnInvalidRequest: req.FallbackGroupIDOnInvalidRequest,

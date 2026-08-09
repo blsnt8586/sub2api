@@ -1412,7 +1412,7 @@ type ImagePriceConfig struct {
 	ModelPricing *ModelPricingConfig
 }
 
-// JimengVideoPriceConfig 视频计费配置（即梦 jimeng 平台）
+// JimengVideoPriceConfig 视频计费配置（Canvas canvas 平台）
 type JimengVideoPriceConfig struct {
 	// PricePerSecond 非 nil 时优先生效：按视频时长（秒）× 单价计费。
 	// 两者均为 nil 时按内置默认 0.05 USD/次 计费。
@@ -1425,7 +1425,7 @@ type JimengVideoPriceConfig struct {
 // DefaultVideoPricePerCount 默认视频按次单价（USD），无分组配置时使用。
 const DefaultVideoPricePerCount = 0.05
 
-// CalculateJimengVideoCost 计算即梦视频生成费用。
+// CalculateJimengVideoCost 计算Canvas视频生成费用。
 //
 // model:        视频生成模型（如 "seedance-v1"，用于查找模型专属定价）。
 // videoCount:   生成的视频数量（通常为 1）。

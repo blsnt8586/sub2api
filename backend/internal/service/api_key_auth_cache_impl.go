@@ -14,7 +14,10 @@ import (
 	"github.com/dgraph-io/ristretto"
 )
 
-const apiKeyAuthSnapshotVersion = 19 // v19: group search/audio/video_model_prices billing fields (force refresh of pre-fix snapshots)
+// v20: 合并 v19(search/audio/video_model_prices) + v18(canvas model_pricing) 两批字段。
+// 必须升版本强制刷新——否则升级后 Redis 里旧快照仍被判定有效，新字段缺失会导致
+// canvas 分组/语音搜索计费一直回退到分组全局价直到缓存自然过期。[CUSTOM+upstream]
+const apiKeyAuthSnapshotVersion = 20
 
 type apiKeyAuthCacheConfig struct {
 	l1Size        int
@@ -406,6 +409,7 @@ func (s *APIKeyService) snapshotFromAPIKey(ctx context.Context, apiKey *APIKey) 
 			AudioRealtimePricePerMin:        apiKey.Group.AudioRealtimePricePerMin,
 			AudioTTSPricePerMillionChars:    apiKey.Group.AudioTTSPricePerMillionChars,
 			AudioSTTPricePerHour:            apiKey.Group.AudioSTTPricePerHour,
+			ModelPricing:                    apiKey.Group.ModelPricing, // [CUSTOM] canvas
 			ClaudeCodeOnly:                  apiKey.Group.ClaudeCodeOnly,
 			FallbackGroupID:                 apiKey.Group.FallbackGroupID,
 			FallbackGroupIDOnInvalidRequest: apiKey.Group.FallbackGroupIDOnInvalidRequest,
@@ -501,6 +505,7 @@ func (s *APIKeyService) snapshotToAPIKey(key string, snapshot *APIKeyAuthSnapsho
 			AudioRealtimePricePerMin:        snapshot.Group.AudioRealtimePricePerMin,
 			AudioTTSPricePerMillionChars:    snapshot.Group.AudioTTSPricePerMillionChars,
 			AudioSTTPricePerHour:            snapshot.Group.AudioSTTPricePerHour,
+			ModelPricing:                    snapshot.Group.ModelPricing, // [CUSTOM] canvas
 			ClaudeCodeOnly:                  snapshot.Group.ClaudeCodeOnly,
 			FallbackGroupID:                 snapshot.Group.FallbackGroupID,
 			FallbackGroupIDOnInvalidRequest: snapshot.Group.FallbackGroupIDOnInvalidRequest,

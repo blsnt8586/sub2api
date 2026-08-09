@@ -22,10 +22,10 @@ func TestSettingKeyAuthSourcePlatformQuotas(t *testing.T) {
 	}
 }
 
-// TestPlatformJimeng_Constant 验证即梦平台常量值正确。
-func TestPlatformJimeng_Constant(t *testing.T) {
-	if PlatformJimeng != "jimeng" {
-		t.Errorf("PlatformJimeng = %q, want %q", PlatformJimeng, "jimeng")
+// TestPlatformCanvas_Constant 验证即梦平台常量值正确。
+func TestPlatformCanvas_Constant(t *testing.T) {
+	if PlatformCanvas != "canvas" {
+		t.Errorf("PlatformCanvas = %q, want %q", PlatformCanvas, "canvas")
 	}
 }
 
@@ -33,19 +33,19 @@ func TestPlatformJimeng_Constant(t *testing.T) {
 func TestAllowedQuotaPlatforms_ContainsJimeng(t *testing.T) {
 	found := false
 	for _, p := range AllowedQuotaPlatforms {
-		if p == PlatformJimeng {
+		if p == PlatformCanvas {
 			found = true
 			break
 		}
 	}
 	if !found {
-		t.Errorf("AllowedQuotaPlatforms 应包含 %q，当前: %v", PlatformJimeng, AllowedQuotaPlatforms)
+		t.Errorf("AllowedQuotaPlatforms 应包含 %q，当前: %v", PlatformCanvas, AllowedQuotaPlatforms)
 	}
 }
 
 // TestIsAllowedQuotaPlatform_Jimeng 验证 IsAllowedQuotaPlatform 对即梦返回 true。
 func TestIsAllowedQuotaPlatform_Jimeng(t *testing.T) {
-	if !IsAllowedQuotaPlatform(PlatformJimeng) {
-		t.Errorf("IsAllowedQuotaPlatform(%q) = false, want true", PlatformJimeng)
+	if !IsAllowedQuotaPlatform(PlatformCanvas) {
+		t.Errorf("IsAllowedQuotaPlatform(%q) = false, want true", PlatformCanvas)
 	}
 }

@@ -13,7 +13,7 @@ export type Platform =
   | 'antigravity'
   | 'gemini'
   | 'grok'
-  | 'jimeng'
+  | 'canvas'
   | 'composite'
 
 // ── Badge (bg + text + border, for inline badges with border) ───────
@@ -23,7 +23,7 @@ const BADGE: Record<Platform, string> = {
   antigravity: 'bg-purple-500/10 text-purple-600 border-purple-500/30 dark:text-purple-400',
   gemini: 'bg-blue-500/10 text-blue-600 border-blue-500/30 dark:text-blue-400',
   grok: 'bg-zinc-800/10 text-zinc-800 border-zinc-800/30 dark:bg-zinc-500/10 dark:text-zinc-200 dark:border-zinc-500/30',
-  jimeng: 'bg-rose-500/10 text-rose-600 border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300 dark:border-rose-500/30',
+  canvas: 'bg-rose-500/10 text-rose-600 border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300 dark:border-rose-500/30',
   composite: 'bg-cyan-500/10 text-cyan-700 border-cyan-500/30 dark:text-cyan-300',
 }
 const BADGE_DEFAULT = 'bg-slate-500/10 text-slate-600 border-slate-500/30 dark:text-slate-400'
@@ -35,7 +35,7 @@ const BADGE_LIGHT: Record<Platform, string> = {
   antigravity: 'bg-purple-500/10 text-purple-600 dark:bg-purple-500/10 dark:text-purple-300',
   gemini: 'bg-blue-500/10 text-blue-600 dark:bg-blue-500/10 dark:text-blue-300',
   grok: 'bg-zinc-800/10 text-zinc-800 dark:bg-zinc-500/10 dark:text-zinc-200',
-  jimeng: 'bg-rose-500/10 text-rose-600 dark:bg-rose-500/10 dark:text-rose-300',
+  canvas: 'bg-rose-500/10 text-rose-600 dark:bg-rose-500/10 dark:text-rose-300',
   composite: 'bg-cyan-500/10 text-cyan-700 dark:bg-cyan-500/10 dark:text-cyan-300',
 }
 
@@ -46,7 +46,7 @@ const BORDER: Record<Platform, string> = {
   antigravity: 'border-purple-500/20 dark:border-purple-500/20',
   gemini: 'border-blue-500/20 dark:border-blue-500/20',
   grok: 'border-zinc-800/20 dark:border-zinc-500/20',
-  jimeng: 'border-rose-500/20 dark:border-rose-500/20',
+  canvas: 'border-rose-500/20 dark:border-rose-500/20',
   composite: 'border-cyan-500/20 dark:border-cyan-500/20',
 }
 const BORDER_DEFAULT = 'border-gray-200 dark:border-dark-700'
@@ -58,7 +58,7 @@ const BORDER_STRONG: Record<Platform, string> = {
   antigravity: 'border-purple-500/35 dark:border-purple-500/30',
   gemini: 'border-blue-500/35 dark:border-blue-500/30',
   grok: 'border-zinc-800/35 dark:border-zinc-500/35',
-  jimeng: 'border-rose-500/35 dark:border-rose-500/30', // [CUSTOM]
+  canvas: 'border-rose-500/35 dark:border-rose-500/30', // [CUSTOM]
   composite: 'border-cyan-500/35 dark:border-cyan-500/30',
 }
 const BORDER_STRONG_DEFAULT = 'border-gray-300 dark:border-dark-600'
@@ -71,7 +71,7 @@ const ACCENT: Record<Platform, string> = {
   antigravity: '#a855f7', // purple-500
   gemini: '#3b82f6', // blue-500
   grok: '#71717a', // zinc-500
-  jimeng: '#f43f5e', // rose-500 [CUSTOM]
+  canvas: '#f43f5e', // rose-500 [CUSTOM]
   composite: '#06b6d4', // cyan-500
 }
 const ACCENT_DEFAULT = '#14b8a6' // primary-500 (teal)
@@ -83,7 +83,7 @@ const ACCENT_BAR: Record<Platform, string> = {
   antigravity: 'bg-gradient-to-r from-purple-400 to-purple-500',
   gemini: 'bg-gradient-to-r from-blue-400 to-blue-500',
   grok: 'bg-gradient-to-r from-zinc-700 to-zinc-900',
-  jimeng: 'bg-gradient-to-r from-rose-400 to-rose-500',
+  canvas: 'bg-gradient-to-r from-rose-400 to-rose-500',
   composite: 'bg-gradient-to-r from-slate-500 to-cyan-500',
 }
 const ACCENT_BAR_DEFAULT = 'bg-gradient-to-r from-primary-400 to-primary-500'
@@ -95,7 +95,7 @@ const TEXT: Record<Platform, string> = {
   antigravity: 'text-purple-600 dark:text-purple-400',
   gemini: 'text-blue-600 dark:text-blue-400',
   grok: 'text-zinc-800 dark:text-zinc-200',
-  jimeng: 'text-rose-600 dark:text-rose-400',
+  canvas: 'text-rose-600 dark:text-rose-400',
   composite: 'text-cyan-700 dark:text-cyan-300',
 }
 const TEXT_DEFAULT = 'text-primary-600 dark:text-primary-400'
@@ -107,7 +107,7 @@ const TEXT_STRONG: Record<Platform, string> = {
   antigravity: 'text-purple-700 dark:text-purple-400',
   gemini: 'text-blue-700 dark:text-blue-400',
   grok: 'text-zinc-700 dark:text-zinc-300',
-  jimeng: 'text-rose-700 dark:text-rose-400',
+  canvas: 'text-rose-700 dark:text-rose-400',
   composite: 'text-cyan-700 dark:text-cyan-300',
 }
 const TEXT_STRONG_DEFAULT = 'text-blue-700 dark:text-blue-400'
@@ -119,7 +119,7 @@ const ICON: Record<Platform, string> = {
   antigravity: 'text-purple-500 dark:text-purple-400',
   gemini: 'text-blue-500 dark:text-blue-400',
   grok: 'text-zinc-800 dark:text-zinc-200',
-  jimeng: 'text-rose-500 dark:text-rose-400',
+  canvas: 'text-rose-500 dark:text-rose-400',
   composite: 'text-cyan-600 dark:text-cyan-300',
 }
 const ICON_DEFAULT = 'text-primary-500 dark:text-primary-400'
@@ -131,7 +131,7 @@ const BUTTON: Record<Platform, string> = {
   antigravity: 'bg-purple-500 text-white hover:bg-purple-600 active:bg-purple-700 dark:bg-purple-500/80 dark:hover:bg-purple-500',
   gemini: 'bg-blue-500 text-white hover:bg-blue-600 active:bg-blue-700 dark:bg-blue-500/80 dark:hover:bg-blue-500',
   grok: 'bg-zinc-800 text-white hover:bg-zinc-900 active:bg-black dark:bg-zinc-700 dark:hover:bg-zinc-600',
-  jimeng: 'bg-rose-500 text-white hover:bg-rose-600 active:bg-rose-700 dark:bg-rose-500/80 dark:hover:bg-rose-500',
+  canvas: 'bg-rose-500 text-white hover:bg-rose-600 active:bg-rose-700 dark:bg-rose-500/80 dark:hover:bg-rose-500',
   composite: 'bg-cyan-700 text-white hover:bg-cyan-800 active:bg-cyan-900 dark:bg-cyan-600 dark:hover:bg-cyan-500',
 }
 const BUTTON_DEFAULT = 'bg-primary-500 text-white hover:bg-primary-600 dark:bg-primary-600 dark:hover:bg-primary-500'
@@ -143,7 +143,7 @@ const DISCOUNT: Record<Platform, string> = {
   antigravity: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300',
   gemini: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
   grok: 'bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200',
-  jimeng: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300',
+  canvas: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300',
   composite: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-300',
 }
 const DISCOUNT_DEFAULT = 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
@@ -155,7 +155,7 @@ const TAG: Record<Platform, string> = {
   antigravity: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
   gemini: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
   grok: 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300',
-  jimeng: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
+  canvas: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
   composite: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',
 }
 const TAG_DEFAULT = 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400'
@@ -167,7 +167,7 @@ const TAG_SOFT: Record<Platform, string> = {
   antigravity: 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400',
   gemini: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
   grok: 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300',
-  jimeng: 'bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400',
+  canvas: 'bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400',
   composite: 'bg-cyan-100 text-cyan-600 dark:bg-cyan-900/30 dark:text-cyan-400',
 }
 const TAG_SOFT_DEFAULT = 'bg-gray-100 text-gray-600 dark:bg-gray-900/30 dark:text-gray-400'
@@ -180,7 +180,7 @@ const BADGE_STANDARD: Record<Platform, string> = {
   antigravity: 'bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-900/20 dark:text-fuchsia-400',
   gemini: 'bg-sky-50 text-sky-700 dark:bg-sky-900/20 dark:text-sky-400',
   grok: 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200',
-  jimeng: 'bg-rose-50 text-rose-700 dark:bg-rose-900/20 dark:text-rose-400',
+  canvas: 'bg-rose-50 text-rose-700 dark:bg-rose-900/20 dark:text-rose-400',
   composite: 'bg-cyan-50 text-cyan-800 dark:bg-cyan-900/20 dark:text-cyan-300',
 }
 const BADGE_STANDARD_DEFAULT = 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
@@ -192,20 +192,20 @@ const LABEL_SUBSCRIPTION: Record<Platform, string> = {
   antigravity: 'bg-purple-200/60 text-purple-800 dark:bg-purple-800/40 dark:text-purple-300',
   gemini: 'bg-blue-200/60 text-blue-800 dark:bg-blue-800/40 dark:text-blue-300',
   grok: 'bg-zinc-300/70 text-zinc-800 dark:bg-zinc-700/60 dark:text-zinc-200',
-  jimeng: 'bg-pink-200/60 text-pink-800 dark:bg-pink-800/40 dark:text-pink-300',
+  canvas: 'bg-pink-200/60 text-pink-800 dark:bg-pink-800/40 dark:text-pink-300',
   composite: 'bg-cyan-200/70 text-cyan-900 dark:bg-cyan-900/50 dark:text-cyan-300',
 }
 const LABEL_SUBSCRIPTION_DEFAULT = 'bg-violet-200/60 text-violet-800 dark:bg-violet-800/40 dark:text-violet-300'
 
 // ── Badge subscription variant (bg-100，用于 GroupBadge subscription 类型主徽章) ──
-// 注意 grok/jimeng 与 TAG 色系略有差异（grok 更深，jimeng 用 pink）
+// 注意 grok/canvas 与 TAG 色系略有差异（grok 更深，canvas 用 pink）
 const BADGE_SUBSCRIPTION: Record<Platform, string> = {
   anthropic: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
   openai: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
   antigravity: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
   gemini: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
   grok: 'bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-100',
-  jimeng: 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400',
+  canvas: 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400',
   composite: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-300',
 }
 const BADGE_SUBSCRIPTION_DEFAULT = 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400'
@@ -217,7 +217,7 @@ const GRADIENT: Record<Platform, string> = {
   antigravity: 'from-purple-500 to-purple-600',
   gemini: 'from-blue-500 to-blue-600',
   grok: 'from-zinc-700 to-zinc-900',
-  jimeng: 'from-rose-500 to-rose-600',
+  canvas: 'from-rose-500 to-rose-600',
   composite: 'from-slate-600 to-cyan-600',
 }
 const GRADIENT_DEFAULT = 'from-primary-500 to-primary-600'
@@ -229,7 +229,7 @@ const GRADIENT_TEXT: Record<Platform, string> = {
   antigravity: 'text-purple-100',
   gemini: 'text-blue-100',
   grok: 'text-zinc-100',
-  jimeng: 'text-rose-100',
+  canvas: 'text-rose-100',
   composite: 'text-cyan-100',
 }
 const GRADIENT_TEXT_DEFAULT = 'text-primary-100'
@@ -240,7 +240,7 @@ const GRADIENT_SUBTEXT: Record<Platform, string> = {
   antigravity: 'text-purple-200',
   gemini: 'text-blue-200',
   grok: 'text-zinc-300',
-  jimeng: 'text-rose-200',
+  canvas: 'text-rose-200',
   composite: 'text-cyan-200',
 }
 const GRADIENT_SUBTEXT_DEFAULT = 'text-primary-200'
@@ -254,7 +254,7 @@ function isPlatform(p: string): p is Platform {
     p === 'antigravity' ||
     p === 'gemini' ||
     p === 'grok' ||
-    p === 'jimeng' ||
+    p === 'canvas' ||
     p === 'composite'
   )
 }
@@ -348,7 +348,7 @@ export function platformLabel(p: string): string {
     case 'antigravity': return 'Antigravity'
     case 'gemini': return 'Gemini'
     case 'grok': return 'Grok'
-    case 'jimeng': return '即梦'
+    case 'canvas': return 'Canvas'
     case 'composite': return 'Composite'
     default: return p || 'API'
   }
@@ -366,7 +366,7 @@ export const ALL_PLATFORMS: Platform[] = [
   'gemini',
   'antigravity',
   'grok',
-  'jimeng',
+  'canvas',
 ]
 
 // PlatformSelectOption 是下拉/筛选组件使用的 { value, label } 结构。

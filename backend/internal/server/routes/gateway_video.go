@@ -45,8 +45,8 @@ func registerVideoRoutes(
 		switch getGroupPlatform(c) {
 		case service.PlatformGrok:
 			h.OpenAIGateway.GrokVideoGeneration(c)
-		case service.PlatformJimeng:
-			h.OpenAIGateway.JimengVideoCreation(c)
+		case service.PlatformCanvas:
+			h.OpenAIGateway.CanvasVideoCreation(c)
 		default:
 			videoUnsupported(c)
 		}
@@ -77,8 +77,8 @@ func registerVideoRoutes(
 		switch getGroupPlatform(c) {
 		case service.PlatformGrok, service.PlatformComposite:
 			h.OpenAIGateway.GrokVideoStatus(c)
-		case service.PlatformJimeng:
-			h.OpenAIGateway.JimengVideoStatus(c)
+		case service.PlatformCanvas:
+			h.OpenAIGateway.CanvasVideoStatus(c)
 		default:
 			videoUnsupported(c)
 		}
@@ -91,8 +91,7 @@ func registerVideoRoutes(
 		switch getGroupPlatform(c) {
 		case service.PlatformGrok, service.PlatformComposite:
 			h.OpenAIGateway.GrokVideoContent(c)
-		case service.PlatformJimeng:
-			h.OpenAIGateway.JimengVideoContent(c)
+		// Canvas 无独立视频下载接口（视频 URL 已在状态响应里返回）；显式落到 unsupported。[CUSTOM]
 		default:
 			videoUnsupported(c)
 		}
@@ -100,8 +99,8 @@ func registerVideoRoutes(
 
 	// videoCancelHandler 处理 POST /v1/videos/{id}/cancel（即梦 Leonardo vendor 专用）。[CUSTOM]
 	videoCancelHandler := func(c *gin.Context) {
-		if getGroupPlatform(c) == service.PlatformJimeng {
-			h.OpenAIGateway.JimengVideoCancel(c)
+		if getGroupPlatform(c) == service.PlatformCanvas {
+			h.OpenAIGateway.CanvasVideoCancel(c)
 			return
 		}
 		videoUnsupported(c)
@@ -111,19 +110,19 @@ func registerVideoRoutes(
 	// infinite-canvas 等客户端对含 "seedance" 的模型走此路径；body 在 handler 层自动转换成
 	// AIV2API 风格后沿 jimeng 通道转发。仅限 jimeng 平台。[CUSTOM]
 	seedanceTasksHandler := func(c *gin.Context) {
-		if getGroupPlatform(c) == service.PlatformJimeng {
-			h.OpenAIGateway.JimengVideoCreation(c)
+		if getGroupPlatform(c) == service.PlatformCanvas {
+			h.OpenAIGateway.CanvasVideoCreation(c)
 			return
 		}
 		videoUnsupported(c)
 	}
 
 	// seedanceTaskStatusHandler 处理 GET /v1/contents/generations/tasks/{id}（Seedance 状态查询）。
-	// 复用 jimeng 状态处理器；normalizeJimengVideoResponse 已补入 content.video_url，
+	// 复用 canvas 状态处理器；normalizeCanvasVideoResponse 已补入 content.video_url，
 	// 使 infinite-canvas 的 Seedance 轮询路径能正确提取到视频 URL。[CUSTOM]
 	seedanceTaskStatusHandler := func(c *gin.Context) {
-		if getGroupPlatform(c) == service.PlatformJimeng {
-			h.OpenAIGateway.JimengVideoStatus(c)
+		if getGroupPlatform(c) == service.PlatformCanvas {
+			h.OpenAIGateway.CanvasVideoStatus(c)
 			return
 		}
 		videoUnsupported(c)

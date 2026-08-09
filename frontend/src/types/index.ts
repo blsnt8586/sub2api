@@ -525,7 +525,7 @@ export interface PaginationConfig {
 
 // ==================== API Key & Group Types ====================
 
-export type GroupPlatform = 'anthropic' | 'openai' | 'gemini' | 'antigravity' | 'grok' | 'composite' | 'jimeng' // [CUSTOM] jimeng added
+export type GroupPlatform = 'anthropic' | 'openai' | 'gemini' | 'antigravity' | 'grok' | 'composite' | 'canvas' // [CUSTOM] canvas added
 
 export type VideoModelPrices = Record<string, Record<string, number>>
 
@@ -541,6 +541,25 @@ export interface OpenAIMessagesDispatchModelConfig {
 export interface ReasoningEffortMapping {
   from: string
   to: string
+}
+
+// Canvas 平台按模型定价配置 [CUSTOM]
+// 后端存 groups.model_pricing (JSONB)，key 为模型名。
+// 优先级：模型专属价 > 分组全局价 > 系统默认价。
+export interface ModelVideoPricing {
+  per_count?: number | null
+  per_second?: number | null
+}
+
+export interface ModelImagePricing {
+  '1k'?: number | null
+  '2k'?: number | null
+  '4k'?: number | null
+}
+
+export interface ModelPricingConfig {
+  video?: Record<string, ModelVideoPricing>
+  image?: Record<string, ModelImagePricing>
 }
 
 export interface Group {
@@ -577,6 +596,8 @@ export interface Group {
   video_price_per_count: number | null  // [CUSTOM]
   // Optional model-family x resolution overrides for Grok video pricing.
   video_model_prices?: VideoModelPrices
+  // Canvas 平台按模型定价；null 表示所有模型走上面的分组全局价 [CUSTOM]
+  model_pricing?: ModelPricingConfig | null
   // Codex 网页搜索单次价格（USD/次）；null 表示使用默认价 0.01
   web_search_price_per_call: number | null
   // Grok Voice 显式定价（分组级）
@@ -878,7 +899,7 @@ export interface UpdateGroupRequest {
 
 // ==================== Account & Proxy Types ====================
 
-export type AccountPlatform = 'anthropic' | 'openai' | 'gemini' | 'antigravity' | 'grok' | 'jimeng' // [CUSTOM] jimeng added
+export type AccountPlatform = 'anthropic' | 'openai' | 'gemini' | 'antigravity' | 'grok' | 'canvas' // [CUSTOM] canvas added
 export type AccountType = 'oauth' | 'setup-token' | 'apikey' | 'upstream' | 'bedrock' | 'service_account'
 export type OAuthAddMethod = 'oauth' | 'setup-token'
 export type ProxyProtocol = 'http' | 'https' | 'socks5' | 'socks5h'
@@ -1661,6 +1682,10 @@ export interface UsageLog {
   image_input_cost: number
   image_output_tokens: number
   image_output_cost: number
+
+  // 视频生成字段
+  video_count: number
+  video_duration_seconds: number | null
 
   // User-Agent
   user_agent: string | null

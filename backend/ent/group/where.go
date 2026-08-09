@@ -255,6 +255,11 @@ func AudioSttPricePerHour(v float64) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldAudioSttPricePerHour, v))
 }
 
+// ModelPricing applies equality check predicate on the "model_pricing" field. It's identical to ModelPricingEQ.
+func ModelPricing(v []byte) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldModelPricing, v))
+}
+
 // ClaudeCodeOnly applies equality check predicate on the "claude_code_only" field. It's identical to ClaudeCodeOnlyEQ.
 func ClaudeCodeOnly(v bool) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldClaudeCodeOnly, v))
@@ -2153,6 +2158,56 @@ func AudioSttPricePerHourIsNil() predicate.Group {
 // AudioSttPricePerHourNotNil applies the NotNil predicate on the "audio_stt_price_per_hour" field.
 func AudioSttPricePerHourNotNil() predicate.Group {
 	return predicate.Group(sql.FieldNotNull(FieldAudioSttPricePerHour))
+}
+
+// ModelPricingEQ applies the EQ predicate on the "model_pricing" field.
+func ModelPricingEQ(v []byte) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldModelPricing, v))
+}
+
+// ModelPricingNEQ applies the NEQ predicate on the "model_pricing" field.
+func ModelPricingNEQ(v []byte) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldModelPricing, v))
+}
+
+// ModelPricingIn applies the In predicate on the "model_pricing" field.
+func ModelPricingIn(vs ...[]byte) predicate.Group {
+	return predicate.Group(sql.FieldIn(FieldModelPricing, vs...))
+}
+
+// ModelPricingNotIn applies the NotIn predicate on the "model_pricing" field.
+func ModelPricingNotIn(vs ...[]byte) predicate.Group {
+	return predicate.Group(sql.FieldNotIn(FieldModelPricing, vs...))
+}
+
+// ModelPricingGT applies the GT predicate on the "model_pricing" field.
+func ModelPricingGT(v []byte) predicate.Group {
+	return predicate.Group(sql.FieldGT(FieldModelPricing, v))
+}
+
+// ModelPricingGTE applies the GTE predicate on the "model_pricing" field.
+func ModelPricingGTE(v []byte) predicate.Group {
+	return predicate.Group(sql.FieldGTE(FieldModelPricing, v))
+}
+
+// ModelPricingLT applies the LT predicate on the "model_pricing" field.
+func ModelPricingLT(v []byte) predicate.Group {
+	return predicate.Group(sql.FieldLT(FieldModelPricing, v))
+}
+
+// ModelPricingLTE applies the LTE predicate on the "model_pricing" field.
+func ModelPricingLTE(v []byte) predicate.Group {
+	return predicate.Group(sql.FieldLTE(FieldModelPricing, v))
+}
+
+// ModelPricingIsNil applies the IsNil predicate on the "model_pricing" field.
+func ModelPricingIsNil() predicate.Group {
+	return predicate.Group(sql.FieldIsNull(FieldModelPricing))
+}
+
+// ModelPricingNotNil applies the NotNil predicate on the "model_pricing" field.
+func ModelPricingNotNil() predicate.Group {
+	return predicate.Group(sql.FieldNotNull(FieldModelPricing))
 }
 
 // ClaudeCodeOnlyEQ applies the EQ predicate on the "claude_code_only" field.

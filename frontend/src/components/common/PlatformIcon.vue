@@ -26,7 +26,7 @@
     />
   </svg>
   <!-- Jimeng logo (video / film clapper) -->
-  <svg v-else-if="platform === 'jimeng'" :class="sizeClass" viewBox="0 0 24 24" fill="currentColor">
+  <svg v-else-if="platform === 'canvas'" :class="sizeClass" viewBox="0 0 24 24" fill="currentColor">
     <path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm5.5 4.5v7l6-3.5-6-3.5z" />
   </svg>
 

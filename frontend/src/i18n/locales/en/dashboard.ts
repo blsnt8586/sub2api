@@ -380,6 +380,8 @@ export default {
     exportExcelSuccess: 'Usage data exported successfully (Excel format)',
     exportExcelFailed: 'Failed to export usage data',
     imageUnit: ' images',
+    videoUnit: ' videos',
+    secondsUnit: 's',
     userAgent: 'User-Agent',
     ipGeo: {
       fetch: 'Fetch region',

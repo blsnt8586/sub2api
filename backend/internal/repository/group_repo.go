@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
@@ -124,6 +125,15 @@ func createGroupRecord(ctx context.Context, client *dbent.Client, groupIn *servi
 
 	// 设置支持的模型系列（始终设置，空数组表示不限制）
 	builder = builder.SetSupportedModelScopes(groupIn.SupportedModelScopes)
+
+	// canvas 模型专属定价（JSONB）；空配置留 NULL
+	if groupIn.ModelPricing != nil && (len(groupIn.ModelPricing.Video) > 0 || len(groupIn.ModelPricing.Image) > 0) {
+		pricingBytes, err := json.Marshal(groupIn.ModelPricing)
+		if err != nil {
+			return fmt.Errorf("serialize model_pricing: %w", err)
+		}
+		builder = builder.SetModelPricing(pricingBytes)
+	}
 
 	created, err := builder.Save(ctx)
 	if err != nil {
@@ -390,6 +400,20 @@ func (r *groupRepository) Update(ctx context.Context, groupIn *service.Group) er
 
 	// 处理 SupportedModelScopes（始终设置，空数组表示不限制）
 	builder = builder.SetSupportedModelScopes(groupIn.SupportedModelScopes)
+
+	// canvas 模型专属定价（JSONB），nil 表示不修改。
+	// 空配置写 NULL 而不是 {}，避免 DB 里堆积无意义的空对象。
+	if groupIn.ModelPricing != nil {
+		if len(groupIn.ModelPricing.Video) == 0 && len(groupIn.ModelPricing.Image) == 0 {
+			builder = builder.ClearModelPricing()
+		} else {
+			pricingBytes, err := json.Marshal(groupIn.ModelPricing)
+			if err != nil {
+				return fmt.Errorf("serialize model_pricing: %w", err)
+			}
+			builder = builder.SetModelPricing(pricingBytes)
+		}
+	}
 
 	updated, err := builder.Save(ctx)
 	if err != nil {

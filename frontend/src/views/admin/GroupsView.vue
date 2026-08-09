@@ -146,7 +146,7 @@
                       ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
                       : value === 'grok'
                         ? 'bg-zinc-200 text-zinc-800 dark:bg-zinc-700 dark:text-zinc-100'
-                        : value === 'jimeng'
+                        : value === 'canvas'
                           ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300'
                           : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
               ]"
@@ -1008,47 +1008,15 @@
             </div>
           </div>
           <p
-            v-else-if="createForm.platform !== 'gemini'"
+            v-else-if="createForm.platform !== 'gemini' && createForm.platform !== 'canvas'"
             class="mt-4 border-t border-dashed border-gray-200 pt-4 text-xs text-gray-500 dark:border-dark-700 dark:text-gray-400"
           >
             {{ t("admin.groups.imagePricing.batchGeminiOnlyHint") }}
           </p>
         </div>
-        <!-- 视频计费配置（即梦 jimeng 平台） -->
-        <div class="form-group" v-if="createForm.platform === 'jimeng'">
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            {{ t("admin.groups.videoPricing.title") }}
-          </label>
-          <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">
-            {{ t("admin.groups.videoPricing.hint") }}
-          </p>
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="input-label">{{ t("admin.groups.videoPricing.perCount") }} ($/次)</label>
-              <input
-                v-model.number="createForm.video_price_per_count"
-                type="number"
-                step="0.001"
-                min="0"
-                class="input"
-                placeholder="0.05"
-              />
-            </div>
-            <div>
-              <label class="input-label">{{ t("admin.groups.videoPricing.perSecond") }} ($/秒)</label>
-              <input
-                v-model.number="createForm.video_price_per_second"
-                type="number"
-                step="0.0001"
-                min="0"
-                class="input"
-                placeholder="0.01"
-              />
-            </div>
-          </div>
-          <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-            {{ t("admin.groups.videoPricing.priorityHint") }}
-          </p>
+        <!-- Canvas 计费配置（仅 canvas 平台）：按模型定价 -->
+        <div class="form-group" v-if="createForm.platform === 'canvas'">
+          <CanvasModelPricingEditor v-model="createForm.model_pricing" />
         </div>
 
         <!-- 视频生成计费配置（仅 Grok 平台） -->
@@ -2751,47 +2719,15 @@
             </div>
           </div>
           <p
-            v-else-if="editForm.platform !== 'gemini'"
+            v-else-if="editForm.platform !== 'gemini' && editForm.platform !== 'canvas'"
             class="mt-4 border-t border-dashed border-gray-200 pt-4 text-xs text-gray-500 dark:border-dark-700 dark:text-gray-400"
           >
             {{ t("admin.groups.imagePricing.batchGeminiOnlyHint") }}
           </p>
         </div>
-        <!-- 视频计费配置（即梦 jimeng 平台） -->
-        <div class="form-group" v-if="editForm.platform === 'jimeng'">
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            {{ t("admin.groups.videoPricing.title") }}
-          </label>
-          <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">
-            {{ t("admin.groups.videoPricing.hint") }}
-          </p>
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="input-label">{{ t("admin.groups.videoPricing.perCount") }} ($/次)</label>
-              <input
-                v-model.number="editForm.video_price_per_count"
-                type="number"
-                step="0.001"
-                min="0"
-                class="input"
-                placeholder="0.05"
-              />
-            </div>
-            <div>
-              <label class="input-label">{{ t("admin.groups.videoPricing.perSecond") }} ($/秒)</label>
-              <input
-                v-model.number="editForm.video_price_per_second"
-                type="number"
-                step="0.0001"
-                min="0"
-                class="input"
-                placeholder="0.01"
-              />
-            </div>
-          </div>
-          <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-            {{ t("admin.groups.videoPricing.priorityHint") }}
-          </p>
+        <!-- Canvas 计费配置（仅 canvas 平台）：按模型定价 -->
+        <div class="form-group" v-if="editForm.platform === 'canvas'">
+          <CanvasModelPricingEditor v-model="editForm.model_pricing" />
         </div>
 
         <!-- 视频生成计费配置（仅 Grok 平台） -->
@@ -4434,6 +4370,7 @@ import type {
   CompositeRouteEndpoint,
   CompositeRouteMatchType,
   GroupPlatform,
+  ModelPricingConfig,
   SubscriptionType,
 } from "@/types";
 import type { Column } from "@/components/common/types";
@@ -4451,6 +4388,7 @@ import GroupRateMultipliersModal from "@/components/admin/group/GroupRateMultipl
 import GroupRPMOverridesModal from "@/components/admin/group/GroupRPMOverridesModal.vue";
 import GroupCapacityBadge from "@/components/common/GroupCapacityBadge.vue";
 import ReasoningEffortPolicyFields from "@/components/admin/group/ReasoningEffortPolicyFields.vue";
+import CanvasModelPricingEditor from "@/components/admin/group/CanvasModelPricingEditor.vue";
 import { VueDraggable } from "vue-draggable-plus";
 import { createStableObjectKeyResolver } from "@/utils/stableObjectKey";
 import { extractApiErrorMessage } from "@/utils/apiError";
@@ -4688,7 +4626,7 @@ const platformOptions = computed(() => [
   { value: "gemini", label: "Gemini" },
   { value: "antigravity", label: "Antigravity" },
   { value: "grok", label: "Grok" },
-  { value: "jimeng", label: t("admin.groups.platforms.jimeng") },
+  { value: "canvas", label: t("admin.groups.platforms.canvas") },
   { value: "composite", label: "Composite" },
 ]);
 
@@ -4699,12 +4637,12 @@ const platformFilterOptions = computed(() => [
   { value: "gemini", label: "Gemini" },
   { value: "antigravity", label: "Antigravity" },
   { value: "grok", label: "Grok" },
-  { value: "jimeng", label: t("admin.groups.platforms.jimeng") },
+  { value: "canvas", label: t("admin.groups.platforms.canvas") },
   { value: "composite", label: "Composite" },
 ]);
 
 // 复合分组的子路由目标平台：仅上游原生支持 composite 调度的平台。
-// 即梦（jimeng）是 fork 新增的视频平台，后端未接入 composite 路由，故不列入。
+// Canvas（canvas）是 fork 新增的视频平台，后端未接入 composite 路由，故不列入。
 const compositeRoutePlatformOptions = computed(() => [
   { value: "anthropic", label: "Anthropic" },
   { value: "openai", label: "OpenAI" },
@@ -4752,6 +4690,12 @@ const editStatusOptions = computed(() => [
 const subscriptionTypeOptions = computed(() => [
   { value: "standard", label: t("admin.groups.subscription.standard") },
   { value: "subscription", label: t("admin.groups.subscription.subscription") },
+]);
+
+// Canvas 视频计费方式选项 [CUSTOM]
+const videoBillingModeOptions = computed(() => [
+  { value: "per_count", label: t("admin.groups.videoPricing.perCount") },
+  { value: "per_second", label: t("admin.groups.videoPricing.perSecond") },
 ]);
 
 // 降级分组选项（创建时）- 仅包含 anthropic 平台且未启用 claude_code_only 的分组
@@ -5003,6 +4947,13 @@ const createForm = reactive({
   image_price_4k: null as number | null,
   video_price_per_count: null as number | null,
   video_price_per_second: null as number | null,
+  // 视频计费方式（仅 UI 状态，不提交）[CUSTOM]
+  // 后端没有 billing_mode 字段，模式由「哪个价格字段非空」隐式表达。
+  // 这里把它显式化：选中的模式保留价格，另一个字段提交时清成 -1（后端归一为 NULL），
+  // 避免两个价格同时有值时用户看不出实际按哪种收费。
+  video_billing_mode: "per_count" as "per_count" | "per_second",
+  // Canvas 按模型定价（覆盖上面的分组全局价）[CUSTOM]
+  model_pricing: null as ModelPricingConfig | null,
   // 视频生成计费配置（仅 Grok 平台）
   video_rate_independent: false,
   video_rate_multiplier: 1,
@@ -5364,6 +5315,13 @@ const editForm = reactive({
   image_price_4k: null as number | null,
   video_price_per_count: null as number | null,
   video_price_per_second: null as number | null,
+  // 视频计费方式（仅 UI 状态，不提交）[CUSTOM]
+  // 后端没有 billing_mode 字段，模式由「哪个价格字段非空」隐式表达。
+  // 这里把它显式化：选中的模式保留价格，另一个字段提交时清成 -1（后端归一为 NULL），
+  // 避免两个价格同时有值时用户看不出实际按哪种收费。
+  video_billing_mode: "per_count" as "per_count" | "per_second",
+  // Canvas 按模型定价（覆盖上面的分组全局价）[CUSTOM]
+  model_pricing: null as ModelPricingConfig | null,
   // 视频生成计费配置（仅 Grok 平台）
   video_rate_independent: false,
   video_rate_multiplier: 1,
@@ -5576,6 +5534,17 @@ const resetDisabledBatchImagePricing = (
   if (!form.allow_batch_image_generation) {
     form.batch_image_discount_multiplier = 0.5;
     form.batch_image_hold_multiplier = 0.6;
+  }
+};
+
+// 按模型定价只对 canvas 平台有意义。用户若先填了定价再切换平台，
+// 残留值会被一起提交，落库成其他平台永远读不到的死数据。
+const resetNonCanvasModelPricing = (form: {
+  platform: GroupPlatform;
+  model_pricing: ModelPricingConfig | null;
+}) => {
+  if (form.platform !== "canvas") {
+    form.model_pricing = null;
   }
 };
 
@@ -5824,6 +5793,8 @@ const closeCreateModal = () => {
   createForm.image_price_4k = null;
   createForm.video_price_per_count = null;
   createForm.video_price_per_second = null;
+  createForm.video_billing_mode = "per_count";
+  createForm.model_pricing = null;
   createForm.video_rate_independent = false;
   createForm.video_rate_multiplier = 1;
   createForm.video_price_480p = null;
@@ -5982,6 +5953,7 @@ const handleCreateGroup = async () => {
       requestData.image_rate_multiplier,
     );
     resetDisabledBatchImagePricing(requestData);
+    resetNonCanvasModelPricing(requestData);
     requestData.batch_image_discount_multiplier = normalizeRateMultiplier(
       requestData.batch_image_discount_multiplier,
     );
@@ -6011,6 +5983,23 @@ const handleCreateGroup = async () => {
     requestData.audio_stt_price_per_hour = emptyToNull(
       requestData.audio_stt_price_per_hour,
     );
+    // canvas 按次/按秒价同理，漏了会导致清空输入框时提交 "" 被后端拒绝
+    requestData.video_price_per_count = emptyToNull(
+      requestData.video_price_per_count,
+    );
+    requestData.video_price_per_second = emptyToNull(
+      requestData.video_price_per_second,
+    );
+    // 计费模式互斥：只提交所选模式的单价，另一个必须为 null。
+    // 后端靠"哪个字段非空"判定模式（per_second 非空即按秒），两个都有值时
+    // 按次那个永远不生效，留在库里只会让人以为它在起作用。
+    if (createForm.platform === "canvas") {
+      if (createForm.video_billing_mode === "per_second") {
+        requestData.video_price_per_count = null;
+      } else {
+        requestData.video_price_per_second = null;
+      }
+    }
     requestData.web_search_price_per_call = emptyToNull(
       requestData.web_search_price_per_call,
     );
@@ -6020,6 +6009,8 @@ const handleCreateGroup = async () => {
     requestData.peak_rate_multiplier = normalizeRateMultiplier(
       createForm.peak_rate_multiplier,
     );
+    // video_billing_mode 是纯 UI 状态（模式由哪个单价非空表达），后端没有这个字段
+    delete (requestData as Record<string, unknown>).video_billing_mode;
     await adminAPI.groups.create(requestData);
     appStore.showSuccess(t("admin.groups.groupCreated"));
     closeCreateModal();
@@ -6064,6 +6055,11 @@ const handleEdit = async (group: AdminGroup) => {
   editForm.image_price_4k = group.image_price_4k;
   editForm.video_price_per_count = group.video_price_per_count ?? null;
   editForm.video_price_per_second = group.video_price_per_second ?? null;
+  // 计费模式从"哪个价格非空"反推：库里没有独立的 mode 字段，
+  // 按秒价非空即为按秒（与后端 CalculateJimengVideoCost 的优先级一致）。
+  editForm.video_billing_mode =
+    group.video_price_per_second != null ? "per_second" : "per_count";
+  editForm.model_pricing = group.model_pricing ?? null;
   editForm.video_rate_independent = group.video_rate_independent ?? false;
   editForm.video_rate_multiplier = group.video_rate_multiplier ?? 1;
   editForm.video_price_480p = group.video_price_480p;
@@ -6248,6 +6244,7 @@ const handleUpdateGroup = async () => {
       payload.image_rate_multiplier,
     );
     resetDisabledBatchImagePricing(payload);
+    resetNonCanvasModelPricing(payload);
     payload.batch_image_discount_multiplier = normalizeRateMultiplier(
       payload.batch_image_discount_multiplier,
     );
@@ -6279,6 +6276,22 @@ const handleUpdateGroup = async () => {
     payload.audio_stt_price_per_hour = emptyPriceToClear(
       payload.audio_stt_price_per_hour,
     );
+    // canvas 按次/按秒价同理：清空后需发 -1 才能真正清除，否则 "" 会被后端拒绝
+    payload.video_price_per_count = emptyPriceToClear(
+      payload.video_price_per_count,
+    );
+    payload.video_price_per_second = emptyPriceToClear(
+      payload.video_price_per_second,
+    );
+    // 计费模式互斥：未选中的那个单价发 -1 显式清除（null 在更新语义里是"不修改"，
+    // 会把旧值留在库里）。历史上两个都填过的分组，保存后冗余的那个会被清掉。
+    if (editForm.platform === "canvas") {
+      if (editForm.video_billing_mode === "per_second") {
+        payload.video_price_per_count = -1;
+      } else {
+        payload.video_price_per_second = -1;
+      }
+    }
     payload.web_search_price_per_call = emptyPriceToClear(
       payload.web_search_price_per_call,
     );
@@ -6288,6 +6301,8 @@ const handleUpdateGroup = async () => {
     payload.peak_rate_multiplier = normalizeRateMultiplier(
       editForm.peak_rate_multiplier,
     );
+    // video_billing_mode 是纯 UI 状态（模式由哪个单价非空表达），后端没有这个字段
+    delete (payload as Record<string, unknown>).video_billing_mode;
     await adminAPI.groups.update(editingGroup.value.id, payload);
     appStore.showSuccess(t("admin.groups.groupUpdated"));
     closeEditModal();

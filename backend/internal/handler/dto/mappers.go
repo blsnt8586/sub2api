@@ -210,6 +210,7 @@ func groupFromServiceBase(g *service.Group) Group {
 		AudioRealtimePricePerMin:        g.AudioRealtimePricePerMin,
 		AudioTtsPricePerMillionChars:    g.AudioTTSPricePerMillionChars,
 		AudioSttPricePerHour:            g.AudioSTTPricePerHour,
+		ModelPricing:                    g.ModelPricing, // [CUSTOM] canvas
 		ClaudeCodeOnly:                  g.ClaudeCodeOnly,
 		FallbackGroupID:                 g.FallbackGroupID,
 		FallbackGroupIDOnInvalidRequest: g.FallbackGroupIDOnInvalidRequest,
@@ -683,6 +684,8 @@ func usageLogFromServiceUser(l *service.UsageLog) UsageLog {
 		SessionID:                 l.SessionID,
 		CacheTTLOverridden:        l.CacheTTLOverridden,
 		BillingMode:               l.BillingMode,
+		VideoCount:                l.VideoCount,
+		VideoDurationSeconds:      l.VideoDurationSeconds,
 		CreatedAt:                 l.CreatedAt,
 		User:                      UserFromServiceShallow(l.User),
 		APIKey:                    APIKeyFromService(l.APIKey),

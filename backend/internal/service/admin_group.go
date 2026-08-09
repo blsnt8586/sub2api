@@ -10,6 +10,7 @@ import (
 
 	dbent "github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/antigravity"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/avi2api"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/claude"
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/geminicli"
@@ -247,6 +248,8 @@ func defaultModelsListCandidateIDs(platform string) []string {
 		return ids
 	case PlatformGrok:
 		return xai.DefaultModelIDs()
+	case PlatformCanvas:
+		return avi2api.AllModels()
 	case PlatformComposite:
 		return compositeDefaultModelsListCandidateIDs()
 	default:
@@ -261,7 +264,10 @@ func defaultModelsListCandidateIDs(platform string) []string {
 func defaultAllowImageGenerationForPlatform(platform string) bool {
 	// Grok image and video generation routes share the legacy image-generation gate.
 	// Older clients send the false zero value, so Grok groups must default enabled.
-	return platform == PlatformGrok
+	// Canvas is a media-generation-native platform; the AllowImageGeneration gate
+	// doesn't apply, but defaulting to true keeps the DB flag consistent and prevents
+	// accidental 403s if the check is ever added back.
+	return platform == PlatformGrok || platform == PlatformCanvas
 }
 
 func compositeDefaultModelsListCandidateIDs() []string {
@@ -491,6 +497,7 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		AudioRealtimePricePerMin:        audioRealtimePricePerMin,
 		AudioTTSPricePerMillionChars:    audioTTSPricePerMillionChars,
 		AudioSTTPricePerHour:            audioSTTPricePerHour,
+		ModelPricing:                    normalizeModelPricing(input.ModelPricing), // [CUSTOM] canvas
 		ClaudeCodeOnly:                  input.ClaudeCodeOnly,
 		FallbackGroupID:                 input.FallbackGroupID,
 		FallbackGroupIDOnInvalidRequest: fallbackOnInvalidRequest,
@@ -563,6 +570,54 @@ func normalizePrice(price *float64) *float64 {
 		return nil
 	}
 	return price
+}
+
+// normalizeModelPricing 对 ModelPricingConfig 内所有价格指针做 normalizePrice 处理。
+// 防止管理员通过直接 API 调用存入负价，导致 CalculateJimengVideoCost / CalculateImageCost
+// 返回负值（相当于给用户账户充值）。前端已挡负数，但计费系统不应依赖纯客户端校验。
+func normalizeModelPricing(cfg *ModelPricingConfig) *ModelPricingConfig {
+	if cfg == nil {
+		return nil
+	}
+	out := &ModelPricingConfig{}
+	if len(cfg.Video) > 0 {
+		out.Video = make(map[string]*ModelVideoPricing, len(cfg.Video))
+		for model, p := range cfg.Video {
+			if p == nil {
+				continue
+			}
+			entry := &ModelVideoPricing{
+				PricePerCount:  normalizePrice(p.PricePerCount),
+				PricePerSecond: normalizePrice(p.PricePerSecond),
+			}
+			if entry.PricePerCount != nil || entry.PricePerSecond != nil {
+				out.Video[model] = entry
+			}
+		}
+		if len(out.Video) == 0 {
+			out.Video = nil
+		}
+	}
+	if len(cfg.Image) > 0 {
+		out.Image = make(map[string]*ModelImagePricing, len(cfg.Image))
+		for model, p := range cfg.Image {
+			if p == nil {
+				continue
+			}
+			entry := &ModelImagePricing{
+				Price1K: normalizePrice(p.Price1K),
+				Price2K: normalizePrice(p.Price2K),
+				Price4K: normalizePrice(p.Price4K),
+			}
+			if entry.Price1K != nil || entry.Price2K != nil || entry.Price4K != nil {
+				out.Image[model] = entry
+			}
+		}
+		if len(out.Image) == 0 {
+			out.Image = nil
+		}
+	}
+	return out
 }
 
 // validateFallbackGroup 校验降级分组的有效性
@@ -794,6 +849,10 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 	}
 	if input.AudioSTTPricePerHour != nil {
 		group.AudioSTTPricePerHour = normalizePrice(input.AudioSTTPricePerHour)
+	}
+	// [CUSTOM] canvas 模型专属定价
+	if input.ModelPricing != nil {
+		group.ModelPricing = normalizeModelPricing(input.ModelPricing)
 	}
 
 	// Claude Code 客户端限制

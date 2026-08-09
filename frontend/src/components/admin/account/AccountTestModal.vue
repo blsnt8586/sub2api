@@ -171,12 +171,12 @@
       </div>
 
       <!-- Jimeng video prompt -->
-      <div v-if="isJimengAccount" class="space-y-1.5">
+      <div v-if="isCanvasAccount" class="space-y-1.5">
         <TextArea
           v-model="testPrompt"
           label="视频提示词"
           placeholder="描述要生成的视频内容，留空使用默认提示词"
-          hint="即梦将根据提示词创建一个 4 秒的测试视频任务，验证账号连通性"
+          hint="Canvas将根据提示词创建一个 4 秒的测试视频任务，验证账号连通性"
           :disabled="status === 'connecting'"
           rows="3"
         />
@@ -463,7 +463,7 @@ const supportsOpenAIImageTest = computed(() => {
   return props.account?.platform === 'openai'
 })
 
-const isJimengAccount = computed(() => props.account?.platform === 'jimeng') // [CUSTOM]
+const isCanvasAccount = computed(() => props.account?.platform === 'canvas') // [CUSTOM]
 const isGrokImageModel = (id: string) => {
   const modelID = id.toLowerCase()
   return (
@@ -682,7 +682,7 @@ const testModeSummary = computed(() => {
         return t('admin.accounts.grok.textTestMode')
     }
   }
-  if (isJimengAccount.value) return t('admin.accounts.videoTestMode') // [CUSTOM]
+  if (isCanvasAccount.value) return t('admin.accounts.videoTestMode') // [CUSTOM]
   if (supportsImageTest.value) return t('admin.accounts.imageTestMode')
   return t('admin.accounts.testPrompt')
 })
@@ -751,8 +751,8 @@ watch(
   () => props.show,
   async (newVal) => {
     if (newVal && props.account) {
-      // 即梦账号自动填入默认视频提示词
-      testPrompt.value = props.account.platform === 'jimeng'
+      // Canvas账号自动填入默认视频提示词
+      testPrompt.value = props.account.platform === 'canvas'
         ? 'A serene mountain landscape with a flowing river at sunset.'
         : ''
       testMode.value = 'default'
@@ -973,7 +973,7 @@ const handleEvent = (event: {
         addLine(t('admin.accounts.usingModel', { model: event.model }), 'text-cyan-400')
       }
       addLine(
-        isJimengAccount.value
+        isCanvasAccount.value
           ? t('admin.accounts.sendingVideoRequest') // [CUSTOM]
           : isGrokAccount.value
           ? grokTestMode.value === 'video'
