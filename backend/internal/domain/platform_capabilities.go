@@ -8,14 +8,14 @@ var AllPlatforms = []string{
 	PlatformGemini,
 	PlatformAntigravity,
 	PlatformGrok,
-	PlatformJimeng,
+	PlatformCanvas,
 }
 
 // VideoPlatforms 支持视频生成 API 的平台。
 // 新增视频平台时在此追加，gateway_video.go 中补充对应 handler 即可。
 var VideoPlatforms = []string{
 	PlatformGrok,
-	PlatformJimeng,
+	PlatformCanvas,
 }
 
 // GroupPlatforms 允许作为分组（group.platform）取值的平台列表。

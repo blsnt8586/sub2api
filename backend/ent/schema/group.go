@@ -171,6 +171,15 @@ func (Group) Fields() []ent.Field {
 			SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}).
 			Comment("Codex alpha/search 网页搜索单次价格（USD/次）；nil 表示使用默认价 0.01（官方 $10/1000 次）"),
 
+		// Canvas 平台（avi2api vendor）模型专属定价（added by canvas-model-pricing migration）
+		// 格式：{"video":{"veo-3.1":{"per_second":0.02},"kling-3.0":{"per_count":0.05}},"image":{"gpt-image-2":{"2k":0.05}}}
+		// nil/NULL 或空表示所有模型使用分组全局价（video_price_per_count/per_second、image_price_*）。
+		field.Bytes("model_pricing").
+			Optional().
+			Nillable().
+			SchemaType(map[string]string{dialect.Postgres: "jsonb"}).
+			Comment("Canvas 平台模型专属定价（JSONB），按模型覆盖分组全局定价"),
+
 		// Claude Code 客户端限制 (added by migration 029)
 		field.Bool("claude_code_only").
 			Default(false).

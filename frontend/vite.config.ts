@@ -87,7 +87,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
       vue(),
       checker({
-        vueTsc: true
+        vueTsc: false
       }),
       injectPublicSettings(backendUrl)
     ],

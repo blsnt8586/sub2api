@@ -82,17 +82,6 @@ func (s *SettingService) GetOpenAISystemPromptInjection(ctx context.Context) (en
 	return false, ""
 }
 
-// storeOpenAISystemPromptInjectCache 在管理员保存设置后，把新值直接写入缓存，
-// 让新配置无需等待 TTL 过期即刻生效（与 refreshCachedSettings 中其它缓存热更新对齐）。
-func storeOpenAISystemPromptInjectCache(enabled bool, prompt string) {
-	openAISystemPromptInjectionSF.Forget("openai_system_prompt_injection")
-	openAISystemPromptInjectionCache.Store(&cachedOpenAISystemPromptInjection{
-		enabled:   enabled,
-		prompt:    prompt,
-		expiresAt: time.Now().Add(openAISystemPromptInjectionCacheTTL).UnixNano(),
-	})
-}
-
 // injectOpenAIGlobalInstructions 把全局 system prompt 前置合并到 Responses 格式 body 的
 // 顶层 instructions 字段（Codex/responses 与 chat→responses 两条路径统一走此字段）。
 //   - prompt 为空：原样返回，changed=false。

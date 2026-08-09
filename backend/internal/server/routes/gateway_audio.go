@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// registerAudioRoutes 注册音频生成相关路由（即梦 jimeng 等）
+// registerAudioRoutes 注册音频生成相关路由（Canvas canvas 等）
 func registerAudioRoutes(
 	gateway *gin.RouterGroup,
 	r *gin.Engine,
@@ -35,8 +35,8 @@ func registerAudioRoutes(
 
 	// audioGenerationHandler 处理 POST /v1/audio/generations
 	audioGenerationHandler := func(c *gin.Context) {
-		if getGroupPlatform(c) == service.PlatformJimeng {
-			h.OpenAIGateway.JimengAudioCreation(c)
+		if getGroupPlatform(c) == service.PlatformCanvas {
+			h.OpenAIGateway.CanvasAudioCreation(c)
 			return
 		}
 		audioUnsupported(c)
@@ -44,8 +44,8 @@ func registerAudioRoutes(
 
 	// audioStatusHandler 处理 GET /v1/audio/{id}
 	audioStatusHandler := func(c *gin.Context) {
-		if getGroupPlatform(c) == service.PlatformJimeng {
-			h.OpenAIGateway.JimengAudioStatus(c)
+		if getGroupPlatform(c) == service.PlatformCanvas {
+			h.OpenAIGateway.CanvasAudioStatus(c)
 			return
 		}
 		audioUnsupported(c)
@@ -53,8 +53,8 @@ func registerAudioRoutes(
 
 	// audioCancelHandler 处理 POST /v1/audio/{id}/cancel
 	audioCancelHandler := func(c *gin.Context) {
-		if getGroupPlatform(c) == service.PlatformJimeng {
-			h.OpenAIGateway.JimengAudioCancel(c)
+		if getGroupPlatform(c) == service.PlatformCanvas {
+			h.OpenAIGateway.CanvasAudioCancel(c)
 			return
 		}
 		audioUnsupported(c)

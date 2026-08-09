@@ -16,7 +16,7 @@ fork 在上游之上叠加了三大功能块，外加一层解耦重构：
 | 功能块 | 说明 | 冲突面 |
 |--------|------|--------|
 | A. Nova Image Studio iframe 对接 | 用户端 iframe 嵌入 Nova，含剪贴板授权、导航联动、`/v1/models` 免计费 | 中（改上游 View + 中间件） |
-| B. 即梦（jimeng）视频平台 + Leonardo vendor | 新增视频生成平台，按次/按秒计费，走 OpenAI 网关链路；`credentials.vendor=leonardo` 子类型再叠加 OpenAI 兼容图像 + 异步视频（对外仍伪装为即梦） | 中（新增为主，少量上游文件插桩） |
+| B. AVI2API 图像/视频/音频平台（`platform=jimeng`） | 新增图像 + 视频 + 音频生成平台，走 OpenAI 网关链路，按次/按秒计费。视频支持五种请求模式（无参考 JSON + 参考图/首尾帧/参考视频/参考音频 multipart）。2026-08 重构：原生即梦下线、vendor 机制移除、`leonardo` 更名 `avi2api` | 中（新增为主，少量上游文件插桩） |
 | C. 上游 Sub2API 管理 + 定时优化 | 管理端管理 `provider_type=sub2api` 上游实例，定时优化账号倍率区间 | 低（几乎全新增文件） |
 | D. 平台分支解耦重构 | 把散落各处的平台 `switch/if` 收敛到 `platformColors.ts` / `domain_constants.go` | 降低未来冲突 |
 | E. OpenAI/Codex 全局 system prompt 注入 | 管理端配置全局系统提示词，前置合并到 Responses `instructions`，覆盖 responses/codex/chat 三条路径 | 低（逻辑全在新增文件，上游纯追加 + 2 处网关钩子） |
@@ -85,7 +85,7 @@ Nova 侧发送示例：`parent.postMessage({ type: 'sub2api:navigate', target: '
 ### 3.2 新增文件（低冲突，直接保留）
 
 后端：
-- `backend/internal/pkg/jimeng/` — 平台协议客户端（`models.go` / `url.go` + 测试）
+- `backend/internal/pkg/avi2api/` — 协议客户端（`models.go` / `url.go` + 测试）。**注**：原 `pkg/jimeng/` 与 `pkg/leonardo/` 已于 2026-08 合并至此，见 3.4
 - `backend/internal/handler/jimeng_video.go` — 视频生成/状态查询 handler
 - `backend/internal/service/jimeng_video_service.go` / `jimeng_video_helpers.go` — 业务逻辑（含 duration → `VideoSeconds` 解析）
 
@@ -117,36 +117,192 @@ field.Float("video_price_per_second")  // 每秒视频价格 USD/秒，非 nil �
 > ⚠️ **两套 ForwardResult**：`ForwardResult`（GatewayService）与 `OpenAIForwardResult`（OpenAIGatewayService）都加了
 > `VideoCount`/`VideoSeconds` 字段。即梦走 OpenAI 路径，改计费务必两边同步。
 
-### 3.4 即梦平台下的 Leonardo vendor 子类型（图像 + 视频）
+### 3.4 AVI2API 上游（图像 + 视频 + 音频）
 
-**设计目标**：接入一个 OpenAI 兼容的第三方图像/视频网关，但**对外不暴露其真名**——伪装成即梦（`platform=jimeng`）下的一个 **vendor 子类型**，客户端只见 `platform=jimeng`。管理端建号时该子类型显示为 **Leonardo**。
+> **2026-08 重构**：原生即梦上游已**下线**，`credentials.vendor` 机制**移除**。
+> `platform=jimeng` 现在唯一对应 AVI2API 上游。原 vendor 名 `leonardo`
+> 在代码中全部改为 `avi2api`。DB 里存量账号的 `credentials.vendor` 字段被忽略，
+> **无需迁移**。
 
-**核心机制**：即梦账号的 `credentials.vendor` 字段区分上游协议——空串 = 原生即梦（视频 `/v1/videos`）；`"leonardo"` = Leonardo 上游（OpenAI 兼容图像 + 异步视频）。vendor 分流点在**选号之后的转发层**，因此一个即梦分组可同时挂原生即梦号和 Leonardo 号，原生即梦逻辑零改动。
+**设计目标**：接入 AVI2API 图像/视频/音频生成网关。平台标识仍为 `jimeng`
+（DB/前端/quota 三处的值未改，避免账号+分组+配额的数据迁移），
+但代码标识、管理端文案、对外契约均已统一为 AVI2API。
 
-> **混合分组的图像 failover**：调度器只按 `platform=jimeng` 选号、不区分 vendor。若图像请求被调度到原生即梦号（无图像接口）或缺 `api_key` 的号，`ForwardJimengImages` 返回 **account 级 `UpstreamFailoverError`**（触碰上游前拒绝），failover 循环跳过该号继续调度同组的 Leonardo 号；整组均无可用 Leonardo 号时才耗尽退出（映射 502 "Upstream service temporarily unavailable"）。这样图像专用分组即便混入原生即梦号也不会随机 502。
+> **平台名遗留**：`platform=jimeng` 这个字符串值本身仍未改名。要改成 `avi2api`
+> 需要迁移 accounts/groups/user_platform_quota 三张表 + 前端类型 + i18n，
+> 风险与本次重构不同量级，属未决事项。
 
 **新增文件（低冲突，直接保留）**：
-- `backend/internal/pkg/leonardo/` — 协议客户端（`url.go` 图像/视频 URL 构建 + `models.go` **图像**请求/响应解析：`ParseImageRequest`/`CountImages`/`ExtractImageModel` + 测试）。视频请求/响应解析复用原生 `jimeng.ParseVideoRequest`（已兼容 `duration` 整数），leonardo 包不重复实现视频解析。
-- `backend/internal/service/leonardo_image_service.go` — `ForwardJimengImages`（图像转发，仿 `ForwardJimengVideo`）+ 测试 `leonardo_image_service_test.go`
-- `backend/internal/handler/jimeng_images.go` — `JimengImages` handler + 转发循环（仿 `jimeng_video.go`，选号用 `SelectAccountWithSchedulerForCapability(..., PlatformJimeng)`）
+- `backend/internal/pkg/avi2api/` — 协议客户端。合并了原 `pkg/leonardo` 与 `pkg/jimeng`：
+  - `url.go` — 图像/视频/音频九个端点的 URL 构建
+  - `models.go` — 请求解析：`ParseImageRequest`/`ParseVideoRequest`/`ParseAudioRequest`
+    + `CountImages`。**视频解析同时支持 JSON 与 multipart**（见下）
+- `backend/internal/service/avi2api_image_service.go` — `ForwardJimengImages`（图像转发）
+- `backend/internal/service/jimeng_video_service.go` / `jimeng_video_helpers.go` — 视频转发 + 响应规范化
+- `backend/internal/service/jimeng_audio_service.go` — 音频转发 + 粘性会话 + 计费
+- `backend/internal/service/jimeng_video_seedance.go` — Ark Plan v3 body 翻译层
+- `backend/internal/handler/jimeng_images.go` / `jimeng_video.go` / `jimeng_audio.go` — 三个 handler + 转发循环
+- `backend/internal/server/routes/gateway_video.go` / `gateway_audio.go` — 路由注册
+
+**已删除**：`pkg/leonardo/`、`pkg/jimeng/`、`service/leonardo_image_service.go`
 
 **上游/既有文件插桩（少量，注意冲突）**：
-- `backend/internal/service/account.go` — 新增 `GetJimengVendor()` / `IsJimengLeonardo()` + `JimengVendorLeonardo` 常量（紧挨 `GetJimengAPIKey`）
-- `backend/internal/service/jimeng_video_service.go` `jimengVideoURL` — Leonardo vendor 分支：创建走 `/v1/videos/generations`，状态走 `/v1/videos/{id}`，**无 `/content` 端点**（MP4 直接在状态响应 `data[0].url`）
-- `backend/internal/server/routes/gateway.go` `imagesHandler` — 新增 `case service.PlatformJimeng: h.OpenAIGateway.JimengImages(c)`
-- 前端 `frontend/src/components/account/CreateAccountModal.vue` — 即梦建号块加 vendor 选择器（`jimengVendor` ref），提交时写 `credentials.vendor`，`resetForm` 重置
-- 前端 `frontend/src/views/admin/groupsImagePricing.ts` — `imagePricingPlatforms` 加 `"jimeng"`，让即梦分组显示图片价格 UI + `allow_image_generation` 开关
-- i18n `zh|en/admin/accounts.ts` 的 `jimeng` 块 — 加 `vendorLabel`/`vendorNative`/`vendorLeonardo`/`vendorLeonardoHint`
+- `backend/internal/service/account.go` — `GetJimengBaseURL()` / `GetJimengAPIKey()`
+  （`GetJimengVendor()` / `IsJimengLeonardo()` / `JimengVendorLeonardo` 已删除）
+- `backend/internal/server/routes/gateway.go` `imagesHandler` — `case service.PlatformJimeng`
+- `backend/internal/service/openai_gateway_scheduling.go` `normalizeOpenAICompatiblePlatform`
+  — jimeng 分支（`[CUSTOM]` 标记，必须保留，否则选号命中不了）
+- 前端 `frontend/src/components/account/CreateAccountModal.vue` — 即梦建号块
+  （vendor 选择器**已移除**，只剩 Base URL + API Key）
+- 前端 `frontend/src/views/admin/groupsImagePricing.ts` — `imagePricingPlatforms` 含 `"jimeng"`
+- i18n `zh|en/admin/accounts.ts` 的 `jimeng` 块 — `name` 改为 `AVI2API`，
+  `vendorLabel`/`vendorNative`/`vendorLeonardo`/`vendorLeonardoHint` **已删除**
 
-**计费**：图像走既有 `CalculateImageCost`（`OpenAIForwardResult.ImageCount` + `ImageSize` 1K/2K/4K 档位，分组 `image_price_1k/2k/4k`）；视频复用即梦 `CalculateJimengVideoCost`（按次/按秒）。**无新增 schema 字段、无新增迁移**——vendor 存 `credentials` JSONB，图像价格复用既有 group 字段。
+**客户端契约（对外，与 AVI2API 文档逐字对齐）**：
 
-**客户端契约（对外统一，与原生即梦一致）**：
-- 图像：`POST /v1/images/generations`、`POST /v1/images/edits`（OpenAI Images 格式，body 透传）
-- 视频：`POST /v1/videos`（创建）+ `GET /v1/videos/{id}`（轮询，成功后 `data[0].url` 取 MP4），内部翻译到上游 `/v1/videos/generations`
+| 对外端点 | 上游端点 |
+|---|---|
+| `POST /v1/images/generations` \| `/edits` | 同名 |
+| `POST /v1/videos/generations` | 同名 |
+| `GET /v1/videos/{id}` | 同名 |
+| `POST /v1/videos/{id}/cancel` | 同名 |
+| `POST /v1/audio/generations` | 同名 |
+| `GET /v1/audio/{id}` | 同名 |
+| `POST /v1/audio/{id}/cancel` | 同名 |
 
-**Leonardo 上游接口契约**（`base_url` + `api_key` 由管理员后续填入）：
-- 图像模型：`gpt-image-2`、`nano-banana-2`、`nano-banana-pro`、`seedream-4.5`（同步返回 `{created,data:[{url|b64_json}]}`）
-- 视频模型：`seedance-2.0`/`-fast`/`-mini`、`gemini-omni-flash`（异步任务，提交返回 `{id,status}`，轮询终态 succeeded/failed）
+- **`POST /v1/videos` 已移除**（原 Sora 风格创建端点）。创建统一走 `/videos/generations`，
+  与 Grok 共用该路径按 platform 分流。
+- `GET /v1/videos/{id}/content` 保留给 Grok/composite；jimeng 分组访问返回明确的
+  "not supported" 而非 404。AVI2API 无此端点，MP4 URL 在状态响应 `result.data[0].url`。
+- `POST /v1/contents/generations/tasks` + `GET .../{id}` — Seedance/Ark Plan v3 兼容别名，
+  body 在 handler 层经 `ConvertSeedanceVideoCreateBody` 翻译。
+
+**视频五种请求模式（全部支持）**：
+
+AVI2API 无 `mode` 字段，靠 Content-Type + multipart 中出现的文件字段推断：
+
+| 模式 | Content-Type | 必需文件字段 |
+|---|---|---|
+| 无参考 | `application/json` | — |
+| 参考图 | `multipart/form-data` | `image` / `image[]`（≤4） |
+| 首尾帧 | `multipart/form-data` | `start_frame`（+可选 `end_frame`） |
+| 参考视频 | `multipart/form-data` | `video[]`（≤3，合计 ≤15s） |
+| 参考音频 | `multipart/form-data` | `audio[]`（≤1）+ 陪跑图/视频 |
+
+实现要点（`pkg/avi2api/models.go`）：
+- `ParseVideoRequest(contentType, body)` 双格式：JSON 走 gjson，multipart 走
+  `parseVideoMultipartFields` **只挑文本字段**（model/prompt/duration/size/resolution），
+  文件字段跳过不读进内存（单字段 1 MiB 上限防 OOM）
+- body **逐字节透传**，Content-Type 连 boundary 一起转发，否则上游无法解析 multipart
+- **组合规则不在本层实现**：首尾帧与其他素材互斥、`end_frame` 依赖 `start_frame`、
+  Seedance 音频需搭图或视频、MiniMax H3 音频需搭普通图、各类数量上限——
+  全部由上游 schema（`allOf`/`not`/`maxItems`）校验，违规吃 422 传回客户端。
+  本层复制只会与上游漂移。
+
+> **历史坑**：multipart 支持之前缺失，`ParseVideoRequest` 只认 JSON，
+> handler 拿到空 model 直接 `400 model is required`，四种参考模式全部不可用。
+> 同时 `duration` 解不出导致 `VideoSeconds=0`，按秒计费的分组等于白送。
+
+**字段黑名单**：`fps` 与 `watermark` 必须丢弃。AVI2API v1.1.2 全部视频 schema 都是
+`additionalProperties:false` 且均无这两个字段，携带即 400。测试
+`TestConvertSeedanceVideoCreateBodyDropsFPS` 锁定此行为。
+
+**`Idempotency-Key` 透传（图像/视频/音频三条转发链路必须一致）**：
+AVI2API 对所有 POST 创建类接口（`/images/generations`、`/images/edits`、
+`/videos/generations`、`/audio/generations`）**强制要求** `Idempotency-Key` 请求头
+（非空且 ≤255 字符），缺失即返回 `Idempotency-Key is required and must not exceed 255 characters`。
+网关转发时必须把客户端传来的该头**原样带给上游**：
+
+```go
+// canvas_image_service.go / canvas_video_service.go / canvas_audio_service.go 统一模式
+if idempotencyKey := c.GetHeader("Idempotency-Key"); idempotencyKey != "" {
+    upstreamReq.Header.Set("Idempotency-Key", idempotencyKey)
+}
+```
+
+- 前端 infinite-canvas 在 `services/api/{image,video,audio}.ts` 与 `model-plugin.ts`
+  的 POST 请求头用 `nanoid()` 生成该头。
+- 透传还能防止 failover 重试重复创建付费任务（同 key 命中上游幂等）。
+- **历史坑（2026-08 修复）**：`canvas_image_service.go` 曾漏掉透传（video/audio 有、image 没有），
+  导致生图工作台一律 `生成失败：Idempotency-Key is required...`。回归测试
+  `TestForwardCanvasImagesForwardsIdempotencyKey` 锁定此行为。**同步上游或重写转发时三条链路要同增同减。**
+
+**响应规范化**（`normalizeJimengVideoResponse`）：
+- `status: succeeded` → `completed`（infinite-canvas 认 `completed`）。
+  **注意**：这偏离了 AVI2API 文档的 status enum，照文档写的客户端认不出 `completed`
+- `result.data[0].url` → 顶层 `video_url` + `result_url` + `content.video_url`（Ark Plan 兼容）
+- 补 `object: "video.task"`
+
+**计费**：
+- 图像：`CalculateImageCost`（`ImageCount` + `ImageSize` 1K/2K/4K 档位，分组 `image_price_1k/2k/4k`）
+- 视频：`CalculateJimengVideoCost`（按次 `video_price_per_count` / 按秒 `video_price_per_second`）
+- 音频：按次 `VideoCount=1`；`music-v1` 的 `duration_minutes` × 60 记入 `VideoSeconds`
+  （`dialogue-v3`/`sound-effects-v2` 的 `duration` 单位是秒，直接记入）
+- **无新增 schema 字段、无新增迁移**
+
+**音频选号坑**：`runJimengAudioForwardLoop` 必须用
+`SelectAccountWithSchedulerForCapability(..., service.PlatformJimeng)`。
+通用的 `SelectAccountForModelWithExclusions` 内部硬编码 `PlatformOpenAI`
+（`openai_gateway_scheduling.go:190`），用它会一个 jimeng 账号都命中不了。
+
+**AVI2API 上游模型清单（v1.1.2）**：
+- 图像：`gpt-image-2`、`nano-banana-2`、`nano-banana-pro`、`seedream-5.0-pro`
+- 视频：`seedance-2.0`/`-fast`/`-mini`、`gemini-omni-flash`、`veo-3.1`/`-fast`/`-lite`、
+  `kling-3.0`、`minimax-h3`（各模型的 duration/size/resolution/generate_audio 约束不同，
+  详见上游 `/openapi.json`；本层纯透传不做本地校验）
+- 音频：`dialogue-v3`（TTS）、`music-v1`（音乐）、`sound-effects-v2`（音效，`model` 可省略）
+
+### 3.5 模型能力表：单一权威 + 运行时下发
+
+**背景**：模型参数约束（duration/size/resolution/generate_audio/参考模式）原先在
+两处各维护一份 —— 后端 `pkg/avi2api/registry.go` 与前端
+`infinite-canvas/web/src/lib/canvas-model-caps.ts`。靠人工同步，已经出过两类事故：
+
+1. **约束漂移**：前端箝制逻辑把 `1080p` 与去掉后缀的 `["720","1080"]` 相比，
+   永远不匹配 → 所有 canvas 视频模型的 resolution 都被箝到裸 `"720"`，被上游拒
+2. **模型漏判**：`guessCapability()` 靠模型名关键词猜能力，`nano-banana-2`/
+   `nano-banana-pro`/`minimax-h3`/`gemini-omni-flash`/`dialogue-v3` 五个名字不含
+   任何关键词，全被归到 `text`，在三个工作台的下拉里都不出现
+
+**方案**：后端 registry 为唯一权威，前端运行时拉取覆盖。
+
+- 后端 `pkg/avi2api/caps_dto.go` — 对外 JSON 表示。三处必须转换：
+  `DurationConstraint`（Go 靠 `Enum` 非空隐式判别 → 前端要显式 `kind` 标签）、
+  `GenAudioMode`（int 枚举 → 字符串）、`ReferenceMode`（Go 字面量 `start_frame`
+  是 multipart 字段名 → 前端语义标签 `frame`）
+- 后端 `handler/gateway_canvas_model_caps.go` — `GET /v1/sub2api/canvas/model-caps`，
+  API Key 鉴权、`sync.Once` 缓存 body 与 ETag、支持 `If-None-Match` → 304
+- 前端 `lib/canvas-model-caps-sync.ts` — 拿到第一个可用 Key 后拉取一次
+  （`hydrateCanvasModelCapsOnce`，并发合并 + 单次守卫）
+- 前端 `lib/canvas-model-caps.ts` — 三张 `bundled*` 表降级为**冷启动兜底**，
+  registry 改为 `let` 可变 + `hydrateModelCaps()` 整表替换 + 订阅通知
+- 前端 `lib/use-model-caps.ts` — `useSyncExternalStore` hook，让参数面板在
+  caps 到达后重渲染
+
+**为什么不做构建期代码生成**：`infinite-canvas` 是**独立 git 仓库**
+（remote `basketikun/infinite-canvas`，嵌在本仓库内但非 submodule），
+构建时拿不到 sub2api 的 Go 源码，生成步骤会让前端无法独立构建。
+
+**为什么不完全删掉前端内置表**：`guessCapability()` 在 zustand persist 的
+`merge` 回调里被**同步**调用（决定持久化 channel 的模型归类），那一刻网络请求
+还没回来，必须有同步可用的数据。
+
+**兜底表不需要手工维护**：数值允许过时，hydrate 时整表覆盖。后端加模型前端自动就有。
+
+> ⚠️ **改 wire 格式必须同时递增两处版本号**：
+> `handler/gateway_canvas_model_caps.go` 的 `canvasModelCapsSchemaVersion` 与
+> `lib/canvas-model-caps-sync.ts` 的 `SUPPORTED_SCHEMA_VERSION`。
+> 版本不匹配时前端整体拒绝该 payload 并保留兜底表 —— 这是有意的：
+> 按旧字段解析未知结构会把非法约束写进面板，比继续用兜底表更危险。
+
+**已知缺口**：
+- `POST /v1/videos/estimate`、`POST /v1/images/estimate`（成本预估）未接
+- `GET/POST /v1/tasks/{id}[/cancel]`（通用任务端点）未接，图像异步任务查不了
+- **multipart 请求的提示词审计失效**：`ExtractContentModerationInput` 与
+  `ExtractPromptSnapshot` 都只认 JSON body。`off`/`async` 模式下提示词扫不到
+  （审计留痕缺失）；**`blocking` 模式下 `json.Unmarshal` 失败会升级成
+  `GuardError{ErrorCodeInvalidResponse}` → 503，参考素材视频直接不可用**。
+  `/images/edits` 有同样问题。
 
 ---
 
@@ -341,8 +497,9 @@ fork 初期散落的平台分支（jimeng/grok 等）遍布 41 个文件，每�
 
 | 文件 | fork 改动 | 同步后检查项 |
 |------|----------|-------------|
-| `api_key_auth.go` | `skipBilling` 含 `/v1/models` | 上游只有 `/v1/usage`，需补回 `/v1/models` |
-| `gateway.go` routes | jimeng `videoStatusHandler` 分流 | 若上游改 `/v1/videos/*` 路由需重新插桩 |
+| `api_key_auth.go` | `skipBilling` 含 `/v1/models` 与 `/v1/sub2api/canvas/model-caps` | 上游只有 `/v1/usage`，需补回这两项。model-caps 是静态元数据端点，若被计费拦住，前端会静默退回内置兜底表 |
+| `routes/gateway.go` | 注册 `GET /v1/sub2api/canvas/model-caps`（在 `compositeTarget`/`requireGroupAnthropic` **之前**） | 位置不能挪到两个中间件之后 —— canvas 分组不是 Anthropic 平台，会被 `requireGroupAnthropic` 拒 |
+| `gateway_video.go` / `gateway_audio.go` routes | jimeng 在 `videoGenerationHandler`/`videoStatusHandler`/`videoCancelHandler` 的分流 + 音频三端点 | 若上游改 `/v1/videos/*` 路由需重新插桩。**注意 `POST /v1/videos` 已被本 fork 移除**，上游若重新引入需确认不与 `/videos/generations` 冲突 |
 | `openai_gateway_usage.go` | video 分支**置于 image 之前** | 上游若重构计费顺序，需保持 video > image 优先级 |
 | `billing_service.go` | `CalculateVideoCost` 函数 | 上游若拆分文件，需迁移该函数 |
 | `admin_group.go` | video 字段映射 | 上游若改 CreateGroup DTO，需同步 video 字段 |
@@ -361,11 +518,12 @@ fork 初期散落的平台分支（jimeng/grok 等）遍布 41 个文件，每�
 | `openai_gateway_forward.go` | `Forward` body 定稿后的 `[CUSTOM]` 注入钩子（15 行，覆盖 responses HTTP+WS） | 上游高频重构 OpenAI 网关；若改 `if bodyModified` 块或重命名 `requestView`/`reqBody`/`compatMessagesBridge`，需重新贴钩子并核对变量名 |
 | `openai_gateway_chat_completions.go` | `ForwardAsChatCompletions` 的 `[CUSTOM]` 注入钩子（7 行，锚点 `responsesBody = updatedBody` 后） | 上游若重构 chat→responses 转换流程，需重新定位注入点 |
 | **`openai_gateway_scheduling.go`** | `normalizeOpenAICompatiblePlatform` 新增 jimeng 分支（7 行，`[CUSTOM]` 注释标记） | 上游若重构该函数（如改名/拆分/内联），需补回 `if platform == PlatformJimeng { return PlatformJimeng }` 分支；与 `account.go` 的 `IsOpenAICompatible` 逻辑绑定，两处必须同时维护 |
+| **`handler/admin/group_handler.go`** | 新增 `import "github.com/Wei-Shaw/sub2api/internal/pkg/avi2api"` + `GetCanvasPricingModels` handler（约 10 行，[CUSTOM]）；`CreateGroupRequest` / `UpdateGroupRequest` 各加 `ModelPricing *service.ModelPricingConfig` 字段（2 行） | 上游高频改 group handler DTO；同步冲突时需手动保留 `avi2api` import、`ModelPricing` 字段和 `GetCanvasPricingModels` 函数 |
 
 ### 🟢 LOW — 一般无冲突（fork 新增文件为主）
 
 - Sub2API 管理全套文件（`sub2api_provider*`、`sub2api_optimize*`）— 上游未涉及，直接保留
-- jimeng 平台客户端（`pkg/jimeng/`、`jimeng_video_*.go`）— 新增文件，直接保留
+- AVI2API 客户端（`pkg/avi2api/`、`jimeng_video_*.go`、`jimeng_audio_service.go`、`avi2api_image_service.go`）— 新增文件，直接保留
 - **OpenAI/Codex 全局 system prompt 注入**（功能块 E）：核心逻辑全在新增文件 `openai_system_prompt_inject.go`(+test)，只引用自身符号 + stdlib/gjson/sjson，零上游依赖，直接保留
 - 设置存储链路（功能块 E 的 setting 接入）：`domain_constants.go` / `settings_view.go` / `setting_parse.go` / `setting_update.go` / `dto/settings.go` / `setting_handler{,_update,_audit}.go` 各 2~16 行**纯新增**，与 Claude OAuth/Codex UA 等既有设置同模式；追加式改动，冲突概率低，冲突时照抄相邻设置的写法即可
 - 开发脚本（`start-*.sh`）— 新增文件

@@ -794,7 +794,7 @@ func (s *GatewayService) calculateRecordUsageCost(
 	imageMultiplier float64,
 	opts *recordUsageOpts,
 ) *CostBreakdown {
-	// 视频生成（即梦 jimeng）：按次/按秒计费，优先于图片与 token 路径
+	// 视频生成（Canvas canvas）：按次/按秒计费，优先于图片与 token 路径
 	if result.VideoCount > 0 {
 		return s.calculateVideoCost(result, apiKey, imageMultiplier)
 	}
@@ -811,7 +811,7 @@ func (s *GatewayService) calculateRecordUsageCost(
 	return s.calculateTokenCost(ctx, result, apiKey, billingModel, multiplier, opts)
 }
 
-// calculateVideoCost 计算视频生成费用（即梦 jimeng）：按秒优先，否则按次。
+// calculateVideoCost 计算视频生成费用（Canvas canvas）：按秒优先，否则按次。
 func (s *GatewayService) calculateVideoCost(
 	result *ForwardResult,
 	apiKey *APIKey,

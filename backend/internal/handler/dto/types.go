@@ -118,7 +118,7 @@ type Group struct {
 	ImagePrice1K       *float64 `json:"image_price_1k"`
 	ImagePrice2K       *float64 `json:"image_price_2k"`
 	ImagePrice4K       *float64 `json:"image_price_4k"`
-	// 视频生成计费配置（即梦 jimeng 平台）
+	// 视频生成计费配置（Canvas canvas 平台）
 	VideoPricePerCount  *float64 `json:"video_price_per_count"`
 	VideoPricePerSecond *float64 `json:"video_price_per_second"`
 	VideoPrice480P      *float64 `json:"video_price_480p"`
@@ -126,6 +126,8 @@ type Group struct {
 	VideoPrice1080P     *float64 `json:"video_price_1080p"`
 	// Codex alpha/search 网页搜索单次价格（USD/次）；null 表示使用默认价 0.01
 	WebSearchPricePerCall *float64 `json:"web_search_price_per_call"`
+	// Canvas 平台模型专属定价；null 表示所有模型走分组全局价
+	ModelPricing *service.ModelPricingConfig `json:"model_pricing,omitempty"`
 
 	// Claude Code 客户端限制
 	ClaudeCodeOnly  bool   `json:"claude_code_only"`
@@ -521,6 +523,10 @@ type UsageLog struct {
 	ImageSizeSource    *string        `json:"image_size_source"`
 	ImageSizeBreakdown map[string]int `json:"image_size_breakdown"`
 	MediaType          *string        `json:"media_type"`
+
+	// 视频生成字段
+	VideoCount           int  `json:"video_count"`
+	VideoDurationSeconds *int `json:"video_duration_seconds"`
 
 	// User-Agent
 	UserAgent *string `json:"user_agent"`

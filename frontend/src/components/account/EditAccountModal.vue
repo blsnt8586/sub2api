@@ -43,7 +43,9 @@
                     ? 'https://cloudcode-pa.googleapis.com'
                     : account.platform === 'grok'
                       ? 'https://api.x.ai/v1'
-                      : 'https://api.anthropic.com'
+                      : account.platform === 'canvas'
+                        ? 'https://api.example.com/v1'
+                        : 'https://api.anthropic.com'
             "
           />
           <p v-if="baseUrlHint" class="input-hint">{{ baseUrlHint }}</p>
@@ -72,9 +74,12 @@
                     ? 'sk-...'
                     : account.platform === 'grok'
                       ? 'xai-...'
-                      : 'sk-ant-...'
+                      : account.platform === 'canvas'
+                        ? 'sk-...'
+                        : 'sk-ant-...'
             "
           />
+          <p v-if="apiKeyHint" class="input-hint">{{ apiKeyHint }}</p>
           <p class="input-hint">{{ t('admin.accounts.leaveEmptyToKeep') }}</p>
         </div>
 
@@ -2718,7 +2723,17 @@ const baseUrlHint = computed(() => {
   if (props.account.platform === 'openai') return t('admin.accounts.openai.baseUrlHint')
   if (props.account.platform === 'gemini') return t('admin.accounts.gemini.baseUrlHint')
   if (props.account.platform === 'grok') return ''
+  if (props.account.platform === 'canvas') return t('admin.accounts.canvas.baseUrlHint')
   return t('admin.accounts.baseUrlHint')
+})
+
+// canvas 平台的 API Key 说明（AVI2API 上游端点约定）。与 CreateAccountModal 保持一致：
+// 编辑弹窗此前对 canvas 没有任何分支，会落到 Anthropic 文案，导致同一账号在
+// 新建和编辑两个界面看到互相矛盾的提示。
+const apiKeyHint = computed(() => {
+  if (!props.account) return ''
+  if (props.account.platform === 'canvas') return t('admin.accounts.canvas.apiKeyHint')
+  return ''
 })
 
 const antigravityPresetMappings = computed(() => getPresetMappingsByPlatform('antigravity'))
@@ -3168,6 +3183,11 @@ const defaultBaseUrl = computed(() => {
   if (props.account?.platform === 'openai') return 'https://api.openai.com'
   if (props.account?.platform === 'gemini') return 'https://generativelanguage.googleapis.com'
   if (props.account?.platform === 'grok') return 'https://api.x.ai/v1'
+  // canvas 的上游地址由用户自填，没有官方默认端点。必须返回空串：
+  // 保存路径是 editBaseUrl.trim() || defaultBaseUrl，若在此回退到 Anthropic 端点，
+  // 用户清空 Base URL 再保存就会把 canvas 账号的 base_url 静默改写成 Anthropic 地址。
+  // 与 CreateAccountModal 的 canvas 默认值（空串）保持一致。
+  if (props.account?.platform === 'canvas') return ''
   return 'https://api.anthropic.com'
 })
 

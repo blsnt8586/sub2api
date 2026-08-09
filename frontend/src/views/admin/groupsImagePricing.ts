@@ -3,8 +3,8 @@ export const imagePricingPlatforms = new Set([
   "gemini",
   "grok",
   "openai",
-  // 即梦 jimeng：Leonardo vendor 账号支持图像生成，分组需显示图片价格配置。
-  "jimeng",
+  // canvas 平台图片计费由专属区块（canvasBilling section）承载，
+  // 不走此上游图片计费区块，避免 AllowImageGeneration 等无关字段干扰管理员。
 ]);
 
 export const supportsImagePricingPlatform = (platform: string): boolean =>

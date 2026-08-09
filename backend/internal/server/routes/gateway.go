@@ -82,10 +82,10 @@ func RegisterGatewayRoutes(
 			h.OpenAIGateway.Images(c)
 		case service.PlatformGrok:
 			h.OpenAIGateway.GrokImages(c)
-		case service.PlatformJimeng:
-			// 即梦平台的图像仅 Leonardo vendor 账号支持（对外仍伪装为即梦）；
-			// 原生即梦无图像 API，转发层会按 vendor 校验并返回明确错误。
-			h.OpenAIGateway.JimengImages(c)
+		case service.PlatformCanvas:
+			// AIV2API 图像接口（OpenAI Images 兼容）；
+			// 转发层校验 api_key 凭据，缺失时按 account 级 failover 跳号。
+			h.OpenAIGateway.CanvasImages(c)
 		default:
 			service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonLocalFeatureGate)
 			c.JSON(http.StatusNotFound, gin.H{
@@ -96,7 +96,7 @@ func RegisterGatewayRoutes(
 			})
 		}
 	}
-	// 视频路由（Grok、即梦 jimeng 等）由 registerVideoRoutes 统一管理，
+	// 视频路由（Grok、Canvas canvas 等）由 registerVideoRoutes 统一管理，
 	// 上游内联的 videoGenerationHandler/videoStatusHandler 等已移入 gateway_video.go；
 	// 上游给 status/content 加的 composite 分支同步补在那里。
 
@@ -127,6 +127,10 @@ func RegisterGatewayRoutes(
 	gateway.Use(endpointNorm)
 	gateway.Use(gin.HandlerFunc(apiKeyAuth))
 	gateway.GET("/sub2api/billing", h.Gateway.KeyBillingInfo)
+	// avi2api 模型能力表：静态元数据，是 infinite-canvas 前端参数约束的唯一来源。
+	// 注册在 compositeTarget/requireGroupAnthropic 之前 —— canvas 分组不是
+	// Anthropic 平台，走那两个中间件会被拒。
+	gateway.GET("/sub2api/canvas/model-caps", h.Gateway.CanvasModelCaps)
 	gateway.Use(compositeTarget)
 	gateway.Use(requireGroupAnthropic)
 	{
@@ -277,12 +281,13 @@ func RegisterGatewayRoutes(
 	r.POST("/images/generations/async", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), compositeTarget, requireGroupAnthropic, h.AsyncImage.Submit)
 	r.POST("/images/edits/async", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), compositeTarget, requireGroupAnthropic, h.AsyncImage.Submit)
 	r.GET("/images/tasks/:task_id", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), compositeTarget, requireGroupAnthropic, h.AsyncImage.Get)
-	// 视频路由（Grok、即梦 jimeng 等）——新增视频平台只需修改 gateway_video.go。
+	// 视频路由（Grok、Canvas canvas 等）——新增视频平台只需修改 gateway_video.go。
 	// compositeTarget 与图片路由一致地挂在根路径别名上，让 composite 分组按 model 解析目标平台。
 	registerVideoRoutes(gateway, r, h, bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), compositeTarget, requireGroupAnthropic)
 
-	// 音频路由（即梦 jimeng 等）——新增音频平台只需修改 gateway_audio.go。
+	// 音频路由（Canvas canvas 等）——新增音频平台只需修改 gateway_audio.go。
 	registerAudioRoutes(gateway, r, h, bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), compositeTarget, requireGroupAnthropic)
+	registerTaskRoutes(gateway, r, h, bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), compositeTarget, requireGroupAnthropic)
 
 	// Antigravity 模型列表
 	r.GET("/antigravity/models", gin.HandlerFunc(apiKeyAuth), requireGroupAnthropic, h.Gateway.AntigravityModels)

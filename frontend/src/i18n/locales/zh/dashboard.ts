@@ -372,6 +372,8 @@ export default {
     exportExcelSuccess: '使用数据导出成功（Excel格式）',
     exportExcelFailed: '使用数据导出失败',
     imageUnit: '张',
+    videoUnit: '条',
+    secondsUnit: '秒',
     userAgent: 'User-Agent',
     ipGeo: {
       fetch: '获取地区',

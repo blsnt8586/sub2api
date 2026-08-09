@@ -303,7 +303,7 @@ export default {
         gemini: 'Gemini',
         antigravity: 'Antigravity',
         grok: 'Grok',
-        jimeng: '即梦',
+        canvas: '即梦',
       },
       types: {
         oauth: 'OAuth',
@@ -559,7 +559,9 @@ export default {
       // OpenAI specific hints
       openai: {
         baseUrlHint: '留空使用官方 OpenAI API',
-        apiKeyHint: '您的 OpenAI API Key',
+        vendorLabel: '上游服务商',
+        vendorAVI2API: 'AVI2API（图像 + 视频 + 音频）',
+                apiKeyHint: '您的 OpenAI API Key',
         oauthPassthrough: '自动透传（仅替换认证）',
         oauthPassthroughDesc:
           '开启后，该 OpenAI 账号将自动透传请求与响应，仅替换认证并保留计费/并发/审计及必要安全过滤；如遇兼容性问题可随时关闭回滚。',
@@ -655,14 +657,13 @@ export default {
         baseUrlHint: 'Grok OAuth 账号会转发到官方 xAI API Base URL。',
         apiKeyHint: 'Grok 订阅支持使用 OAuth refresh token；API Key 账号不在本次范围内。'
       },
-      jimeng: {
-        name: '即梦',
-        baseUrlHint: '即梦视频第三方端点地址，例如：https://api.example.com/v1（会转发到 {baseUrl}/videos）。',
-        apiKeyHint: '即梦仅支持 API Key 接入（第三方兼容端点，需填写 Base URL + API Key），用于视频生成 /v1/videos。',
-        vendorLabel: '上游子类型',
-        vendorNative: '原生即梦（视频 /v1/videos）',
-        vendorLeonardo: 'AIV2API（图像 + 视频 + 音频）',
-        vendorLeonardoHint: 'AIV2API 上游：图像走 /v1/images/generations 与 /v1/images/edits（同步）；视频走 /v1/videos/generations 创建任务、/v1/videos/{id} 查询状态、/v1/videos/{id}/cancel 取消；音频走 /v1/audio/generations。填写 Base URL + API Key 即可接入。'
+      canvas: {
+        name: 'Canvas',
+        baseUrlHint: 'Canvas 平台上游端点地址，例如：https://api.example.com/v1。',
+        vendorLabel: '上游服务商',
+        vendorAVI2API: 'AVI2API（图像 + 视频 + 音频）',
+        apiKeyHint:
+          'AVI2API 上游：图像走 /v1/images/generations 与 /v1/images/edits（同步）；视频走 /v1/videos/generations 创建任务（无参考发 JSON，带参考图/首尾帧/参考视频/参考音频发 multipart）、/v1/videos/{id} 查询状态、/v1/videos/{id}/cancel 取消；音频走 /v1/audio/generations。仅支持 API Key 接入，填写 Base URL + API Key 即可。'
       },
       anthropic: {
         apiKeyPassthrough: '自动透传（仅替换认证）',

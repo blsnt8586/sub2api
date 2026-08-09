@@ -235,7 +235,7 @@ type CreateGroupInput struct {
 	ImagePrice1K       *float64
 	ImagePrice2K       *float64
 	ImagePrice4K       *float64
-	// 视频计费配置（仅 jimeng 平台使用）
+	// 视频计费配置（仅 canvas 平台使用）
 	VideoPricePerCount  *float64 // USD/次；nil 使用默认值
 	VideoPricePerSecond *float64 // USD/秒；非 nil 时优先于 VideoPricePerCount
 	VideoPrice480P      *float64
@@ -269,6 +269,8 @@ type CreateGroupInput struct {
 	ReasoningEffortMappings []ReasoningEffortMapping
 	// 从指定分组复制账号（创建分组后在同一事务内绑定）
 	CopyAccountsFromGroupIDs []int64
+	// Canvas 平台模型专属定价（nil 表示不修改/不配置）
+	ModelPricing *ModelPricingConfig
 }
 
 type UpdateGroupInput struct {
@@ -299,7 +301,7 @@ type UpdateGroupInput struct {
 	ImagePrice1K       *float64
 	ImagePrice2K       *float64
 	ImagePrice4K       *float64
-	// 视频计费配置（仅 jimeng 平台使用）
+	// 视频计费配置（仅 canvas 平台使用）
 	VideoPricePerCount  *float64 // USD/次；nil 使用默认值
 	VideoPricePerSecond *float64 // USD/秒；非 nil 时优先于 VideoPricePerCount
 	VideoPrice480P      *float64
@@ -333,6 +335,8 @@ type UpdateGroupInput struct {
 	ReasoningEffortMappings *[]ReasoningEffortMapping
 	// 从指定分组复制账号（同步操作：先清空当前分组的账号绑定，再绑定源分组的账号）
 	CopyAccountsFromGroupIDs []int64
+	// Canvas 平台模型专属定价（nil 表示不修改，空结构体表示清空）
+	ModelPricing *ModelPricingConfig
 }
 
 type CreateAccountInput struct {

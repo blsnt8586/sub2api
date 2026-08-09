@@ -370,3 +370,25 @@ func TestGatewayRoutesOpenAICountTokensPathIsRegistered(t *testing.T) {
 	router.ServeHTTP(w, req)
 	require.NotEqual(t, http.StatusNotFound, w.Code)
 }
+
+
+func TestGatewayRoutesTaskPathsAreRegistered(t *testing.T) {
+	router := newGatewayRoutesTestRouter(service.PlatformCanvas)
+	registered := make(map[string]bool)
+	for _, route := range router.Routes() {
+		registered[route.Method+" "+route.Path] = true
+	}
+
+	for _, route := range []string{
+		"POST /v1/tasks/images",
+		"GET /v1/tasks/:id",
+		"POST /v1/tasks/:id/cancel",
+		"POST /tasks/images",
+		"GET /tasks/:id",
+		"POST /tasks/:id/cancel",
+	} {
+		if !registered[route] {
+			t.Errorf("task route %q should be registered", route)
+		}
+	}
+}

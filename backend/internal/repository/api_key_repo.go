@@ -3,8 +3,10 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -193,6 +195,7 @@ func (r *apiKeyRepository) GetByKeyForAuth(ctx context.Context, key string) (*se
 				group.FieldVideoPrice720p,
 				group.FieldVideoPrice1080p,
 				group.FieldWebSearchPricePerCall,
+				group.FieldModelPricing,
 				group.FieldClaudeCodeOnly,
 				group.FieldFallbackGroupID,
 				group.FieldFallbackGroupIDOnInvalidRequest,
@@ -968,6 +971,7 @@ func groupEntityToService(g *dbent.Group) *service.Group {
 		VideoPrice720P:                  g.VideoPrice720p,
 		VideoPrice1080P:                 g.VideoPrice1080p,
 		WebSearchPricePerCall:           g.WebSearchPricePerCall,
+		ModelPricing:                    unmarshalModelPricing(g.ModelPricing),
 		DefaultValidityDays:             g.DefaultValidityDays,
 		ClaudeCodeOnly:                  g.ClaudeCodeOnly,
 		FallbackGroupID:                 g.FallbackGroupID,
@@ -1001,4 +1005,22 @@ func derefString(s *string) string {
 		return ""
 	}
 	return *s
+}
+
+// unmarshalModelPricing 把 groups.model_pricing（JSONB）反序列化为 ModelPricingConfig。
+// NULL / 空 / 脏数据都返回 nil——定价缺失时计费链路会回退到分组全局价，
+// 因此这里静默降级比让整个分组查询失败更合适。
+func unmarshalModelPricing(b *[]byte) *service.ModelPricingConfig {
+	if b == nil || len(*b) == 0 {
+		return nil
+	}
+	var cfg service.ModelPricingConfig
+	if err := json.Unmarshal(*b, &cfg); err != nil {
+		slog.Warn("model_pricing unmarshal failed; falling back to group pricing", "error", err)
+		return nil
+	}
+	if len(cfg.Video) == 0 && len(cfg.Image) == 0 {
+		return nil
+	}
+	return &cfg
 }

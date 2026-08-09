@@ -54,14 +54,14 @@ type CreateOptimizeLogInput struct {
 
 // OptimizeScheduleInfo 返回给 handler/前端 的配置信息
 type OptimizeScheduleInfo struct {
-	ID         int64      `json:"id"`
-	ProviderID int64      `json:"provider_id"`
-	CronExpr   string     `json:"cron_expr"`
-	Enabled    bool       `json:"enabled"`
-	LastRunAt  *string    `json:"last_run_at,omitempty"`
-	NextRunAt  *string    `json:"next_run_at,omitempty"`
-	CreatedAt  string     `json:"created_at"`
-	UpdatedAt  string     `json:"updated_at"`
+	ID         int64             `json:"id"`
+	ProviderID int64             `json:"provider_id"`
+	CronExpr   string            `json:"cron_expr"`
+	Enabled    bool              `json:"enabled"`
+	LastRunAt  *string           `json:"last_run_at,omitempty"`
+	NextRunAt  *string           `json:"next_run_at,omitempty"`
+	CreatedAt  string            `json:"created_at"`
+	UpdatedAt  string            `json:"updated_at"`
 	RecentLogs []OptimizeLogInfo `json:"recent_logs"`
 }
 

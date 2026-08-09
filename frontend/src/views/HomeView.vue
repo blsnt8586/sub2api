@@ -1,3 +1,4 @@
+<template>
   <!-- Custom Home Content: Full Page Mode -->
   <div v-if="hasHomeContent" class="min-h-screen">
     <iframe v-if="isHomeContentUrl" :src="homeContent.trim()" class="h-screen w-full border-0"
@@ -341,6 +342,8 @@ const homeContent = computed(() => appStore.cachedPublicSettings?.home_content |
 const isHomeContentUrl = computed(() => { const c = homeContent.value.trim(); return c.startsWith('http://') || c.startsWith('https://') })
 const hasHomeContent = computed(() => homeContent.value.trim().length > 0)
 const compactHomeEnabled = computed(() => appStore.cachedPublicSettings?.compact_home_enabled === true)
+// compact home 页脚的版权年份（上游功能，二开重写首页时漏了这个定义）
+const currentYear = computed(() => new Date().getFullYear())
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const isAdmin = computed(() => authStore.isAdmin)
 const dashboardPath = computed(() => isAdmin.value ? '/admin/dashboard' : '/dashboard')

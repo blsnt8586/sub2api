@@ -176,6 +176,13 @@ func (r *openAIFastPolicyForwardingSettingRepo) GetValue(context.Context, string
 	return r.value, nil
 }
 
+// GetMultiple 必须显式实现：内嵌的 service.SettingRepository 是 nil interface，
+// 任何未手写的方法一被调用就 nil pointer panic。转发链路里的
+// SettingService.GetOpenAISystemPromptInjection 走的正是这个方法。
+func (r *openAIFastPolicyForwardingSettingRepo) GetMultiple(context.Context, []string) (map[string]string, error) {
+	return map[string]string{}, nil
+}
+
 type openAIFastPolicyForwardingHTTPUpstream struct {
 	client *http.Client
 }

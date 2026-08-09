@@ -14,7 +14,7 @@ import (
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/domain"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/jimeng"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/avi2api"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/openai_compat"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/xai"
 )
@@ -279,9 +279,9 @@ func (a *Account) IsGrok() bool {
 	return a.Platform == PlatformGrok
 }
 
-// IsJimeng 报告账号是否为即梦视频平台账号。
-func (a *Account) IsJimeng() bool {
-	return a.Platform == PlatformJimeng
+// IsCanvas 报告账号是否为Canvas视频平台账号。
+func (a *Account) IsCanvas() bool {
+	return a.Platform == PlatformCanvas
 }
 
 func (a *Account) IsGrokOAuth() bool {
@@ -289,7 +289,7 @@ func (a *Account) IsGrokOAuth() bool {
 }
 
 func (a *Account) IsOpenAICompatible() bool {
-	return a != nil && (a.Platform == PlatformOpenAI || a.Platform == PlatformGrok || a.Platform == PlatformJimeng)
+	return a != nil && (a.Platform == PlatformOpenAI || a.Platform == PlatformGrok || a.Platform == PlatformCanvas)
 }
 
 func (a *Account) GeminiOAuthType() string {
@@ -1370,43 +1370,43 @@ func (a *Account) GetGrokAccessToken() string {
 	return a.GetCredential("access_token")
 }
 
-// GetJimengBaseURL 返回即梦第三方端点的 base_url（credentials.base_url）。
+// GetCanvasBaseURL 返回 Canvas 平台账号的 base_url（credentials.base_url）。
 // 未配置时兜底为占位默认值，实际由 service 层的 allowlist 校验决定是否放行。
-func (a *Account) GetJimengBaseURL() string {
-	if !a.IsJimeng() {
+func (a *Account) GetCanvasBaseURL() string {
+	if !a.IsCanvas() {
 		return ""
 	}
 	baseURL := strings.TrimSpace(a.GetCredential("base_url"))
 	if baseURL != "" {
 		return baseURL
 	}
-	return jimeng.DefaultBaseURL
+	return avi2api.DefaultBaseURL
 }
 
-// GetJimengAPIKey 返回即梦账号的 api_key 凭据。
-func (a *Account) GetJimengAPIKey() string {
-	if !a.IsJimeng() {
+// GetCanvasAPIKey 返回 Canvas 平台账号的 api_key 凭据。
+func (a *Account) GetCanvasAPIKey() string {
+	if !a.IsCanvas() {
 		return ""
 	}
 	return strings.TrimSpace(a.GetCredential("api_key"))
 }
 
-// JimengVendorLeonardo 是即梦平台下 Leonardo 上游的 vendor 标识。
-// 对外仍伪装为 platform=jimeng，仅在 credentials.vendor 中区分实际上游协议。
-const JimengVendorLeonardo = "leonardo"
+// CanvasVendorAVI2API 是 Canvas 平台下 AVI2API 上游的 vendor 标识。
+// 空串与此值等价（向后兼容老账号）。
+const CanvasVendorAVI2API = "avi2api"
 
-// GetJimengVendor 返回即梦账号的 vendor 子类型（credentials.vendor）。
-// 空串表示原生即梦上游；"leonardo" 表示 Leonardo 上游（OpenAI 兼容图像 + 异步视频）。
-func (a *Account) GetJimengVendor() string {
-	if !a.IsJimeng() {
+// GetCanvasVendor 返回 Canvas 账号的 vendor 子类型（credentials.vendor）。
+// 空串与 "avi2api" 等价，均路由到 AVI2API 上游。
+// 未来新增其他 OpenAI 兼容上游时，在此追加新常量并在转发层加 case 即可。
+func (a *Account) GetCanvasVendor() string {
+	if !a.IsCanvas() {
 		return ""
 	}
-	return strings.ToLower(strings.TrimSpace(a.GetCredential("vendor")))
-}
-
-// IsJimengLeonardo 报告账号是否为即梦平台下的 Leonardo vendor 账号。
-func (a *Account) IsJimengLeonardo() bool {
-	return a.GetJimengVendor() == JimengVendorLeonardo
+	v := strings.ToLower(strings.TrimSpace(a.GetCredential("vendor")))
+	if v == "" {
+		return CanvasVendorAVI2API // 默认 vendor
+	}
+	return v
 }
 
 func (a *Account) GetGrokRefreshToken() string {

@@ -30,11 +30,11 @@ func ProviderFromService(s *service.Provider) *Provider {
 	}
 
 	return &Provider{
-		ID:      s.ID,
-		Name:    s.Name,
-		BaseURL: s.BaseURL,
-		ProviderType: s.ProviderType,
-		Status:  s.Status,
+		ID:             s.ID,
+		Name:           s.Name,
+		BaseURL:        s.BaseURL,
+		ProviderType:   s.ProviderType,
+		Status:         s.Status,
 		Notes:          s.Notes,
 		Email:          s.Email,
 		APIPathKeys:    s.APIPathKeys,

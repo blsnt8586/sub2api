@@ -43,7 +43,7 @@ const (
 	PlatformGemini      = domain.PlatformGemini
 	PlatformAntigravity = domain.PlatformAntigravity
 	PlatformGrok        = domain.PlatformGrok
-	PlatformJimeng      = domain.PlatformJimeng // 即梦视频生成平台（第三方 base_url + api_key）
+	PlatformCanvas      = domain.PlatformCanvas
 	PlatformComposite   = domain.PlatformComposite
 )
 

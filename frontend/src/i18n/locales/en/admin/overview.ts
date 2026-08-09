@@ -945,7 +945,7 @@ export default {
         gemini: 'Gemini',
         antigravity: 'Antigravity',
         grok: 'Grok',
-        jimeng: 'Jimeng',
+        canvas: 'Canvas',
         composite: 'Composite',
       },
       deleteConfirm:
@@ -993,13 +993,41 @@ export default {
           'Videos are billed per second: per-second price × duration (1-15s, default 8s). By default the current effective group multiplier applies; independent mode uses the video multiplier instead.',
         finalPricePreview: 'Final per-second price preview',
         notConfigured: 'Not configured',
-        jimengVideoBilling: {
+        hint: 'Configure Canvas video generation billing. Leave empty to use built-in default ($0.05/request).',
+        perCount: 'Per request',
+        perSecond: 'Per second',
+        priorityHint: 'Priority: per-second > per-request > built-in default. When "per second" is set, cost = duration(s) × unit price; otherwise cost = count × unit price.',
+        mode: 'Billing mode',
+        modeCount: 'Per request ($/req)',
+        modeSecond: 'Per second ($/s)',
+        modeHintCount: 'Cost = request count × unit price. Leave empty to use the built-in default of $0.05/request.',
+        modeHintSecond: 'Cost = video duration (seconds) × unit price. Duration comes from the request\'s duration field; when absent the model default is used (4-8s depending on model). Leave empty to fall back to the per-request default of $0.05/request.',
+        canvasVideoBilling: {
           title: 'Video Billing',
           hint: 'Configure billing for Jimeng video generation. Leave empty to use built-in default ($0.05/request).',
           perCount: 'Per request',
           perSecond: 'Per second',
           priorityHint: 'Priority: per-second > per-request > built-in default. When "per second" is set, cost = duration(s) × unit price; otherwise cost = count × unit price.'
         }
+      },
+      canvasBilling: {
+        title: 'Canvas Billing',
+        hint: 'Set group-level fallback prices for Canvas images and videos. Leave empty to use built-in defaults. Per-model pricing below takes priority over these group-level prices.',
+        videoSection: 'Video base price',
+        imageSection: 'Image base price (fallback)',
+        imageFallbackHint: 'Models without a per-model price fall back to these tier prices. Per-model pricing always wins.',
+      },
+      modelPricing: {
+        title: 'Canvas Model Pricing',
+        hint: 'Set a unit price for each model individually. Models left empty fall back to built-in defaults and are never billed as $0.',
+        model: 'Model',
+        videoSection: 'Video models',
+        imageSection: 'Image models',
+        unitPrice: 'Unit price',
+        videoPriorityHint: 'Pick per-request or per-second for each model, then enter its unit price. Switching mode clears the entered price (the same number differs by nearly an order of magnitude between modes, which would otherwise cause mis-billing).',
+        emptyMeansFallback: 'Empty = built-in default price, not billed as $0.',
+        clearAll: 'Clear all per-model prices',
+        loadFailed: 'Failed to load model list'
       },
       webSearchPricing: {
         title: 'Codex Web Search Pricing',

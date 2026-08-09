@@ -229,6 +229,16 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/studio',
+    name: 'Studio',
+    component: () => import('@/views/user/StudioView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: '视图工作台',
+    }
+  },
+  {
     path: '/usage',
     name: 'Usage',
     component: () => import('@/views/user/UsageView.vue'),
