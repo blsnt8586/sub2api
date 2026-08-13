@@ -120,17 +120,15 @@ field.Float("video_price_per_second")  // 每秒视频价格 USD/秒，非 nil �
 ### 3.4 AVI2API 上游（图像 + 视频 + 音频）
 
 > **2026-08 重构**：原生即梦上游已**下线**，`credentials.vendor` 机制**移除**。
-> `platform=jimeng` 现在唯一对应 AVI2API 上游。原 vendor 名 `leonardo`
+> `platform=canvas` 现在唯一对应 AVI2API 上游。原 vendor 名 `leonardo`
 > 在代码中全部改为 `avi2api`。DB 里存量账号的 `credentials.vendor` 字段被忽略，
 > **无需迁移**。
 
-**设计目标**：接入 AVI2API 图像/视频/音频生成网关。平台标识仍为 `jimeng`
-（DB/前端/quota 三处的值未改，避免账号+分组+配额的数据迁移），
-但代码标识、管理端文案、对外契约均已统一为 AVI2API。
-
-> **平台名遗留**：`platform=jimeng` 这个字符串值本身仍未改名。要改成 `avi2api`
-> 需要迁移 accounts/groups/user_platform_quota 三张表 + 前端类型 + i18n，
-> 风险与本次重构不同量级，属未决事项。
+**设计目标**：接入 AVI2API 图像/视频/音频生成网关。历史平台标识 `jimeng`
+已由迁移 `193_rename_canvas_platform.sql` 在 accounts/groups/user_platform_quotas
+中统一重命名为 `canvas`，代码标识、管理端文案与对外契约均使用 Canvas/AVI2API。
+迁移 `223_user_platform_quotas_add_canvas.sql` 同步放宽用户平台配额 CHECK 约束，
+确保 `domain.AllPlatforms` 中的 `canvas` 可以正常写入。
 
 **新增文件（低冲突，直接保留）**：
 - `backend/internal/pkg/avi2api/` — 协议客户端。合并了原 `pkg/leonardo` 与 `pkg/jimeng`：
@@ -513,10 +511,10 @@ fork 初期散落的平台分支（jimeng/grok 等）遍布 41 个文件，每�
 
 | 文件 | fork 改动 | 同步后检查项 |
 |------|----------|-------------|
-| `domain_constants.go` | `PlatformJimeng` + `AllowedQuotaPlatforms` | 上游若改平台枚举，需补回 jimeng |
+| `domain_constants.go` | `PlatformCanvas` + `AllowedQuotaPlatforms` | 上游若改平台枚举，需补回 canvas，并确保 `user_platform_quotas` CHECK 约束同步更新 |
 | `channel.go` | `BillingModeVideo*` 常量 | 上游若改计费模式枚举，需补回 video 模式 |
 | `group.go` Ent schema | `video_price_*` 字段 | 上游若改 Group schema，冲突时保留 video 字段 |
-| `platformColors.ts` | `jimeng` 条目 + Phase 1 收敛 | 上游若改颜色 token，需合并 jimeng 并保留 accessor 函数 |
+| `platformColors.ts` | `canvas` 条目 + Phase 1 收敛 | 上游若改颜色 token，需合并 canvas 并保留 accessor 函数 |
 | `CustomPageView.vue` / `RiskControlView.vue` | iframe `allow` 属性 | 上游若改 iframe 结构，需补回剪贴板授权（HomeView 的 iframe 授权已随功能块 G 整文件保留） |
 | `openai_gateway_forward.go` | `Forward` body 定稿后的 `[CUSTOM]` 注入钩子（15 行，覆盖 responses HTTP+WS） | 上游高频重构 OpenAI 网关；若改 `if bodyModified` 块或重命名 `requestView`/`reqBody`/`compatMessagesBridge`，需重新贴钩子并核对变量名 |
 | `openai_gateway_chat_completions.go` | `ForwardAsChatCompletions` 的 `[CUSTOM]` 注入钩子（7 行，锚点 `responsesBody = updatedBody` 后） | 上游若重构 chat→responses 转换流程，需重新定位注入点 |
@@ -542,20 +540,20 @@ fork 初期散落的平台分支（jimeng/grok 等）遍布 41 个文件，每�
 
 1. **Ent 生成代码**：若 `ent/schema/` 冲突，优先解决 schema，再 `go generate ./ent`，最后提交全部生成文件
 2. **wire 依赖注入**：检查 `service/wire.go`、`handler/wire.go`、`repository/wire.go` 是否含 Sub2API optimize 相关 provider（[§4.2](#42-wire-依赖注入关键易漏)）
-3. **迁移文件**：fork 新增迁移（含 `165*.sql`、`222_canvas_model_pricing_split.sql`）保留，编号若与上游冲突需重命名；不要修改已上线迁移内容
-4. **前端类型**：若 `types/index.ts` 的 `AccountPlatform` / `GroupPlatform` 冲突，保留 `jimeng`
+3. **迁移文件**：fork 新增迁移（含 `165*.sql`、`222_canvas_model_pricing_split.sql`、`223_user_platform_quotas_add_canvas.sql`）保留，编号若与上游冲突需重命名；不要修改已上线迁移内容
+4. **前端类型**：若 `types/index.ts` 的 `AccountPlatform` / `GroupPlatform` 冲突，保留 `canvas`
 
 ### 8.2 逐项复原（对照 [§7 冲突面](#七冲突面分级high-conflict-必查)）
 
 按 HIGH → MEDIUM 优先级核对：
 - ✅ `api_key_auth.go` 的 `skipBilling` 含 `/v1/models`
-- ✅ `routes/gateway.go` 的 jimeng videoStatusHandler 分流
+- ✅ `routes/gateway.go` 的 canvas videoStatusHandler 分流
 - ✅ `openai_gateway_usage.go` 的 video 分支优先级（image 之前）
 - ✅ `billing_service.go` 的 `CalculateVideoCost` 函数
 - ✅ `admin_group.go` 的 video 字段映射
-- ✅ `domain_constants.go` / `channel.go` / `group.go` 的 jimeng/video 相关常量/字段
+- ✅ `domain_constants.go` / `channel.go` / `group.go` 的 canvas/video 相关常量/字段
 - ✅ iframe View 的 `allow` 属性
-- ✅ `platformColors.ts` 的 jimeng 条目 + accessor 函数
+- ✅ `platformColors.ts` 的 canvas 条目 + accessor 函数
 - ✅ `openai_gateway_forward.go` / `openai_gateway_chat_completions.go` 的 `[CUSTOM]` system prompt 注入钩子（搜 `injectOpenAIGlobalInstructions`）
 - ✅ 设置链路 8 文件的 `OpenAISystemPrompt` / `EnableOpenAISystemPromptInjection` 字段（搜 `OpenAISystemPrompt`）
 

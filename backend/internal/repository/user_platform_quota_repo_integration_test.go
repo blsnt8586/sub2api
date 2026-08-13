@@ -98,6 +98,30 @@ func TestUserPlatformQuotaRepository_BulkInsertInitial_GrokAllowed(t *testing.T)
 	require.InDelta(t, 9.0, *rec.DailyLimitUSD, 1e-9)
 }
 
+// TestUserPlatformQuotaRepository_BulkInsertInitial_CanvasAllowed guards the
+// database constraint behind domain.AllPlatforms. Without migration 223,
+// Canvas quota defaults pass service validation but fail at PostgreSQL.
+func TestUserPlatformQuotaRepository_BulkInsertInitial_CanvasAllowed(t *testing.T) {
+	ctx := context.Background()
+	tx := testEntTx(t)
+	txCtx := dbent.NewTxContext(ctx, tx)
+	client := tx.Client()
+
+	userID := mustCreateUserForQuota(t, client)
+	repo := NewUserPlatformQuotaRepository(client)
+
+	daily := 12.0
+	require.NoError(t, repo.BulkInsertInitial(txCtx, []UserPlatformQuotaRecord{
+		{UserID: userID, Platform: service.PlatformCanvas, DailyLimitUSD: &daily},
+	}), "canvas platform quota should satisfy the database constraint")
+
+	rec, err := repo.GetByUserPlatform(txCtx, userID, service.PlatformCanvas)
+	require.NoError(t, err)
+	require.NotNil(t, rec)
+	require.NotNil(t, rec.DailyLimitUSD)
+	require.InDelta(t, 12.0, *rec.DailyLimitUSD, 1e-9)
+}
+
 func TestUserPlatformQuotaRepository_GetByUserPlatform(t *testing.T) {
 	ctx := context.Background()
 	tx := testEntTx(t)
