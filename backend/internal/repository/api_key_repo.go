@@ -202,7 +202,9 @@ func (r *apiKeyRepository) GetByKeyForAuth(ctx context.Context, key string) (*se
 				group.FieldAudioSttPricePerHour,
 				group.FieldCanvasImagePricePerCount, // [CUSTOM] canvas
 				group.FieldCanvasAudioPricePerCount, // [CUSTOM] canvas
-				group.FieldModelPricing,             // [CUSTOM] canvas
+				group.FieldCanvasModelPricing,       // [CUSTOM] canvas
+				group.FieldLongContextPricingEnabled,
+				group.FieldModelPricing,
 				group.FieldClaudeCodeOnly,
 				group.FieldFallbackGroupID,
 				group.FieldFallbackGroupIDOnInvalidRequest,
@@ -953,6 +955,14 @@ func groupEntityToService(g *dbent.Group) *service.Group {
 	if g == nil {
 		return nil
 	}
+	var modelPricing []service.ChannelModelPricing
+	if len(g.ModelPricing) > 0 {
+		if err := json.Unmarshal(g.ModelPricing, &modelPricing); err != nil {
+			slog.Warn("group model_pricing unmarshal failed; falling back to channel/builtin pricing",
+				"group_id", g.ID, "error", err)
+			modelPricing = nil
+		}
+	}
 	return &service.Group{
 		ID:                              g.ID,
 		Name:                            g.Name,
@@ -989,9 +999,11 @@ func groupEntityToService(g *dbent.Group) *service.Group {
 		AudioRealtimePricePerMin:        g.AudioRealtimePricePerMin,
 		AudioTTSPricePerMillionChars:    g.AudioTtsPricePerMillionChars,
 		AudioSTTPricePerHour:            g.AudioSttPricePerHour,
-		CanvasImagePricePerCount:        g.CanvasImagePricePerCount,            // [CUSTOM] canvas
-		CanvasAudioPricePerCount:        g.CanvasAudioPricePerCount,            // [CUSTOM] canvas
-		ModelPricing:                    unmarshalModelPricing(g.ModelPricing), // [CUSTOM] canvas
+		CanvasImagePricePerCount:        g.CanvasImagePricePerCount,                        // [CUSTOM] canvas
+		CanvasAudioPricePerCount:        g.CanvasAudioPricePerCount,                        // [CUSTOM] canvas
+		CanvasModelPricing:              unmarshalCanvasModelPricing(g.CanvasModelPricing), // [CUSTOM] canvas
+		LongContextPricingEnabled:       g.LongContextPricingEnabled,
+		ModelPricing:                    modelPricing,
 		DefaultValidityDays:             g.DefaultValidityDays,
 		ClaudeCodeOnly:                  g.ClaudeCodeOnly,
 		FallbackGroupID:                 g.FallbackGroupID,
@@ -1030,20 +1042,27 @@ func derefString(s *string) string {
 	return *s
 }
 
-// unmarshalModelPricing 把 groups.model_pricing（JSONB）反序列化为 ModelPricingConfig。
+// unmarshalCanvasModelPricing 把 groups.canvas_model_pricing（JSONB）反序列化为 ModelPricingConfig。
 // NULL / 空 / 脏数据都返回 nil——定价缺失时计费链路会回退到分组全局价，
 // 因此这里静默降级比让整个分组查询失败更合适。
-func unmarshalModelPricing(b *[]byte) *service.ModelPricingConfig {
+func unmarshalCanvasModelPricing(b *[]byte) *service.ModelPricingConfig {
 	if b == nil || len(*b) == 0 {
 		return nil
 	}
 	var cfg service.ModelPricingConfig
 	if err := json.Unmarshal(*b, &cfg); err != nil {
-		slog.Warn("model_pricing unmarshal failed; falling back to group pricing", "error", err)
+		slog.Warn("canvas_model_pricing unmarshal failed; falling back to group pricing", "error", err)
 		return nil
 	}
 	if len(cfg.Video) == 0 && len(cfg.Image) == 0 {
 		return nil
 	}
 	return &cfg
+}
+
+// unmarshalModelPricing is kept as a test/helper compatibility alias. New code
+// must use unmarshalCanvasModelPricing because model_pricing now stores the
+// upstream generic pricing array.
+func unmarshalModelPricing(b *[]byte) *service.ModelPricingConfig {
+	return unmarshalCanvasModelPricing(b)
 }

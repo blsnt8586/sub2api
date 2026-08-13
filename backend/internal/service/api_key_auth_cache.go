@@ -88,10 +88,12 @@ type APIKeyAuthGroupSnapshot struct {
 	CanvasAudioPricePerCount     *float64                      `json:"canvas_audio_price_per_count,omitempty"`
 	// Canvas 平台模型专属定价。计费发生在网关热路径上，若不进快照，
 	// 缓存命中的请求会全部回退到分组全局价。[CUSTOM]
-	ModelPricing                    *ModelPricingConfig `json:"model_pricing,omitempty"`
-	ClaudeCodeOnly                  bool                `json:"claude_code_only"`
-	FallbackGroupID                 *int64              `json:"fallback_group_id,omitempty"`
-	FallbackGroupIDOnInvalidRequest *int64              `json:"fallback_group_id_on_invalid_request,omitempty"`
+	CanvasModelPricing              *ModelPricingConfig   `json:"canvas_model_pricing,omitempty"`
+	LongContextPricingEnabled       bool                  `json:"long_context_pricing_enabled"`
+	ModelPricing                    []ChannelModelPricing `json:"model_pricing,omitempty"`
+	ClaudeCodeOnly                  bool                  `json:"claude_code_only"`
+	FallbackGroupID                 *int64                `json:"fallback_group_id,omitempty"`
+	FallbackGroupIDOnInvalidRequest *int64                `json:"fallback_group_id_on_invalid_request,omitempty"`
 
 	// Model routing is used by gateway account selection, so it must be part of auth cache snapshot.
 	// Only anthropic groups use these fields; others may leave them empty.

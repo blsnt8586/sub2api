@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -895,9 +896,41 @@ func (_u *GroupUpdate) ClearCanvasAudioPricePerCount() *GroupUpdate {
 	return _u
 }
 
+// SetCanvasModelPricing sets the "canvas_model_pricing" field.
+func (_u *GroupUpdate) SetCanvasModelPricing(v []byte) *GroupUpdate {
+	_u.mutation.SetCanvasModelPricing(v)
+	return _u
+}
+
+// ClearCanvasModelPricing clears the value of the "canvas_model_pricing" field.
+func (_u *GroupUpdate) ClearCanvasModelPricing() *GroupUpdate {
+	_u.mutation.ClearCanvasModelPricing()
+	return _u
+}
+
+// SetLongContextPricingEnabled sets the "long_context_pricing_enabled" field.
+func (_u *GroupUpdate) SetLongContextPricingEnabled(v bool) *GroupUpdate {
+	_u.mutation.SetLongContextPricingEnabled(v)
+	return _u
+}
+
+// SetNillableLongContextPricingEnabled sets the "long_context_pricing_enabled" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableLongContextPricingEnabled(v *bool) *GroupUpdate {
+	if v != nil {
+		_u.SetLongContextPricingEnabled(*v)
+	}
+	return _u
+}
+
 // SetModelPricing sets the "model_pricing" field.
-func (_u *GroupUpdate) SetModelPricing(v []byte) *GroupUpdate {
+func (_u *GroupUpdate) SetModelPricing(v json.RawMessage) *GroupUpdate {
 	_u.mutation.SetModelPricing(v)
+	return _u
+}
+
+// AppendModelPricing appends value to the "model_pricing" field.
+func (_u *GroupUpdate) AppendModelPricing(v json.RawMessage) *GroupUpdate {
+	_u.mutation.AppendModelPricing(v)
 	return _u
 }
 
@@ -1853,11 +1886,25 @@ func (_u *GroupUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.CanvasAudioPricePerCountCleared() {
 		_spec.ClearField(group.FieldCanvasAudioPricePerCount, field.TypeFloat64)
 	}
+	if value, ok := _u.mutation.CanvasModelPricing(); ok {
+		_spec.SetField(group.FieldCanvasModelPricing, field.TypeBytes, value)
+	}
+	if _u.mutation.CanvasModelPricingCleared() {
+		_spec.ClearField(group.FieldCanvasModelPricing, field.TypeBytes)
+	}
+	if value, ok := _u.mutation.LongContextPricingEnabled(); ok {
+		_spec.SetField(group.FieldLongContextPricingEnabled, field.TypeBool, value)
+	}
 	if value, ok := _u.mutation.ModelPricing(); ok {
-		_spec.SetField(group.FieldModelPricing, field.TypeBytes, value)
+		_spec.SetField(group.FieldModelPricing, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedModelPricing(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, group.FieldModelPricing, value)
+		})
 	}
 	if _u.mutation.ModelPricingCleared() {
-		_spec.ClearField(group.FieldModelPricing, field.TypeBytes)
+		_spec.ClearField(group.FieldModelPricing, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.ClaudeCodeOnly(); ok {
 		_spec.SetField(group.FieldClaudeCodeOnly, field.TypeBool, value)
@@ -3132,9 +3179,41 @@ func (_u *GroupUpdateOne) ClearCanvasAudioPricePerCount() *GroupUpdateOne {
 	return _u
 }
 
+// SetCanvasModelPricing sets the "canvas_model_pricing" field.
+func (_u *GroupUpdateOne) SetCanvasModelPricing(v []byte) *GroupUpdateOne {
+	_u.mutation.SetCanvasModelPricing(v)
+	return _u
+}
+
+// ClearCanvasModelPricing clears the value of the "canvas_model_pricing" field.
+func (_u *GroupUpdateOne) ClearCanvasModelPricing() *GroupUpdateOne {
+	_u.mutation.ClearCanvasModelPricing()
+	return _u
+}
+
+// SetLongContextPricingEnabled sets the "long_context_pricing_enabled" field.
+func (_u *GroupUpdateOne) SetLongContextPricingEnabled(v bool) *GroupUpdateOne {
+	_u.mutation.SetLongContextPricingEnabled(v)
+	return _u
+}
+
+// SetNillableLongContextPricingEnabled sets the "long_context_pricing_enabled" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableLongContextPricingEnabled(v *bool) *GroupUpdateOne {
+	if v != nil {
+		_u.SetLongContextPricingEnabled(*v)
+	}
+	return _u
+}
+
 // SetModelPricing sets the "model_pricing" field.
-func (_u *GroupUpdateOne) SetModelPricing(v []byte) *GroupUpdateOne {
+func (_u *GroupUpdateOne) SetModelPricing(v json.RawMessage) *GroupUpdateOne {
 	_u.mutation.SetModelPricing(v)
+	return _u
+}
+
+// AppendModelPricing appends value to the "model_pricing" field.
+func (_u *GroupUpdateOne) AppendModelPricing(v json.RawMessage) *GroupUpdateOne {
+	_u.mutation.AppendModelPricing(v)
 	return _u
 }
 
@@ -4120,11 +4199,25 @@ func (_u *GroupUpdateOne) sqlSave(ctx context.Context) (_node *Group, err error)
 	if _u.mutation.CanvasAudioPricePerCountCleared() {
 		_spec.ClearField(group.FieldCanvasAudioPricePerCount, field.TypeFloat64)
 	}
+	if value, ok := _u.mutation.CanvasModelPricing(); ok {
+		_spec.SetField(group.FieldCanvasModelPricing, field.TypeBytes, value)
+	}
+	if _u.mutation.CanvasModelPricingCleared() {
+		_spec.ClearField(group.FieldCanvasModelPricing, field.TypeBytes)
+	}
+	if value, ok := _u.mutation.LongContextPricingEnabled(); ok {
+		_spec.SetField(group.FieldLongContextPricingEnabled, field.TypeBool, value)
+	}
 	if value, ok := _u.mutation.ModelPricing(); ok {
-		_spec.SetField(group.FieldModelPricing, field.TypeBytes, value)
+		_spec.SetField(group.FieldModelPricing, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedModelPricing(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, group.FieldModelPricing, value)
+		})
 	}
 	if _u.mutation.ModelPricingCleared() {
-		_spec.ClearField(group.FieldModelPricing, field.TypeBytes)
+		_spec.ClearField(group.FieldModelPricing, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.ClaudeCodeOnly(); ok {
 		_spec.SetField(group.FieldClaudeCodeOnly, field.TypeBool, value)

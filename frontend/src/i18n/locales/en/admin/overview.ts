@@ -1023,6 +1023,22 @@ export default {
         searchPricePer1k: 'Search price per 1k calls (USD)',
         pricePlaceholder: 'optional'
       },
+      modelPricing: {
+        title: 'Per-model group pricing',
+        description: 'Overrides channel and built-in prices for matching models. Long-context tiers come from official presets — do not enter custom intervals. Use per-request tiers such as realtime, tts, and stt for audio.',
+        longContext: 'Enable long-context tier pricing',
+        longContextHint: 'When checked, official/preset long-context tiers apply. When unchecked, token models stay on the first-tier base rate.',
+        add: 'Add model price',
+        hint: 'Set a unit price for each model individually. Models left empty fall back to built-in defaults and are never billed as $0.',
+        model: 'Model',
+        videoSection: 'Video models',
+        imageSection: 'Image models',
+        unitPrice: 'Unit price',
+        videoPriorityHint: 'Pick per-request or per-second for each model, then enter its unit price. Switching mode clears the entered price (the same number differs by nearly an order of magnitude between modes, which would otherwise cause mis-billing).',
+        emptyMeansFallback: 'Empty = built-in default price, not billed as $0.',
+        clearAll: 'Clear all per-model prices',
+        loadFailed: 'Failed to load model list'
+      },
       voicePricing: {
         title: 'Grok Voice Pricing',
         description: 'Optional per-group prices for Voice realtime / TTS / STT (USD). Leave empty to leave unpriced.',
@@ -1037,18 +1053,6 @@ export default {
         videoSection: 'Video base price',
         imageSection: 'Image base price (fallback)',
         imageFallbackHint: 'Models without a per-model price fall back to these tier prices. Per-model pricing always wins.',
-      },
-      modelPricing: {
-        title: 'Canvas Model Pricing',
-        hint: 'Set a unit price for each model individually. Models left empty fall back to built-in defaults and are never billed as $0.',
-        model: 'Model',
-        videoSection: 'Video models',
-        imageSection: 'Image models',
-        unitPrice: 'Unit price',
-        videoPriorityHint: 'Pick per-request or per-second for each model, then enter its unit price. Switching mode clears the entered price (the same number differs by nearly an order of magnitude between modes, which would otherwise cause mis-billing).',
-        emptyMeansFallback: 'Empty = built-in default price, not billed as $0.',
-        clearAll: 'Clear all per-model prices',
-        loadFailed: 'Failed to load model list'
       },
       webSearchPricing: {
         title: 'Codex Web Search Pricing',

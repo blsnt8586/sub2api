@@ -8,7 +8,7 @@ func imagePriceConfigFromAPIKey(apiKey *APIKey) *ImagePriceConfig {
 		Price1K:      apiKey.Group.ImagePrice1K,
 		Price2K:      apiKey.Group.ImagePrice2K,
 		Price4K:      apiKey.Group.ImagePrice4K,
-		ModelPricing: apiKey.Group.ModelPricing,
+		ModelPricing: apiKey.Group.CanvasModelPricing,
 	}
 }
 
@@ -41,7 +41,7 @@ func apiKeyHasConfiguredImagePrice(apiKey *APIKey, imageSize string) bool {
 	}
 	// 分组配置了 per-model 图片定价时也算"已配置"，确保不会跳到渠道定价路径
 	// 从而绕过 ModelPricing（渠道定价优先级应低于显式 per-model 配置）。
-	return apiKey.Group.ModelPricing != nil && len(apiKey.Group.ModelPricing.Image) > 0
+	return apiKey.Group.CanvasModelPricing != nil && len(apiKey.Group.CanvasModelPricing.Image) > 0
 }
 
 func videoPriceConfigFromAPIKey(apiKey *APIKey) *VideoPriceConfig {

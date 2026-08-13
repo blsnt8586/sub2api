@@ -102,6 +102,10 @@ const (
 	FieldCanvasImagePricePerCount = "canvas_image_price_per_count"
 	// FieldCanvasAudioPricePerCount holds the string denoting the canvas_audio_price_per_count field in the database.
 	FieldCanvasAudioPricePerCount = "canvas_audio_price_per_count"
+	// FieldCanvasModelPricing holds the string denoting the canvas_model_pricing field in the database.
+	FieldCanvasModelPricing = "canvas_model_pricing"
+	// FieldLongContextPricingEnabled holds the string denoting the long_context_pricing_enabled field in the database.
+	FieldLongContextPricingEnabled = "long_context_pricing_enabled"
 	// FieldModelPricing holds the string denoting the model_pricing field in the database.
 	FieldModelPricing = "model_pricing"
 	// FieldClaudeCodeOnly holds the string denoting the claude_code_only field in the database.
@@ -264,6 +268,8 @@ var Columns = []string{
 	FieldAudioSttPricePerHour,
 	FieldCanvasImagePricePerCount,
 	FieldCanvasAudioPricePerCount,
+	FieldCanvasModelPricing,
+	FieldLongContextPricingEnabled,
 	FieldModelPricing,
 	FieldClaudeCodeOnly,
 	FieldFallbackGroupID,
@@ -379,6 +385,8 @@ var (
 	AudioTtsPricePerMillionCharsValidator func(float64) error
 	// AudioSttPricePerHourValidator is a validator for the "audio_stt_price_per_hour" field. It is called by the builders before save.
 	AudioSttPricePerHourValidator func(float64) error
+	// DefaultLongContextPricingEnabled holds the default value on creation for the "long_context_pricing_enabled" field.
+	DefaultLongContextPricingEnabled bool
 	// DefaultClaudeCodeOnly holds the default value on creation for the "claude_code_only" field.
 	DefaultClaudeCodeOnly bool
 	// DefaultModelRoutingEnabled holds the default value on creation for the "model_routing_enabled" field.
@@ -637,6 +645,11 @@ func ByCanvasImagePricePerCount(opts ...sql.OrderTermOption) OrderOption {
 // ByCanvasAudioPricePerCount orders the results by the canvas_audio_price_per_count field.
 func ByCanvasAudioPricePerCount(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCanvasAudioPricePerCount, opts...).ToFunc()
+}
+
+// ByLongContextPricingEnabled orders the results by the long_context_pricing_enabled field.
+func ByLongContextPricingEnabled(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLongContextPricingEnabled, opts...).ToFunc()
 }
 
 // ByClaudeCodeOnly orders the results by the claude_code_only field.

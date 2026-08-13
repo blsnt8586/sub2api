@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -615,8 +616,28 @@ func (_c *GroupCreate) SetNillableCanvasAudioPricePerCount(v *float64) *GroupCre
 	return _c
 }
 
+// SetCanvasModelPricing sets the "canvas_model_pricing" field.
+func (_c *GroupCreate) SetCanvasModelPricing(v []byte) *GroupCreate {
+	_c.mutation.SetCanvasModelPricing(v)
+	return _c
+}
+
+// SetLongContextPricingEnabled sets the "long_context_pricing_enabled" field.
+func (_c *GroupCreate) SetLongContextPricingEnabled(v bool) *GroupCreate {
+	_c.mutation.SetLongContextPricingEnabled(v)
+	return _c
+}
+
+// SetNillableLongContextPricingEnabled sets the "long_context_pricing_enabled" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableLongContextPricingEnabled(v *bool) *GroupCreate {
+	if v != nil {
+		_c.SetLongContextPricingEnabled(*v)
+	}
+	return _c
+}
+
 // SetModelPricing sets the "model_pricing" field.
-func (_c *GroupCreate) SetModelPricing(v []byte) *GroupCreate {
+func (_c *GroupCreate) SetModelPricing(v json.RawMessage) *GroupCreate {
 	_c.mutation.SetModelPricing(v)
 	return _c
 }
@@ -1104,6 +1125,10 @@ func (_c *GroupCreate) defaults() error {
 		v := group.DefaultVideoRateMultiplier
 		_c.mutation.SetVideoRateMultiplier(v)
 	}
+	if _, ok := _c.mutation.LongContextPricingEnabled(); !ok {
+		v := group.DefaultLongContextPricingEnabled
+		_c.mutation.SetLongContextPricingEnabled(v)
+	}
 	if _, ok := _c.mutation.ClaudeCodeOnly(); !ok {
 		v := group.DefaultClaudeCodeOnly
 		_c.mutation.SetClaudeCodeOnly(v)
@@ -1298,6 +1323,9 @@ func (_c *GroupCreate) check() error {
 		if err := group.AudioSttPricePerHourValidator(v); err != nil {
 			return &ValidationError{Name: "audio_stt_price_per_hour", err: fmt.Errorf(`ent: validator failed for field "Group.audio_stt_price_per_hour": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.LongContextPricingEnabled(); !ok {
+		return &ValidationError{Name: "long_context_pricing_enabled", err: errors.New(`ent: missing required field "Group.long_context_pricing_enabled"`)}
 	}
 	if _, ok := _c.mutation.ClaudeCodeOnly(); !ok {
 		return &ValidationError{Name: "claude_code_only", err: errors.New(`ent: missing required field "Group.claude_code_only"`)}
@@ -1562,9 +1590,17 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 		_spec.SetField(group.FieldCanvasAudioPricePerCount, field.TypeFloat64, value)
 		_node.CanvasAudioPricePerCount = &value
 	}
+	if value, ok := _c.mutation.CanvasModelPricing(); ok {
+		_spec.SetField(group.FieldCanvasModelPricing, field.TypeBytes, value)
+		_node.CanvasModelPricing = &value
+	}
+	if value, ok := _c.mutation.LongContextPricingEnabled(); ok {
+		_spec.SetField(group.FieldLongContextPricingEnabled, field.TypeBool, value)
+		_node.LongContextPricingEnabled = value
+	}
 	if value, ok := _c.mutation.ModelPricing(); ok {
-		_spec.SetField(group.FieldModelPricing, field.TypeBytes, value)
-		_node.ModelPricing = &value
+		_spec.SetField(group.FieldModelPricing, field.TypeJSON, value)
+		_node.ModelPricing = value
 	}
 	if value, ok := _c.mutation.ClaudeCodeOnly(); ok {
 		_spec.SetField(group.FieldClaudeCodeOnly, field.TypeBool, value)
@@ -2574,8 +2610,38 @@ func (u *GroupUpsert) ClearCanvasAudioPricePerCount() *GroupUpsert {
 	return u
 }
 
+// SetCanvasModelPricing sets the "canvas_model_pricing" field.
+func (u *GroupUpsert) SetCanvasModelPricing(v []byte) *GroupUpsert {
+	u.Set(group.FieldCanvasModelPricing, v)
+	return u
+}
+
+// UpdateCanvasModelPricing sets the "canvas_model_pricing" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateCanvasModelPricing() *GroupUpsert {
+	u.SetExcluded(group.FieldCanvasModelPricing)
+	return u
+}
+
+// ClearCanvasModelPricing clears the value of the "canvas_model_pricing" field.
+func (u *GroupUpsert) ClearCanvasModelPricing() *GroupUpsert {
+	u.SetNull(group.FieldCanvasModelPricing)
+	return u
+}
+
+// SetLongContextPricingEnabled sets the "long_context_pricing_enabled" field.
+func (u *GroupUpsert) SetLongContextPricingEnabled(v bool) *GroupUpsert {
+	u.Set(group.FieldLongContextPricingEnabled, v)
+	return u
+}
+
+// UpdateLongContextPricingEnabled sets the "long_context_pricing_enabled" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateLongContextPricingEnabled() *GroupUpsert {
+	u.SetExcluded(group.FieldLongContextPricingEnabled)
+	return u
+}
+
 // SetModelPricing sets the "model_pricing" field.
-func (u *GroupUpsert) SetModelPricing(v []byte) *GroupUpsert {
+func (u *GroupUpsert) SetModelPricing(v json.RawMessage) *GroupUpsert {
 	u.Set(group.FieldModelPricing, v)
 	return u
 }
@@ -3842,8 +3908,43 @@ func (u *GroupUpsertOne) ClearCanvasAudioPricePerCount() *GroupUpsertOne {
 	})
 }
 
+// SetCanvasModelPricing sets the "canvas_model_pricing" field.
+func (u *GroupUpsertOne) SetCanvasModelPricing(v []byte) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetCanvasModelPricing(v)
+	})
+}
+
+// UpdateCanvasModelPricing sets the "canvas_model_pricing" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateCanvasModelPricing() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateCanvasModelPricing()
+	})
+}
+
+// ClearCanvasModelPricing clears the value of the "canvas_model_pricing" field.
+func (u *GroupUpsertOne) ClearCanvasModelPricing() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearCanvasModelPricing()
+	})
+}
+
+// SetLongContextPricingEnabled sets the "long_context_pricing_enabled" field.
+func (u *GroupUpsertOne) SetLongContextPricingEnabled(v bool) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetLongContextPricingEnabled(v)
+	})
+}
+
+// UpdateLongContextPricingEnabled sets the "long_context_pricing_enabled" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateLongContextPricingEnabled() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateLongContextPricingEnabled()
+	})
+}
+
 // SetModelPricing sets the "model_pricing" field.
-func (u *GroupUpsertOne) SetModelPricing(v []byte) *GroupUpsertOne {
+func (u *GroupUpsertOne) SetModelPricing(v json.RawMessage) *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
 		s.SetModelPricing(v)
 	})
@@ -5330,8 +5431,43 @@ func (u *GroupUpsertBulk) ClearCanvasAudioPricePerCount() *GroupUpsertBulk {
 	})
 }
 
+// SetCanvasModelPricing sets the "canvas_model_pricing" field.
+func (u *GroupUpsertBulk) SetCanvasModelPricing(v []byte) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetCanvasModelPricing(v)
+	})
+}
+
+// UpdateCanvasModelPricing sets the "canvas_model_pricing" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateCanvasModelPricing() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateCanvasModelPricing()
+	})
+}
+
+// ClearCanvasModelPricing clears the value of the "canvas_model_pricing" field.
+func (u *GroupUpsertBulk) ClearCanvasModelPricing() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearCanvasModelPricing()
+	})
+}
+
+// SetLongContextPricingEnabled sets the "long_context_pricing_enabled" field.
+func (u *GroupUpsertBulk) SetLongContextPricingEnabled(v bool) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetLongContextPricingEnabled(v)
+	})
+}
+
+// UpdateLongContextPricingEnabled sets the "long_context_pricing_enabled" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateLongContextPricingEnabled() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateLongContextPricingEnabled()
+	})
+}
+
 // SetModelPricing sets the "model_pricing" field.
-func (u *GroupUpsertBulk) SetModelPricing(v []byte) *GroupUpsertBulk {
+func (u *GroupUpsertBulk) SetModelPricing(v json.RawMessage) *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
 		s.SetModelPricing(v)
 	})

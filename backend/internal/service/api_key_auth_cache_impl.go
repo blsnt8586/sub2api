@@ -18,7 +18,7 @@ import (
 // v21: Canvas 图片/音频全局按次价进入认证快照。
 // 必须升版本强制刷新——否则升级后 Redis 里旧快照仍被判定有效，新字段缺失会导致
 // canvas 分组/语音搜索计费一直回退到分组全局价直到缓存自然过期。[CUSTOM+upstream]
-const apiKeyAuthSnapshotVersion = 21
+const apiKeyAuthSnapshotVersion = 22
 
 type apiKeyAuthCacheConfig struct {
 	l1Size        int
@@ -412,7 +412,9 @@ func (s *APIKeyService) snapshotFromAPIKey(ctx context.Context, apiKey *APIKey) 
 			AudioSTTPricePerHour:            apiKey.Group.AudioSTTPricePerHour,
 			CanvasImagePricePerCount:        apiKey.Group.CanvasImagePricePerCount,
 			CanvasAudioPricePerCount:        apiKey.Group.CanvasAudioPricePerCount,
-			ModelPricing:                    apiKey.Group.ModelPricing, // [CUSTOM] canvas
+			CanvasModelPricing:              apiKey.Group.CanvasModelPricing,
+			LongContextPricingEnabled:       apiKey.Group.LongContextPricingEnabled,
+			ModelPricing:                    apiKey.Group.ModelPricing,
 			ClaudeCodeOnly:                  apiKey.Group.ClaudeCodeOnly,
 			FallbackGroupID:                 apiKey.Group.FallbackGroupID,
 			FallbackGroupIDOnInvalidRequest: apiKey.Group.FallbackGroupIDOnInvalidRequest,
@@ -510,7 +512,9 @@ func (s *APIKeyService) snapshotToAPIKey(key string, snapshot *APIKeyAuthSnapsho
 			AudioSTTPricePerHour:            snapshot.Group.AudioSTTPricePerHour,
 			CanvasImagePricePerCount:        snapshot.Group.CanvasImagePricePerCount,
 			CanvasAudioPricePerCount:        snapshot.Group.CanvasAudioPricePerCount,
-			ModelPricing:                    snapshot.Group.ModelPricing, // [CUSTOM] canvas
+			CanvasModelPricing:              snapshot.Group.CanvasModelPricing,
+			LongContextPricingEnabled:       snapshot.Group.LongContextPricingEnabled,
+			ModelPricing:                    snapshot.Group.ModelPricing,
 			ClaudeCodeOnly:                  snapshot.Group.ClaudeCodeOnly,
 			FallbackGroupID:                 snapshot.Group.FallbackGroupID,
 			FallbackGroupIDOnInvalidRequest: snapshot.Group.FallbackGroupIDOnInvalidRequest,

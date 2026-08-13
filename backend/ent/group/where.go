@@ -265,9 +265,14 @@ func CanvasAudioPricePerCount(v float64) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldCanvasAudioPricePerCount, v))
 }
 
-// ModelPricing applies equality check predicate on the "model_pricing" field. It's identical to ModelPricingEQ.
-func ModelPricing(v []byte) predicate.Group {
-	return predicate.Group(sql.FieldEQ(FieldModelPricing, v))
+// CanvasModelPricing applies equality check predicate on the "canvas_model_pricing" field. It's identical to CanvasModelPricingEQ.
+func CanvasModelPricing(v []byte) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldCanvasModelPricing, v))
+}
+
+// LongContextPricingEnabled applies equality check predicate on the "long_context_pricing_enabled" field. It's identical to LongContextPricingEnabledEQ.
+func LongContextPricingEnabled(v bool) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldLongContextPricingEnabled, v))
 }
 
 // ClaudeCodeOnly applies equality check predicate on the "claude_code_only" field. It's identical to ClaudeCodeOnlyEQ.
@@ -2270,44 +2275,64 @@ func CanvasAudioPricePerCountNotNil() predicate.Group {
 	return predicate.Group(sql.FieldNotNull(FieldCanvasAudioPricePerCount))
 }
 
-// ModelPricingEQ applies the EQ predicate on the "model_pricing" field.
-func ModelPricingEQ(v []byte) predicate.Group {
-	return predicate.Group(sql.FieldEQ(FieldModelPricing, v))
+// CanvasModelPricingEQ applies the EQ predicate on the "canvas_model_pricing" field.
+func CanvasModelPricingEQ(v []byte) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldCanvasModelPricing, v))
 }
 
-// ModelPricingNEQ applies the NEQ predicate on the "model_pricing" field.
-func ModelPricingNEQ(v []byte) predicate.Group {
-	return predicate.Group(sql.FieldNEQ(FieldModelPricing, v))
+// CanvasModelPricingNEQ applies the NEQ predicate on the "canvas_model_pricing" field.
+func CanvasModelPricingNEQ(v []byte) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldCanvasModelPricing, v))
 }
 
-// ModelPricingIn applies the In predicate on the "model_pricing" field.
-func ModelPricingIn(vs ...[]byte) predicate.Group {
-	return predicate.Group(sql.FieldIn(FieldModelPricing, vs...))
+// CanvasModelPricingIn applies the In predicate on the "canvas_model_pricing" field.
+func CanvasModelPricingIn(vs ...[]byte) predicate.Group {
+	return predicate.Group(sql.FieldIn(FieldCanvasModelPricing, vs...))
 }
 
-// ModelPricingNotIn applies the NotIn predicate on the "model_pricing" field.
-func ModelPricingNotIn(vs ...[]byte) predicate.Group {
-	return predicate.Group(sql.FieldNotIn(FieldModelPricing, vs...))
+// CanvasModelPricingNotIn applies the NotIn predicate on the "canvas_model_pricing" field.
+func CanvasModelPricingNotIn(vs ...[]byte) predicate.Group {
+	return predicate.Group(sql.FieldNotIn(FieldCanvasModelPricing, vs...))
 }
 
-// ModelPricingGT applies the GT predicate on the "model_pricing" field.
-func ModelPricingGT(v []byte) predicate.Group {
-	return predicate.Group(sql.FieldGT(FieldModelPricing, v))
+// CanvasModelPricingGT applies the GT predicate on the "canvas_model_pricing" field.
+func CanvasModelPricingGT(v []byte) predicate.Group {
+	return predicate.Group(sql.FieldGT(FieldCanvasModelPricing, v))
 }
 
-// ModelPricingGTE applies the GTE predicate on the "model_pricing" field.
-func ModelPricingGTE(v []byte) predicate.Group {
-	return predicate.Group(sql.FieldGTE(FieldModelPricing, v))
+// CanvasModelPricingGTE applies the GTE predicate on the "canvas_model_pricing" field.
+func CanvasModelPricingGTE(v []byte) predicate.Group {
+	return predicate.Group(sql.FieldGTE(FieldCanvasModelPricing, v))
 }
 
-// ModelPricingLT applies the LT predicate on the "model_pricing" field.
-func ModelPricingLT(v []byte) predicate.Group {
-	return predicate.Group(sql.FieldLT(FieldModelPricing, v))
+// CanvasModelPricingLT applies the LT predicate on the "canvas_model_pricing" field.
+func CanvasModelPricingLT(v []byte) predicate.Group {
+	return predicate.Group(sql.FieldLT(FieldCanvasModelPricing, v))
 }
 
-// ModelPricingLTE applies the LTE predicate on the "model_pricing" field.
-func ModelPricingLTE(v []byte) predicate.Group {
-	return predicate.Group(sql.FieldLTE(FieldModelPricing, v))
+// CanvasModelPricingLTE applies the LTE predicate on the "canvas_model_pricing" field.
+func CanvasModelPricingLTE(v []byte) predicate.Group {
+	return predicate.Group(sql.FieldLTE(FieldCanvasModelPricing, v))
+}
+
+// CanvasModelPricingIsNil applies the IsNil predicate on the "canvas_model_pricing" field.
+func CanvasModelPricingIsNil() predicate.Group {
+	return predicate.Group(sql.FieldIsNull(FieldCanvasModelPricing))
+}
+
+// CanvasModelPricingNotNil applies the NotNil predicate on the "canvas_model_pricing" field.
+func CanvasModelPricingNotNil() predicate.Group {
+	return predicate.Group(sql.FieldNotNull(FieldCanvasModelPricing))
+}
+
+// LongContextPricingEnabledEQ applies the EQ predicate on the "long_context_pricing_enabled" field.
+func LongContextPricingEnabledEQ(v bool) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldLongContextPricingEnabled, v))
+}
+
+// LongContextPricingEnabledNEQ applies the NEQ predicate on the "long_context_pricing_enabled" field.
+func LongContextPricingEnabledNEQ(v bool) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldLongContextPricingEnabled, v))
 }
 
 // ModelPricingIsNil applies the IsNil predicate on the "model_pricing" field.

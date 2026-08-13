@@ -1,6 +1,8 @@
 package schema
 
 import (
+	"encoding/json"
+
 	"github.com/Wei-Shaw/sub2api/ent/schema/mixins"
 	"github.com/Wei-Shaw/sub2api/internal/domain"
 
@@ -207,14 +209,21 @@ func (Group) Fields() []ent.Field {
 			SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}).
 			Comment("canvas 异步音频任务按次单价（USD/次）。nil 表示使用全局视频价格兜底。"),
 
-		// Canvas 平台（avi2api vendor）模型专属定价（added by canvas-model-pricing migration）[CUSTOM]
+		// Canvas 平台（avi2api vendor）模型专属定价。[CUSTOM]
 		// 格式：{"video":{"veo-3.1":{"per_second":0.02},"kling-3.0":{"per_count":0.05}},"image":{"gpt-image-2":{"2k":0.05}}}
 		// nil/NULL 或空表示所有模型使用分组全局价（video_price_per_count/per_second、image_price_*）。
-		field.Bytes("model_pricing").
+		field.Bytes("canvas_model_pricing").
 			Optional().
 			Nillable().
 			SchemaType(map[string]string{dialect.Postgres: "jsonb"}).
 			Comment("Canvas 平台模型专属定价（JSONB），按模型覆盖分组全局定价"),
+		field.Bool("long_context_pricing_enabled").
+			Default(true).
+			Comment("是否按上下文长度应用模型阶梯价格；默认开启以保持官方/渠道长上下文价"),
+		field.JSON("model_pricing", json.RawMessage{}).
+			Optional().
+			SchemaType(map[string]string{dialect.Postgres: "jsonb"}).
+			Comment("分组逐模型定价；优先级高于渠道和内置定价"),
 
 		// Claude Code 客户端限制 (added by migration 029)
 		field.Bool("claude_code_only").

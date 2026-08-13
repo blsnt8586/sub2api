@@ -75,7 +75,7 @@ type Group struct {
 	// 模型定价配置（canvas 平台专用）
 	// 优先级：模型专属定价 > 分组全局定价（上方字段） > 系统默认定价
 	// JSON 结构示例：{"video":{"seedance-v1":{"per_count":0.08}},"image":{"leonardo-phoenix":{"1k":0.01,"2k":0.02}}}
-	ModelPricing *ModelPricingConfig
+	CanvasModelPricing *ModelPricingConfig
 
 	// 搜索工具显式定价（per 1k calls）。
 	SearchPricePer1k *float64
@@ -83,6 +83,11 @@ type Group struct {
 	AudioRealtimePricePerMin     *float64
 	AudioTTSPricePerMillionChars *float64
 	AudioSTTPricePerHour         *float64
+
+	// ModelPricing overrides channel and built-in prices for matching models.
+	// Token intervals are selected only when LongContextPricingEnabled is true.
+	LongContextPricingEnabled bool
+	ModelPricing              []ChannelModelPricing
 
 	// Claude Code 客户端限制
 	ClaudeCodeOnly  bool

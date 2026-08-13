@@ -521,7 +521,8 @@ fork 初期散落的平台分支（jimeng/grok 等）遍布 41 个文件，每�
 | `openai_gateway_forward.go` | `Forward` body 定稿后的 `[CUSTOM]` 注入钩子（15 行，覆盖 responses HTTP+WS） | 上游高频重构 OpenAI 网关；若改 `if bodyModified` 块或重命名 `requestView`/`reqBody`/`compatMessagesBridge`，需重新贴钩子并核对变量名 |
 | `openai_gateway_chat_completions.go` | `ForwardAsChatCompletions` 的 `[CUSTOM]` 注入钩子（7 行，锚点 `responsesBody = updatedBody` 后） | 上游若重构 chat→responses 转换流程，需重新定位注入点 |
 | **`openai_gateway_scheduling.go`** | `normalizeOpenAICompatiblePlatform` 新增 jimeng 分支（7 行，`[CUSTOM]` 注释标记） | 上游若重构该函数（如改名/拆分/内联），需补回 `if platform == PlatformJimeng { return PlatformJimeng }` 分支；与 `account.go` 的 `IsOpenAICompatible` 逻辑绑定，两处必须同时维护 |
-| **`handler/admin/group_handler.go`** | 新增 `import "github.com/Wei-Shaw/sub2api/internal/pkg/avi2api"` + `GetCanvasPricingModels` handler（约 10 行，[CUSTOM]）；`CreateGroupRequest` / `UpdateGroupRequest` 各加 `ModelPricing *service.ModelPricingConfig` 字段（2 行） | 上游高频改 group handler DTO；同步冲突时需手动保留 `avi2api` import、`ModelPricing` 字段和 `GetCanvasPricingModels` 函数 |
+| **`handler/admin/group_handler.go`** | 新增 `import "github.com/Wei-Shaw/sub2api/internal/pkg/avi2api"` + `GetCanvasPricingModels` handler（约 10 行，[CUSTOM]）；`CreateGroupRequest` / `UpdateGroupRequest` 各加 `CanvasModelPricing *service.ModelPricingConfig` 字段 | 上游高频改 group handler DTO；同步冲突时必须同时保留上游 `ModelPricing []service.ChannelModelPricing` 与 fork `CanvasModelPricing`，两者不能再合并为同一 JSON 字段 |
+| `groups.model_pricing` / `groups.canvas_model_pricing` | 上游 `model_pricing` 是 `[]ChannelModelPricing` JSON 数组；fork 的 Canvas 图片/视频专属价是 `ModelPricingConfig` JSON 对象，固定存 `canvas_model_pricing` | 迁移 `222_canvas_model_pricing_split.sql` 用 `jsonb_typeof(model_pricing) = 'object'` 搬迁旧 Canvas 数据，数组原位保留。以后同步不得把 Canvas DTO、认证快照或前端编辑器重新绑定到 `model_pricing` |
 
 ### 🟢 LOW — 一般无冲突（fork 新增文件为主）
 
@@ -541,7 +542,7 @@ fork 初期散落的平台分支（jimeng/grok 等）遍布 41 个文件，每�
 
 1. **Ent 生成代码**：若 `ent/schema/` 冲突，优先解决 schema，再 `go generate ./ent`，最后提交全部生成文件
 2. **wire 依赖注入**：检查 `service/wire.go`、`handler/wire.go`、`repository/wire.go` 是否含 Sub2API optimize 相关 provider（[§4.2](#42-wire-依赖注入关键易漏)）
-3. **迁移文件**：fork 新增的 `migrations/165*.sql` 保留，编号若与上游冲突需重命名
+3. **迁移文件**：fork 新增迁移（含 `165*.sql`、`222_canvas_model_pricing_split.sql`）保留，编号若与上游冲突需重命名；不要修改已上线迁移内容
 4. **前端类型**：若 `types/index.ts` 的 `AccountPlatform` / `GroupPlatform` 冲突，保留 `jimeng`
 
 ### 8.2 逐项复原（对照 [§7 冲突面](#七冲突面分级high-conflict-必查)）

@@ -1020,6 +1020,22 @@ export default {
         searchPricePer1k: '搜索每千次价格（USD）',
         pricePlaceholder: '可选'
       },
+      modelPricing: {
+        title: '分组逐模型定价',
+        description: '匹配模型后覆盖渠道和内置价格。长上下文阶梯沿用官方/预设价卡，无需再手填区间。音频可用按次层级配置 realtime、tts、stt。',
+        longContext: '启用长上下文阶梯定价',
+        longContextHint: '勾选后按官方/预设阶梯计费；关闭则始终按第一档基础价。',
+        add: '添加模型价格',
+        hint: '为每个模型单独配置单价；留空则使用内置默认价，不会按 $0 计费。',
+        model: '模型',
+        videoSection: '视频模型',
+        imageSection: '图像模型',
+        unitPrice: '单价',
+        videoPriorityHint: '每个模型单独选按次或按秒，再填对应单价。切换方式会清空已填单价（同一数字在两种方式下相差近一个数量级，避免误收费）。',
+        emptyMeansFallback: '留空 = 使用内置默认价，不会按 $0 计费。',
+        clearAll: '清空全部模型定价',
+        loadFailed: '加载模型列表失败'
+      },
       voicePricing: {
         title: 'Grok Voice 定价',
         description: '分组级 Voice realtime / TTS / STT 单价（USD）。留空表示未配置。',
@@ -1034,18 +1050,6 @@ export default {
         videoSection: '视频基础价',
         imageSection: '图片基础价（回退）',
         imageFallbackHint: '留空的模型自动回退到此档位价格；设置了"按模型定价"的模型优先使用模型专属价。',
-      },
-      modelPricing: {
-        title: 'Canvas 模型定价',
-        hint: '为每个模型单独配置单价；留空则使用内置默认价，不会按 $0 计费。',
-        model: '模型',
-        videoSection: '视频模型',
-        imageSection: '图像模型',
-        unitPrice: '单价',
-        videoPriorityHint: '每个模型单独选按次或按秒，再填对应单价。切换方式会清空已填单价（同一数字在两种方式下相差近一个数量级，避免误收费）。',
-        emptyMeansFallback: '留空 = 使用内置默认价，不会按 $0 计费。',
-        clearAll: '清空全部模型定价',
-        loadFailed: '加载模型列表失败'
       },
       webSearchPricing: {
         title: 'Codex 网页搜索计费',

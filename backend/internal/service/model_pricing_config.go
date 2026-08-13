@@ -1,6 +1,6 @@
 package service
 
-// ModelPricingConfig 分组级别的模型定价配置（存储为 groups.model_pricing JSONB）。
+// ModelPricingConfig 分组级别的 Canvas 模型定价配置（存储为 groups.canvas_model_pricing JSONB）。
 // 优先级：模型专属定价 > 分组全局定价（video_price_per_count 等） > 系统默认定价。
 type ModelPricingConfig struct {
 	Video map[string]*ModelVideoPricing `json:"video,omitempty"`

@@ -9,9 +9,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// 快照会序列化进 Redis。ModelPricing 若在往返中丢失，
+// 快照会序列化进 Redis。CanvasModelPricing 若在往返中丢失，
 // 缓存命中的 canvas 请求会静默按分组全局价计费。
-func TestAPIKeyAuthGroupSnapshot_ModelPricingRoundTrip(t *testing.T) {
+func TestAPIKeyAuthGroupSnapshot_CanvasModelPricingRoundTrip(t *testing.T) {
 	canvasImagePrice := 0.08
 	canvasAudioPrice := 0.12
 	snapshot := &APIKeyAuthGroupSnapshot{
@@ -21,7 +21,7 @@ func TestAPIKeyAuthGroupSnapshot_ModelPricingRoundTrip(t *testing.T) {
 		Status:                   StatusActive,
 		CanvasImagePricePerCount: &canvasImagePrice,
 		CanvasAudioPricePerCount: &canvasAudioPrice,
-		ModelPricing: &ModelPricingConfig{
+		CanvasModelPricing: &ModelPricingConfig{
 			Video: map[string]*ModelVideoPricing{
 				"veo-3.1":   {PricePerSecond: priceOf(0.02)},
 				"kling-3.0": {PricePerCount: priceOf(0.5)},
@@ -34,45 +34,45 @@ func TestAPIKeyAuthGroupSnapshot_ModelPricingRoundTrip(t *testing.T) {
 
 	encoded, err := json.Marshal(snapshot)
 	require.NoError(t, err)
-	require.Contains(t, string(encoded), `"model_pricing"`, "快照 JSON 未包含 model_pricing")
+	require.Contains(t, string(encoded), `"canvas_model_pricing"`, "快照 JSON 未包含 canvas_model_pricing")
 
 	var decoded APIKeyAuthGroupSnapshot
 	require.NoError(t, json.Unmarshal(encoded, &decoded))
-	require.NotNil(t, decoded.ModelPricing)
+	require.NotNil(t, decoded.CanvasModelPricing)
 	require.NotNil(t, decoded.CanvasImagePricePerCount)
 	require.InDelta(t, canvasImagePrice, *decoded.CanvasImagePricePerCount, 1e-9)
 	require.NotNil(t, decoded.CanvasAudioPricePerCount)
 	require.InDelta(t, canvasAudioPrice, *decoded.CanvasAudioPricePerCount, 1e-9)
 
-	videoPrice := decoded.ModelPricing.GetModelVideoPrice("veo-3.1")
+	videoPrice := decoded.CanvasModelPricing.GetModelVideoPrice("veo-3.1")
 	require.NotNil(t, videoPrice)
 	require.NotNil(t, videoPrice.PricePerSecond)
 	require.InDelta(t, 0.02, *videoPrice.PricePerSecond, 1e-9)
 
-	countPrice := decoded.ModelPricing.GetModelVideoPrice("kling-3.0")
+	countPrice := decoded.CanvasModelPricing.GetModelVideoPrice("kling-3.0")
 	require.NotNil(t, countPrice)
 	require.InDelta(t, 0.5, *countPrice.PricePerCount, 1e-9)
 
-	imagePrice := decoded.ModelPricing.GetModelImagePrice("gpt-image-2", "2K")
+	imagePrice := decoded.CanvasModelPricing.GetModelImagePrice("gpt-image-2", "2K")
 	require.NotNil(t, imagePrice)
 	require.InDelta(t, 0.03, *imagePrice, 1e-9)
 }
 
-func TestAPIKeyAuthGroupSnapshot_NilModelPricingOmitted(t *testing.T) {
+func TestAPIKeyAuthGroupSnapshot_NilCanvasModelPricingOmitted(t *testing.T) {
 	snapshot := &APIKeyAuthGroupSnapshot{ID: 1, Name: "anthropic-group", Platform: PlatformAnthropic}
 
 	encoded, err := json.Marshal(snapshot)
 	require.NoError(t, err)
-	require.NotContains(t, string(encoded), `"model_pricing"`, "未配置定价时不应写入该字段")
+	require.NotContains(t, string(encoded), `"canvas_model_pricing"`, "未配置 Canvas 定价时不应写入该字段")
 
 	var decoded APIKeyAuthGroupSnapshot
 	require.NoError(t, json.Unmarshal(encoded, &decoded))
-	require.Nil(t, decoded.ModelPricing)
+	require.Nil(t, decoded.CanvasModelPricing)
 }
 
 // 旧版本快照必须被拒绝，否则升级后仍会命中不含 model_pricing 的缓存。
 func TestAPIKeyService_RejectsSnapshotWithoutModelPricingSupport(t *testing.T) {
-	require.Equal(t, 21, apiKeyAuthSnapshotVersion,
+	require.Equal(t, 22, apiKeyAuthSnapshotVersion,
 		"新增快照字段后必须递增版本号，否则旧缓存不会失效")
 
 	svc := &APIKeyService{}

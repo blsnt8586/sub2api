@@ -545,7 +545,7 @@ export interface ReasoningEffortMapping {
 }
 
 // Canvas 平台按模型定价配置 [CUSTOM]
-// 后端存 groups.model_pricing (JSONB)，key 为模型名。
+// 后端存 groups.canvas_model_pricing (JSONB)，key 为模型名。
 // 优先级：模型专属价 > 分组全局价 > 系统默认价。
 export interface ModelVideoPricing {
   per_count?: number | null
@@ -578,6 +578,7 @@ export interface Group {
   daily_limit_usd: number | null
   weekly_limit_usd: number | null
   monthly_limit_usd: number | null
+  long_context_pricing_enabled: boolean
   // 图片生成计费配置
   allow_image_generation: boolean
   allow_batch_image_generation: boolean
@@ -598,7 +599,7 @@ export interface Group {
   // Optional model-family x resolution overrides for Grok video pricing.
   video_model_prices?: VideoModelPrices
   // Canvas 平台按模型定价；null 表示所有模型走上面的分组全局价 [CUSTOM]
-  model_pricing?: ModelPricingConfig | null
+  canvas_model_pricing?: ModelPricingConfig | null
   // Codex 网页搜索单次价格（USD/次）；null 表示使用默认价 0.01
   web_search_price_per_call: number | null
   // Grok Voice 显式定价（分组级）
@@ -630,6 +631,7 @@ export interface Group {
 }
 
 export interface AdminGroup extends Group {
+  model_pricing: import('@/api/admin/channels').ChannelModelPricing[]
   // 分组利润控制（openai/anthropic/gemini/grok/antigravity 分组可启用；margin/buffer 为小数存储）。
   // 仅管理员可见：与 rate_multiplier 相乘即可反推上游成本上限，不得下放到 Group。
   profit_control_enabled: boolean
@@ -792,6 +794,9 @@ export interface CreateGroupRequest {
   daily_limit_usd?: number | null
   weekly_limit_usd?: number | null
   monthly_limit_usd?: number | null
+  long_context_pricing_enabled?: boolean
+  model_pricing?: import('@/api/admin/channels').ChannelModelPricing[]
+  canvas_model_pricing?: ModelPricingConfig | null
   allow_image_generation?: boolean
   allow_batch_image_generation?: boolean
   image_rate_independent?: boolean
@@ -854,6 +859,9 @@ export interface UpdateGroupRequest {
   daily_limit_usd?: number | null
   weekly_limit_usd?: number | null
   monthly_limit_usd?: number | null
+  long_context_pricing_enabled?: boolean
+  model_pricing?: import('@/api/admin/channels').ChannelModelPricing[]
+  canvas_model_pricing?: ModelPricingConfig | null
   allow_image_generation?: boolean
   allow_batch_image_generation?: boolean
   image_rate_independent?: boolean

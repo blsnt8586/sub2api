@@ -22741,7 +22741,10 @@ type GroupMutation struct {
 	addcanvas_image_price_per_count         *float64
 	canvas_audio_price_per_count            *float64
 	addcanvas_audio_price_per_count         *float64
-	model_pricing                           *[]byte
+	canvas_model_pricing                    *[]byte
+	long_context_pricing_enabled            *bool
+	model_pricing                           *json.RawMessage
+	appendmodel_pricing                     json.RawMessage
 	claude_code_only                        *bool
 	fallback_group_id                       *int64
 	addfallback_group_id                    *int64
@@ -25245,13 +25248,99 @@ func (m *GroupMutation) ResetCanvasAudioPricePerCount() {
 	delete(m.clearedFields, group.FieldCanvasAudioPricePerCount)
 }
 
+// SetCanvasModelPricing sets the "canvas_model_pricing" field.
+func (m *GroupMutation) SetCanvasModelPricing(b []byte) {
+	m.canvas_model_pricing = &b
+}
+
+// CanvasModelPricing returns the value of the "canvas_model_pricing" field in the mutation.
+func (m *GroupMutation) CanvasModelPricing() (r []byte, exists bool) {
+	v := m.canvas_model_pricing
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCanvasModelPricing returns the old "canvas_model_pricing" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldCanvasModelPricing(ctx context.Context) (v *[]byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCanvasModelPricing is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCanvasModelPricing requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCanvasModelPricing: %w", err)
+	}
+	return oldValue.CanvasModelPricing, nil
+}
+
+// ClearCanvasModelPricing clears the value of the "canvas_model_pricing" field.
+func (m *GroupMutation) ClearCanvasModelPricing() {
+	m.canvas_model_pricing = nil
+	m.clearedFields[group.FieldCanvasModelPricing] = struct{}{}
+}
+
+// CanvasModelPricingCleared returns if the "canvas_model_pricing" field was cleared in this mutation.
+func (m *GroupMutation) CanvasModelPricingCleared() bool {
+	_, ok := m.clearedFields[group.FieldCanvasModelPricing]
+	return ok
+}
+
+// ResetCanvasModelPricing resets all changes to the "canvas_model_pricing" field.
+func (m *GroupMutation) ResetCanvasModelPricing() {
+	m.canvas_model_pricing = nil
+	delete(m.clearedFields, group.FieldCanvasModelPricing)
+}
+
+// SetLongContextPricingEnabled sets the "long_context_pricing_enabled" field.
+func (m *GroupMutation) SetLongContextPricingEnabled(b bool) {
+	m.long_context_pricing_enabled = &b
+}
+
+// LongContextPricingEnabled returns the value of the "long_context_pricing_enabled" field in the mutation.
+func (m *GroupMutation) LongContextPricingEnabled() (r bool, exists bool) {
+	v := m.long_context_pricing_enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLongContextPricingEnabled returns the old "long_context_pricing_enabled" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldLongContextPricingEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLongContextPricingEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLongContextPricingEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLongContextPricingEnabled: %w", err)
+	}
+	return oldValue.LongContextPricingEnabled, nil
+}
+
+// ResetLongContextPricingEnabled resets all changes to the "long_context_pricing_enabled" field.
+func (m *GroupMutation) ResetLongContextPricingEnabled() {
+	m.long_context_pricing_enabled = nil
+}
+
 // SetModelPricing sets the "model_pricing" field.
-func (m *GroupMutation) SetModelPricing(b []byte) {
-	m.model_pricing = &b
+func (m *GroupMutation) SetModelPricing(jm json.RawMessage) {
+	m.model_pricing = &jm
+	m.appendmodel_pricing = nil
 }
 
 // ModelPricing returns the value of the "model_pricing" field in the mutation.
-func (m *GroupMutation) ModelPricing() (r []byte, exists bool) {
+func (m *GroupMutation) ModelPricing() (r json.RawMessage, exists bool) {
 	v := m.model_pricing
 	if v == nil {
 		return
@@ -25262,7 +25351,7 @@ func (m *GroupMutation) ModelPricing() (r []byte, exists bool) {
 // OldModelPricing returns the old "model_pricing" field's value of the Group entity.
 // If the Group object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *GroupMutation) OldModelPricing(ctx context.Context) (v *[]byte, err error) {
+func (m *GroupMutation) OldModelPricing(ctx context.Context) (v json.RawMessage, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldModelPricing is only allowed on UpdateOne operations")
 	}
@@ -25276,9 +25365,23 @@ func (m *GroupMutation) OldModelPricing(ctx context.Context) (v *[]byte, err err
 	return oldValue.ModelPricing, nil
 }
 
+// AppendModelPricing adds jm to the "model_pricing" field.
+func (m *GroupMutation) AppendModelPricing(jm json.RawMessage) {
+	m.appendmodel_pricing = append(m.appendmodel_pricing, jm...)
+}
+
+// AppendedModelPricing returns the list of values that were appended to the "model_pricing" field in this mutation.
+func (m *GroupMutation) AppendedModelPricing() (json.RawMessage, bool) {
+	if len(m.appendmodel_pricing) == 0 {
+		return nil, false
+	}
+	return m.appendmodel_pricing, true
+}
+
 // ClearModelPricing clears the value of the "model_pricing" field.
 func (m *GroupMutation) ClearModelPricing() {
 	m.model_pricing = nil
+	m.appendmodel_pricing = nil
 	m.clearedFields[group.FieldModelPricing] = struct{}{}
 }
 
@@ -25291,6 +25394,7 @@ func (m *GroupMutation) ModelPricingCleared() bool {
 // ResetModelPricing resets all changes to the "model_pricing" field.
 func (m *GroupMutation) ResetModelPricing() {
 	m.model_pricing = nil
+	m.appendmodel_pricing = nil
 	delete(m.clearedFields, group.FieldModelPricing)
 }
 
@@ -26599,7 +26703,7 @@ func (m *GroupMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GroupMutation) Fields() []string {
-	fields := make([]string, 0, 65)
+	fields := make([]string, 0, 67)
 	if m.created_at != nil {
 		fields = append(fields, group.FieldCreatedAt)
 	}
@@ -26728,6 +26832,12 @@ func (m *GroupMutation) Fields() []string {
 	}
 	if m.canvas_audio_price_per_count != nil {
 		fields = append(fields, group.FieldCanvasAudioPricePerCount)
+	}
+	if m.canvas_model_pricing != nil {
+		fields = append(fields, group.FieldCanvasModelPricing)
+	}
+	if m.long_context_pricing_enabled != nil {
+		fields = append(fields, group.FieldLongContextPricingEnabled)
 	}
 	if m.model_pricing != nil {
 		fields = append(fields, group.FieldModelPricing)
@@ -26889,6 +26999,10 @@ func (m *GroupMutation) Field(name string) (ent.Value, bool) {
 		return m.CanvasImagePricePerCount()
 	case group.FieldCanvasAudioPricePerCount:
 		return m.CanvasAudioPricePerCount()
+	case group.FieldCanvasModelPricing:
+		return m.CanvasModelPricing()
+	case group.FieldLongContextPricingEnabled:
+		return m.LongContextPricingEnabled()
 	case group.FieldModelPricing:
 		return m.ModelPricing()
 	case group.FieldClaudeCodeOnly:
@@ -27028,6 +27142,10 @@ func (m *GroupMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldCanvasImagePricePerCount(ctx)
 	case group.FieldCanvasAudioPricePerCount:
 		return m.OldCanvasAudioPricePerCount(ctx)
+	case group.FieldCanvasModelPricing:
+		return m.OldCanvasModelPricing(ctx)
+	case group.FieldLongContextPricingEnabled:
+		return m.OldLongContextPricingEnabled(ctx)
 	case group.FieldModelPricing:
 		return m.OldModelPricing(ctx)
 	case group.FieldClaudeCodeOnly:
@@ -27382,8 +27500,22 @@ func (m *GroupMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetCanvasAudioPricePerCount(v)
 		return nil
-	case group.FieldModelPricing:
+	case group.FieldCanvasModelPricing:
 		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCanvasModelPricing(v)
+		return nil
+	case group.FieldLongContextPricingEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLongContextPricingEnabled(v)
+		return nil
+	case group.FieldModelPricing:
+		v, ok := value.(json.RawMessage)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -28007,6 +28139,9 @@ func (m *GroupMutation) ClearedFields() []string {
 	if m.FieldCleared(group.FieldCanvasAudioPricePerCount) {
 		fields = append(fields, group.FieldCanvasAudioPricePerCount)
 	}
+	if m.FieldCleared(group.FieldCanvasModelPricing) {
+		fields = append(fields, group.FieldCanvasModelPricing)
+	}
 	if m.FieldCleared(group.FieldModelPricing) {
 		fields = append(fields, group.FieldModelPricing)
 	}
@@ -28098,6 +28233,9 @@ func (m *GroupMutation) ClearField(name string) error {
 		return nil
 	case group.FieldCanvasAudioPricePerCount:
 		m.ClearCanvasAudioPricePerCount()
+		return nil
+	case group.FieldCanvasModelPricing:
+		m.ClearCanvasModelPricing()
 		return nil
 	case group.FieldModelPricing:
 		m.ClearModelPricing()
@@ -28247,6 +28385,12 @@ func (m *GroupMutation) ResetField(name string) error {
 		return nil
 	case group.FieldCanvasAudioPricePerCount:
 		m.ResetCanvasAudioPricePerCount()
+		return nil
+	case group.FieldCanvasModelPricing:
+		m.ResetCanvasModelPricing()
+		return nil
+	case group.FieldLongContextPricingEnabled:
+		m.ResetLongContextPricingEnabled()
 		return nil
 	case group.FieldModelPricing:
 		m.ResetModelPricing()
