@@ -127,8 +127,9 @@ field.Float("video_price_per_second")  // 每秒视频价格 USD/秒，非 nil �
 **设计目标**：接入 AVI2API 图像/视频/音频生成网关。历史平台标识 `jimeng`
 已由迁移 `193_rename_canvas_platform.sql` 在 accounts/groups/user_platform_quotas
 中统一重命名为 `canvas`，代码标识、管理端文案与对外契约均使用 Canvas/AVI2API。
-迁移 `223_user_platform_quotas_add_canvas.sql` 同步放宽用户平台配额 CHECK 约束，
-确保 `domain.AllPlatforms` 中的 `canvas` 可以正常写入。
+迁移 `192a_user_platform_quotas_allow_canvas_rename.sql` 在重命名前临时兼容两个标识，
+迁移 `223_user_platform_quotas_add_canvas.sql` 再把用户平台配额 CHECK 约束收敛到
+`domain.AllPlatforms`，确保 `canvas` 可以正常写入。
 
 **新增文件（低冲突，直接保留）**：
 - `backend/internal/pkg/avi2api/` — 协议客户端。合并了原 `pkg/leonardo` 与 `pkg/jimeng`：
@@ -540,7 +541,7 @@ fork 初期散落的平台分支（jimeng/grok 等）遍布 41 个文件，每�
 
 1. **Ent 生成代码**：若 `ent/schema/` 冲突，优先解决 schema，再 `go generate ./ent`，最后提交全部生成文件
 2. **wire 依赖注入**：检查 `service/wire.go`、`handler/wire.go`、`repository/wire.go` 是否含 Sub2API optimize 相关 provider（[§4.2](#42-wire-依赖注入关键易漏)）
-3. **迁移文件**：fork 新增迁移（含 `165*.sql`、`222_canvas_model_pricing_split.sql`、`223_user_platform_quotas_add_canvas.sql`）保留，编号若与上游冲突需重命名；不要修改已上线迁移内容
+3. **迁移文件**：fork 新增迁移（含 `165*.sql`、`192a_user_platform_quotas_allow_canvas_rename.sql`、`222_canvas_model_pricing_split.sql`、`223_user_platform_quotas_add_canvas.sql`）保留，编号若与上游冲突需重命名；不要修改已上线迁移内容
 4. **前端类型**：若 `types/index.ts` 的 `AccountPlatform` / `GroupPlatform` 冲突，保留 `canvas`
 
 ### 8.2 逐项复原（对照 [§7 冲突面](#七冲突面分级high-conflict-必查)）
