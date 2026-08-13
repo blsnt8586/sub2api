@@ -19,13 +19,18 @@ func TestCanvasPlatformQuotaMigrationAlignsConstraint(t *testing.T) {
 	require.Contains(t, prepareSQL, "not valid")
 	require.Contains(t, prepareSQL, "validate constraint user_platform_quotas_platform_check")
 
-	content, err := FS.ReadFile("223_user_platform_quotas_add_canvas.sql")
-	require.NoError(t, err)
+	for _, name := range []string{
+		"223_user_platform_quotas_add_canvas.sql",
+		"224_user_platform_quotas_finalize_canvas.sql",
+	} {
+		content, readErr := FS.ReadFile(name)
+		require.NoError(t, readErr)
 
-	sql := strings.ToLower(string(content))
-	require.Contains(t, sql, "drop constraint if exists user_platform_quotas_platform_check")
-	require.Contains(t, sql, "add constraint user_platform_quotas_platform_check")
-	require.Contains(t, sql, "'canvas'")
-	require.NotContains(t, sql, "'jimeng'")
-	require.NotContains(t, sql, "drop table")
+		sql := strings.ToLower(string(content))
+		require.Contains(t, sql, "drop constraint if exists user_platform_quotas_platform_check")
+		require.Contains(t, sql, "add constraint user_platform_quotas_platform_check")
+		require.Contains(t, sql, "'canvas'")
+		require.NotContains(t, sql, "'jimeng'")
+		require.NotContains(t, sql, "drop table")
+	}
 }
