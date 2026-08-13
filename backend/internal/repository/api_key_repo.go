@@ -200,7 +200,9 @@ func (r *apiKeyRepository) GetByKeyForAuth(ctx context.Context, key string) (*se
 				group.FieldAudioRealtimePricePerMin,
 				group.FieldAudioTtsPricePerMillionChars,
 				group.FieldAudioSttPricePerHour,
-				group.FieldModelPricing, // [CUSTOM] canvas
+				group.FieldCanvasImagePricePerCount, // [CUSTOM] canvas
+				group.FieldCanvasAudioPricePerCount, // [CUSTOM] canvas
+				group.FieldModelPricing,             // [CUSTOM] canvas
 				group.FieldClaudeCodeOnly,
 				group.FieldFallbackGroupID,
 				group.FieldFallbackGroupIDOnInvalidRequest,
@@ -987,6 +989,8 @@ func groupEntityToService(g *dbent.Group) *service.Group {
 		AudioRealtimePricePerMin:        g.AudioRealtimePricePerMin,
 		AudioTTSPricePerMillionChars:    g.AudioTtsPricePerMillionChars,
 		AudioSTTPricePerHour:            g.AudioSttPricePerHour,
+		CanvasImagePricePerCount:        g.CanvasImagePricePerCount,            // [CUSTOM] canvas
+		CanvasAudioPricePerCount:        g.CanvasAudioPricePerCount,            // [CUSTOM] canvas
 		ModelPricing:                    unmarshalModelPricing(g.ModelPricing), // [CUSTOM] canvas
 		DefaultValidityDays:             g.DefaultValidityDays,
 		ClaudeCodeOnly:                  g.ClaudeCodeOnly,

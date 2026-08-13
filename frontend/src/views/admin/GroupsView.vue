@@ -1550,6 +1550,30 @@
                 data-testid="create-audio-stt-price"
               />
             </div>
+            <div>
+              <label class="input-label">Canvas 图片按次价</label>
+              <input
+                v-model.number="createForm.canvas_image_price_per_count"
+                type="number"
+                step="0.000001"
+                min="0"
+                class="input"
+                :placeholder="t('admin.groups.voicePricing.pricePlaceholder')"
+                data-testid="create-canvas-image-price"
+              />
+            </div>
+            <div>
+              <label class="input-label">Canvas 音频按次价</label>
+              <input
+                v-model.number="createForm.canvas_audio_price_per_count"
+                type="number"
+                step="0.000001"
+                min="0"
+                class="input"
+                :placeholder="t('admin.groups.voicePricing.pricePlaceholder')"
+                data-testid="create-canvas-audio-price"
+              />
+            </div>
           </div>
         </div>
         <!-- OpenAI Live 开关（仅 openai 平台） -->
@@ -3255,6 +3279,30 @@
                 class="input"
                 :placeholder="t('admin.groups.voicePricing.pricePlaceholder')"
                 data-testid="edit-audio-stt-price"
+              />
+            </div>
+            <div>
+              <label class="input-label">Canvas 图片按次价</label>
+              <input
+                v-model.number="editForm.canvas_image_price_per_count"
+                type="number"
+                step="0.000001"
+                min="0"
+                class="input"
+                :placeholder="t('admin.groups.voicePricing.pricePlaceholder')"
+                data-testid="edit-canvas-image-price"
+              />
+            </div>
+            <div>
+              <label class="input-label">Canvas 音频按次价</label>
+              <input
+                v-model.number="editForm.canvas_audio_price_per_count"
+                type="number"
+                step="0.000001"
+                min="0"
+                class="input"
+                :placeholder="t('admin.groups.voicePricing.pricePlaceholder')"
+                data-testid="edit-canvas-audio-price"
               />
             </div>
           </div>
@@ -4967,6 +5015,8 @@ const createForm = reactive({
   audio_realtime_price_per_min: null as number | null,
   audio_tts_price_per_million_chars: null as number | null,
   audio_stt_price_per_hour: null as number | null,
+  canvas_image_price_per_count: null as number | null,
+  canvas_audio_price_per_count: null as number | null,
   // 高峰时段倍率配置
   peak_rate_enabled: false,
   peak_start: "",
@@ -5335,6 +5385,8 @@ const editForm = reactive({
   audio_realtime_price_per_min: null as number | null,
   audio_tts_price_per_million_chars: null as number | null,
   audio_stt_price_per_hour: null as number | null,
+  canvas_image_price_per_count: null as number | null,
+  canvas_audio_price_per_count: null as number | null,
   // 高峰时段倍率配置
   peak_rate_enabled: false,
   peak_start: "",
@@ -5806,6 +5858,8 @@ const closeCreateModal = () => {
   createForm.audio_realtime_price_per_min = null;
   createForm.audio_tts_price_per_million_chars = null;
   createForm.audio_stt_price_per_hour = null;
+  createForm.canvas_image_price_per_count = null;
+  createForm.canvas_audio_price_per_count = null;
   createForm.peak_rate_enabled = false;
   createForm.peak_start = "";
   createForm.peak_end = "";
@@ -5983,6 +6037,12 @@ const handleCreateGroup = async () => {
     requestData.audio_stt_price_per_hour = emptyToNull(
       requestData.audio_stt_price_per_hour,
     );
+    requestData.canvas_image_price_per_count = emptyToNull(
+      requestData.canvas_image_price_per_count,
+    );
+    requestData.canvas_audio_price_per_count = emptyToNull(
+      requestData.canvas_audio_price_per_count,
+    );
     // canvas 按次/按秒价同理，漏了会导致清空输入框时提交 "" 被后端拒绝
     requestData.video_price_per_count = emptyToNull(
       requestData.video_price_per_count,
@@ -6073,6 +6133,8 @@ const handleEdit = async (group: AdminGroup) => {
   editForm.audio_realtime_price_per_min = group.audio_realtime_price_per_min ?? null;
   editForm.audio_tts_price_per_million_chars = group.audio_tts_price_per_million_chars ?? null;
   editForm.audio_stt_price_per_hour = group.audio_stt_price_per_hour ?? null;
+  editForm.canvas_image_price_per_count = group.canvas_image_price_per_count ?? null;
+  editForm.canvas_audio_price_per_count = group.canvas_audio_price_per_count ?? null;
   editForm.peak_rate_enabled = group.peak_rate_enabled ?? false;
   editForm.peak_start = group.peak_start ?? "";
   editForm.peak_end = group.peak_end ?? "";
@@ -6158,6 +6220,8 @@ const closeEditModal = () => {
   editForm.audio_realtime_price_per_min = null;
   editForm.audio_tts_price_per_million_chars = null;
   editForm.audio_stt_price_per_hour = null;
+  editForm.canvas_image_price_per_count = null;
+  editForm.canvas_audio_price_per_count = null;
   resetMessagesDispatchFormState(editForm);
   editForm.allow_live = false;
   resetModelsListState(editModelsListState);
@@ -6275,6 +6339,12 @@ const handleUpdateGroup = async () => {
     );
     payload.audio_stt_price_per_hour = emptyPriceToClear(
       payload.audio_stt_price_per_hour,
+    );
+    payload.canvas_image_price_per_count = emptyPriceToClear(
+      payload.canvas_image_price_per_count,
+    );
+    payload.canvas_audio_price_per_count = emptyPriceToClear(
+      payload.canvas_audio_price_per_count,
     );
     // canvas 按次/按秒价同理：清空后需发 -1 才能真正清除，否则 "" 会被后端拒绝
     payload.video_price_per_count = emptyPriceToClear(

@@ -126,8 +126,8 @@ type APIKeysResponse struct {
 
 // GroupsResponse 分组响应
 type GroupsResponse struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
+	Code    int     `json:"code"`
+	Message string  `json:"message"`
 	Data    []Group `json:"data"`
 }
 

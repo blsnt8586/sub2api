@@ -162,7 +162,9 @@ field.Float("video_price_per_second")  // 每秒视频价格 USD/秒，非 nil �
 
 | 对外端点 | 上游端点 |
 |---|---|
-| `POST /v1/images/generations` \| `/edits` | 同名 |
+| `POST /v1/images/generations` | 同名（JSON 文生图或 multipart 图生图，返回异步 Task） |
+| `GET /v1/images/{id}` | 同名 |
+| `POST /v1/images/{id}/cancel` | 同名 |
 | `POST /v1/videos/generations` | 同名 |
 | `GET /v1/videos/{id}` | 同名 |
 | `POST /v1/videos/{id}/cancel` | 同名 |
@@ -208,7 +210,7 @@ AVI2API 无 `mode` 字段，靠 Content-Type + multipart 中出现的文件字�
 `TestConvertSeedanceVideoCreateBodyDropsFPS` 锁定此行为。
 
 **`Idempotency-Key` 透传（图像/视频/音频三条转发链路必须一致）**：
-AVI2API 对所有 POST 创建类接口（`/images/generations`、`/images/edits`、
+AVI2API 对所有 POST 创建类接口（图像统一为 `/images/generations`，以及
 `/videos/generations`、`/audio/generations`）**强制要求** `Idempotency-Key` 请求头
 （非空且 ≤255 字符），缺失即返回 `Idempotency-Key is required and must not exceed 255 characters`。
 网关转发时必须把客户端传来的该头**原样带给上游**：
@@ -234,10 +236,15 @@ if idempotencyKey := c.GetHeader("Idempotency-Key"); idempotencyKey != "" {
 - 补 `object: "video.task"`
 
 **计费**：
-- 图像：`CalculateImageCost`（`ImageCount` + `ImageSize` 1K/2K/4K 档位，分组 `image_price_1k/2k/4k`）
+- 图像：异步任务终态成功后按 `result.data` 实际产物数与实际 `width/height` 计费；
+  分组使用 `canvas_image_price_per_count`（缺省时回退模型价格/旧档位逻辑）
 - 视频：`CalculateJimengVideoCost`（按次 `video_price_per_count` / 按秒 `video_price_per_second`）
 - 音频：按次 `VideoCount=1`；`music-v1` 的 `duration_minutes` × 60 记入 `VideoSeconds`
   （`dialogue-v3`/`sound-effects-v2` 的 `duration` 单位是秒，直接记入）
+- Canvas 异步生图完成记录将 `/v1/images/{task_id}` 归一化为 `/v1/images`，与视频
+  `/v1/videos/{task_id}` → `/v1/videos` 的统计口径一致；创建接口
+  `/v1/images/generations` 单独保留。任务 ID 继续保存在稳定的 `request_id` 中，
+  用于幂等扣费。旧 `/v1/tasks/*` 仅作为 Canvas worker 兼容别名保留。
 - **无新增 schema 字段、无新增迁移**
 
 **音频选号坑**：`runJimengAudioForwardLoop` 必须用
@@ -245,7 +252,7 @@ if idempotencyKey := c.GetHeader("Idempotency-Key"); idempotencyKey != "" {
 通用的 `SelectAccountForModelWithExclusions` 内部硬编码 `PlatformOpenAI`
 （`openai_gateway_scheduling.go:190`），用它会一个 jimeng 账号都命中不了。
 
-**AVI2API 上游模型清单（v1.1.2）**：
+**AVI2API 上游模型清单（v2.0.0）**：
 - 图像：`gpt-image-2`、`nano-banana-2`、`nano-banana-pro`、`seedream-5.0-pro`
 - 视频：`seedance-2.0`/`-fast`/`-mini`、`gemini-omni-flash`、`veo-3.1`/`-fast`/`-lite`、
   `kling-3.0`、`minimax-h3`（各模型的 duration/size/resolution/generate_audio 约束不同，
@@ -297,12 +304,8 @@ if idempotencyKey := c.GetHeader("Idempotency-Key"); idempotencyKey != "" {
 
 **已知缺口**：
 - `POST /v1/videos/estimate`、`POST /v1/images/estimate`（成本预估）未接
-- `GET/POST /v1/tasks/{id}[/cancel]`（通用任务端点）未接，图像异步任务查不了
-- **multipart 请求的提示词审计失效**：`ExtractContentModerationInput` 与
-  `ExtractPromptSnapshot` 都只认 JSON body。`off`/`async` 模式下提示词扫不到
-  （审计留痕缺失）；**`blocking` 模式下 `json.Unmarshal` 失败会升级成
-  `GuardError{ErrorCodeInvalidResponse}` → 503，参考素材视频直接不可用**。
-  `/images/edits` 有同样问题。
+- 视频 multipart 请求的提示词审计仍待归一化；图像 JSON/multipart 已在
+  `CanvasAsyncImageModerationBody` 中统一提取 `prompt` 后进入 OpenAI Images 审计协议。
 
 ---
 

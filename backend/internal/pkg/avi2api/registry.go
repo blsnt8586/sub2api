@@ -1,7 +1,7 @@
 // Package avi2api — registry.go
 // 模型能力注册表：定义 canvas 平台所有支持的视频/图像/音频模型及其参数约束。
 //
-// 数据来源：AIV2API OpenAPI v1.1.2（/openapi.json）。
+// 数据来源：AIV2API OpenAPI v2.0.0（/openapi.json）。
 // 上游更新模型时，只需在此文件追加或修改对应条目，校验逻辑（validate.go）无需改动。
 package avi2api
 
@@ -132,6 +132,26 @@ func AllModels() []string {
 }
 
 var videoModels = []VideoModelCaps{
+	// ── FLUX 3 Video ──────────────────────────────────────────────────
+	// 上游 size 与 resolution 价位档强绑定（720p / 1080p），此处平铺全部
+	// 合法 size；size↔resolution 组合规则交由上游二次校验。
+	{
+		Model:    "flux-3-video",
+		Duration: DurationConstraint{Min: 5, Max: 20, Default: 8},
+		AllowedSizes: []string{
+			// 720p 档
+			"1470x630", "1360x680", "1280x720", "1112x834", "960x960", "834x1112", "720x1280",
+			// 1080p 档
+			"2520x1080", "2160x1080", "1920x1080", "1440x1080", "1440x1440", "1080x1440", "1080x1920",
+		},
+		DefaultSize:        "1280x720",
+		AllowedResolutions: []string{"720p", "1080p"},
+		DefaultResolution:  "720p",
+		GenerateAudio:      GenAudioOptional,
+		// 首尾帧 或 单个视频续写文件（二选一），不支持图片参考
+		AllowedRefModes: []ReferenceMode{RefModeFrame, RefModeVideo},
+		VideoMaxCount:   1,
+	},
 	// ── Seedance 2.0（旗舰）────────────────────────────────────────────
 	{
 		Model:                        "seedance-2.0",
@@ -177,18 +197,6 @@ var videoModels = []VideoModelCaps{
 		AudioMaxCount:                1,
 		AudioRefRequiresImageOrVideo: true,
 	},
-	// ── Gemini Omni Flash ─────────────────────────────────────────────
-	{
-		Model:              "gemini-omni-flash",
-		Duration:           DurationConstraint{Min: 3, Max: 10, Default: 5},
-		AllowedSizes:       []string{"1280x720", "720x1280"},
-		DefaultSize:        "1280x720",
-		AllowedResolutions: []string{"720p"},
-		DefaultResolution:  "720p",
-		GenerateAudio:      GenAudioUnsupported,
-		AllowedRefModes:    []ReferenceMode{RefModeImage},
-		ImageMaxCount:      5,
-	},
 	// ── Veo 3.1（标准）────────────────────────────────────────────────
 	{
 		Model:              "veo-3.1",
@@ -216,29 +224,47 @@ var videoModels = []VideoModelCaps{
 		// 仅支持首尾帧参考（start_frame 必填）
 		AllowedRefModes: []ReferenceMode{RefModeFrame},
 	},
-	// ── Veo 3.1 Lite ──────────────────────────────────────────────────
+	// ── Kling O3 Omni ─────────────────────────────────────────────────
+	// size 与 resolution 价位档强绑定（720p / 1080p / 2160p）。
 	{
-		Model:              "veo-3.1-lite",
-		Duration:           DurationConstraint{Enum: []int{4, 6, 8}, Default: 8},
-		AllowedSizes:       []string{"1280x720", "720x1280"},
-		DefaultSize:        "1280x720",
-		AllowedResolutions: []string{"720p", "1080p"},
-		DefaultResolution:  "720p",
-		GenerateAudio:      GenAudioOptional,
-		// 仅支持首尾帧参考
-		AllowedRefModes: []ReferenceMode{RefModeFrame},
-	},
-	// ── Kling 3.0 ─────────────────────────────────────────────────────
-	{
-		Model:              "kling-3.0",
-		Duration:           DurationConstraint{Min: 3, Max: 15, Default: 5},
-		AllowedSizes:       []string{"1280x720", "720x1280"},
-		DefaultSize:        "1280x720",
+		Model:    "kling-o3-omni",
+		Duration: DurationConstraint{Min: 3, Max: 15, Default: 5},
+		AllowedSizes: []string{
+			// 720p 档
+			"1280x720", "720x1280", "960x960",
+			// 1080p 档
+			"1920x1080", "1080x1920", "1440x1440",
+			// 2160p 档
+			"3840x2160", "2160x3840", "2880x2880",
+		},
+		DefaultSize:        "1920x1080",
 		AllowedResolutions: []string{"720p", "1080p", "2160p"},
-		DefaultResolution:  "720p",
+		DefaultResolution:  "1080p",
 		GenerateAudio:      GenAudioOptional,
-		// 仅支持首尾帧参考
-		AllowedRefModes: []ReferenceMode{RefModeFrame},
+		// 首尾帧 / 最多 7 张图片 / 单个视频（含 reference_strength）
+		AllowedRefModes: []ReferenceMode{RefModeImage, RefModeFrame, RefModeVideo},
+		ImageMaxCount:   7,
+		VideoMaxCount:   1,
+	},
+	// ── Grok Imagine 1.5 ──────────────────────────────────────────────
+	// 仅支持首尾帧参考（start_frame 必填），拒绝其他所有参考字段。
+	// size 与 resolution 价位档强绑定（480p / 720p / 1080p）。
+	{
+		Model:    "grok-imagine-1.5",
+		Duration: DurationConstraint{Min: 3, Max: 15, Default: 6},
+		AllowedSizes: []string{
+			// 480p 档
+			"736x400", "400x736", "544x544",
+			// 720p 档
+			"1280x720", "720x1280", "960x960",
+			// 1080p 档
+			"1888x1072", "1072x1888", "1424x1424",
+		},
+		DefaultSize:        "736x400",
+		AllowedResolutions: []string{"480p", "720p", "1080p"},
+		DefaultResolution:  "480p",
+		GenerateAudio:      GenAudioOptional,
+		AllowedRefModes:    []ReferenceMode{RefModeFrame},
 	},
 	// ── MiniMax H3 ────────────────────────────────────────────────────
 	{
@@ -365,10 +391,10 @@ type ImageModelCaps struct {
 	// Quality：gpt-image-2 专用
 	HasQuality bool
 
-	// 是否支持 /images/edits（图生图 multipart）
+	// 是否支持 /images/generations 的 multipart 图生图模式
 	SupportsEdits bool
 
-	// ReferenceStrength：/images/edits 参考强度
+	// ReferenceStrength：multipart 图生图参考强度
 	HasReferenceStrength bool
 }
 
@@ -400,18 +426,21 @@ var imageModels = []ImageModelCaps{
 	{
 		Model: "nano-banana-2",
 		NMax:  6, NDefault: 1,
+		NMaxPerRequest:       4,
 		SupportsEdits:        true,
 		HasReferenceStrength: true,
 	},
 	{
 		Model: "nano-banana-pro",
 		NMax:  6, NDefault: 1,
+		NMaxPerRequest:       4,
 		SupportsEdits:        true,
 		HasReferenceStrength: true,
 	},
 	{
 		Model: "seedream-5.0-pro",
 		NMax:  6, NDefault: 1,
+		NMaxPerRequest:       4,
 		SupportsEdits:        true,
 		HasReferenceStrength: true,
 	},

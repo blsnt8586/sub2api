@@ -606,6 +606,8 @@ export interface Group {
   audio_realtime_price_per_min: number | null
   audio_tts_price_per_million_chars: number | null
   audio_stt_price_per_hour: number | null
+  canvas_image_price_per_count: number | null
+  canvas_audio_price_per_count: number | null
   // 高峰时段倍率配置
   peak_rate_enabled: boolean
   peak_start: string
@@ -810,6 +812,8 @@ export interface CreateGroupRequest {
   audio_realtime_price_per_min?: number | null
   audio_tts_price_per_million_chars?: number | null
   audio_stt_price_per_hour?: number | null
+  canvas_image_price_per_count?: number | null
+  canvas_audio_price_per_count?: number | null
   peak_rate_enabled?: boolean
   peak_start?: string
   peak_end?: string
@@ -870,6 +874,8 @@ export interface UpdateGroupRequest {
   audio_realtime_price_per_min?: number | null
   audio_tts_price_per_million_chars?: number | null
   audio_stt_price_per_hour?: number | null
+  canvas_image_price_per_count?: number | null
+  canvas_audio_price_per_count?: number | null
   peak_rate_enabled?: boolean
   peak_start?: string
   peak_end?: string

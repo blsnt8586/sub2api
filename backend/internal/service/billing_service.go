@@ -1715,6 +1715,27 @@ func (s *BillingService) CalculateVideoCost(model string, resolution string, vid
 	}
 }
 
+// CalculateCanvasMediaCost 计算 Canvas 异步音频等非图片媒体任务的按次费用。
+// pricePerCount 为 nil 时单价视为 0（不代入任何默认值，由调用方决定兜底逻辑）。
+func (s *BillingService) CalculateCanvasMediaCost(model string, count int, pricePerCount *float64, rateMultiplier float64) *CostBreakdown {
+	if count <= 0 {
+		return &CostBreakdown{}
+	}
+	var unitPrice float64
+	if pricePerCount != nil {
+		unitPrice = *pricePerCount
+	}
+	totalCost := unitPrice * float64(count)
+	if rateMultiplier < 0 {
+		rateMultiplier = 0
+	}
+	return &CostBreakdown{
+		TotalCost:   totalCost,
+		ActualCost:  totalCost * rateMultiplier,
+		BillingMode: string(BillingModePerRequest),
+	}
+}
+
 // getImageUnitPrice 获取图片单价
 func (s *BillingService) getImageUnitPrice(model string, imageSize string, groupConfig *ImagePriceConfig) float64 {
 	// 1. 优先查找模型专属定价

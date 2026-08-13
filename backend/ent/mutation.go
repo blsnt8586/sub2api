@@ -22737,6 +22737,10 @@ type GroupMutation struct {
 	addaudio_tts_price_per_million_chars    *float64
 	audio_stt_price_per_hour                *float64
 	addaudio_stt_price_per_hour             *float64
+	canvas_image_price_per_count            *float64
+	addcanvas_image_price_per_count         *float64
+	canvas_audio_price_per_count            *float64
+	addcanvas_audio_price_per_count         *float64
 	model_pricing                           *[]byte
 	claude_code_only                        *bool
 	fallback_group_id                       *int64
@@ -25101,6 +25105,146 @@ func (m *GroupMutation) ResetAudioSttPricePerHour() {
 	delete(m.clearedFields, group.FieldAudioSttPricePerHour)
 }
 
+// SetCanvasImagePricePerCount sets the "canvas_image_price_per_count" field.
+func (m *GroupMutation) SetCanvasImagePricePerCount(f float64) {
+	m.canvas_image_price_per_count = &f
+	m.addcanvas_image_price_per_count = nil
+}
+
+// CanvasImagePricePerCount returns the value of the "canvas_image_price_per_count" field in the mutation.
+func (m *GroupMutation) CanvasImagePricePerCount() (r float64, exists bool) {
+	v := m.canvas_image_price_per_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCanvasImagePricePerCount returns the old "canvas_image_price_per_count" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldCanvasImagePricePerCount(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCanvasImagePricePerCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCanvasImagePricePerCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCanvasImagePricePerCount: %w", err)
+	}
+	return oldValue.CanvasImagePricePerCount, nil
+}
+
+// AddCanvasImagePricePerCount adds f to the "canvas_image_price_per_count" field.
+func (m *GroupMutation) AddCanvasImagePricePerCount(f float64) {
+	if m.addcanvas_image_price_per_count != nil {
+		*m.addcanvas_image_price_per_count += f
+	} else {
+		m.addcanvas_image_price_per_count = &f
+	}
+}
+
+// AddedCanvasImagePricePerCount returns the value that was added to the "canvas_image_price_per_count" field in this mutation.
+func (m *GroupMutation) AddedCanvasImagePricePerCount() (r float64, exists bool) {
+	v := m.addcanvas_image_price_per_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearCanvasImagePricePerCount clears the value of the "canvas_image_price_per_count" field.
+func (m *GroupMutation) ClearCanvasImagePricePerCount() {
+	m.canvas_image_price_per_count = nil
+	m.addcanvas_image_price_per_count = nil
+	m.clearedFields[group.FieldCanvasImagePricePerCount] = struct{}{}
+}
+
+// CanvasImagePricePerCountCleared returns if the "canvas_image_price_per_count" field was cleared in this mutation.
+func (m *GroupMutation) CanvasImagePricePerCountCleared() bool {
+	_, ok := m.clearedFields[group.FieldCanvasImagePricePerCount]
+	return ok
+}
+
+// ResetCanvasImagePricePerCount resets all changes to the "canvas_image_price_per_count" field.
+func (m *GroupMutation) ResetCanvasImagePricePerCount() {
+	m.canvas_image_price_per_count = nil
+	m.addcanvas_image_price_per_count = nil
+	delete(m.clearedFields, group.FieldCanvasImagePricePerCount)
+}
+
+// SetCanvasAudioPricePerCount sets the "canvas_audio_price_per_count" field.
+func (m *GroupMutation) SetCanvasAudioPricePerCount(f float64) {
+	m.canvas_audio_price_per_count = &f
+	m.addcanvas_audio_price_per_count = nil
+}
+
+// CanvasAudioPricePerCount returns the value of the "canvas_audio_price_per_count" field in the mutation.
+func (m *GroupMutation) CanvasAudioPricePerCount() (r float64, exists bool) {
+	v := m.canvas_audio_price_per_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCanvasAudioPricePerCount returns the old "canvas_audio_price_per_count" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldCanvasAudioPricePerCount(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCanvasAudioPricePerCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCanvasAudioPricePerCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCanvasAudioPricePerCount: %w", err)
+	}
+	return oldValue.CanvasAudioPricePerCount, nil
+}
+
+// AddCanvasAudioPricePerCount adds f to the "canvas_audio_price_per_count" field.
+func (m *GroupMutation) AddCanvasAudioPricePerCount(f float64) {
+	if m.addcanvas_audio_price_per_count != nil {
+		*m.addcanvas_audio_price_per_count += f
+	} else {
+		m.addcanvas_audio_price_per_count = &f
+	}
+}
+
+// AddedCanvasAudioPricePerCount returns the value that was added to the "canvas_audio_price_per_count" field in this mutation.
+func (m *GroupMutation) AddedCanvasAudioPricePerCount() (r float64, exists bool) {
+	v := m.addcanvas_audio_price_per_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearCanvasAudioPricePerCount clears the value of the "canvas_audio_price_per_count" field.
+func (m *GroupMutation) ClearCanvasAudioPricePerCount() {
+	m.canvas_audio_price_per_count = nil
+	m.addcanvas_audio_price_per_count = nil
+	m.clearedFields[group.FieldCanvasAudioPricePerCount] = struct{}{}
+}
+
+// CanvasAudioPricePerCountCleared returns if the "canvas_audio_price_per_count" field was cleared in this mutation.
+func (m *GroupMutation) CanvasAudioPricePerCountCleared() bool {
+	_, ok := m.clearedFields[group.FieldCanvasAudioPricePerCount]
+	return ok
+}
+
+// ResetCanvasAudioPricePerCount resets all changes to the "canvas_audio_price_per_count" field.
+func (m *GroupMutation) ResetCanvasAudioPricePerCount() {
+	m.canvas_audio_price_per_count = nil
+	m.addcanvas_audio_price_per_count = nil
+	delete(m.clearedFields, group.FieldCanvasAudioPricePerCount)
+}
+
 // SetModelPricing sets the "model_pricing" field.
 func (m *GroupMutation) SetModelPricing(b []byte) {
 	m.model_pricing = &b
@@ -26455,7 +26599,7 @@ func (m *GroupMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GroupMutation) Fields() []string {
-	fields := make([]string, 0, 63)
+	fields := make([]string, 0, 65)
 	if m.created_at != nil {
 		fields = append(fields, group.FieldCreatedAt)
 	}
@@ -26578,6 +26722,12 @@ func (m *GroupMutation) Fields() []string {
 	}
 	if m.audio_stt_price_per_hour != nil {
 		fields = append(fields, group.FieldAudioSttPricePerHour)
+	}
+	if m.canvas_image_price_per_count != nil {
+		fields = append(fields, group.FieldCanvasImagePricePerCount)
+	}
+	if m.canvas_audio_price_per_count != nil {
+		fields = append(fields, group.FieldCanvasAudioPricePerCount)
 	}
 	if m.model_pricing != nil {
 		fields = append(fields, group.FieldModelPricing)
@@ -26735,6 +26885,10 @@ func (m *GroupMutation) Field(name string) (ent.Value, bool) {
 		return m.AudioTtsPricePerMillionChars()
 	case group.FieldAudioSttPricePerHour:
 		return m.AudioSttPricePerHour()
+	case group.FieldCanvasImagePricePerCount:
+		return m.CanvasImagePricePerCount()
+	case group.FieldCanvasAudioPricePerCount:
+		return m.CanvasAudioPricePerCount()
 	case group.FieldModelPricing:
 		return m.ModelPricing()
 	case group.FieldClaudeCodeOnly:
@@ -26870,6 +27024,10 @@ func (m *GroupMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldAudioTtsPricePerMillionChars(ctx)
 	case group.FieldAudioSttPricePerHour:
 		return m.OldAudioSttPricePerHour(ctx)
+	case group.FieldCanvasImagePricePerCount:
+		return m.OldCanvasImagePricePerCount(ctx)
+	case group.FieldCanvasAudioPricePerCount:
+		return m.OldCanvasAudioPricePerCount(ctx)
 	case group.FieldModelPricing:
 		return m.OldModelPricing(ctx)
 	case group.FieldClaudeCodeOnly:
@@ -27210,6 +27368,20 @@ func (m *GroupMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetAudioSttPricePerHour(v)
 		return nil
+	case group.FieldCanvasImagePricePerCount:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCanvasImagePricePerCount(v)
+		return nil
+	case group.FieldCanvasAudioPricePerCount:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCanvasAudioPricePerCount(v)
+		return nil
 	case group.FieldModelPricing:
 		v, ok := value.([]byte)
 		if !ok {
@@ -27441,6 +27613,12 @@ func (m *GroupMutation) AddedFields() []string {
 	if m.addaudio_stt_price_per_hour != nil {
 		fields = append(fields, group.FieldAudioSttPricePerHour)
 	}
+	if m.addcanvas_image_price_per_count != nil {
+		fields = append(fields, group.FieldCanvasImagePricePerCount)
+	}
+	if m.addcanvas_audio_price_per_count != nil {
+		fields = append(fields, group.FieldCanvasAudioPricePerCount)
+	}
 	if m.addfallback_group_id != nil {
 		fields = append(fields, group.FieldFallbackGroupID)
 	}
@@ -27513,6 +27691,10 @@ func (m *GroupMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedAudioTtsPricePerMillionChars()
 	case group.FieldAudioSttPricePerHour:
 		return m.AddedAudioSttPricePerHour()
+	case group.FieldCanvasImagePricePerCount:
+		return m.AddedCanvasImagePricePerCount()
+	case group.FieldCanvasAudioPricePerCount:
+		return m.AddedCanvasAudioPricePerCount()
 	case group.FieldFallbackGroupID:
 		return m.AddedFallbackGroupID()
 	case group.FieldFallbackGroupIDOnInvalidRequest:
@@ -27695,6 +27877,20 @@ func (m *GroupMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddAudioSttPricePerHour(v)
 		return nil
+	case group.FieldCanvasImagePricePerCount:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCanvasImagePricePerCount(v)
+		return nil
+	case group.FieldCanvasAudioPricePerCount:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCanvasAudioPricePerCount(v)
+		return nil
 	case group.FieldFallbackGroupID:
 		v, ok := value.(int64)
 		if !ok {
@@ -27805,6 +28001,12 @@ func (m *GroupMutation) ClearedFields() []string {
 	if m.FieldCleared(group.FieldAudioSttPricePerHour) {
 		fields = append(fields, group.FieldAudioSttPricePerHour)
 	}
+	if m.FieldCleared(group.FieldCanvasImagePricePerCount) {
+		fields = append(fields, group.FieldCanvasImagePricePerCount)
+	}
+	if m.FieldCleared(group.FieldCanvasAudioPricePerCount) {
+		fields = append(fields, group.FieldCanvasAudioPricePerCount)
+	}
 	if m.FieldCleared(group.FieldModelPricing) {
 		fields = append(fields, group.FieldModelPricing)
 	}
@@ -27890,6 +28092,12 @@ func (m *GroupMutation) ClearField(name string) error {
 		return nil
 	case group.FieldAudioSttPricePerHour:
 		m.ClearAudioSttPricePerHour()
+		return nil
+	case group.FieldCanvasImagePricePerCount:
+		m.ClearCanvasImagePricePerCount()
+		return nil
+	case group.FieldCanvasAudioPricePerCount:
+		m.ClearCanvasAudioPricePerCount()
 		return nil
 	case group.FieldModelPricing:
 		m.ClearModelPricing()
@@ -28033,6 +28241,12 @@ func (m *GroupMutation) ResetField(name string) error {
 		return nil
 	case group.FieldAudioSttPricePerHour:
 		m.ResetAudioSttPricePerHour()
+		return nil
+	case group.FieldCanvasImagePricePerCount:
+		m.ResetCanvasImagePricePerCount()
+		return nil
+	case group.FieldCanvasAudioPricePerCount:
+		m.ResetCanvasAudioPricePerCount()
 		return nil
 	case group.FieldModelPricing:
 		m.ResetModelPricing()

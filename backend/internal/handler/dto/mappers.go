@@ -210,7 +210,9 @@ func groupFromServiceBase(g *service.Group) Group {
 		AudioRealtimePricePerMin:        g.AudioRealtimePricePerMin,
 		AudioTtsPricePerMillionChars:    g.AudioTTSPricePerMillionChars,
 		AudioSttPricePerHour:            g.AudioSTTPricePerHour,
-		ModelPricing:                    g.ModelPricing, // [CUSTOM] canvas
+		CanvasImagePricePerCount:        g.CanvasImagePricePerCount, // [CUSTOM]
+		CanvasAudioPricePerCount:        g.CanvasAudioPricePerCount, // [CUSTOM]
+		ModelPricing:                    g.ModelPricing,             // [CUSTOM] canvas
 		ClaudeCodeOnly:                  g.ClaudeCodeOnly,
 		FallbackGroupID:                 g.FallbackGroupID,
 		FallbackGroupIDOnInvalidRequest: g.FallbackGroupIDOnInvalidRequest,

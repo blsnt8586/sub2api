@@ -196,6 +196,16 @@ func (Group) Fields() []ent.Field {
 			Min(0).
 			SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}).
 			Comment("STT 每小时价格（USD）"),
+		field.Float("canvas_image_price_per_count").
+			Optional().
+			Nillable().
+			SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}).
+			Comment("canvas 异步图像任务按次单价（USD/次）。nil 表示使用全局视频价格兜底。"),
+		field.Float("canvas_audio_price_per_count").
+			Optional().
+			Nillable().
+			SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}).
+			Comment("canvas 异步音频任务按次单价（USD/次）。nil 表示使用全局视频价格兜底。"),
 
 		// Canvas 平台（avi2api vendor）模型专属定价（added by canvas-model-pricing migration）[CUSTOM]
 		// 格式：{"video":{"veo-3.1":{"per_second":0.02},"kling-3.0":{"per_count":0.05}},"image":{"gpt-image-2":{"2k":0.05}}}

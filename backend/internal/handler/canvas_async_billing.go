@@ -16,7 +16,7 @@ import (
 //
 // 二开背景：canvas 三个异步端点原本在提交时扣费，失败无退。改为完成时扣费后，
 // canvas-api 的服务端 worker 会持续轮询 GET 状态（经 sub2api），任务终态必被某次
-// 轮询命中，那次轮询的 service 层已填好计费字段（result.VideoCount>0），由此函数扣费。
+// 轮询命中，那次轮询的 service 层已按媒体类型填好完成计数字段，由此函数扣费。
 //
 // 幂等（关键）：同一任务会被轮询几十次，每次都是独立 HTTP 请求，中间件为每次生成
 // 不同的 ClientRequestID。若直接沿用，resolveUsageBillingRequestID 会为每次轮询取到
@@ -30,6 +30,22 @@ import (
 // 通道：走 submitMandatoryUsageRecordTask（而非普通通道）——普通通道在 worker 池队列满
 // 时按 drop 策略静默丢弃；而 canvas-api 一旦 MarkSucceeded 便停止轮询，丢了就永久漏计费。
 // mandatory 通道在无法入队时内联同步执行，保证不丢。
+func shouldRecordCanvasAsyncCompletionUsage(result *service.OpenAIForwardResult, capability string) bool {
+	if result == nil {
+		return false
+	}
+	switch capability {
+	case "image":
+		return result.CanvasImageCount > 0
+	case "audio":
+		return result.CanvasAudioCount > 0
+	case "video":
+		return result.VideoCount > 0
+	default:
+		return false
+	}
+}
+
 func recordCanvasAsyncCompletionUsage(
 	c *gin.Context,
 	h *OpenAIGatewayHandler,

@@ -24,7 +24,8 @@ type ImageRequestInfo struct {
 	// Size 如 "1024x1024" / "2048x2048"，用于计费档位归一化。
 	Size string
 	// N 是请求生成的图片数量（默认 1）。
-	N int
+	N        int
+	NPresent bool
 }
 
 // ExtractImageModel 从图像请求体中提取 model 字段，兼容 JSON 与 multipart。
@@ -33,7 +34,7 @@ func ExtractImageModel(contentType string, body []byte) string {
 }
 
 // ParseImageRequest 解析 AIV2API 图像请求。
-// JSON（/images/generations）直接读字段；multipart（/images/edits）从 form 字段提取。
+// /images/generations 的 JSON 文生图直接读字段；multipart 图生图从 form 字段提取。
 func ParseImageRequest(contentType string, body []byte) ImageRequestInfo {
 	info := ImageRequestInfo{N: 1}
 	if gjson.ValidBytes(body) {
@@ -41,28 +42,15 @@ func ParseImageRequest(contentType string, body []byte) ImageRequestInfo {
 		info.Prompt = strings.TrimSpace(gjson.GetBytes(body, "prompt").String())
 		info.Size = strings.TrimSpace(gjson.GetBytes(body, "size").String())
 		if n := gjson.GetBytes(body, "n"); n.Exists() && n.Type == gjson.Number {
-			info.N = int(n.Int())
+			info.N, info.NPresent = int(n.Int()), true
 		}
 	} else {
 		parseImageMultipartFields(contentType, body, &info)
 	}
-	if info.N <= 0 {
+	if !info.NPresent {
 		info.N = 1
 	}
 	return info
-}
-
-// CountImages 统计响应 data 数组的元素数（图片张数）。
-// 解析失败时返回 0，调用方回退到请求侧 N。
-func CountImages(body []byte) int {
-	if len(body) == 0 || !gjson.ValidBytes(body) {
-		return 0
-	}
-	data := gjson.GetBytes(body, "data")
-	if !data.IsArray() {
-		return 0
-	}
-	return len(data.Array())
 }
 
 func parseImageMultipartFields(contentType string, body []byte, info *ImageRequestInfo) {
@@ -98,7 +86,7 @@ func parseImageMultipartFields(contentType string, body []byte, info *ImageReque
 			info.Size = value
 		case "n":
 			if n, err := strconv.Atoi(value); err == nil {
-				info.N = n
+				info.N, info.NPresent = n, true
 			}
 		}
 	}

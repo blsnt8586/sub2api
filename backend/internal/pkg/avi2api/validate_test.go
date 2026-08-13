@@ -50,11 +50,11 @@ func TestValidateVideoRequest_ValidJSON(t *testing.T) {
 		{"seedance-2.0", `"duration":8,"size":"1280x720","resolution":"720p"`},
 		{"seedance-2.0-fast", `"duration":4`},
 		{"seedance-2.0-mini", `"resolution":"480p"`},
-		{"gemini-omni-flash", `"duration":5`},
+		{"flux-3-video", `"duration":8,"size":"1280x720","resolution":"720p"`},
 		{"veo-3.1", `"duration":8`},
 		{"veo-3.1-fast", `"duration":4`},
-		{"veo-3.1-lite", `"duration":6`},
-		{"kling-3.0", `"duration":5`},
+		{"kling-o3-omni", `"duration":5,"size":"1920x1080","resolution":"1080p"`},
+		{"grok-imagine-1.5", `"duration":6,"size":"736x400","resolution":"480p"`},
 		{"minimax-h3", `"size":"2560x1440"`},
 	}
 	for _, tc := range cases {
@@ -91,19 +91,11 @@ func TestValidateVideoRequest_InvalidSize(t *testing.T) {
 }
 
 func TestValidateVideoRequest_InvalidResolution(t *testing.T) {
-	// veo-3.1-lite 只有 720p/1080p
-	body := `{"model":"veo-3.1-lite","prompt":"test","resolution":"2160p"}`
+	// seedance-2.0-fast 只有 480p/720p
+	body := `{"model":"seedance-2.0-fast","prompt":"test","resolution":"2160p"}`
 	err := avi2api.ValidateVideoRequest("application/json", []byte(body))
 	require.NotNil(t, err)
 	require.Equal(t, "resolution", err.Field)
-}
-
-func TestValidateVideoRequest_GenAudioUnsupported(t *testing.T) {
-	// gemini-omni-flash 无 generate_audio 字段
-	body := `{"model":"gemini-omni-flash","prompt":"test","generate_audio":true}`
-	err := avi2api.ValidateVideoRequest("application/json", []byte(body))
-	require.NotNil(t, err)
-	require.Equal(t, "generate_audio", err.Field)
 }
 
 func TestValidateVideoRequest_GenAudioAlwaysTrue(t *testing.T) {
@@ -163,9 +155,9 @@ func TestValidateVideoRequest_EndFrameRequiresStartFrame(t *testing.T) {
 }
 
 func TestValidateVideoRequest_RefModeNotSupportedByModel(t *testing.T) {
-	// kling-3.0 不支持图片参考
+	// grok-imagine-1.5 仅支持首尾帧，不支持图片参考
 	body, ct := buildMultipartBody(t,
-		map[string]string{"model": "kling-3.0", "prompt": "test"},
+		map[string]string{"model": "grok-imagine-1.5", "prompt": "test"},
 		map[string]string{"image": "ref.jpg"},
 	)
 	err := avi2api.ValidateVideoRequest(ct, body)
@@ -266,9 +258,75 @@ func TestValidateImageRequest_NExceedsMax(t *testing.T) {
 	require.Equal(t, "n", err.Field)
 }
 
+func TestValidateImageRequest_ExplicitZeroN(t *testing.T) {
+	body := `{"model":"nano-banana-2","prompt":"a cat","n":0}`
+	err := avi2api.ValidateImageRequest(false, "application/json", []byte(body))
+	require.NotNil(t, err)
+	require.Equal(t, "n", err.Field)
+}
+
 func TestValidateImageRequest_UnknownModel(t *testing.T) {
 	body := `{"model":"dall-e-4","prompt":"a cat"}`
 	err := avi2api.ValidateImageRequest(false, "application/json", []byte(body))
 	require.NotNil(t, err)
 	require.Equal(t, "model", err.Field)
+}
+
+func TestValidateImageRequest_ModelSpecificSizes(t *testing.T) {
+	for _, tc := range []struct {
+		model   string
+		size    string
+		wantErr bool
+	}{
+		{model: "gpt-image-2", size: "1376x768"},
+		{model: "gpt-image-2", size: "1536x1024"}, // 枚举边长的合法非标准预设组合
+		{model: "gpt-image-2", size: "1368x768", wantErr: true},
+		{model: "gpt-image-2", size: "3808x672", wantErr: true}, // 比例超过 3:1
+		{model: "nano-banana-2", size: "4096x4096"},
+		{model: "nano-banana-pro", size: "6336x2688"},
+		{model: "nano-banana-pro", size: "4096x2688"}, // 宽高分别命中模型枚举
+		{model: "seedream-5.0-pro", size: "1806x774"},
+		{model: "seedream-5.0-pro", size: "4096x4096", wantErr: true},
+		{model: "seedream-5.0-pro", size: "1024x1024trailing", wantErr: true},
+	} {
+		body := []byte(fmt.Sprintf(`{"model":%q,"prompt":"a cat","size":%q}`, tc.model, tc.size))
+		err := avi2api.ValidateImageRequest(false, "application/json", body)
+		if tc.wantErr {
+			require.NotNil(t, err, "%s %s", tc.model, tc.size)
+			require.Equal(t, "size", err.Field)
+		} else {
+			require.Nil(t, err, "%s %s: %v", tc.model, tc.size, err)
+		}
+	}
+}
+
+func TestValidateImageRequest_MultipartContract(t *testing.T) {
+	body, contentType := buildMultipartBody(t,
+		map[string]string{"model": "nano-banana-2", "prompt": "edit", "n": "4", "size": "4096x4096"},
+		map[string]string{"image[]": "reference.png"},
+	)
+	require.Nil(t, avi2api.ValidateImageRequest(true, contentType, body))
+
+	body, contentType = buildMultipartBody(t,
+		map[string]string{"model": "gpt-image-2", "prompt": "edit", "n": "2"},
+		map[string]string{"image[]": "reference.png"},
+	)
+	err := avi2api.ValidateImageRequest(true, contentType, body)
+	require.NotNil(t, err)
+	require.Equal(t, "n", err.Field)
+
+	body, contentType = buildMultipartBody(t,
+		map[string]string{"model": "nano-banana-2", "prompt": "edit", "n": "0"},
+		map[string]string{"image[]": "reference.png"},
+	)
+	err = avi2api.ValidateImageRequest(true, contentType, body)
+	require.NotNil(t, err)
+	require.Equal(t, "n", err.Field)
+
+	body, contentType = buildMultipartBody(t,
+		map[string]string{"model": "gpt-image-2", "prompt": "edit"}, nil,
+	)
+	err = avi2api.ValidateImageRequest(true, contentType, body)
+	require.NotNil(t, err)
+	require.Equal(t, "image", err.Field)
 }

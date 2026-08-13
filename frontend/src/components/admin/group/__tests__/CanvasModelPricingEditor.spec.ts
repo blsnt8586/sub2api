@@ -11,6 +11,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createI18n } from 'vue-i18n'
+import { reactive } from 'vue'
 import type { ModelPricingConfig } from '@/types'
 
 const mockGetCanvasPricingModels = vi.fn()
@@ -46,13 +47,13 @@ function lastEmitted(wrapper: any): ModelPricingConfig | null {
 
 // mock 返回：2 个视频模型 + 2 个图片模型 + 1 个音频模型
 // mount 后：
-//   inputs[0] = veo-3.1 价格, inputs[1] = kling-3.0 价格
+//   inputs[0] = veo-3.1 价格, inputs[1] = kling-o3-omni 价格
 //   inputs[2..4] = gpt-image-2 (1k/2k/4k), inputs[5..7] = nano-banana-2 (1k/2k/4k)
-//   selects[0] = veo-3.1 计费方式, selects[1] = kling-3.0 计费方式
+//   selects[0] = veo-3.1 计费方式, selects[1] = kling-o3-omni 计费方式
 beforeEach(() => {
   mockGetCanvasPricingModels.mockReset()
   mockGetCanvasPricingModels.mockResolvedValue({
-    video: ['veo-3.1', 'kling-3.0'],
+    video: ['veo-3.1', 'kling-o3-omni'],
     image: ['gpt-image-2', 'nano-banana-2'],
     audio: ['music-v1']
   })
@@ -69,7 +70,7 @@ describe('CanvasModelPricingEditor', () => {
 
     const text = wrapper.text()
     expect(text).toContain('veo-3.1')
-    expect(text).toContain('kling-3.0')
+    expect(text).toContain('kling-o3-omni')
     expect(text).toContain('gpt-image-2')
     expect(text).not.toContain('music-v1')
   })
@@ -143,11 +144,11 @@ describe('CanvasModelPricingEditor', () => {
     const wrapper = await mountEditor()
 
     await wrapper.findAll('input')[0].setValue('0.3')  // veo-3.1
-    await wrapper.findAll('input')[1].setValue('0.5')  // kling-3.0
+    await wrapper.findAll('input')[1].setValue('0.5')  // kling-o3-omni
 
     const payload = lastEmitted(wrapper)
     expect(payload?.video?.['veo-3.1']).toEqual({ per_count: 0.3 })
-    expect(payload?.video?.['kling-3.0']).toEqual({ per_count: 0.5 })
+    expect(payload?.video?.['kling-o3-omni']).toEqual({ per_count: 0.5 })
   })
 
   it('图像模型按 1K/2K/4K 档位独立定价', async () => {
@@ -181,6 +182,41 @@ describe('CanvasModelPricingEditor', () => {
 
     expect(wrapper.text()).toContain('boom')
     expect(wrapper.findAll('input')).toHaveLength(0)
+  })
+
+  // 回归：父级 editForm 是 reactive()，v-model 会把 emit 出的 payload 包成 proxy 再回灌。
+  // 若 syncFromProp 不 toRaw 拆包比引用，就会把这次回灌当成「外部换分组」而清空
+  // videoModeDraft —— 用户刚选的「按秒」被重置回「按次」。这正是线上报的 bug。
+  it('已有按次价切按秒后父级 reactive 回灌，计费方式不被重置回按次', async () => {
+    // 模拟父级 editForm = reactive(...)：v-model 把 emit 出的 payload 包成 proxy 再回灌。
+    // 场景复现线上 bug：原本按次 0.2 → 切按秒（此时值被清空、emit 空配置）→
+    // 父级回灌空配置。若不 toRaw 拆包比引用，syncFromProp 会清空 videoModeDraft，
+    // 而 videoDraft 已空 → videoMode() 无字段可反推 → select 掉回按次。
+    const parent = reactive<{ mp: ModelPricingConfig | null }>({
+      mp: { video: { 'veo-3.1': { per_count: 0.2 } } }
+    })
+    const wrapper = mount(CanvasModelPricingEditor, {
+      props: {
+        modelValue: parent.mp,
+        'onUpdate:modelValue': (v: ModelPricingConfig | null) => {
+          parent.mp = v
+        }
+      },
+      global: { plugins: [i18n] }
+    })
+    await flushPromises()
+    expect((wrapper.findAll('select')[0].element as HTMLSelectElement).value).toBe('per_count')
+
+    // 切到按秒：原有 0.2 被清空，emit 空配置
+    await wrapper.findAll('select')[0].setValue('per_second')
+    expect(lastEmitted(wrapper)).toEqual({})
+
+    // 父级把 reactive 包装后的空配置回灌（真实 v-model 行为）
+    await wrapper.setProps({ modelValue: parent.mp })
+    await flushPromises()
+
+    // select 必须仍停在 per_second，而不是掉回 per_count
+    expect((wrapper.findAll('select')[0].element as HTMLSelectElement).value).toBe('per_second')
   })
 
   it('视频输入框 placeholder 使用内置默认值', async () => {

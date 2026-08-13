@@ -135,9 +135,13 @@ func TestGatewayRoutesAsyncImagesPathsAreRegistered(t *testing.T) {
 		"POST /v1/images/generations/async",
 		"POST /v1/images/edits/async",
 		"GET /v1/images/tasks/:task_id",
+		"GET /v1/images/:id",
+		"POST /v1/images/:id/cancel",
 		"POST /images/generations/async",
 		"POST /images/edits/async",
 		"GET /images/tasks/:task_id",
+		"GET /images/:id",
+		"POST /images/:id/cancel",
 	} {
 		require.True(t, registered[route], "%s should be registered", route)
 	}
@@ -454,7 +458,6 @@ func TestGatewayRoutesOpenAICountTokensPathIsRegistered(t *testing.T) {
 	router.ServeHTTP(w, req)
 	require.NotEqual(t, http.StatusNotFound, w.Code)
 }
-
 
 func TestGatewayRoutesTaskPathsAreRegistered(t *testing.T) {
 	router := newGatewayRoutesTestRouter(service.PlatformCanvas)

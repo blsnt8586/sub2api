@@ -255,6 +255,16 @@ func AudioSttPricePerHour(v float64) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldAudioSttPricePerHour, v))
 }
 
+// CanvasImagePricePerCount applies equality check predicate on the "canvas_image_price_per_count" field. It's identical to CanvasImagePricePerCountEQ.
+func CanvasImagePricePerCount(v float64) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldCanvasImagePricePerCount, v))
+}
+
+// CanvasAudioPricePerCount applies equality check predicate on the "canvas_audio_price_per_count" field. It's identical to CanvasAudioPricePerCountEQ.
+func CanvasAudioPricePerCount(v float64) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldCanvasAudioPricePerCount, v))
+}
+
 // ModelPricing applies equality check predicate on the "model_pricing" field. It's identical to ModelPricingEQ.
 func ModelPricing(v []byte) predicate.Group {
 	return predicate.Group(sql.FieldEQ(FieldModelPricing, v))
@@ -2158,6 +2168,106 @@ func AudioSttPricePerHourIsNil() predicate.Group {
 // AudioSttPricePerHourNotNil applies the NotNil predicate on the "audio_stt_price_per_hour" field.
 func AudioSttPricePerHourNotNil() predicate.Group {
 	return predicate.Group(sql.FieldNotNull(FieldAudioSttPricePerHour))
+}
+
+// CanvasImagePricePerCountEQ applies the EQ predicate on the "canvas_image_price_per_count" field.
+func CanvasImagePricePerCountEQ(v float64) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldCanvasImagePricePerCount, v))
+}
+
+// CanvasImagePricePerCountNEQ applies the NEQ predicate on the "canvas_image_price_per_count" field.
+func CanvasImagePricePerCountNEQ(v float64) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldCanvasImagePricePerCount, v))
+}
+
+// CanvasImagePricePerCountIn applies the In predicate on the "canvas_image_price_per_count" field.
+func CanvasImagePricePerCountIn(vs ...float64) predicate.Group {
+	return predicate.Group(sql.FieldIn(FieldCanvasImagePricePerCount, vs...))
+}
+
+// CanvasImagePricePerCountNotIn applies the NotIn predicate on the "canvas_image_price_per_count" field.
+func CanvasImagePricePerCountNotIn(vs ...float64) predicate.Group {
+	return predicate.Group(sql.FieldNotIn(FieldCanvasImagePricePerCount, vs...))
+}
+
+// CanvasImagePricePerCountGT applies the GT predicate on the "canvas_image_price_per_count" field.
+func CanvasImagePricePerCountGT(v float64) predicate.Group {
+	return predicate.Group(sql.FieldGT(FieldCanvasImagePricePerCount, v))
+}
+
+// CanvasImagePricePerCountGTE applies the GTE predicate on the "canvas_image_price_per_count" field.
+func CanvasImagePricePerCountGTE(v float64) predicate.Group {
+	return predicate.Group(sql.FieldGTE(FieldCanvasImagePricePerCount, v))
+}
+
+// CanvasImagePricePerCountLT applies the LT predicate on the "canvas_image_price_per_count" field.
+func CanvasImagePricePerCountLT(v float64) predicate.Group {
+	return predicate.Group(sql.FieldLT(FieldCanvasImagePricePerCount, v))
+}
+
+// CanvasImagePricePerCountLTE applies the LTE predicate on the "canvas_image_price_per_count" field.
+func CanvasImagePricePerCountLTE(v float64) predicate.Group {
+	return predicate.Group(sql.FieldLTE(FieldCanvasImagePricePerCount, v))
+}
+
+// CanvasImagePricePerCountIsNil applies the IsNil predicate on the "canvas_image_price_per_count" field.
+func CanvasImagePricePerCountIsNil() predicate.Group {
+	return predicate.Group(sql.FieldIsNull(FieldCanvasImagePricePerCount))
+}
+
+// CanvasImagePricePerCountNotNil applies the NotNil predicate on the "canvas_image_price_per_count" field.
+func CanvasImagePricePerCountNotNil() predicate.Group {
+	return predicate.Group(sql.FieldNotNull(FieldCanvasImagePricePerCount))
+}
+
+// CanvasAudioPricePerCountEQ applies the EQ predicate on the "canvas_audio_price_per_count" field.
+func CanvasAudioPricePerCountEQ(v float64) predicate.Group {
+	return predicate.Group(sql.FieldEQ(FieldCanvasAudioPricePerCount, v))
+}
+
+// CanvasAudioPricePerCountNEQ applies the NEQ predicate on the "canvas_audio_price_per_count" field.
+func CanvasAudioPricePerCountNEQ(v float64) predicate.Group {
+	return predicate.Group(sql.FieldNEQ(FieldCanvasAudioPricePerCount, v))
+}
+
+// CanvasAudioPricePerCountIn applies the In predicate on the "canvas_audio_price_per_count" field.
+func CanvasAudioPricePerCountIn(vs ...float64) predicate.Group {
+	return predicate.Group(sql.FieldIn(FieldCanvasAudioPricePerCount, vs...))
+}
+
+// CanvasAudioPricePerCountNotIn applies the NotIn predicate on the "canvas_audio_price_per_count" field.
+func CanvasAudioPricePerCountNotIn(vs ...float64) predicate.Group {
+	return predicate.Group(sql.FieldNotIn(FieldCanvasAudioPricePerCount, vs...))
+}
+
+// CanvasAudioPricePerCountGT applies the GT predicate on the "canvas_audio_price_per_count" field.
+func CanvasAudioPricePerCountGT(v float64) predicate.Group {
+	return predicate.Group(sql.FieldGT(FieldCanvasAudioPricePerCount, v))
+}
+
+// CanvasAudioPricePerCountGTE applies the GTE predicate on the "canvas_audio_price_per_count" field.
+func CanvasAudioPricePerCountGTE(v float64) predicate.Group {
+	return predicate.Group(sql.FieldGTE(FieldCanvasAudioPricePerCount, v))
+}
+
+// CanvasAudioPricePerCountLT applies the LT predicate on the "canvas_audio_price_per_count" field.
+func CanvasAudioPricePerCountLT(v float64) predicate.Group {
+	return predicate.Group(sql.FieldLT(FieldCanvasAudioPricePerCount, v))
+}
+
+// CanvasAudioPricePerCountLTE applies the LTE predicate on the "canvas_audio_price_per_count" field.
+func CanvasAudioPricePerCountLTE(v float64) predicate.Group {
+	return predicate.Group(sql.FieldLTE(FieldCanvasAudioPricePerCount, v))
+}
+
+// CanvasAudioPricePerCountIsNil applies the IsNil predicate on the "canvas_audio_price_per_count" field.
+func CanvasAudioPricePerCountIsNil() predicate.Group {
+	return predicate.Group(sql.FieldIsNull(FieldCanvasAudioPricePerCount))
+}
+
+// CanvasAudioPricePerCountNotNil applies the NotNil predicate on the "canvas_audio_price_per_count" field.
+func CanvasAudioPricePerCountNotNil() predicate.Group {
+	return predicate.Group(sql.FieldNotNull(FieldCanvasAudioPricePerCount))
 }
 
 // ModelPricingEQ applies the EQ predicate on the "model_pricing" field.

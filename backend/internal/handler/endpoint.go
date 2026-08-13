@@ -23,7 +23,10 @@ const (
 	EndpointResponsesCompact  = "/v1/responses/compact"
 	EndpointImagesGenerations = "/v1/images/generations"
 	EndpointImagesEdits       = "/v1/images/edits"
+	EndpointImages            = "/v1/images"
 	EndpointImageTasks        = "/v1/images/tasks"
+	EndpointTasksImages       = "/v1/tasks/images"
+	EndpointTasks             = "/v1/tasks"
 	EndpointVideosGenerations = "/v1/videos/generations"
 	EndpointVideosEdits       = "/v1/videos/edits"
 	EndpointVideosExtensions  = "/v1/videos/extensions"
@@ -94,6 +97,12 @@ func NormalizeInboundEndpoint(path string) string {
 		return EndpointImagesEdits
 	case strings.Contains(path, EndpointImageTasks) || strings.Contains(path, "/images/tasks/"):
 		return EndpointImageTasks
+	case strings.Contains(path, EndpointImages) || strings.Contains(path, "/images/"):
+		return EndpointImages
+	case strings.Contains(path, EndpointTasksImages) || strings.Contains(path, "/tasks/images"):
+		return EndpointTasksImages
+	case strings.Contains(path, EndpointTasks) || strings.Contains(path, "/tasks/"):
+		return EndpointTasks
 	case strings.Contains(path, EndpointVideosGenerations) || strings.Contains(path, "/videos/generations"):
 		return EndpointVideosGenerations
 	case strings.Contains(path, EndpointVideosEdits) || strings.Contains(path, "/videos/edits"):

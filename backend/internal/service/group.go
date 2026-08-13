@@ -68,6 +68,9 @@ type Group struct {
 	// 两者均为 nil 时退回到内置默认定价。
 	VideoPricePerCount  *float64 // USD/次
 	VideoPricePerSecond *float64 // USD/秒
+	// Canvas 异步图像/音频任务独立按次定价；nil 时调用方自行决定兜底逻辑。
+	CanvasImagePricePerCount *float64 // USD/次
+	CanvasAudioPricePerCount *float64 // USD/次
 
 	// 模型定价配置（canvas 平台专用）
 	// 优先级：模型专属定价 > 分组全局定价（上方字段） > 系统默认定价

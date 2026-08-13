@@ -143,6 +143,13 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 	user := input.User
 	account := input.Account
 	subscription := input.Subscription
+	// Canvas uses a dedicated completion marker so status polling cannot be
+	// confused with synchronous image generation. Once completion is accepted,
+	// project it onto the canonical image usage fields used by persistence,
+	// pricing, multipliers, and the usage UI.
+	if result.CanvasImageCount > 0 {
+		result.ImageCount = result.CanvasImageCount
+	}
 	if !isGrokVideoUsageResult(result, nil) {
 		ApplyOpenAIImageBillingResolution(result)
 	}
@@ -502,6 +509,19 @@ func (s *OpenAIGatewayService) calculateOpenAIRecordUsageCost(
 	longContextBillingEnabled bool,
 ) (*CostBreakdown, error) {
 	billingModel := firstUsageBillingModel(billingModels)
+	// Canvas 异步图片使用标准图片定价器：模型+档位价优先，其次 Canvas
+	// 全局按次价，再回退通用图片档位价和系统默认价。
+	if result != nil && result.CanvasImageCount > 0 {
+		return s.calculateCanvasImageCost(billingModel, apiKey, result, imageMultiplier), nil
+	}
+	// canvas 异步音频任务：按次计费，使用 canvas_audio_price_per_count。
+	if result != nil && result.CanvasAudioCount > 0 {
+		var pricePerCount *float64
+		if apiKey != nil && apiKey.Group != nil {
+			pricePerCount = apiKey.Group.CanvasAudioPricePerCount
+		}
+		return s.billingService.CalculateCanvasMediaCost(billingModel, result.CanvasAudioCount, pricePerCount, multiplier), nil
+	}
 	// 视频生成（Canvas canvas）：按秒/按次计费，优先于图片与 token 路径。
 	if result != nil && result.VideoCount > 0 && !isGrokVideoUsageResult(result, billingModels) {
 		var groupConfig *JimengVideoPriceConfig
@@ -603,6 +623,45 @@ func (s *OpenAIGatewayService) calculateOpenAIRecordUsageCost(
 	tokenCost.TotalCost += searchCost.TotalCost
 	tokenCost.ActualCost += searchCost.ActualCost
 	return tokenCost, nil
+}
+
+func (s *OpenAIGatewayService) calculateCanvasImageCost(
+	billingModel string,
+	apiKey *APIKey,
+	result *OpenAIForwardResult,
+	multiplier float64,
+) *CostBreakdown {
+	count := result.CanvasImageCount
+	if count <= 0 {
+		count = result.ImageCount
+	}
+	config := canvasImagePriceConfigFromAPIKey(apiKey)
+	fallbackTier := NormalizeImageBillingTierOrDefault(result.ImageSize)
+	if len(result.ImageSizeBreakdown) == 0 {
+		return s.billingService.CalculateImageCost(billingModel, fallbackTier, count, config, multiplier)
+	}
+
+	// AIV2API 2.0 reports width/height per artifact. Price each known output at
+	// its own tier instead of charging every image at the largest returned tier.
+	// Artifacts without dimensions retain the established fallback tier.
+	total := &CostBreakdown{BillingMode: string(BillingModeImage)}
+	pricedCount := 0
+	for _, tier := range SortedImageBillingBreakdownKeys(result.ImageSizeBreakdown) {
+		tierCount := result.ImageSizeBreakdown[tier]
+		if tierCount <= 0 {
+			continue
+		}
+		pricedCount += tierCount
+		part := s.billingService.CalculateImageCost(billingModel, tier, tierCount, config, multiplier)
+		total.TotalCost += part.TotalCost
+		total.ActualCost += part.ActualCost
+	}
+	if unclassified := count - pricedCount; unclassified > 0 {
+		part := s.billingService.CalculateImageCost(billingModel, fallbackTier, unclassified, config, multiplier)
+		total.TotalCost += part.TotalCost
+		total.ActualCost += part.ActualCost
+	}
+	return total
 }
 
 func isGrokVideoBillingModel(model string) bool {
@@ -796,6 +855,9 @@ func groupMediaPricingLooksIncomplete(group *Group) bool {
 	}
 	// Any first-class pricing field present means the projection is not a blank shell.
 	if len(group.VideoModelPrices) > 0 {
+		return false
+	}
+	if group.ModelPricing != nil || group.CanvasImagePricePerCount != nil || group.CanvasAudioPricePerCount != nil {
 		return false
 	}
 	if group.SearchPricePer1k != nil ||

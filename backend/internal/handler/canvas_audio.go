@@ -311,8 +311,8 @@ func (h *OpenAIGatewayHandler) runCanvasAudioForwardLoop(
 			}
 		}
 		// 完成时扣费：仅当本次是轮询（非 create）且 service 层判定终态成功
-		// （result.VideoCount>0）时扣一次费。提交时不扣、失败/取消不扣。
-		if !isCreate && result != nil && result.VideoCount > 0 {
+		// （result.CanvasAudioCount>0）时扣一次费。提交时不扣、失败/取消不扣。
+		if !isCreate && shouldRecordCanvasAsyncCompletionUsage(result, "audio") {
 			recordCanvasAsyncCompletionUsage(c, h, reqLog, apiKey, subject, subscription, account, result, taskID)
 		}
 		reqLog.Debug("jimeng_audio.request_completed",

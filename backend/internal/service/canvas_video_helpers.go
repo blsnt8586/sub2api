@@ -233,8 +233,3 @@ func ValidateCanvasVideoRequest(contentType string, body []byte) *avi2api.Valida
 func ValidateCanvasAudioRequest(body []byte) *avi2api.ValidationError {
 	return avi2api.ValidateAudioRequest(body)
 }
-
-// ValidateCanvasImageRequest 在转发前校验图像请求参数。
-func ValidateCanvasImageRequest(isEdits bool, contentType string, body []byte) *avi2api.ValidationError {
-	return avi2api.ValidateImageRequest(isEdits, contentType, body)
-}

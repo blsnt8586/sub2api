@@ -346,7 +346,25 @@ func isAsyncImageTaskRead(method, path string) bool {
 	if method != http.MethodGet {
 		return false
 	}
-	return strings.HasPrefix(path, "/v1/images/tasks/") || strings.HasPrefix(path, "/images/tasks/")
+	segments := strings.Split(strings.Trim(path, "/"), "/")
+	if len(segments) > 0 && segments[0] == "v1" {
+		segments = segments[1:]
+	}
+	if len(segments) == 2 && segments[0] == "tasks" {
+		return segments[1] != "" && segments[1] != "images"
+	}
+	if len(segments) == 3 && segments[0] == "images" && segments[1] == "tasks" {
+		return segments[2] != ""
+	}
+	if len(segments) == 2 && segments[0] == "images" {
+		switch segments[1] {
+		case "", "generations", "edits", "batches", "estimate", "tasks":
+			return false
+		default:
+			return true
+		}
+	}
+	return false
 }
 
 // GetAPIKeyFromContext 从上下文中获取API key

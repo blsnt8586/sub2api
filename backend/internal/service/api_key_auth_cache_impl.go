@@ -15,9 +15,10 @@ import (
 )
 
 // v20: 合并 v19(search/audio/video_model_prices) + v18(canvas model_pricing) 两批字段。
+// v21: Canvas 图片/音频全局按次价进入认证快照。
 // 必须升版本强制刷新——否则升级后 Redis 里旧快照仍被判定有效，新字段缺失会导致
 // canvas 分组/语音搜索计费一直回退到分组全局价直到缓存自然过期。[CUSTOM+upstream]
-const apiKeyAuthSnapshotVersion = 20
+const apiKeyAuthSnapshotVersion = 21
 
 type apiKeyAuthCacheConfig struct {
 	l1Size        int
@@ -409,6 +410,8 @@ func (s *APIKeyService) snapshotFromAPIKey(ctx context.Context, apiKey *APIKey) 
 			AudioRealtimePricePerMin:        apiKey.Group.AudioRealtimePricePerMin,
 			AudioTTSPricePerMillionChars:    apiKey.Group.AudioTTSPricePerMillionChars,
 			AudioSTTPricePerHour:            apiKey.Group.AudioSTTPricePerHour,
+			CanvasImagePricePerCount:        apiKey.Group.CanvasImagePricePerCount,
+			CanvasAudioPricePerCount:        apiKey.Group.CanvasAudioPricePerCount,
 			ModelPricing:                    apiKey.Group.ModelPricing, // [CUSTOM] canvas
 			ClaudeCodeOnly:                  apiKey.Group.ClaudeCodeOnly,
 			FallbackGroupID:                 apiKey.Group.FallbackGroupID,
@@ -505,6 +508,8 @@ func (s *APIKeyService) snapshotToAPIKey(key string, snapshot *APIKeyAuthSnapsho
 			AudioRealtimePricePerMin:        snapshot.Group.AudioRealtimePricePerMin,
 			AudioTTSPricePerMillionChars:    snapshot.Group.AudioTTSPricePerMillionChars,
 			AudioSTTPricePerHour:            snapshot.Group.AudioSTTPricePerHour,
+			CanvasImagePricePerCount:        snapshot.Group.CanvasImagePricePerCount,
+			CanvasAudioPricePerCount:        snapshot.Group.CanvasAudioPricePerCount,
 			ModelPricing:                    snapshot.Group.ModelPricing, // [CUSTOM] canvas
 			ClaudeCodeOnly:                  snapshot.Group.ClaudeCodeOnly,
 			FallbackGroupID:                 snapshot.Group.FallbackGroupID,

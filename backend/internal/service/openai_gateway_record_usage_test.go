@@ -1776,6 +1776,133 @@ func TestOpenAIGatewayServiceRecordUsage_ImageOnlyUsageStillPersists(t *testing.
 	require.Equal(t, string(BillingModeImage), *usageRepo.lastLog.BillingMode)
 }
 
+func TestOpenAIGatewayServiceRecordUsage_CanvasImageUsesIndependentMarkerAndModelPricing(t *testing.T) {
+	modelPrice := 0.05
+	groupID := int64(1301)
+	usageRepo := &openAIRecordUsageLogRepoStub{inserted: true}
+	svc := newOpenAIRecordUsageServiceForTest(usageRepo, &openAIRecordUsageUserRepoStub{}, &openAIRecordUsageSubRepoStub{}, nil)
+
+	err := svc.RecordUsage(context.Background(), &OpenAIRecordUsageInput{
+		Result: &OpenAIForwardResult{
+			RequestID:        "canvas-image-independent-marker",
+			Model:            "seedream-5.0-pro",
+			CanvasImageCount: 1,
+			ImageOutputSizes: []string{"1368x768"},
+			Duration:         time.Second,
+		},
+		APIKey: &APIKey{
+			ID:      11301,
+			GroupID: i64p(groupID),
+			Group: &Group{
+				ID:             groupID,
+				Platform:       PlatformCanvas,
+				RateMultiplier: 1,
+				// The model price must win over the intentionally different global
+				// Canvas price, proving the existing editor contract is honored.
+				CanvasImagePricePerCount: priceOf(0.99),
+				ModelPricing: &ModelPricingConfig{
+					Image: map[string]*ModelImagePricing{
+						"seedream-5.0-pro": {Price2K: &modelPrice},
+					},
+				},
+			},
+		},
+		User:    &User{ID: 21301},
+		Account: &Account{ID: 31301},
+	})
+
+	require.NoError(t, err)
+	require.NotNil(t, usageRepo.lastLog)
+	require.Equal(t, 1, usageRepo.lastLog.ImageCount, "Canvas marker must project to canonical usage image_count")
+	require.Equal(t, 0, usageRepo.lastLog.VideoCount, "Canvas image must never be persisted as video")
+	require.NotNil(t, usageRepo.lastLog.ImageSize)
+	require.Equal(t, ImageBillingSize2K, *usageRepo.lastLog.ImageSize)
+	require.NotNil(t, usageRepo.lastLog.BillingMode)
+	require.Equal(t, string(BillingModeImage), *usageRepo.lastLog.BillingMode)
+	require.InDelta(t, modelPrice, usageRepo.lastLog.TotalCost, 1e-12)
+	require.InDelta(t, modelPrice, usageRepo.lastLog.ActualCost, 1e-12)
+}
+
+func TestOpenAIGatewayServiceRecordUsage_CanvasImagePricesEachActualOutputSize(t *testing.T) {
+	imagePrice1K := 0.11
+	imagePrice2K := 0.22
+	groupID := int64(1303)
+	usageRepo := &openAIRecordUsageLogRepoStub{inserted: true}
+	svc := newOpenAIRecordUsageServiceForTest(usageRepo, &openAIRecordUsageUserRepoStub{}, &openAIRecordUsageSubRepoStub{}, nil)
+
+	err := svc.RecordUsage(context.Background(), &OpenAIRecordUsageInput{
+		Result: &OpenAIForwardResult{
+			RequestID:        "canvas-image-mixed-output-sizes",
+			Model:            "nano-banana-2",
+			CanvasImageCount: 2,
+			ImageOutputSizes: []string{"1024x1024", "2048x2048"},
+			Duration:         time.Second,
+		},
+		APIKey: &APIKey{
+			ID:      11303,
+			GroupID: i64p(groupID),
+			Group: &Group{
+				ID:             groupID,
+				Platform:       PlatformCanvas,
+				RateMultiplier: 1,
+				ImagePrice1K:   &imagePrice1K,
+				ImagePrice2K:   &imagePrice2K,
+			},
+		},
+		User:    &User{ID: 21303},
+		Account: &Account{ID: 31303},
+	})
+
+	require.NoError(t, err)
+	require.NotNil(t, usageRepo.lastLog)
+	require.Equal(t, map[string]int{ImageBillingSize1K: 1, ImageBillingSize2K: 1}, usageRepo.lastLog.ImageSizeBreakdown)
+	require.InDelta(t, imagePrice1K+imagePrice2K, usageRepo.lastLog.TotalCost, 1e-12)
+	require.InDelta(t, imagePrice1K+imagePrice2K, usageRepo.lastLog.ActualCost, 1e-12)
+}
+
+func TestOpenAIGatewayServiceRecordUsage_CanvasImageExplicitZeroPriceStillPersists(t *testing.T) {
+	zeroPrice := 0.0
+	groupID := int64(1302)
+	usageRepo := &openAIRecordUsageLogRepoStub{inserted: true}
+	userRepo := &openAIRecordUsageUserRepoStub{}
+	svc := newOpenAIRecordUsageServiceForTest(usageRepo, userRepo, &openAIRecordUsageSubRepoStub{}, nil)
+
+	err := svc.RecordUsage(context.Background(), &OpenAIRecordUsageInput{
+		Result: &OpenAIForwardResult{
+			RequestID:        "canvas-image-explicit-free",
+			Model:            "canvas-model-without-model-price",
+			CanvasImageCount: 1,
+			ImageOutputSizes: []string{"1024x1024"},
+			Duration:         time.Second,
+		},
+		APIKey: &APIKey{
+			ID:      11302,
+			GroupID: i64p(groupID),
+			Group: &Group{
+				ID:                       groupID,
+				Platform:                 PlatformCanvas,
+				RateMultiplier:           1,
+				CanvasImagePricePerCount: &zeroPrice,
+			},
+		},
+		User:    &User{ID: 21302},
+		Account: &Account{ID: 31302},
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, 1, usageRepo.calls, "explicitly free Canvas images must remain visible in usage history")
+	require.NotNil(t, usageRepo.lastLog)
+	require.Equal(t, 1, usageRepo.lastLog.ImageCount)
+	require.Equal(t, 0, usageRepo.lastLog.VideoCount)
+	require.NotNil(t, usageRepo.lastLog.ImageSize)
+	require.Equal(t, ImageBillingSize1K, *usageRepo.lastLog.ImageSize)
+	require.NotNil(t, usageRepo.lastLog.BillingMode)
+	require.Equal(t, string(BillingModeImage), *usageRepo.lastLog.BillingMode)
+	require.Zero(t, usageRepo.lastLog.TotalCost)
+	require.Zero(t, usageRepo.lastLog.ActualCost)
+	require.Zero(t, userRepo.deductCalls)
+}
+
 func TestOpenAIGatewayServiceRecordUsage_EmptyImageSizeDefaultsBeforeBillingAndPersistence(t *testing.T) {
 	imagePrice2K := 0.31
 	groupID := int64(1201)

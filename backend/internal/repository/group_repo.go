@@ -91,6 +91,8 @@ func createGroupRecord(ctx context.Context, client *dbent.Client, groupIn *servi
 		SetNillableAudioRealtimePricePerMin(groupIn.AudioRealtimePricePerMin).
 		SetNillableAudioTtsPricePerMillionChars(groupIn.AudioTTSPricePerMillionChars).
 		SetNillableAudioSttPricePerHour(groupIn.AudioSTTPricePerHour).
+		SetNillableCanvasImagePricePerCount(groupIn.CanvasImagePricePerCount). // [CUSTOM] canvas
+		SetNillableCanvasAudioPricePerCount(groupIn.CanvasAudioPricePerCount). // [CUSTOM] canvas
 		SetDefaultValidityDays(groupIn.DefaultValidityDays).
 		SetClaudeCodeOnly(groupIn.ClaudeCodeOnly).
 		SetNillableFallbackGroupID(groupIn.FallbackGroupID).
@@ -376,6 +378,17 @@ func (r *groupRepository) Update(ctx context.Context, groupIn *service.Group) er
 		builder = builder.SetAudioSttPricePerHour(*groupIn.AudioSTTPricePerHour)
 	} else {
 		builder = builder.ClearAudioSttPricePerHour()
+	}
+	// [CUSTOM] canvas 异步图像/音频单次定价
+	if groupIn.CanvasImagePricePerCount != nil {
+		builder = builder.SetCanvasImagePricePerCount(*groupIn.CanvasImagePricePerCount)
+	} else {
+		builder = builder.ClearCanvasImagePricePerCount()
+	}
+	if groupIn.CanvasAudioPricePerCount != nil {
+		builder = builder.SetCanvasAudioPricePerCount(*groupIn.CanvasAudioPricePerCount)
+	} else {
+		builder = builder.ClearCanvasAudioPricePerCount()
 	}
 
 	// 处理 FallbackGroupID：nil 时清除，否则设置

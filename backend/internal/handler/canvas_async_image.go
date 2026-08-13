@@ -14,18 +14,17 @@ import (
 	"go.uber.org/zap"
 )
 
-// CanvasAsyncImageCreation 处理异步图像任务创建：POST /v1/tasks/images。
+// CanvasAsyncImageCreation 处理异步图像任务创建：POST /v1/images/generations。
 func (h *OpenAIGatewayHandler) CanvasAsyncImageCreation(c *gin.Context) {
 	h.handleCanvasAsyncImage(c, service.CanvasAsyncImageCreate, "")
 }
 
-// CanvasAsyncImageStatus 处理异步图像任务状态查询：GET /v1/tasks/:id。
-// 注：该路由同时服务 video / audio 任务，由 handler 层根据 kind 字段透传。
+// CanvasAsyncImageStatus 处理异步图像任务状态查询：GET /v1/images/:id。
 func (h *OpenAIGatewayHandler) CanvasAsyncImageStatus(c *gin.Context) {
 	h.handleCanvasAsyncImage(c, service.CanvasAsyncImageStatus, c.Param("id"))
 }
 
-// CanvasAsyncImageCancel 处理异步图像任务取消：POST /v1/tasks/:id/cancel。
+// CanvasAsyncImageCancel 处理异步图像任务取消：POST /v1/images/:id/cancel。
 func (h *OpenAIGatewayHandler) CanvasAsyncImageCancel(c *gin.Context) {
 	h.handleCanvasAsyncImage(c, service.CanvasAsyncImageCancel, c.Param("id"))
 }
@@ -66,6 +65,15 @@ func (h *OpenAIGatewayHandler) handleCanvasAsyncImage(c *gin.Context, endpoint s
 	var body []byte
 	var err error
 	if isCreate {
+		idempotencyKey := strings.TrimSpace(c.GetHeader("Idempotency-Key"))
+		if idempotencyKey == "" {
+			h.errorResponse(c, http.StatusBadRequest, "idempotency_key_required", "Idempotency-Key header is required")
+			return
+		}
+		if len(idempotencyKey) > 255 {
+			h.errorResponse(c, http.StatusBadRequest, "idempotency_key_too_long", "Idempotency-Key must not exceed 255 characters")
+			return
+		}
 		body, err = pkghttputil.ReadRequestBodyWithPrealloc(c.Request)
 		if err != nil {
 			if maxErr, ok := extractMaxBytesError(err); ok {
@@ -85,11 +93,38 @@ func (h *OpenAIGatewayHandler) handleCanvasAsyncImage(c *gin.Context, endpoint s
 	}
 
 	contentType := c.GetHeader("Content-Type")
-	requestModel := service.ExtractCanvasAsyncImageModel(body)
+	requestModel := service.ExtractCanvasAsyncImageModel(contentType, body)
+	if isCreate && strings.TrimSpace(requestModel) == "" {
+		h.errorResponse(c, http.StatusBadRequest, "invalid_request", "model is required")
+		return
+	}
+	if isCreate {
+		if verr := service.ValidateCanvasAsyncImageRequest(contentType, body); verr != nil {
+			h.errorResponse(c, http.StatusBadRequest, "invalid_request", verr.Error())
+			return
+		}
+	}
 
 	reqLog = reqLog.With(zap.String("model", requestModel))
 	setOpsRequestContext(c, requestModel, false)
 	setOpsEndpointContext(c, "", int16(service.RequestTypeSync))
+
+	if isCreate {
+		if moderationBody := service.CanvasAsyncImageModerationBody(contentType, body); len(moderationBody) > 0 {
+			decision := h.checkSecurityAudit(c, reqLog, apiKey, subject, service.ContentModerationProtocolOpenAIImages, requestModel, moderationBody)
+			if decision != nil && !decision.AllowNextStage {
+				h.openAISecurityAuditError(c, decision)
+				return
+			}
+		}
+		imageReleaseFunc, acquired := h.acquireImageGenerationSlot(c, streamStarted)
+		if !acquired {
+			return
+		}
+		if imageReleaseFunc != nil {
+			defer imageReleaseFunc()
+		}
+	}
 
 	if h.errorPassthroughService != nil {
 		service.BindErrorPassthroughService(c, h.errorPassthroughService)
@@ -303,8 +338,8 @@ func (h *OpenAIGatewayHandler) runCanvasAsyncImageForwardLoop(
 			}
 		}
 		// 完成时扣费：仅当本次是轮询（非 create）且 service 层判定终态成功
-		// （result.VideoCount>0）时扣一次费。提交时不扣、失败/取消不扣。
-		if !isCreate && result != nil && result.VideoCount > 0 {
+		// （result.CanvasImageCount>0）时扣一次费。提交时不扣、失败/取消不扣。
+		if !isCreate && shouldRecordCanvasAsyncCompletionUsage(result, "image") {
 			recordCanvasAsyncCompletionUsage(c, h, reqLog, apiKey, subject, subscription, account, result, taskID)
 		}
 		reqLog.Debug("canvas_async_image.request_completed",

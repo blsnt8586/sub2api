@@ -42,7 +42,7 @@ func TestEveryGatewayPOSTRouteIsClassifiedForPromptAuditCoverage(t *testing.T) {
 		"/alpha/search":               {"openai_alpha_search.go"},
 		"/live":                       {"openai_live.go"},
 		"/realtime/calls":             {"openai_live.go"},
-		"/images/generations":         {"openai_images.go", "grok_media.go"},
+		"/images/generations":         {"openai_images.go", "grok_media.go", "canvas_async_image.go"},
 		"/images/edits":               {"openai_images.go", "grok_media.go"},
 		"/images/generations/async":   {"image_task_handler.go"},
 		"/images/edits/async":         {"image_task_handler.go"},
@@ -59,6 +59,7 @@ func TestEveryGatewayPOSTRouteIsClassifiedForPromptAuditCoverage(t *testing.T) {
 	excluded := map[string]string{
 		"/messages/count_tokens":     "tokenization only; it does not execute a model request",
 		"/images/batches/:id/cancel": "control-plane cancellation with no user prompt",
+		"/images/:id/cancel":         "control-plane cancellation with no user prompt",
 		"/stt":                       "speech transcription is not a text-generation prompt",
 		"/custom-voices":             "voice profile management has no model prompt",
 		"/videos/:request_id/cancel": "control-plane cancellation with no user prompt", // [CUSTOM] canvas

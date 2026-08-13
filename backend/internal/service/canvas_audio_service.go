@@ -141,7 +141,7 @@ func (s *OpenAIGatewayService) ForwardCanvasAudio(
 		result.ResponseID = extractCanvasAudioTaskID(respBody)
 	} else if endpoint == CanvasAudioStatus {
 		// 音频计费：按次（VideoCount=1）+ 展示时长（VideoSeconds）。
-		applyCanvasAsyncCompletionBilling(result, respBody, taskID, true)
+		applyCanvasAsyncCompletionBilling(result, respBody, taskID, "audio")
 	}
 	return result, nil
 }

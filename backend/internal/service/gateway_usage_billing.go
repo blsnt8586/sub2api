@@ -775,6 +775,9 @@ func (s *GatewayService) recordUsageCore(ctx context.Context, input *recordUsage
 	user := input.User
 	account := input.Account
 	subscription := input.Subscription
+	if result.CanvasImageCount > 0 {
+		result.ImageCount = result.CanvasImageCount
+	}
 	ApplyForwardImageBillingResolution(result)
 
 	// 强制缓存计费：将 input_tokens 转为 cache_read_input_tokens
@@ -941,6 +944,23 @@ func (s *GatewayService) calculateRecordUsageCost(
 	imageMultiplier float64,
 	opts *recordUsageOpts,
 ) *CostBreakdown {
+	// Canvas 异步图片复用标准图片记录和定价语义。
+	if result.CanvasImageCount > 0 {
+		return s.billingService.CalculateImageCost(
+			result.Model,
+			NormalizeImageBillingTierOrDefault(result.ImageSize),
+			result.CanvasImageCount,
+			canvasImagePriceConfigFromAPIKey(apiKey),
+			imageMultiplier,
+		)
+	}
+	if result.CanvasAudioCount > 0 {
+		var pricePerCount *float64
+		if apiKey.Group != nil {
+			pricePerCount = apiKey.Group.CanvasAudioPricePerCount
+		}
+		return s.billingService.CalculateCanvasMediaCost(result.Model, result.CanvasAudioCount, pricePerCount, multiplier)
+	}
 	// 视频生成（Canvas canvas）：按次/按秒计费，优先于图片与 token 路径
 	if result.VideoCount > 0 {
 		return s.calculateVideoCost(result, apiKey, imageMultiplier)

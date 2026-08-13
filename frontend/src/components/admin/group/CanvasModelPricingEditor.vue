@@ -2,7 +2,7 @@
   Canvas 平台按模型定价编辑器 [CUSTOM]
 
   为什么需要：canvas 平台一个分组下挂着画质、时长差异巨大的多个模型
-  （veo-3.1 按秒、kling-3.0 按次、gpt-image-2 分 1K/2K/4K 档），
+  （veo-3.1 按秒、kling-o3-omni 按次、gpt-image-2 分 1K/2K/4K 档），
   单一分组全局价无法表达真实成本。
 
   只写用户显式填过的模型：未填的模型不进 payload，运行时自动回退内置默认价。
@@ -144,7 +144,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, toRaw, watch } from 'vue'
 // watch 仍用于 props.modelValue 回填
 import { useI18n } from 'vue-i18n'
 import { getCanvasPricingModels } from '@/api/admin/groups'
@@ -279,6 +279,10 @@ function clearAll() {
   emitChange()
 }
 
+// emitChange 发出的 payload 引用。用于识别「自己 emit 又被 v-model 回灌」的回环：
+// 这种回环不能重置 videoModeDraft，否则用户刚选的按秒/按次会被立刻抹掉。
+let lastEmitted: ModelPricingConfig | undefined
+
 // 只发非空字段，避免 payload 里塞满 null 让后端把「未配置」当成「配置为 0」。
 function emitChange() {
   const video: Record<string, ModelVideoPricing> = {}
@@ -300,23 +304,25 @@ function emitChange() {
 
   const hasVideo = Object.keys(video).length > 0
   const hasImage = Object.keys(image).length > 0
-  if (!hasVideo && !hasImage) {
-    // 空对象而非 null：后端把空配置视为「清空」，null 会被当成「不修改」。
-    emit('update:modelValue', {})
-    return
-  }
 
   const payload: ModelPricingConfig = {}
   if (hasVideo) payload.video = video
   if (hasImage) payload.image = image
+  // 空对象而非 null：后端把空配置视为「清空」，null 会被当成「不修改」。
+  lastEmitted = payload
   emit('update:modelValue', payload)
 }
 
 function syncFromProp(config: ModelPricingConfig | null | undefined) {
+  // 自己 emit 又经 v-model 回灌的同一个对象：drafts 已是最新，
+  // 保留 videoModeDraft，避免刚切的计费方式被重置回按次。
+  // 父级 editForm 是 reactive()，回灌值会被包成 proxy，必须 toRaw 拆包后比引用。
+  if (config != null && toRaw(config) === lastEmitted) return
+
   videoDraft.value = { ...(config?.video ?? {}) }
   imageDraft.value = { ...(config?.image ?? {}) }
-  // 模式回显交给 videoMode() 从字段反推，这里清空手动覆盖，
-  // 否则切换分组后会残留上一个分组的选择。
+  // 外部真正换了分组（不同引用）才清空手动覆盖，
+  // 否则会残留上一个分组的选择。模式回显交给 videoMode() 从字段反推。
   videoModeDraft.value = {}
 }
 

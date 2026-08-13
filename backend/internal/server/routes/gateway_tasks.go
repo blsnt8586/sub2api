@@ -9,16 +9,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// registerTaskRoutes 注册 AIV2API 统一任务路由（限 platform=canvas）。
+// registerTaskRoutes 注册 AIV2API 1.x 统一任务兼容路由（限 platform=canvas）。
 //
 // 端点清单：
-//   POST /v1/tasks/images       创建异步图像任务（文生图，AsyncImageRequest，无参考图字段）
-//   GET  /v1/tasks/:id          统一任务查询（kind=image|video|audio）
-//   POST /v1/tasks/:id/cancel   统一任务取消
 //
-// 历史背景：canvas-api task_poller 原先打 GET {baseURL}/v1/tasks/{id}，
-// 但 sub2api 没有此路由，导致轮询恒 404、任务 25~50 分钟后判定 poll_timeout。
-// 本文件注册这三条路由，同时修复该缺陷。
+//	POST /v1/tasks/images       创建异步图像任务（文生图，AsyncImageRequest，无参考图字段）
+//	GET  /v1/tasks/:id          存量图像任务查询别名
+//	POST /v1/tasks/:id/cancel   存量图像任务取消别名
+//
+// AIV2API 2.0 已把图像任务迁移到 /v1/images/*；旧 Canvas 图片 worker 仍可能
+// 持有 /tasks/* 请求，因此保留别名。handler 内部会转发到新图像上游路径。
+// 视频和音频已经分别使用 /v1/videos/*、/v1/audio/*，不能经该别名查询。
 //
 // 其他平台（openai/grok/gemini 等）走 tasksUnsupported 返回 404，
 // 不干扰既有的 /images/tasks/:task_id（上游 AsyncImage，限 OpenAI/Grok）。
@@ -54,7 +55,7 @@ func registerTaskRoutes(
 		tasksUnsupported(c)
 	}
 
-	// tasksStatusHandler 处理 GET /v1/tasks/:id（统一任务查询，含 video / audio）
+	// tasksStatusHandler 处理 GET /v1/tasks/:id（仅存量图像任务兼容）
 	tasksStatusHandler := func(c *gin.Context) {
 		if getGroupPlatform(c) == service.PlatformCanvas {
 			h.OpenAIGateway.CanvasAsyncImageStatus(c)
@@ -63,7 +64,7 @@ func registerTaskRoutes(
 		tasksUnsupported(c)
 	}
 
-	// tasksCancelHandler 处理 POST /v1/tasks/:id/cancel（统一任务取消）
+	// tasksCancelHandler 处理 POST /v1/tasks/:id/cancel（仅存量图像任务兼容）
 	tasksCancelHandler := func(c *gin.Context) {
 		if getGroupPlatform(c) == service.PlatformCanvas {
 			h.OpenAIGateway.CanvasAsyncImageCancel(c)

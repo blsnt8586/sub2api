@@ -78,14 +78,12 @@ func RegisterGatewayRoutes(
 	}
 	imagesHandler := func(c *gin.Context) {
 		switch getGroupPlatform(c) {
+		case service.PlatformCanvas:
+			h.OpenAIGateway.CanvasAsyncImageCreation(c)
 		case service.PlatformOpenAI:
 			h.OpenAIGateway.Images(c)
 		case service.PlatformGrok:
 			h.OpenAIGateway.GrokImages(c)
-		case service.PlatformCanvas:
-			// AIV2API 图像接口（OpenAI Images 兼容）；
-			// 转发层校验 api_key 凭据，缺失时按 account 级 failover 跳号。
-			h.OpenAIGateway.CanvasImages(c)
 		default:
 			service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonLocalFeatureGate)
 			c.JSON(http.StatusNotFound, gin.H{
@@ -197,6 +195,22 @@ func RegisterGatewayRoutes(
 		gateway.POST("/images/generations/async", h.AsyncImage.Submit)
 		gateway.POST("/images/edits/async", h.AsyncImage.Submit)
 		gateway.GET("/images/tasks/:task_id", h.AsyncImage.Get)
+		gateway.GET("/images/:id", func(c *gin.Context) {
+			if getGroupPlatform(c) == service.PlatformCanvas {
+				h.OpenAIGateway.CanvasAsyncImageStatus(c)
+				return
+			}
+			service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonLocalFeatureGate)
+			c.JSON(http.StatusNotFound, gin.H{"error": gin.H{"type": "not_found_error", "message": "Image task API is not supported for this platform"}})
+		})
+		gateway.POST("/images/:id/cancel", func(c *gin.Context) {
+			if getGroupPlatform(c) == service.PlatformCanvas {
+				h.OpenAIGateway.CanvasAsyncImageCancel(c)
+				return
+			}
+			service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonLocalFeatureGate)
+			c.JSON(http.StatusNotFound, gin.H{"error": gin.H{"type": "not_found_error", "message": "Image task API is not supported for this platform"}})
+		})
 		gateway.POST("/images/batches", h.BatchImage.Submit)
 		gateway.GET("/images/batches", h.BatchImage.List)
 		gateway.GET("/images/batches/models", h.BatchImage.Models)
@@ -328,6 +342,22 @@ func RegisterGatewayRoutes(
 	r.POST("/images/generations/async", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), compositeTarget, requireGroupAnthropic, h.AsyncImage.Submit)
 	r.POST("/images/edits/async", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), compositeTarget, requireGroupAnthropic, h.AsyncImage.Submit)
 	r.GET("/images/tasks/:task_id", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), compositeTarget, requireGroupAnthropic, h.AsyncImage.Get)
+	r.GET("/images/:id", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), compositeTarget, requireGroupAnthropic, func(c *gin.Context) {
+		if getGroupPlatform(c) == service.PlatformCanvas {
+			h.OpenAIGateway.CanvasAsyncImageStatus(c)
+			return
+		}
+		service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonLocalFeatureGate)
+		c.JSON(http.StatusNotFound, gin.H{"error": gin.H{"type": "not_found_error", "message": "Image task API is not supported for this platform"}})
+	})
+	r.POST("/images/:id/cancel", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), compositeTarget, requireGroupAnthropic, func(c *gin.Context) {
+		if getGroupPlatform(c) == service.PlatformCanvas {
+			h.OpenAIGateway.CanvasAsyncImageCancel(c)
+			return
+		}
+		service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonLocalFeatureGate)
+		c.JSON(http.StatusNotFound, gin.H{"error": gin.H{"type": "not_found_error", "message": "Image task API is not supported for this platform"}})
+	})
 	// 视频路由（Grok、Canvas canvas 等）——新增视频平台只需修改 gateway_video.go。
 	// compositeTarget 与图片路由一致地挂在根路径别名上，让 composite 分组按 model 解析目标平台。
 	registerVideoRoutes(gateway, r, h, bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, gin.HandlerFunc(apiKeyAuth), compositeTarget, requireGroupAnthropic)

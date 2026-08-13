@@ -587,6 +587,34 @@ func (_c *GroupCreate) SetNillableAudioSttPricePerHour(v *float64) *GroupCreate 
 	return _c
 }
 
+// SetCanvasImagePricePerCount sets the "canvas_image_price_per_count" field.
+func (_c *GroupCreate) SetCanvasImagePricePerCount(v float64) *GroupCreate {
+	_c.mutation.SetCanvasImagePricePerCount(v)
+	return _c
+}
+
+// SetNillableCanvasImagePricePerCount sets the "canvas_image_price_per_count" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableCanvasImagePricePerCount(v *float64) *GroupCreate {
+	if v != nil {
+		_c.SetCanvasImagePricePerCount(*v)
+	}
+	return _c
+}
+
+// SetCanvasAudioPricePerCount sets the "canvas_audio_price_per_count" field.
+func (_c *GroupCreate) SetCanvasAudioPricePerCount(v float64) *GroupCreate {
+	_c.mutation.SetCanvasAudioPricePerCount(v)
+	return _c
+}
+
+// SetNillableCanvasAudioPricePerCount sets the "canvas_audio_price_per_count" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableCanvasAudioPricePerCount(v *float64) *GroupCreate {
+	if v != nil {
+		_c.SetCanvasAudioPricePerCount(*v)
+	}
+	return _c
+}
+
 // SetModelPricing sets the "model_pricing" field.
 func (_c *GroupCreate) SetModelPricing(v []byte) *GroupCreate {
 	_c.mutation.SetModelPricing(v)
@@ -1525,6 +1553,14 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.AudioSttPricePerHour(); ok {
 		_spec.SetField(group.FieldAudioSttPricePerHour, field.TypeFloat64, value)
 		_node.AudioSttPricePerHour = &value
+	}
+	if value, ok := _c.mutation.CanvasImagePricePerCount(); ok {
+		_spec.SetField(group.FieldCanvasImagePricePerCount, field.TypeFloat64, value)
+		_node.CanvasImagePricePerCount = &value
+	}
+	if value, ok := _c.mutation.CanvasAudioPricePerCount(); ok {
+		_spec.SetField(group.FieldCanvasAudioPricePerCount, field.TypeFloat64, value)
+		_node.CanvasAudioPricePerCount = &value
 	}
 	if value, ok := _c.mutation.ModelPricing(); ok {
 		_spec.SetField(group.FieldModelPricing, field.TypeBytes, value)
@@ -2487,6 +2523,54 @@ func (u *GroupUpsert) AddAudioSttPricePerHour(v float64) *GroupUpsert {
 // ClearAudioSttPricePerHour clears the value of the "audio_stt_price_per_hour" field.
 func (u *GroupUpsert) ClearAudioSttPricePerHour() *GroupUpsert {
 	u.SetNull(group.FieldAudioSttPricePerHour)
+	return u
+}
+
+// SetCanvasImagePricePerCount sets the "canvas_image_price_per_count" field.
+func (u *GroupUpsert) SetCanvasImagePricePerCount(v float64) *GroupUpsert {
+	u.Set(group.FieldCanvasImagePricePerCount, v)
+	return u
+}
+
+// UpdateCanvasImagePricePerCount sets the "canvas_image_price_per_count" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateCanvasImagePricePerCount() *GroupUpsert {
+	u.SetExcluded(group.FieldCanvasImagePricePerCount)
+	return u
+}
+
+// AddCanvasImagePricePerCount adds v to the "canvas_image_price_per_count" field.
+func (u *GroupUpsert) AddCanvasImagePricePerCount(v float64) *GroupUpsert {
+	u.Add(group.FieldCanvasImagePricePerCount, v)
+	return u
+}
+
+// ClearCanvasImagePricePerCount clears the value of the "canvas_image_price_per_count" field.
+func (u *GroupUpsert) ClearCanvasImagePricePerCount() *GroupUpsert {
+	u.SetNull(group.FieldCanvasImagePricePerCount)
+	return u
+}
+
+// SetCanvasAudioPricePerCount sets the "canvas_audio_price_per_count" field.
+func (u *GroupUpsert) SetCanvasAudioPricePerCount(v float64) *GroupUpsert {
+	u.Set(group.FieldCanvasAudioPricePerCount, v)
+	return u
+}
+
+// UpdateCanvasAudioPricePerCount sets the "canvas_audio_price_per_count" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateCanvasAudioPricePerCount() *GroupUpsert {
+	u.SetExcluded(group.FieldCanvasAudioPricePerCount)
+	return u
+}
+
+// AddCanvasAudioPricePerCount adds v to the "canvas_audio_price_per_count" field.
+func (u *GroupUpsert) AddCanvasAudioPricePerCount(v float64) *GroupUpsert {
+	u.Add(group.FieldCanvasAudioPricePerCount, v)
+	return u
+}
+
+// ClearCanvasAudioPricePerCount clears the value of the "canvas_audio_price_per_count" field.
+func (u *GroupUpsert) ClearCanvasAudioPricePerCount() *GroupUpsert {
+	u.SetNull(group.FieldCanvasAudioPricePerCount)
 	return u
 }
 
@@ -3699,6 +3783,62 @@ func (u *GroupUpsertOne) UpdateAudioSttPricePerHour() *GroupUpsertOne {
 func (u *GroupUpsertOne) ClearAudioSttPricePerHour() *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
 		s.ClearAudioSttPricePerHour()
+	})
+}
+
+// SetCanvasImagePricePerCount sets the "canvas_image_price_per_count" field.
+func (u *GroupUpsertOne) SetCanvasImagePricePerCount(v float64) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetCanvasImagePricePerCount(v)
+	})
+}
+
+// AddCanvasImagePricePerCount adds v to the "canvas_image_price_per_count" field.
+func (u *GroupUpsertOne) AddCanvasImagePricePerCount(v float64) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddCanvasImagePricePerCount(v)
+	})
+}
+
+// UpdateCanvasImagePricePerCount sets the "canvas_image_price_per_count" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateCanvasImagePricePerCount() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateCanvasImagePricePerCount()
+	})
+}
+
+// ClearCanvasImagePricePerCount clears the value of the "canvas_image_price_per_count" field.
+func (u *GroupUpsertOne) ClearCanvasImagePricePerCount() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearCanvasImagePricePerCount()
+	})
+}
+
+// SetCanvasAudioPricePerCount sets the "canvas_audio_price_per_count" field.
+func (u *GroupUpsertOne) SetCanvasAudioPricePerCount(v float64) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetCanvasAudioPricePerCount(v)
+	})
+}
+
+// AddCanvasAudioPricePerCount adds v to the "canvas_audio_price_per_count" field.
+func (u *GroupUpsertOne) AddCanvasAudioPricePerCount(v float64) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddCanvasAudioPricePerCount(v)
+	})
+}
+
+// UpdateCanvasAudioPricePerCount sets the "canvas_audio_price_per_count" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateCanvasAudioPricePerCount() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateCanvasAudioPricePerCount()
+	})
+}
+
+// ClearCanvasAudioPricePerCount clears the value of the "canvas_audio_price_per_count" field.
+func (u *GroupUpsertOne) ClearCanvasAudioPricePerCount() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearCanvasAudioPricePerCount()
 	})
 }
 
@@ -5131,6 +5271,62 @@ func (u *GroupUpsertBulk) UpdateAudioSttPricePerHour() *GroupUpsertBulk {
 func (u *GroupUpsertBulk) ClearAudioSttPricePerHour() *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
 		s.ClearAudioSttPricePerHour()
+	})
+}
+
+// SetCanvasImagePricePerCount sets the "canvas_image_price_per_count" field.
+func (u *GroupUpsertBulk) SetCanvasImagePricePerCount(v float64) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetCanvasImagePricePerCount(v)
+	})
+}
+
+// AddCanvasImagePricePerCount adds v to the "canvas_image_price_per_count" field.
+func (u *GroupUpsertBulk) AddCanvasImagePricePerCount(v float64) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddCanvasImagePricePerCount(v)
+	})
+}
+
+// UpdateCanvasImagePricePerCount sets the "canvas_image_price_per_count" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateCanvasImagePricePerCount() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateCanvasImagePricePerCount()
+	})
+}
+
+// ClearCanvasImagePricePerCount clears the value of the "canvas_image_price_per_count" field.
+func (u *GroupUpsertBulk) ClearCanvasImagePricePerCount() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearCanvasImagePricePerCount()
+	})
+}
+
+// SetCanvasAudioPricePerCount sets the "canvas_audio_price_per_count" field.
+func (u *GroupUpsertBulk) SetCanvasAudioPricePerCount(v float64) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetCanvasAudioPricePerCount(v)
+	})
+}
+
+// AddCanvasAudioPricePerCount adds v to the "canvas_audio_price_per_count" field.
+func (u *GroupUpsertBulk) AddCanvasAudioPricePerCount(v float64) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddCanvasAudioPricePerCount(v)
+	})
+}
+
+// UpdateCanvasAudioPricePerCount sets the "canvas_audio_price_per_count" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateCanvasAudioPricePerCount() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateCanvasAudioPricePerCount()
+	})
+}
+
+// ClearCanvasAudioPricePerCount clears the value of the "canvas_audio_price_per_count" field.
+func (u *GroupUpsertBulk) ClearCanvasAudioPricePerCount() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearCanvasAudioPricePerCount()
 	})
 }
 

@@ -372,6 +372,8 @@ func TestAPIContracts(t *testing.T) {
 						"video_price_1080p": null,
 						"video_price_per_second": null,
 						"video_price_per_count": null,
+						"canvas_image_price_per_count": null,
+						"canvas_audio_price_per_count": null,
 						"web_search_price_per_call": null,
 						"search_price_per_1k": null,
 						"audio_tts_price_per_million_chars": null,

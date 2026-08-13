@@ -12,11 +12,15 @@ import (
 // 快照会序列化进 Redis。ModelPricing 若在往返中丢失，
 // 缓存命中的 canvas 请求会静默按分组全局价计费。
 func TestAPIKeyAuthGroupSnapshot_ModelPricingRoundTrip(t *testing.T) {
+	canvasImagePrice := 0.08
+	canvasAudioPrice := 0.12
 	snapshot := &APIKeyAuthGroupSnapshot{
-		ID:       7,
-		Name:     "canvas-group",
-		Platform: PlatformCanvas,
-		Status:   StatusActive,
+		ID:                       7,
+		Name:                     "canvas-group",
+		Platform:                 PlatformCanvas,
+		Status:                   StatusActive,
+		CanvasImagePricePerCount: &canvasImagePrice,
+		CanvasAudioPricePerCount: &canvasAudioPrice,
 		ModelPricing: &ModelPricingConfig{
 			Video: map[string]*ModelVideoPricing{
 				"veo-3.1":   {PricePerSecond: priceOf(0.02)},
@@ -35,6 +39,10 @@ func TestAPIKeyAuthGroupSnapshot_ModelPricingRoundTrip(t *testing.T) {
 	var decoded APIKeyAuthGroupSnapshot
 	require.NoError(t, json.Unmarshal(encoded, &decoded))
 	require.NotNil(t, decoded.ModelPricing)
+	require.NotNil(t, decoded.CanvasImagePricePerCount)
+	require.InDelta(t, canvasImagePrice, *decoded.CanvasImagePricePerCount, 1e-9)
+	require.NotNil(t, decoded.CanvasAudioPricePerCount)
+	require.InDelta(t, canvasAudioPrice, *decoded.CanvasAudioPricePerCount, 1e-9)
 
 	videoPrice := decoded.ModelPricing.GetModelVideoPrice("veo-3.1")
 	require.NotNil(t, videoPrice)
@@ -64,7 +72,7 @@ func TestAPIKeyAuthGroupSnapshot_NilModelPricingOmitted(t *testing.T) {
 
 // 旧版本快照必须被拒绝，否则升级后仍会命中不含 model_pricing 的缓存。
 func TestAPIKeyService_RejectsSnapshotWithoutModelPricingSupport(t *testing.T) {
-	require.Equal(t, 20, apiKeyAuthSnapshotVersion,
+	require.Equal(t, 21, apiKeyAuthSnapshotVersion,
 		"新增快照字段后必须递增版本号，否则旧缓存不会失效")
 
 	svc := &APIKeyService{}

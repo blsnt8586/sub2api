@@ -1,18 +1,19 @@
 package service
 
-// canvas 异步图像任务协议层（AIV2API /v1/tasks/* 端点）。
+// canvas 异步图像任务协议层（AIV2API 2.0 /v1/images/* 端点）。
 //
 // 端点清单：
-//   POST /v1/tasks/images         创建异步图像任务（仅文生图；AsyncImageRequest，additionalProperties:false）
-//   GET  /v1/tasks/{id}           统一任务查询（kind=image|video|audio，同时修复 task_poller 恒 404 缺陷）
-//   POST /v1/tasks/{id}/cancel    统一取消
+//   POST /v1/images/generations   创建异步图像任务（JSON 文生图或 multipart 图生图）
+//   GET  /v1/images/{id}          查询图像任务
+//   POST /v1/images/{id}/cancel   取消排队中的图像任务
 //
-// 注意：图生图（带参考图）上游没有异步版本，走同步 /v1/images/edits + Idempotency-Key，
-// 由 canvas-api 的 image-edit Adapter 处理，不经过本文件。
+// 图生图与文生图共用创建路径，由 Content-Type 区分请求 DTO。转发层不解析或
+// 重写 body，multipart boundary 与文件内容原样透传。
 
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -27,12 +28,11 @@ import (
 type CanvasAsyncImageEndpoint string
 
 const (
-	// CanvasAsyncImageCreate 创建异步图像任务：POST /v1/tasks/images。
+	// CanvasAsyncImageCreate 创建异步图像任务：POST /v1/images/generations。
 	CanvasAsyncImageCreate CanvasAsyncImageEndpoint = "task_create"
-	// CanvasAsyncImageStatus 查询任务状态：GET /v1/tasks/{id}。
-	// 该端点为统一端点，同时服务 video / audio 任务，路由路径为 /tasks/:id。
+	// CanvasAsyncImageStatus 查询图像任务状态：GET /v1/images/{id}。
 	CanvasAsyncImageStatus CanvasAsyncImageEndpoint = "task_status"
-	// CanvasAsyncImageCancel 取消排队中的任务：POST /v1/tasks/{id}/cancel。
+	// CanvasAsyncImageCancel 取消排队中的任务：POST /v1/images/{id}/cancel。
 	CanvasAsyncImageCancel CanvasAsyncImageEndpoint = "task_cancel"
 )
 
@@ -130,10 +130,10 @@ func (s *OpenAIGatewayService) ForwardCanvasAsyncImage(
 	defer func() { _ = resp.Body.Close() }()
 
 	requestIDHeader := firstNonEmpty(resp.Header.Get("x-request-id"), resp.Header.Get("request-id"))
-	requestModel := extractAsyncImageModel(body)
+	requestModel := extractAsyncImageModel(contentType, body)
 
 	if resp.StatusCode >= 400 {
-		return s.handleCanvasVideoErrorResponse(ctx, resp, c, account, requestIDHeader, requestModel)
+		return s.handleCanvasImageErrorResponse(ctx, resp, c, account, requestIDHeader, requestModel)
 	}
 
 	respBody, err := ReadUpstreamResponseBody(resp.Body, s.cfg, c, openAITooLargeError)
@@ -157,9 +157,55 @@ func (s *OpenAIGatewayService) ForwardCanvasAsyncImage(
 		result.ResponseID = extractAsyncImageTaskID(respBody)
 	} else if endpoint == CanvasAsyncImageStatus {
 		// 图像按次计费，无产物时长维度，withSeconds=false。
-		applyCanvasAsyncCompletionBilling(result, respBody, taskID, false)
+		applyCanvasAsyncCompletionBilling(result, respBody, taskID, "image")
 	}
 	return result, nil
+}
+
+// handleCanvasImageErrorResponse preserves AIV2API's structured public error
+// envelope for deterministic image errors. The generic canvas media helper was
+// designed around legacy video handling and can replace an otherwise actionable
+// 4xx with a generic 500 when an account has no custom error-code policy.
+func (s *OpenAIGatewayService) handleCanvasImageErrorResponse(
+	ctx context.Context,
+	resp *http.Response,
+	c *gin.Context,
+	account *Account,
+	requestIDHeader string,
+	requestedModel string,
+) (*OpenAIForwardResult, error) {
+	body := s.readUpstreamErrorBody(resp)
+	message := sanitizeUpstreamErrorMessage(strings.TrimSpace(extractUpstreamErrorMessage(body)))
+	if message == "" {
+		message = fmt.Sprintf("canvas upstream returned status %d", resp.StatusCode)
+	}
+	setOpsUpstreamError(c, resp.StatusCode, message, "")
+
+	if s.shouldFailoverUpstreamError(resp.StatusCode) {
+		s.handleOpenAIAccountUpstreamError(ctx, account, resp.StatusCode, resp.Header, body, requestedModel)
+		appendOpsUpstreamError(c, OpsUpstreamErrorEvent{
+			Platform: account.Platform, AccountID: account.ID, AccountName: account.Name,
+			UpstreamStatusCode: resp.StatusCode, UpstreamRequestID: requestIDHeader,
+			Kind: "failover", Message: message,
+		})
+		return nil, &UpstreamFailoverError{
+			StatusCode: resp.StatusCode, ResponseBody: body,
+			RetryableOnSameAccount: account.IsPoolMode() && account.IsPoolModeRetryableStatus(resp.StatusCode),
+		}
+	}
+
+	appendOpsUpstreamError(c, OpsUpstreamErrorEvent{
+		Platform: account.Platform, AccountID: account.ID, AccountName: account.Name,
+		UpstreamStatusCode: resp.StatusCode, UpstreamRequestID: requestIDHeader,
+		Kind: "http_error", Message: message,
+	})
+	MarkResponseCommitted(c)
+	contentType := strings.TrimSpace(resp.Header.Get("Content-Type"))
+	if contentType == "" {
+		contentType = "application/json"
+	}
+	c.Data(resp.StatusCode, contentType, body)
+	return nil, fmt.Errorf("upstream error: %d %s", resp.StatusCode, message)
 }
 
 // canvasAsyncImageURL 构建异步图像任务的上游 URL。
@@ -174,17 +220,17 @@ func (s *OpenAIGatewayService) canvasAsyncImageURL(account *Account, endpoint Ca
 	}
 	switch endpoint {
 	case CanvasAsyncImageCreate:
-		return avi2api.BuildAsyncImageTaskURL(validated)
+		return avi2api.BuildImageGenerationTaskURL(validated)
 	case CanvasAsyncImageStatus:
 		if taskID == "" {
 			return "", fmt.Errorf("task_id is required for async image status query")
 		}
-		return avi2api.BuildTaskStatusURL(validated, taskID)
+		return avi2api.BuildImageStatusURL(validated, taskID)
 	case CanvasAsyncImageCancel:
 		if taskID == "" {
 			return "", fmt.Errorf("task_id is required for async image cancel")
 		}
-		return avi2api.BuildTaskCancelURL(validated, taskID)
+		return avi2api.BuildImageCancelURL(validated, taskID)
 	default:
 		return "", fmt.Errorf("unsupported avi2api async image endpoint: %s", endpoint)
 	}
@@ -209,8 +255,12 @@ func extractAsyncImageTaskID(body []byte) string {
 }
 
 // extractAsyncImageModel 从请求体中提取 model 字段。
-func extractAsyncImageModel(body []byte) string {
-	return gjson.GetBytes(body, "model").String()
+//
+// 图像创建端点 /v1/images/generations 同时接受 JSON（文生图）与 multipart（图生图，
+// 带参考图）两种 content-type，故按 content-type 分流：multipart body 不是合法
+// JSON，用 gjson 直接取会得到空串，导致日志/计费 model 缺失。
+func extractAsyncImageModel(contentType string, body []byte) string {
+	return avi2api.ExtractImageModel(contentType, body)
 }
 
 // CanvasAsyncImageTaskSessionHash 为异步图像任务 ID 生成粘性会话 hash，
@@ -225,6 +275,29 @@ func (s *OpenAIGatewayService) BindCanvasAsyncImageTaskAccount(ctx context.Conte
 }
 
 // ExtractCanvasAsyncImageModel 从异步图像请求体中提取 model 字段，供 handler 层调用。
-func ExtractCanvasAsyncImageModel(body []byte) string {
-	return extractAsyncImageModel(body)
+// contentType 用于区分 JSON（文生图）与 multipart（图生图）请求体。
+func ExtractCanvasAsyncImageModel(contentType string, body []byte) string {
+	return extractAsyncImageModel(contentType, body)
+}
+
+// ValidateCanvasAsyncImageRequest applies the image model contract before
+// consuming scheduler capacity. Multipart means reference-image generation;
+// JSON means text-only generation, but both use the same AIV2API 2.0 path.
+func ValidateCanvasAsyncImageRequest(contentType string, body []byte) *avi2api.ValidationError {
+	isReferenceRequest := strings.HasPrefix(strings.ToLower(strings.TrimSpace(contentType)), "multipart/form-data")
+	return avi2api.ValidateImageRequest(isReferenceRequest, contentType, body)
+}
+
+// CanvasAsyncImageModerationBody converts either JSON or multipart image input
+// to the small OpenAI Images shape expected by the existing audit extractor.
+func CanvasAsyncImageModerationBody(contentType string, body []byte) []byte {
+	prompt := strings.TrimSpace(avi2api.ParseImageRequest(contentType, body).Prompt)
+	if prompt == "" {
+		return nil
+	}
+	out, err := json.Marshal(map[string]string{"prompt": prompt})
+	if err != nil {
+		return nil
+	}
+	return out
 }

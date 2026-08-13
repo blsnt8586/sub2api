@@ -101,6 +101,10 @@ type Group struct {
 	AudioTtsPricePerMillionChars *float64 `json:"audio_tts_price_per_million_chars,omitempty"`
 	// STT 每小时价格（USD）
 	AudioSttPricePerHour *float64 `json:"audio_stt_price_per_hour,omitempty"`
+	// canvas 异步图像任务按次单价（USD/次）。nil 表示使用全局视频价格兜底。
+	CanvasImagePricePerCount *float64 `json:"canvas_image_price_per_count,omitempty"`
+	// canvas 异步音频任务按次单价（USD/次）。nil 表示使用全局视频价格兜底。
+	CanvasAudioPricePerCount *float64 `json:"canvas_audio_price_per_count,omitempty"`
 	// Canvas 平台模型专属定价（JSONB），按模型覆盖分组全局定价
 	ModelPricing *[]byte `json:"model_pricing,omitempty"`
 	// 是否仅允许 Claude Code 客户端
@@ -255,7 +259,7 @@ func (*Group) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case group.FieldPeakRateEnabled, group.FieldIsExclusive, group.FieldAllowImageGeneration, group.FieldAllowBatchImageGeneration, group.FieldImageRateIndependent, group.FieldVideoRateIndependent, group.FieldClaudeCodeOnly, group.FieldModelRoutingEnabled, group.FieldMcpXMLInject, group.FieldAllowMessagesDispatch, group.FieldAllowLive, group.FieldRequireOauthOnly, group.FieldRequirePrivacySet, group.FieldProfitControlEnabled:
 			values[i] = new(sql.NullBool)
-		case group.FieldRateMultiplier, group.FieldPeakRateMultiplier, group.FieldDailyLimitUsd, group.FieldWeeklyLimitUsd, group.FieldMonthlyLimitUsd, group.FieldImageRateMultiplier, group.FieldImagePrice1k, group.FieldImagePrice2k, group.FieldImagePrice4k, group.FieldBatchImageDiscountMultiplier, group.FieldBatchImageHoldMultiplier, group.FieldVideoRateMultiplier, group.FieldVideoPricePerCount, group.FieldVideoPricePerSecond, group.FieldVideoPrice480p, group.FieldVideoPrice720p, group.FieldVideoPrice1080p, group.FieldWebSearchPricePerCall, group.FieldSearchPricePer1k, group.FieldAudioRealtimePricePerMin, group.FieldAudioTtsPricePerMillionChars, group.FieldAudioSttPricePerHour, group.FieldProfitMinMargin, group.FieldProfitSafetyBuffer:
+		case group.FieldRateMultiplier, group.FieldPeakRateMultiplier, group.FieldDailyLimitUsd, group.FieldWeeklyLimitUsd, group.FieldMonthlyLimitUsd, group.FieldImageRateMultiplier, group.FieldImagePrice1k, group.FieldImagePrice2k, group.FieldImagePrice4k, group.FieldBatchImageDiscountMultiplier, group.FieldBatchImageHoldMultiplier, group.FieldVideoRateMultiplier, group.FieldVideoPricePerCount, group.FieldVideoPricePerSecond, group.FieldVideoPrice480p, group.FieldVideoPrice720p, group.FieldVideoPrice1080p, group.FieldWebSearchPricePerCall, group.FieldSearchPricePer1k, group.FieldAudioRealtimePricePerMin, group.FieldAudioTtsPricePerMillionChars, group.FieldAudioSttPricePerHour, group.FieldCanvasImagePricePerCount, group.FieldCanvasAudioPricePerCount, group.FieldProfitMinMargin, group.FieldProfitSafetyBuffer:
 			values[i] = new(sql.NullFloat64)
 		case group.FieldID, group.FieldDefaultValidityDays, group.FieldFallbackGroupID, group.FieldFallbackGroupIDOnInvalidRequest, group.FieldSortOrder, group.FieldRpmLimit:
 			values[i] = new(sql.NullInt64)
@@ -550,6 +554,20 @@ func (_m *Group) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.AudioSttPricePerHour = new(float64)
 				*_m.AudioSttPricePerHour = value.Float64
+			}
+		case group.FieldCanvasImagePricePerCount:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field canvas_image_price_per_count", values[i])
+			} else if value.Valid {
+				_m.CanvasImagePricePerCount = new(float64)
+				*_m.CanvasImagePricePerCount = value.Float64
+			}
+		case group.FieldCanvasAudioPricePerCount:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field canvas_audio_price_per_count", values[i])
+			} else if value.Valid {
+				_m.CanvasAudioPricePerCount = new(float64)
+				*_m.CanvasAudioPricePerCount = value.Float64
 			}
 		case group.FieldModelPricing:
 			if value, ok := values[i].(*[]byte); !ok {
@@ -929,6 +947,16 @@ func (_m *Group) String() string {
 	builder.WriteString(", ")
 	if v := _m.AudioSttPricePerHour; v != nil {
 		builder.WriteString("audio_stt_price_per_hour=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.CanvasImagePricePerCount; v != nil {
+		builder.WriteString("canvas_image_price_per_count=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.CanvasAudioPricePerCount; v != nil {
+		builder.WriteString("canvas_audio_price_per_count=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")

@@ -23,7 +23,7 @@ const (
 	PlatformGemini      = "gemini"
 	PlatformAntigravity = "antigravity"
 	PlatformGrok        = "grok"
-	PlatformCanvas      = "canvas" 
+	PlatformCanvas      = "canvas"
 	PlatformComposite   = "composite"
 )
 

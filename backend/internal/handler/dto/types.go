@@ -132,6 +132,9 @@ type Group struct {
 	AudioRealtimePricePerMin     *float64 `json:"audio_realtime_price_per_min"`
 	AudioTtsPricePerMillionChars *float64 `json:"audio_tts_price_per_million_chars"`
 	AudioSttPricePerHour         *float64 `json:"audio_stt_price_per_hour"`
+	// canvas 异步图像/音频任务按次单价（USD/次）；nil 使用视频价格兜底 [CUSTOM]
+	CanvasImagePricePerCount *float64 `json:"canvas_image_price_per_count"`
+	CanvasAudioPricePerCount *float64 `json:"canvas_audio_price_per_count"`
 	// Canvas 平台模型专属定价；null 表示所有模型走分组全局价 [CUSTOM]
 	ModelPricing *service.ModelPricingConfig `json:"model_pricing,omitempty"`
 

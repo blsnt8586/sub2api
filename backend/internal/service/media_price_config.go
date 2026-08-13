@@ -12,6 +12,26 @@ func imagePriceConfigFromAPIKey(apiKey *APIKey) *ImagePriceConfig {
 	}
 }
 
+// canvasImagePriceConfigFromAPIKey preserves Canvas pricing precedence:
+// per-model tier price > Canvas global per-count price > generic image tier
+// price > the BillingService default. Reusing one price pointer for all tiers
+// is intentional because canvas_image_price_per_count has no size dimension.
+func canvasImagePriceConfigFromAPIKey(apiKey *APIKey) *ImagePriceConfig {
+	config := imagePriceConfigFromAPIKey(apiKey)
+	if apiKey == nil || apiKey.Group == nil {
+		return config
+	}
+	if config == nil {
+		config = &ImagePriceConfig{}
+	}
+	if price := apiKey.Group.CanvasImagePricePerCount; price != nil {
+		config.Price1K = price
+		config.Price2K = price
+		config.Price4K = price
+	}
+	return config
+}
+
 func apiKeyHasConfiguredImagePrice(apiKey *APIKey, imageSize string) bool {
 	if apiKey == nil || apiKey.Group == nil {
 		return false

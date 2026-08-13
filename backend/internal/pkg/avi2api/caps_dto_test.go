@@ -100,9 +100,10 @@ func TestGenerateAudioSerializedAsString(t *testing.T) {
 		seen[c.GenerateAudio] = true
 	}
 
-	// minimax-h3 恒为 true、gemini-omni-flash 不支持，两个边界值都必须能正确序列化
+	// minimax-h3 恒为 true 的边界值必须能正确序列化。
+	// 注：上游 v1.5.0 起已无 GenAudioUnsupported 模型（gemini-omni-flash 已下架），
+	// "unsupported" 分支的序列化由 caps_dto 单测（genAudioModeString）单独保证。
 	require.True(t, seen["always-true"], "应有 always-true 模型（minimax-h3）")
-	require.True(t, seen["unsupported"], "应有 unsupported 模型（gemini-omni-flash）")
 }
 
 func TestRefModeFrameMappedToSemanticLabel(t *testing.T) {

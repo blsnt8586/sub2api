@@ -110,41 +110,44 @@ type CreateGroupRequest struct {
 	WeeklyLimitUSD   optionalLimitField `json:"weekly_limit_usd"`
 	MonthlyLimitUSD  optionalLimitField `json:"monthly_limit_usd"`
 	// 图片生成计费配置（antigravity 和 gemini 平台使用，负数表示清除配置）
-	AllowImageGeneration            bool                          `json:"allow_image_generation"`
-	AllowBatchImageGeneration       bool                          `json:"allow_batch_image_generation"`
-	ImageRateIndependent            bool                          `json:"image_rate_independent"`
-	ImageRateMultiplier             *float64                      `json:"image_rate_multiplier"`
-	BatchImageDiscountMultiplier    *float64                      `json:"batch_image_discount_multiplier"`
-	BatchImageHoldMultiplier        *float64                      `json:"batch_image_hold_multiplier"`
-	VideoRateIndependent            bool                          `json:"video_rate_independent"`
-	VideoRateMultiplier             *float64                      `json:"video_rate_multiplier"`
-	PeakRateEnabled                 bool                          `json:"peak_rate_enabled"`
-	PeakStart                       string                        `json:"peak_start"`
-	PeakEnd                         string                        `json:"peak_end"`
-	PeakRateMultiplier              *float64                      `json:"peak_rate_multiplier"`
-	ProfitControlEnabled            bool                          `json:"profit_control_enabled"`
-	ProfitMinMargin                 *float64                      `json:"profit_min_margin"`
-	ProfitSafetyBuffer              *float64                      `json:"profit_safety_buffer"`
-	ImagePrice1K                    *float64                      `json:"image_price_1k"`
-	ImagePrice2K                    *float64                      `json:"image_price_2k"`
-	ImagePrice4K                    *float64                      `json:"image_price_4k"`
+	AllowImageGeneration         bool     `json:"allow_image_generation"`
+	AllowBatchImageGeneration    bool     `json:"allow_batch_image_generation"`
+	ImageRateIndependent         bool     `json:"image_rate_independent"`
+	ImageRateMultiplier          *float64 `json:"image_rate_multiplier"`
+	BatchImageDiscountMultiplier *float64 `json:"batch_image_discount_multiplier"`
+	BatchImageHoldMultiplier     *float64 `json:"batch_image_hold_multiplier"`
+	VideoRateIndependent         bool     `json:"video_rate_independent"`
+	VideoRateMultiplier          *float64 `json:"video_rate_multiplier"`
+	PeakRateEnabled              bool     `json:"peak_rate_enabled"`
+	PeakStart                    string   `json:"peak_start"`
+	PeakEnd                      string   `json:"peak_end"`
+	PeakRateMultiplier           *float64 `json:"peak_rate_multiplier"`
+	ProfitControlEnabled         bool     `json:"profit_control_enabled"`
+	ProfitMinMargin              *float64 `json:"profit_min_margin"`
+	ProfitSafetyBuffer           *float64 `json:"profit_safety_buffer"`
+	ImagePrice1K                 *float64 `json:"image_price_1k"`
+	ImagePrice2K                 *float64 `json:"image_price_2k"`
+	ImagePrice4K                 *float64 `json:"image_price_4k"`
 	// 视频生成计费配置（Canvas canvas 平台）[CUSTOM]
-	VideoPricePerCount              *float64                      `json:"video_price_per_count"`
-	VideoPricePerSecond             *float64                      `json:"video_price_per_second"`
-	VideoPrice480P                  *float64                      `json:"video_price_480p"`
-	VideoPrice720P                  *float64                      `json:"video_price_720p"`
-	VideoPrice1080P                 *float64                      `json:"video_price_1080p"`
-	VideoModelPrices                map[string]map[string]float64 `json:"video_model_prices,omitempty"`
-	WebSearchPricePerCall           *float64                      `json:"web_search_price_per_call"`
-	SearchPricePer1k                *float64                      `json:"search_price_per_1k"`
-	AudioRealtimePricePerMin        *float64                      `json:"audio_realtime_price_per_min"`
-	AudioTtsPricePerMillionChars    *float64                      `json:"audio_tts_price_per_million_chars"`
-	AudioSttPricePerHour            *float64                      `json:"audio_stt_price_per_hour"`
+	VideoPricePerCount           *float64                      `json:"video_price_per_count"`
+	VideoPricePerSecond          *float64                      `json:"video_price_per_second"`
+	VideoPrice480P               *float64                      `json:"video_price_480p"`
+	VideoPrice720P               *float64                      `json:"video_price_720p"`
+	VideoPrice1080P              *float64                      `json:"video_price_1080p"`
+	VideoModelPrices             map[string]map[string]float64 `json:"video_model_prices,omitempty"`
+	WebSearchPricePerCall        *float64                      `json:"web_search_price_per_call"`
+	SearchPricePer1k             *float64                      `json:"search_price_per_1k"`
+	AudioRealtimePricePerMin     *float64                      `json:"audio_realtime_price_per_min"`
+	AudioTtsPricePerMillionChars *float64                      `json:"audio_tts_price_per_million_chars"`
+	AudioSttPricePerHour         *float64                      `json:"audio_stt_price_per_hour"`
+	// Canvas 异步图像/音频按次单价 [CUSTOM]
+	CanvasImagePricePerCount *float64 `json:"canvas_image_price_per_count"`
+	CanvasAudioPricePerCount *float64 `json:"canvas_audio_price_per_count"`
 	// Canvas 平台模型专属定价（按模型覆盖分组全局价）[CUSTOM]
-	ModelPricing                    *service.ModelPricingConfig   `json:"model_pricing,omitempty"`
-	ClaudeCodeOnly                  bool                          `json:"claude_code_only"`
-	FallbackGroupID                 *int64                        `json:"fallback_group_id"`
-	FallbackGroupIDOnInvalidRequest *int64                        `json:"fallback_group_id_on_invalid_request"`
+	ModelPricing                    *service.ModelPricingConfig `json:"model_pricing,omitempty"`
+	ClaudeCodeOnly                  bool                        `json:"claude_code_only"`
+	FallbackGroupID                 *int64                      `json:"fallback_group_id"`
+	FallbackGroupIDOnInvalidRequest *int64                      `json:"fallback_group_id_on_invalid_request"`
 	// 模型路由配置（仅 anthropic 平台使用）
 	ModelRouting        map[string][]int64 `json:"model_routing"`
 	ModelRoutingEnabled bool               `json:"model_routing_enabled"`
@@ -183,41 +186,44 @@ type UpdateGroupRequest struct {
 	WeeklyLimitUSD   optionalLimitField `json:"weekly_limit_usd"`
 	MonthlyLimitUSD  optionalLimitField `json:"monthly_limit_usd"`
 	// 图片生成计费配置（antigravity 和 gemini 平台使用，负数表示清除配置）
-	AllowImageGeneration            *bool                         `json:"allow_image_generation"`
-	AllowBatchImageGeneration       *bool                         `json:"allow_batch_image_generation"`
-	ImageRateIndependent            *bool                         `json:"image_rate_independent"`
-	ImageRateMultiplier             *float64                      `json:"image_rate_multiplier"`
-	BatchImageDiscountMultiplier    *float64                      `json:"batch_image_discount_multiplier"`
-	BatchImageHoldMultiplier        *float64                      `json:"batch_image_hold_multiplier"`
-	VideoRateIndependent            *bool                         `json:"video_rate_independent"`
-	VideoRateMultiplier             *float64                      `json:"video_rate_multiplier"`
-	PeakRateEnabled                 *bool                         `json:"peak_rate_enabled"`
-	PeakStart                       *string                       `json:"peak_start"`
-	PeakEnd                         *string                       `json:"peak_end"`
-	PeakRateMultiplier              *float64                      `json:"peak_rate_multiplier"`
-	ProfitControlEnabled            *bool                         `json:"profit_control_enabled"`
-	ProfitMinMargin                 *float64                      `json:"profit_min_margin"`
-	ProfitSafetyBuffer              *float64                      `json:"profit_safety_buffer"`
-	ImagePrice1K                    *float64                      `json:"image_price_1k"`
-	ImagePrice2K                    *float64                      `json:"image_price_2k"`
-	ImagePrice4K                    *float64                      `json:"image_price_4k"`
+	AllowImageGeneration         *bool    `json:"allow_image_generation"`
+	AllowBatchImageGeneration    *bool    `json:"allow_batch_image_generation"`
+	ImageRateIndependent         *bool    `json:"image_rate_independent"`
+	ImageRateMultiplier          *float64 `json:"image_rate_multiplier"`
+	BatchImageDiscountMultiplier *float64 `json:"batch_image_discount_multiplier"`
+	BatchImageHoldMultiplier     *float64 `json:"batch_image_hold_multiplier"`
+	VideoRateIndependent         *bool    `json:"video_rate_independent"`
+	VideoRateMultiplier          *float64 `json:"video_rate_multiplier"`
+	PeakRateEnabled              *bool    `json:"peak_rate_enabled"`
+	PeakStart                    *string  `json:"peak_start"`
+	PeakEnd                      *string  `json:"peak_end"`
+	PeakRateMultiplier           *float64 `json:"peak_rate_multiplier"`
+	ProfitControlEnabled         *bool    `json:"profit_control_enabled"`
+	ProfitMinMargin              *float64 `json:"profit_min_margin"`
+	ProfitSafetyBuffer           *float64 `json:"profit_safety_buffer"`
+	ImagePrice1K                 *float64 `json:"image_price_1k"`
+	ImagePrice2K                 *float64 `json:"image_price_2k"`
+	ImagePrice4K                 *float64 `json:"image_price_4k"`
 	// 视频生成计费配置（Canvas canvas 平台）[CUSTOM]
-	VideoPricePerCount              *float64                      `json:"video_price_per_count"`
-	VideoPricePerSecond             *float64                      `json:"video_price_per_second"`
-	VideoPrice480P                  *float64                      `json:"video_price_480p"`
-	VideoPrice720P                  *float64                      `json:"video_price_720p"`
-	VideoPrice1080P                 *float64                      `json:"video_price_1080p"`
-	VideoModelPrices                map[string]map[string]float64 `json:"video_model_prices,omitempty"`
-	WebSearchPricePerCall           *float64                      `json:"web_search_price_per_call"`
-	SearchPricePer1k                *float64                      `json:"search_price_per_1k"`
-	AudioRealtimePricePerMin        *float64                      `json:"audio_realtime_price_per_min"`
-	AudioTtsPricePerMillionChars    *float64                      `json:"audio_tts_price_per_million_chars"`
-	AudioSttPricePerHour            *float64                      `json:"audio_stt_price_per_hour"`
+	VideoPricePerCount           *float64                      `json:"video_price_per_count"`
+	VideoPricePerSecond          *float64                      `json:"video_price_per_second"`
+	VideoPrice480P               *float64                      `json:"video_price_480p"`
+	VideoPrice720P               *float64                      `json:"video_price_720p"`
+	VideoPrice1080P              *float64                      `json:"video_price_1080p"`
+	VideoModelPrices             map[string]map[string]float64 `json:"video_model_prices,omitempty"`
+	WebSearchPricePerCall        *float64                      `json:"web_search_price_per_call"`
+	SearchPricePer1k             *float64                      `json:"search_price_per_1k"`
+	AudioRealtimePricePerMin     *float64                      `json:"audio_realtime_price_per_min"`
+	AudioTtsPricePerMillionChars *float64                      `json:"audio_tts_price_per_million_chars"`
+	AudioSttPricePerHour         *float64                      `json:"audio_stt_price_per_hour"`
+	// Canvas 异步图像/音频按次单价 [CUSTOM]
+	CanvasImagePricePerCount *float64 `json:"canvas_image_price_per_count"`
+	CanvasAudioPricePerCount *float64 `json:"canvas_audio_price_per_count"`
 	// Canvas 平台模型专属定价；nil 表示不修改，空对象表示清空 [CUSTOM]
-	ModelPricing                    *service.ModelPricingConfig   `json:"model_pricing,omitempty"`
-	ClaudeCodeOnly                  *bool                         `json:"claude_code_only"`
-	FallbackGroupID                 *int64                        `json:"fallback_group_id"`
-	FallbackGroupIDOnInvalidRequest *int64                        `json:"fallback_group_id_on_invalid_request"`
+	ModelPricing                    *service.ModelPricingConfig `json:"model_pricing,omitempty"`
+	ClaudeCodeOnly                  *bool                       `json:"claude_code_only"`
+	FallbackGroupID                 *int64                      `json:"fallback_group_id"`
+	FallbackGroupIDOnInvalidRequest *int64                      `json:"fallback_group_id_on_invalid_request"`
 	// 模型路由配置（仅 anthropic 平台使用）
 	ModelRouting        map[string][]int64 `json:"model_routing"`
 	ModelRoutingEnabled *bool              `json:"model_routing_enabled"`
@@ -569,7 +575,9 @@ func (h *GroupHandler) Create(c *gin.Context) {
 		AudioRealtimePricePerMin:        req.AudioRealtimePricePerMin,
 		AudioTTSPricePerMillionChars:    req.AudioTtsPricePerMillionChars,
 		AudioSTTPricePerHour:            req.AudioSttPricePerHour,
-		ModelPricing:                    req.ModelPricing, // [CUSTOM] canvas
+		CanvasImagePricePerCount:        req.CanvasImagePricePerCount, // [CUSTOM]
+		CanvasAudioPricePerCount:        req.CanvasAudioPricePerCount, // [CUSTOM]
+		ModelPricing:                    req.ModelPricing,             // [CUSTOM] canvas
 		ClaudeCodeOnly:                  req.ClaudeCodeOnly,
 		FallbackGroupID:                 req.FallbackGroupID,
 		FallbackGroupIDOnInvalidRequest: req.FallbackGroupIDOnInvalidRequest,
@@ -704,7 +712,9 @@ func (h *GroupHandler) Update(c *gin.Context) {
 		AudioRealtimePricePerMin:        req.AudioRealtimePricePerMin,
 		AudioTTSPricePerMillionChars:    req.AudioTtsPricePerMillionChars,
 		AudioSTTPricePerHour:            req.AudioSttPricePerHour,
-		ModelPricing:                    req.ModelPricing, // [CUSTOM] canvas
+		CanvasImagePricePerCount:        req.CanvasImagePricePerCount, // [CUSTOM]
+		CanvasAudioPricePerCount:        req.CanvasAudioPricePerCount, // [CUSTOM]
+		ModelPricing:                    req.ModelPricing,             // [CUSTOM] canvas
 		ClaudeCodeOnly:                  req.ClaudeCodeOnly,
 		FallbackGroupID:                 req.FallbackGroupID,
 		FallbackGroupIDOnInvalidRequest: req.FallbackGroupIDOnInvalidRequest,

@@ -98,6 +98,10 @@ const (
 	FieldAudioTtsPricePerMillionChars = "audio_tts_price_per_million_chars"
 	// FieldAudioSttPricePerHour holds the string denoting the audio_stt_price_per_hour field in the database.
 	FieldAudioSttPricePerHour = "audio_stt_price_per_hour"
+	// FieldCanvasImagePricePerCount holds the string denoting the canvas_image_price_per_count field in the database.
+	FieldCanvasImagePricePerCount = "canvas_image_price_per_count"
+	// FieldCanvasAudioPricePerCount holds the string denoting the canvas_audio_price_per_count field in the database.
+	FieldCanvasAudioPricePerCount = "canvas_audio_price_per_count"
 	// FieldModelPricing holds the string denoting the model_pricing field in the database.
 	FieldModelPricing = "model_pricing"
 	// FieldClaudeCodeOnly holds the string denoting the claude_code_only field in the database.
@@ -258,6 +262,8 @@ var Columns = []string{
 	FieldAudioRealtimePricePerMin,
 	FieldAudioTtsPricePerMillionChars,
 	FieldAudioSttPricePerHour,
+	FieldCanvasImagePricePerCount,
+	FieldCanvasAudioPricePerCount,
 	FieldModelPricing,
 	FieldClaudeCodeOnly,
 	FieldFallbackGroupID,
@@ -621,6 +627,16 @@ func ByAudioTtsPricePerMillionChars(opts ...sql.OrderTermOption) OrderOption {
 // ByAudioSttPricePerHour orders the results by the audio_stt_price_per_hour field.
 func ByAudioSttPricePerHour(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldAudioSttPricePerHour, opts...).ToFunc()
+}
+
+// ByCanvasImagePricePerCount orders the results by the canvas_image_price_per_count field.
+func ByCanvasImagePricePerCount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCanvasImagePricePerCount, opts...).ToFunc()
+}
+
+// ByCanvasAudioPricePerCount orders the results by the canvas_audio_price_per_count field.
+func ByCanvasAudioPricePerCount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCanvasAudioPricePerCount, opts...).ToFunc()
 }
 
 // ByClaudeCodeOnly orders the results by the claude_code_only field.

@@ -149,7 +149,7 @@ func (s *OpenAIGatewayService) ForwardCanvasVideo(
 		result.ResponseID = extractCanvasVideoTaskID(respBody)
 	} else if endpoint == CanvasVideoEndpointStatus {
 		// 视频计费：按次（VideoCount=1）+ 展示时长（VideoSeconds）。
-		if applyCanvasAsyncCompletionBilling(result, respBody, taskID, true) {
+		if applyCanvasAsyncCompletionBilling(result, respBody, taskID, "video") {
 			// 响应体缺产物时长时，从模型注册表取默认时长兜底，
 			// 避免 per-second 计费因 VideoSeconds=0 而错误回退到按次计费。
 			if result.VideoSeconds == 0 {

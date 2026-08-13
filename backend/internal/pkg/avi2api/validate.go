@@ -6,6 +6,7 @@ import (
 	"io"
 	"mime"
 	"mime/multipart"
+	"strconv"
 	"strings"
 
 	"github.com/tidwall/gjson"
@@ -308,28 +309,119 @@ func ValidateImageRequest(isEdits bool, contentType string, body []byte) *Valida
 
 	if isEdits && !caps.SupportsEdits {
 		return validationErr("model",
-			"model %q does not support image editing (/images/edits)", model)
+			"model %q does not support reference-image generation", model)
+	}
+
+	if strings.TrimSpace(info.Prompt) == "" {
+		return validationErr("prompt", "prompt is required")
+	}
+	if len([]rune(info.Prompt)) > 9999 {
+		return validationErr("prompt", "prompt must not exceed 9999 characters")
+	}
+
+	if size := strings.TrimSpace(info.Size); size != "" && !strings.EqualFold(size, "auto") {
+		if !validImageSizeForModel(model, size) {
+			return validationErr("size", "model %q does not support image size %q", model, size)
+		}
 	}
 
 	// n
 	//
 	// 用 NMaxPerRequest 而非 NMax：后者是前端的并发扇出预算（N 个各 n=1 的请求），
 	// 拿它当单请求上限会放过必被上游拒的组合（如 gpt-image-2 + n=3）。
-	if gjson.ValidBytes(body) {
-		if n := gjson.GetBytes(body, "n"); n.Exists() {
-			nv := int(n.Int())
-			nMax := caps.NMaxPerRequest
-			if nMax <= 0 {
-				nMax = caps.NMax
-			}
-			if nv < 1 || nv > nMax {
-				return validationErr("n",
-					"model %q: n must be between 1 and %d", model, nMax)
-			}
+	if info.NPresent {
+		nMax := caps.NMaxPerRequest
+		if nMax <= 0 {
+			nMax = caps.NMax
+		}
+		if info.N < 1 || info.N > nMax {
+			return validationErr("n",
+				"model %q: n must be between 1 and %d", model, nMax)
+		}
+	}
+
+	if isEdits {
+		imageCount := countMultipartFileFields(contentType, body, "image")
+		if imageCount == 0 {
+			return validationErr("image", "at least one reference image is required")
+		}
+		if imageCount > 6 {
+			return validationErr("image", "at most 6 reference images are allowed")
 		}
 	}
 
 	return nil
+}
+
+var gptImage2Widths = intSet(
+	768, 832, 848, 864, 896, 928, 1024, 1136, 1152, 1184, 1200, 1248, 1264,
+	1344, 1376, 1536, 1584, 1648, 1696, 1792, 1856, 2016, 2048, 2336, 2448,
+	2560, 2880, 3200, 3264, 3504, 3584, 3808,
+)
+
+var gptImage2Heights = intSet(
+	672, 768, 832, 848, 864, 896, 928, 1024, 1136, 1152, 1184, 1200, 1248,
+	1264, 1344, 1376, 1536, 1632, 1648, 1696, 1792, 1856, 2016, 2048, 2336,
+	2448, 2560, 2880, 3200, 3264, 3504, 3584,
+)
+
+var nanoBananaWidths = intSet(
+	768, 848, 896, 928, 1024, 1152, 1200, 1264, 1376, 1536, 1584, 1696, 1792,
+	1856, 2048, 2304, 2400, 2528, 2752, 3072, 3168, 3392, 3584, 3712, 4096,
+	4608, 4800, 5056, 5504, 6336,
+)
+
+var nanoBananaHeights = intSet(
+	672, 768, 848, 896, 928, 1024, 1152, 1200, 1264, 1344, 1376, 1536, 1696,
+	1792, 1856, 2048, 2304, 2400, 2528, 2688, 2752, 3072, 3392, 3584, 3712,
+	4096, 4608, 4800, 5056, 5504,
+)
+
+func intSet(values ...int) map[int]struct{} {
+	out := make(map[int]struct{}, len(values))
+	for _, value := range values {
+		out[value] = struct{}{}
+	}
+	return out
+}
+
+func validImageSizeForModel(model, size string) bool {
+	width, height, ok := parseImageDimensionsStrict(size)
+	if !ok {
+		return false
+	}
+	switch model {
+	case "gpt-image-2":
+		_, widthOK := gptImage2Widths[width]
+		_, heightOK := gptImage2Heights[height]
+		pixels := int64(width) * int64(height)
+		longer, shorter := width, height
+		if height > width {
+			longer, shorter = height, width
+		}
+		return widthOK && heightOK && pixels >= 655360 && pixels <= 8294400 && longer <= 3*shorter
+	case "nano-banana-2", "nano-banana-pro":
+		_, widthOK := nanoBananaWidths[width]
+		_, heightOK := nanoBananaHeights[height]
+		return widthOK && heightOK
+	case "seedream-5.0-pro":
+		return width >= 768 && width <= 2048 && height >= 768 && height <= 2048
+	default:
+		return true
+	}
+}
+
+func parseImageDimensionsStrict(size string) (int, int, bool) {
+	left, right, ok := strings.Cut(strings.ToLower(strings.TrimSpace(size)), "x")
+	if !ok || strings.Contains(right, "x") {
+		return 0, 0, false
+	}
+	width, widthErr := strconv.Atoi(left)
+	height, heightErr := strconv.Atoi(right)
+	if widthErr != nil || heightErr != nil || width <= 0 || height <= 0 {
+		return 0, 0, false
+	}
+	return width, height, true
 }
 
 // ─────────────────────────────────────────────
@@ -422,4 +514,14 @@ func extractMultipartFileFieldNames(contentType string, body []byte) []string {
 		}
 	}
 	return names
+}
+
+func countMultipartFileFields(contentType string, body []byte, field string) int {
+	count := 0
+	for _, name := range extractMultipartFileFieldNames(contentType, body) {
+		if name == field || name == field+"[]" {
+			count++
+		}
+	}
+	return count
 }

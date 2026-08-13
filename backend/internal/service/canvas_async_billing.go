@@ -15,6 +15,7 @@ package service
 // 全部逻辑走上游既有 API 表面，不改动上游共享计费核心。
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/tidwall/gjson"
@@ -81,14 +82,37 @@ func canvasAsyncStatusSeconds(respBody []byte) int {
 	return int(secs)
 }
 
+// canvasAsyncStatusImageOutputSizes extracts the dimensions reported for the
+// completed image artifacts. Billing uses the actual output dimensions rather
+// than the now-empty status request body.
+func canvasAsyncStatusImageOutputSizes(respBody []byte) []string {
+	if !gjson.ValidBytes(respBody) {
+		return nil
+	}
+	items := gjson.GetBytes(respBody, "result.data").Array()
+	if len(items) == 0 {
+		return nil
+	}
+	sizes := make([]string, 0, len(items))
+	for _, item := range items {
+		width := item.Get("width").Int()
+		height := item.Get("height").Int()
+		if width > 0 && height > 0 {
+			sizes = append(sizes, fmt.Sprintf("%dx%d", width, height))
+		}
+	}
+	return sizes
+}
+
 // applyCanvasAsyncCompletionBilling 在轮询命中终态成功时，把计费字段填入 result。
 //
 // 返回 true 表示本次轮询判定为终态成功、已填充计费字段，handler 应触发一次扣费；
 // 返回 false 表示非终态或非成功（含 failed/cancelled/processing），不计费。
 //
 // taskID 为该异步任务的上游 ID，用于计费幂等 key（handler 侧使用）与账号绑定回填。
-// withSeconds 为 true 时额外解析产物时长填入 VideoSeconds（视频/音频用；图像传 false）。
-func applyCanvasAsyncCompletionBilling(result *OpenAIForwardResult, respBody []byte, taskID string, withSeconds bool) bool {
+// capability 区分任务类型："image" 填 CanvasImageCount，"audio" 填 CanvasAudioCount，
+// 其余（"video" 或空）填 VideoCount 并解析产物时长。
+func applyCanvasAsyncCompletionBilling(result *OpenAIForwardResult, respBody []byte, taskID string, capability string) bool {
 	if result == nil {
 		return false
 	}
@@ -105,9 +129,24 @@ func applyCanvasAsyncCompletionBilling(result *OpenAIForwardResult, respBody []b
 	result.BillingModel = model
 	result.UpstreamModel = model
 	result.ResponseID = strings.TrimSpace(taskID)
-	// canvas 按次计费统一用 VideoCount（避免与图片 token 计费路径混淆），一任务一次。
-	result.VideoCount = 1
-	if withSeconds {
+	// 按任务类型分别填充计费字段，避免与其他计费路径混淆。
+	switch capability {
+	case "image":
+		// AIV2API 2.0 allows n up to 4 for non-GPT models. result.data is the
+		// authoritative artifact list; a malformed "succeeded" task with no
+		// output must not be billed.
+		result.CanvasImageCount = len(gjson.GetBytes(respBody, "result.data").Array())
+		if result.CanvasImageCount <= 0 {
+			return false
+		}
+		result.ImageOutputSizes = canvasAsyncStatusImageOutputSizes(respBody)
+		if len(result.ImageOutputSizes) > 0 {
+			result.ImageOutputSize = result.ImageOutputSizes[0]
+		}
+	case "audio":
+		result.CanvasAudioCount = 1
+	default: // "video" 或兜底
+		result.VideoCount = 1
 		if secs := canvasAsyncStatusSeconds(respBody); secs > 0 {
 			result.VideoSeconds = secs
 		}

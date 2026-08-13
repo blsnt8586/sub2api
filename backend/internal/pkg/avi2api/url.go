@@ -2,9 +2,10 @@
 //
 // AIV2API 是图像/视频/音频生成网关，通过 base_url + api_key 接入：
 //
-//	图像（同步，OpenAI 兼容）：
-//	  - POST /v1/images/generations   文生图
-//	  - POST /v1/images/edits         图生图（multipart，1-6 张参考图）
+//	图像（异步任务）：
+//	  - POST /v1/images/generations   创建图像任务（JSON 文生图或 multipart 图生图）
+//	  - GET  /v1/images/{id}          轮询图像任务状态
+//	  - POST /v1/images/{id}/cancel   取消排队中的图像任务
 //	视频（异步任务）：
 //	  - POST /v1/videos/generations   创建视频任务，返回 Task{id,status,...}
 //	  - GET  /v1/videos/{id}          轮询任务状态，成功后 result.data[0].url 为 MP4
@@ -40,7 +41,7 @@ func normalizeBaseURL(baseURL string) (string, error) {
 	return trimmed, nil
 }
 
-// BuildImagesGenerationsURL 构建文生图 URL：{base}/v1/images/generations。
+// BuildImagesGenerationsURL 构建图像任务创建 URL：{base}/v1/images/generations。
 func BuildImagesGenerationsURL(baseURL string) (string, error) {
 	base, err := normalizeBaseURL(baseURL)
 	if err != nil {
@@ -49,7 +50,8 @@ func BuildImagesGenerationsURL(baseURL string) (string, error) {
 	return base + "/images/generations", nil
 }
 
-// BuildImagesEditsURL 构建图生图 URL：{base}/v1/images/edits。
+// BuildImagesEditsURL 是旧 AIV2API 1.x 图生图 URL helper。
+// 2.0 调用方应使用 BuildImageGenerationTaskURL，并以 multipart 提交参考图。
 func BuildImagesEditsURL(baseURL string) (string, error) {
 	base, err := normalizeBaseURL(baseURL)
 	if err != nil {
@@ -128,21 +130,19 @@ func BuildAudioCancelURL(baseURL, taskID string) (string, error) {
 	return base + "/audio/" + url.PathEscape(taskID) + "/cancel", nil
 }
 
-// BuildAsyncImageTaskURL 构建异步图像任务提交 URL：{base}/v1/tasks/images。
-// 异步图像任务仅支持文生图（AsyncImageRequest，additionalProperties:false，无 image 字段）。
-// 图生图仍需用同步接口 BuildImagesEditsURL，附 Idempotency-Key 保证崩溃安全。
-func BuildAsyncImageTaskURL(baseURL string) (string, error) {
+// BuildImageGenerationTaskURL 构建异步图像任务提交 URL：
+// {base}/v1/images/generations。AIV2API 2.0 在同一路径按 Content-Type 区分
+// JSON 文生图与 multipart 图生图。
+func BuildImageGenerationTaskURL(baseURL string) (string, error) {
 	base, err := normalizeBaseURL(baseURL)
 	if err != nil {
 		return "", err
 	}
-	return base + "/tasks/images", nil
+	return base + "/images/generations", nil
 }
 
-// BuildTaskStatusURL 构建统一任务状态查询 URL：{base}/v1/tasks/{id}。
-// 该端点服务 image / video / audio 三种 kind，是修复 canvas-api task_poller
-// 轮询恒 404 缺陷的关键——poller 原先就打这个路径，但 sub2api 之前没有此路由。
-func BuildTaskStatusURL(baseURL, taskID string) (string, error) {
+// BuildImageStatusURL 构建图像任务状态查询 URL：{base}/v1/images/{id}。
+func BuildImageStatusURL(baseURL, taskID string) (string, error) {
 	base, err := normalizeBaseURL(baseURL)
 	if err != nil {
 		return "", err
@@ -151,11 +151,11 @@ func BuildTaskStatusURL(baseURL, taskID string) (string, error) {
 	if taskID == "" {
 		return "", fmt.Errorf("task id is required")
 	}
-	return base + "/tasks/" + url.PathEscape(taskID), nil
+	return base + "/images/" + url.PathEscape(taskID), nil
 }
 
-// BuildTaskCancelURL 构建统一任务取消 URL：{base}/v1/tasks/{id}/cancel。
-func BuildTaskCancelURL(baseURL, taskID string) (string, error) {
+// BuildImageCancelURL 构建图像任务取消 URL：{base}/v1/images/{id}/cancel。
+func BuildImageCancelURL(baseURL, taskID string) (string, error) {
 	base, err := normalizeBaseURL(baseURL)
 	if err != nil {
 		return "", err
@@ -164,5 +164,5 @@ func BuildTaskCancelURL(baseURL, taskID string) (string, error) {
 	if taskID == "" {
 		return "", fmt.Errorf("task id is required")
 	}
-	return base + "/tasks/" + url.PathEscape(taskID) + "/cancel", nil
+	return base + "/images/" + url.PathEscape(taskID) + "/cancel", nil
 }

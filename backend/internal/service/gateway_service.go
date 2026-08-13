@@ -618,6 +618,9 @@ type ForwardResult struct {
 	// 视频生成计费字段（Canvas canvas 平台使用）
 	VideoCount   int // 生成的视频数量（通常为 1）
 	VideoSeconds int // 视频时长（秒，来自请求 duration 字段；0 表示未知，退回按次计费）
+	// Canvas 异步图像/音频任务独立计费字段
+	CanvasImageCount int
+	CanvasAudioCount int
 
 	SearchCount int
 	AudioUsage  *AudioUsage

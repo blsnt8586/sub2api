@@ -841,6 +841,60 @@ func (_u *GroupUpdate) ClearAudioSttPricePerHour() *GroupUpdate {
 	return _u
 }
 
+// SetCanvasImagePricePerCount sets the "canvas_image_price_per_count" field.
+func (_u *GroupUpdate) SetCanvasImagePricePerCount(v float64) *GroupUpdate {
+	_u.mutation.ResetCanvasImagePricePerCount()
+	_u.mutation.SetCanvasImagePricePerCount(v)
+	return _u
+}
+
+// SetNillableCanvasImagePricePerCount sets the "canvas_image_price_per_count" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableCanvasImagePricePerCount(v *float64) *GroupUpdate {
+	if v != nil {
+		_u.SetCanvasImagePricePerCount(*v)
+	}
+	return _u
+}
+
+// AddCanvasImagePricePerCount adds value to the "canvas_image_price_per_count" field.
+func (_u *GroupUpdate) AddCanvasImagePricePerCount(v float64) *GroupUpdate {
+	_u.mutation.AddCanvasImagePricePerCount(v)
+	return _u
+}
+
+// ClearCanvasImagePricePerCount clears the value of the "canvas_image_price_per_count" field.
+func (_u *GroupUpdate) ClearCanvasImagePricePerCount() *GroupUpdate {
+	_u.mutation.ClearCanvasImagePricePerCount()
+	return _u
+}
+
+// SetCanvasAudioPricePerCount sets the "canvas_audio_price_per_count" field.
+func (_u *GroupUpdate) SetCanvasAudioPricePerCount(v float64) *GroupUpdate {
+	_u.mutation.ResetCanvasAudioPricePerCount()
+	_u.mutation.SetCanvasAudioPricePerCount(v)
+	return _u
+}
+
+// SetNillableCanvasAudioPricePerCount sets the "canvas_audio_price_per_count" field if the given value is not nil.
+func (_u *GroupUpdate) SetNillableCanvasAudioPricePerCount(v *float64) *GroupUpdate {
+	if v != nil {
+		_u.SetCanvasAudioPricePerCount(*v)
+	}
+	return _u
+}
+
+// AddCanvasAudioPricePerCount adds value to the "canvas_audio_price_per_count" field.
+func (_u *GroupUpdate) AddCanvasAudioPricePerCount(v float64) *GroupUpdate {
+	_u.mutation.AddCanvasAudioPricePerCount(v)
+	return _u
+}
+
+// ClearCanvasAudioPricePerCount clears the value of the "canvas_audio_price_per_count" field.
+func (_u *GroupUpdate) ClearCanvasAudioPricePerCount() *GroupUpdate {
+	_u.mutation.ClearCanvasAudioPricePerCount()
+	return _u
+}
+
 // SetModelPricing sets the "model_pricing" field.
 func (_u *GroupUpdate) SetModelPricing(v []byte) *GroupUpdate {
 	_u.mutation.SetModelPricing(v)
@@ -1780,6 +1834,24 @@ func (_u *GroupUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.AudioSttPricePerHourCleared() {
 		_spec.ClearField(group.FieldAudioSttPricePerHour, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.CanvasImagePricePerCount(); ok {
+		_spec.SetField(group.FieldCanvasImagePricePerCount, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedCanvasImagePricePerCount(); ok {
+		_spec.AddField(group.FieldCanvasImagePricePerCount, field.TypeFloat64, value)
+	}
+	if _u.mutation.CanvasImagePricePerCountCleared() {
+		_spec.ClearField(group.FieldCanvasImagePricePerCount, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.CanvasAudioPricePerCount(); ok {
+		_spec.SetField(group.FieldCanvasAudioPricePerCount, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedCanvasAudioPricePerCount(); ok {
+		_spec.AddField(group.FieldCanvasAudioPricePerCount, field.TypeFloat64, value)
+	}
+	if _u.mutation.CanvasAudioPricePerCountCleared() {
+		_spec.ClearField(group.FieldCanvasAudioPricePerCount, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.ModelPricing(); ok {
 		_spec.SetField(group.FieldModelPricing, field.TypeBytes, value)
@@ -3006,6 +3078,60 @@ func (_u *GroupUpdateOne) ClearAudioSttPricePerHour() *GroupUpdateOne {
 	return _u
 }
 
+// SetCanvasImagePricePerCount sets the "canvas_image_price_per_count" field.
+func (_u *GroupUpdateOne) SetCanvasImagePricePerCount(v float64) *GroupUpdateOne {
+	_u.mutation.ResetCanvasImagePricePerCount()
+	_u.mutation.SetCanvasImagePricePerCount(v)
+	return _u
+}
+
+// SetNillableCanvasImagePricePerCount sets the "canvas_image_price_per_count" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableCanvasImagePricePerCount(v *float64) *GroupUpdateOne {
+	if v != nil {
+		_u.SetCanvasImagePricePerCount(*v)
+	}
+	return _u
+}
+
+// AddCanvasImagePricePerCount adds value to the "canvas_image_price_per_count" field.
+func (_u *GroupUpdateOne) AddCanvasImagePricePerCount(v float64) *GroupUpdateOne {
+	_u.mutation.AddCanvasImagePricePerCount(v)
+	return _u
+}
+
+// ClearCanvasImagePricePerCount clears the value of the "canvas_image_price_per_count" field.
+func (_u *GroupUpdateOne) ClearCanvasImagePricePerCount() *GroupUpdateOne {
+	_u.mutation.ClearCanvasImagePricePerCount()
+	return _u
+}
+
+// SetCanvasAudioPricePerCount sets the "canvas_audio_price_per_count" field.
+func (_u *GroupUpdateOne) SetCanvasAudioPricePerCount(v float64) *GroupUpdateOne {
+	_u.mutation.ResetCanvasAudioPricePerCount()
+	_u.mutation.SetCanvasAudioPricePerCount(v)
+	return _u
+}
+
+// SetNillableCanvasAudioPricePerCount sets the "canvas_audio_price_per_count" field if the given value is not nil.
+func (_u *GroupUpdateOne) SetNillableCanvasAudioPricePerCount(v *float64) *GroupUpdateOne {
+	if v != nil {
+		_u.SetCanvasAudioPricePerCount(*v)
+	}
+	return _u
+}
+
+// AddCanvasAudioPricePerCount adds value to the "canvas_audio_price_per_count" field.
+func (_u *GroupUpdateOne) AddCanvasAudioPricePerCount(v float64) *GroupUpdateOne {
+	_u.mutation.AddCanvasAudioPricePerCount(v)
+	return _u
+}
+
+// ClearCanvasAudioPricePerCount clears the value of the "canvas_audio_price_per_count" field.
+func (_u *GroupUpdateOne) ClearCanvasAudioPricePerCount() *GroupUpdateOne {
+	_u.mutation.ClearCanvasAudioPricePerCount()
+	return _u
+}
+
 // SetModelPricing sets the "model_pricing" field.
 func (_u *GroupUpdateOne) SetModelPricing(v []byte) *GroupUpdateOne {
 	_u.mutation.SetModelPricing(v)
@@ -3975,6 +4101,24 @@ func (_u *GroupUpdateOne) sqlSave(ctx context.Context) (_node *Group, err error)
 	}
 	if _u.mutation.AudioSttPricePerHourCleared() {
 		_spec.ClearField(group.FieldAudioSttPricePerHour, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.CanvasImagePricePerCount(); ok {
+		_spec.SetField(group.FieldCanvasImagePricePerCount, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedCanvasImagePricePerCount(); ok {
+		_spec.AddField(group.FieldCanvasImagePricePerCount, field.TypeFloat64, value)
+	}
+	if _u.mutation.CanvasImagePricePerCountCleared() {
+		_spec.ClearField(group.FieldCanvasImagePricePerCount, field.TypeFloat64)
+	}
+	if value, ok := _u.mutation.CanvasAudioPricePerCount(); ok {
+		_spec.SetField(group.FieldCanvasAudioPricePerCount, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedCanvasAudioPricePerCount(); ok {
+		_spec.AddField(group.FieldCanvasAudioPricePerCount, field.TypeFloat64, value)
+	}
+	if _u.mutation.CanvasAudioPricePerCountCleared() {
+		_spec.ClearField(group.FieldCanvasAudioPricePerCount, field.TypeFloat64)
 	}
 	if value, ok := _u.mutation.ModelPricing(); ok {
 		_spec.SetField(group.FieldModelPricing, field.TypeBytes, value)

@@ -31,7 +31,12 @@ func TestNormalizeInboundEndpoint(t *testing.T) {
 		{"/v1/responses/compact/detail", EndpointResponsesCompact},
 		{"/v1/images/generations", EndpointImagesGenerations},
 		{"/v1/images/edits", EndpointImagesEdits},
+		{"/v1/images/img_123", EndpointImages},
+		{"/v1/images/img_123/cancel", EndpointImages},
 		{"/v1/images/tasks/imgtask_123", EndpointImageTasks},
+		{"/v1/tasks/images", EndpointTasksImages},
+		{"/v1/tasks/task_123", EndpointTasks},
+		{"/v1/tasks/task_123/cancel", EndpointTasks},
 		{"/v1/videos/generations", EndpointVideosGenerations},
 		{"/v1/videos/req_123", EndpointVideos},
 		{"/v1beta/models", EndpointGeminiModels},
@@ -54,6 +59,10 @@ func TestNormalizeInboundEndpoint(t *testing.T) {
 		{"/responses/compact/detail", EndpointResponsesCompact},
 		{"/alpha/search", EndpointAlphaSearch},
 		{"/images/tasks/imgtask_123", EndpointImageTasks},
+		{"/images/img_123", EndpointImages},
+		{"/tasks/images", EndpointTasksImages},
+		{"/tasks/task_123", EndpointTasks},
+		{"/tasks/task_123/cancel", EndpointTasks},
 
 		// Bare Codex direct alias route — root vs. compact.
 		{"/backend-api/codex/responses", EndpointResponses},
@@ -131,6 +140,9 @@ func TestDeriveUpstreamEndpoint(t *testing.T) {
 		{"grok responses", EndpointResponses, "/v1/responses", service.PlatformGrok, EndpointResponses},
 		{"grok video generations", EndpointVideosGenerations, "/v1/videos/generations", service.PlatformGrok, EndpointVideosGenerations},
 		{"grok video status", EndpointVideos, "/videos/req_123", service.PlatformGrok, EndpointVideos},
+		{"canvas image task creation", EndpointTasksImages, "/v1/tasks/images", service.PlatformCanvas, EndpointTasksImages},
+		{"canvas image task status v2", EndpointImages, "/v1/images/task_123", service.PlatformCanvas, EndpointImages},
+		{"canvas image task status", EndpointTasks, "/v1/tasks/task_123", service.PlatformCanvas, EndpointTasks},
 
 		// Antigravity — uses inbound to pick Claude vs Gemini upstream.
 		{"antigravity claude", EndpointMessages, "/antigravity/v1/messages", service.PlatformAntigravity, EndpointMessages},
