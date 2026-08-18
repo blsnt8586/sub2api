@@ -9,6 +9,9 @@ var AllPlatforms = []string{
 	PlatformAntigravity,
 	PlatformGrok,
 	PlatformCanvas,
+	PlatformKimi,
+	PlatformZhipu,
+	PlatformDeepseek,
 }
 
 // VideoPlatforms 支持视频生成 API 的平台。

@@ -952,6 +952,9 @@ export default {
         antigravity: 'Antigravity',
         grok: 'Grok',
         canvas: 'Canvas',
+        kimi: 'Kimi',
+        zhipu: 'Zhipu GLM',
+        deepseek: 'DeepSeek',
         composite: 'Composite',
       },
       deleteConfirm:

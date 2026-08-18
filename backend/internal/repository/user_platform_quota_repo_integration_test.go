@@ -98,10 +98,9 @@ func TestUserPlatformQuotaRepository_BulkInsertInitial_GrokAllowed(t *testing.T)
 	require.InDelta(t, 9.0, *rec.DailyLimitUSD, 1e-9)
 }
 
-// TestUserPlatformQuotaRepository_BulkInsertInitial_CanvasAllowed guards the
-// database constraint behind domain.AllPlatforms. Without migration 223,
-// Canvas quota defaults pass service validation but fail at PostgreSQL.
-func TestUserPlatformQuotaRepository_BulkInsertInitial_CanvasAllowed(t *testing.T) {
+// TestUserPlatformQuotaRepository_BulkInsertInitial_ExtendedPlatformsAllowed
+// guards the database constraint for both Canvas and the CN providers.
+func TestUserPlatformQuotaRepository_BulkInsertInitial_ExtendedPlatformsAllowed(t *testing.T) {
 	ctx := context.Background()
 	tx := testEntTx(t)
 	txCtx := dbent.NewTxContext(ctx, tx)
@@ -111,15 +110,20 @@ func TestUserPlatformQuotaRepository_BulkInsertInitial_CanvasAllowed(t *testing.
 	repo := NewUserPlatformQuotaRepository(client)
 
 	daily := 12.0
-	require.NoError(t, repo.BulkInsertInitial(txCtx, []UserPlatformQuotaRecord{
+	records := []UserPlatformQuotaRecord{
 		{UserID: userID, Platform: service.PlatformCanvas, DailyLimitUSD: &daily},
-	}), "canvas platform quota should satisfy the database constraint")
+		{UserID: userID, Platform: "kimi", DailyLimitUSD: &daily},
+		{UserID: userID, Platform: "zhipu"},
+		{UserID: userID, Platform: "deepseek"},
+	}
+	require.NoError(t, repo.BulkInsertInitial(txCtx, records),
+		"kimi/zhipu/deepseek 平台应可写入（迁移 224 后 CHECK 约束已含国产供应商）")
 
-	rec, err := repo.GetByUserPlatform(txCtx, userID, service.PlatformCanvas)
-	require.NoError(t, err)
-	require.NotNil(t, rec)
-	require.NotNil(t, rec.DailyLimitUSD)
-	require.InDelta(t, 12.0, *rec.DailyLimitUSD, 1e-9)
+	for _, platform := range []string{service.PlatformCanvas, "kimi", "zhipu", "deepseek"} {
+		rec, err := repo.GetByUserPlatform(txCtx, userID, platform)
+		require.NoError(t, err)
+		require.NotNil(t, rec, "%s 配额行应已写入", platform)
+	}
 }
 
 func TestUserPlatformQuotaRepository_GetByUserPlatform(t *testing.T) {

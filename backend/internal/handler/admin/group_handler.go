@@ -100,9 +100,7 @@ func NewGroupHandler(adminService service.AdminService, dashboardService *servic
 type CreateGroupRequest struct {
 	Name        string `json:"name" binding:"required"`
 	Description string `json:"description"`
-	// 平台白名单不写死在 binding tag 里，由 domain.IsValidGroupPlatform 校验（见 CreateGroup）——
-	// 新增平台只改 domain.AllPlatforms 一处。
-	Platform                  string                        `json:"platform" binding:"omitempty"`
+	Platform                  string                        `json:"platform" binding:"omitempty,oneof=anthropic openai gemini antigravity grok canvas kimi zhipu deepseek composite"`
 	RateMultiplier            float64                       `json:"rate_multiplier"`
 	IsExclusive               bool                          `json:"is_exclusive"`
 	SubscriptionType          string                        `json:"subscription_type" binding:"omitempty,oneof=standard subscription"`
@@ -178,8 +176,7 @@ type CreateGroupRequest struct {
 type UpdateGroupRequest struct {
 	Name        string  `json:"name"`
 	Description *string `json:"description"`
-	// 同 CreateGroupRequest.Platform：校验走 domain.IsValidGroupPlatform（见 UpdateGroup）。
-	Platform                  string                         `json:"platform" binding:"omitempty"`
+	Platform                  string                         `json:"platform" binding:"omitempty,oneof=anthropic openai gemini antigravity grok canvas kimi zhipu deepseek composite"`
 	RateMultiplier            *float64                       `json:"rate_multiplier"`
 	IsExclusive               *bool                          `json:"is_exclusive"`
 	Status                    string                         `json:"status" binding:"omitempty,oneof=active inactive"`
