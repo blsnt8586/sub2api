@@ -44,6 +44,26 @@ func TestAccountsToService_LargeActiveAccountSetDoesNotExceedPostgresParameterLi
 	require.Len(t, got, len(accounts))
 }
 
+func TestAccountEntityToServicePreservesSub2APIOptimizationSettings(t *testing.T) {
+	minMultiplier := 0.4
+	maxMultiplier := 1.2
+	testModel := "gpt-5.6-sol"
+
+	got := accountEntityToService(&dbent.Account{
+		ID:                     13,
+		Sub2apiOptimizeEnabled: true,
+		Sub2apiMinMultiplier:   &minMultiplier,
+		Sub2apiMaxMultiplier:   &maxMultiplier,
+		Sub2apiTestModel:       &testModel,
+	})
+
+	require.NotNil(t, got)
+	require.True(t, got.Sub2APIOptimizeEnabled)
+	require.Equal(t, minMultiplier, *got.Sub2APIMinMultiplier)
+	require.Equal(t, maxMultiplier, *got.Sub2APIMaxMultiplier)
+	require.Equal(t, testModel, *got.Sub2APITestModel)
+}
+
 func newParameterLimitAccountRepo(t *testing.T) *accountRepository {
 	t.Helper()
 

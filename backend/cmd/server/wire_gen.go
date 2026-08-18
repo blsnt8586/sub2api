@@ -275,8 +275,11 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	complianceHandler := admin.NewComplianceHandler(settingService)
 	sub2APIProviderRepository := repository.NewSub2APIProviderRepository(client)
 	tokenCache := sub2api.NewTokenCache()
-	sub2APIProviderService := service.NewSub2APIProviderService(sub2APIProviderRepository, accountRepository, tokenCache)
-	sub2APIProviderHandler := admin.NewSub2APIProviderHandler(sub2APIProviderService)
+	sub2APIProviderRemoteOverviewCache := repository.NewSub2APIProviderRemoteOverviewCache(redisClient)
+	sub2APIProviderService := service.NewSub2APIProviderService(sub2APIProviderRepository, accountRepository, proxyRepository, tokenCache, secretEncryptor, sub2APIProviderRemoteOverviewCache, configConfig)
+	sub2APIProviderProbeRepository := repository.NewSub2APIProviderProbeRepository(client, db)
+	sub2APIProviderProbeService := service.NewSub2APIProviderProbeService(sub2APIProviderRepository, sub2APIProviderProbeRepository, accountRepository, accountTestService, tokenCache, secretEncryptor)
+	sub2APIProviderHandler := admin.NewSub2APIProviderHandler(sub2APIProviderService, sub2APIProviderProbeService)
 	sub2APIOptimizeScheduleRepository := repository.NewSub2APIOptimizeScheduleRepository(client)
 	sub2APIOptimizeScheduleService := service.ProvideSub2APIOptimizeScheduleService(sub2APIOptimizeScheduleRepository, sub2APIProviderService, accountTestService, configConfig)
 	sub2APIOptimizeScheduleHandler := admin.NewSub2APIOptimizeScheduleHandler(sub2APIOptimizeScheduleService)
@@ -347,7 +350,8 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	channelMonitorV2Aggregator := service.ProvideChannelMonitorV2Aggregator(channelMonitorV2Repository, db, settingService)
 	userPlatformQuotaUsageFlusher := service.ProvideUserPlatformQuotaUsageFlusher(configConfig, billingCache, serviceUserPlatformQuotaRepository, timingWheelService)
 	sub2APIOptimizeRunnerService := service.ProvideSub2APIOptimizeRunnerService(sub2APIOptimizeScheduleService, configConfig, leaderLockCache, db)
-	v := provideCleanup(client, redisClient, opsMetricsCollector, opsAggregationService, opsAlertEvaluatorService, opsCleanupService, opsScheduledReportService, opsSystemLogSink, opsService, opsIngressRejectAggregator, apiKeyService, authCacheInvalidationWorker, schedulerSnapshotService, tokenRefreshService, accountExpiryService, openAICodexVersionSyncService, proxyExpiryService, subscriptionExpiryService, usageCleanupService, idempotencyCleanupService, batchImageCleanupService, batchImageWorkerRuntime, pricingService, emailQueueService, billingCacheService, usageRecordWorkerPool, subscriptionService, oAuthService, openAIOAuthService, geminiOAuthService, antigravityOAuthService, grokOAuthService, openAIGatewayService, scheduledTestRunnerService, backupService, paymentOrderExpiryService, channelMonitorRunner, channelMonitorV2Aggregator, userPlatformQuotaUsageFlusher, sub2APIOptimizeRunnerService, upstreamBillingProbeService, ollamaCloudUsageService, auditLogService, promptService)
+	sub2APIProviderProbeRunner := service.ProvideSub2APIProviderProbeRunner(sub2APIProviderProbeService, sub2APIOptimizeScheduleService, sub2APIProviderRemoteOverviewCache, leaderLockCache, db)
+	v := provideCleanup(client, redisClient, opsMetricsCollector, opsAggregationService, opsAlertEvaluatorService, opsCleanupService, opsScheduledReportService, opsSystemLogSink, opsService, opsIngressRejectAggregator, apiKeyService, authCacheInvalidationWorker, schedulerSnapshotService, tokenRefreshService, accountExpiryService, openAICodexVersionSyncService, proxyExpiryService, subscriptionExpiryService, usageCleanupService, idempotencyCleanupService, batchImageCleanupService, batchImageWorkerRuntime, pricingService, emailQueueService, billingCacheService, usageRecordWorkerPool, subscriptionService, oAuthService, openAIOAuthService, geminiOAuthService, antigravityOAuthService, grokOAuthService, openAIGatewayService, scheduledTestRunnerService, backupService, paymentOrderExpiryService, channelMonitorRunner, channelMonitorV2Aggregator, userPlatformQuotaUsageFlusher, sub2APIOptimizeRunnerService, sub2APIProviderProbeRunner, upstreamBillingProbeService, ollamaCloudUsageService, auditLogService, promptService)
 	application := &Application{
 		Server:      httpServer,
 		PromptAudit: promptService,
@@ -416,6 +420,7 @@ func provideCleanup(
 	channelMonitorV2Aggregator *service.ChannelMonitorV2Aggregator,
 	quotaFlusher *service.UserPlatformQuotaUsageFlusher,
 	sub2APIOptimizeRunner *service.Sub2APIOptimizeRunnerService,
+	sub2APIProviderProbeRunner *service.Sub2APIProviderProbeRunner,
 	upstreamBillingProbe *service.UpstreamBillingProbeService,
 	ollamaCloudUsage *service.OllamaCloudUsageService,
 	auditLog *service.AuditLogService,
@@ -614,6 +619,12 @@ func provideCleanup(
 			{"Sub2APIOptimizeRunnerService", func() error {
 				if sub2APIOptimizeRunner != nil {
 					sub2APIOptimizeRunner.Stop()
+				}
+				return nil
+			}},
+			{"Sub2APIProviderProbeRunner", func() error {
+				if sub2APIProviderProbeRunner != nil {
+					sub2APIProviderProbeRunner.Stop()
 				}
 				return nil
 			}},

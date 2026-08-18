@@ -863,6 +863,8 @@ var ProviderSet = wire.NewSet(
 	NewAffiliateService,
 	sub2api.NewTokenCache,
 	NewSub2APIProviderService,
+	NewSub2APIProviderProbeService,
+	ProvideSub2APIProviderProbeRunner,
 	ProvideSub2APIOptimizeScheduleService,
 	ProvideSub2APIOptimizeRunnerService,
 	ProvidePaymentConfigService,
@@ -918,6 +920,23 @@ func ProvideSub2APIOptimizeScheduleService(
 	return NewSub2APIOptimizeScheduleService(scheduleRepo, providerSvc, accountTestSvc, defaultTestModels)
 }
 
+// ProvideSub2APIProviderProbeRunner starts the persisted Provider health probe
+// scheduler. Manual probes and scheduled probes share the same provider lock.
+func ProvideSub2APIProviderProbeRunner(
+	probeService *Sub2APIProviderProbeService,
+	optimizeService *Sub2APIOptimizeScheduleService,
+	remoteOverviewCache Sub2APIProviderRemoteOverviewCache,
+	lockCache LeaderLockCache,
+	db *sql.DB,
+) *Sub2APIProviderProbeRunner {
+	probeService.SetAutoOptimizeTrigger(optimizeService)
+	probeService.SetRemoteOverviewCache(remoteOverviewCache)
+	optimizeService.SetProbeTargetBindingSyncer(probeService)
+	runner := NewSub2APIProviderProbeRunner(probeService, lockCache, db)
+	runner.Start()
+	return runner
+}
+
 // ProvideSub2APIOptimizeRunnerService 创建并启动定时优化 Runner。
 // 注入 leader 锁，多实例部署时每个扫描周期只由一个实例执行。
 func ProvideSub2APIOptimizeRunnerService(
@@ -926,6 +945,7 @@ func ProvideSub2APIOptimizeRunnerService(
 	lockCache LeaderLockCache,
 	db *sql.DB,
 ) *Sub2APIOptimizeRunnerService {
+	scheduleSvc.SetExecutionLock(lockCache, db)
 	svc := NewSub2APIOptimizeRunnerService(scheduleSvc, cfg)
 	svc.SetLeaderLock(lockCache, db)
 	svc.Start()

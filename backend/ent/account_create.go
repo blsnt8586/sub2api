@@ -15,6 +15,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/proxy"
 	"github.com/Wei-Shaw/sub2api/ent/sub2apiprovider"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiproviderprobetarget"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
 )
 
@@ -420,6 +421,20 @@ func (_c *AccountCreate) SetNillableProviderAPIKeyID(v *int64) *AccountCreate {
 	return _c
 }
 
+// SetRemoteGroupID sets the "remote_group_id" field.
+func (_c *AccountCreate) SetRemoteGroupID(v int64) *AccountCreate {
+	_c.mutation.SetRemoteGroupID(v)
+	return _c
+}
+
+// SetNillableRemoteGroupID sets the "remote_group_id" field if the given value is not nil.
+func (_c *AccountCreate) SetNillableRemoteGroupID(v *int64) *AccountCreate {
+	if v != nil {
+		_c.SetRemoteGroupID(*v)
+	}
+	return _c
+}
+
 // SetRemoteGroupName sets the "remote_group_name" field.
 func (_c *AccountCreate) SetRemoteGroupName(v string) *AccountCreate {
 	_c.mutation.SetRemoteGroupName(v)
@@ -618,6 +633,21 @@ func (_c *AccountCreate) AddUsageLogs(v ...*UsageLog) *AccountCreate {
 // SetProvider sets the "provider" edge to the Sub2APIProvider entity.
 func (_c *AccountCreate) SetProvider(v *Sub2APIProvider) *AccountCreate {
 	return _c.SetProviderID(v.ID)
+}
+
+// AddSub2apiProbeTargetIDs adds the "sub2api_probe_targets" edge to the Sub2APIProviderProbeTarget entity by IDs.
+func (_c *AccountCreate) AddSub2apiProbeTargetIDs(ids ...int64) *AccountCreate {
+	_c.mutation.AddSub2apiProbeTargetIDs(ids...)
+	return _c
+}
+
+// AddSub2apiProbeTargets adds the "sub2api_probe_targets" edges to the Sub2APIProviderProbeTarget entity.
+func (_c *AccountCreate) AddSub2apiProbeTargets(v ...*Sub2APIProviderProbeTarget) *AccountCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddSub2apiProbeTargetIDs(ids...)
 }
 
 // Mutation returns the AccountMutation object of the builder.
@@ -950,6 +980,10 @@ func (_c *AccountCreate) createSpec() (*Account, *sqlgraph.CreateSpec) {
 		_spec.SetField(account.FieldProviderAPIKeyID, field.TypeInt64, value)
 		_node.ProviderAPIKeyID = &value
 	}
+	if value, ok := _c.mutation.RemoteGroupID(); ok {
+		_spec.SetField(account.FieldRemoteGroupID, field.TypeInt64, value)
+		_node.RemoteGroupID = &value
+	}
 	if value, ok := _c.mutation.RemoteGroupName(); ok {
 		_spec.SetField(account.FieldRemoteGroupName, field.TypeString, value)
 		_node.RemoteGroupName = &value
@@ -1083,6 +1117,22 @@ func (_c *AccountCreate) createSpec() (*Account, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.ProviderID = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.Sub2apiProbeTargetsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   account.Sub2apiProbeTargetsTable,
+			Columns: []string{account.Sub2apiProbeTargetsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiproviderprobetarget.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -1638,6 +1688,30 @@ func (u *AccountUpsert) AddProviderAPIKeyID(v int64) *AccountUpsert {
 // ClearProviderAPIKeyID clears the value of the "provider_api_key_id" field.
 func (u *AccountUpsert) ClearProviderAPIKeyID() *AccountUpsert {
 	u.SetNull(account.FieldProviderAPIKeyID)
+	return u
+}
+
+// SetRemoteGroupID sets the "remote_group_id" field.
+func (u *AccountUpsert) SetRemoteGroupID(v int64) *AccountUpsert {
+	u.Set(account.FieldRemoteGroupID, v)
+	return u
+}
+
+// UpdateRemoteGroupID sets the "remote_group_id" field to the value that was provided on create.
+func (u *AccountUpsert) UpdateRemoteGroupID() *AccountUpsert {
+	u.SetExcluded(account.FieldRemoteGroupID)
+	return u
+}
+
+// AddRemoteGroupID adds v to the "remote_group_id" field.
+func (u *AccountUpsert) AddRemoteGroupID(v int64) *AccountUpsert {
+	u.Add(account.FieldRemoteGroupID, v)
+	return u
+}
+
+// ClearRemoteGroupID clears the value of the "remote_group_id" field.
+func (u *AccountUpsert) ClearRemoteGroupID() *AccountUpsert {
+	u.SetNull(account.FieldRemoteGroupID)
 	return u
 }
 
@@ -2439,6 +2513,34 @@ func (u *AccountUpsertOne) UpdateProviderAPIKeyID() *AccountUpsertOne {
 func (u *AccountUpsertOne) ClearProviderAPIKeyID() *AccountUpsertOne {
 	return u.Update(func(s *AccountUpsert) {
 		s.ClearProviderAPIKeyID()
+	})
+}
+
+// SetRemoteGroupID sets the "remote_group_id" field.
+func (u *AccountUpsertOne) SetRemoteGroupID(v int64) *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetRemoteGroupID(v)
+	})
+}
+
+// AddRemoteGroupID adds v to the "remote_group_id" field.
+func (u *AccountUpsertOne) AddRemoteGroupID(v int64) *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.AddRemoteGroupID(v)
+	})
+}
+
+// UpdateRemoteGroupID sets the "remote_group_id" field to the value that was provided on create.
+func (u *AccountUpsertOne) UpdateRemoteGroupID() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateRemoteGroupID()
+	})
+}
+
+// ClearRemoteGroupID clears the value of the "remote_group_id" field.
+func (u *AccountUpsertOne) ClearRemoteGroupID() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearRemoteGroupID()
 	})
 }
 
@@ -3434,6 +3536,34 @@ func (u *AccountUpsertBulk) UpdateProviderAPIKeyID() *AccountUpsertBulk {
 func (u *AccountUpsertBulk) ClearProviderAPIKeyID() *AccountUpsertBulk {
 	return u.Update(func(s *AccountUpsert) {
 		s.ClearProviderAPIKeyID()
+	})
+}
+
+// SetRemoteGroupID sets the "remote_group_id" field.
+func (u *AccountUpsertBulk) SetRemoteGroupID(v int64) *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetRemoteGroupID(v)
+	})
+}
+
+// AddRemoteGroupID adds v to the "remote_group_id" field.
+func (u *AccountUpsertBulk) AddRemoteGroupID(v int64) *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.AddRemoteGroupID(v)
+	})
+}
+
+// UpdateRemoteGroupID sets the "remote_group_id" field to the value that was provided on create.
+func (u *AccountUpsertBulk) UpdateRemoteGroupID() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateRemoteGroupID()
+	})
+}
+
+// ClearRemoteGroupID clears the value of the "remote_group_id" field.
+func (u *AccountUpsertBulk) ClearRemoteGroupID() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearRemoteGroupID()
 	})
 }
 

@@ -15,8 +15,13 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/Wei-Shaw/sub2api/ent/account"
 	"github.com/Wei-Shaw/sub2api/ent/predicate"
+	"github.com/Wei-Shaw/sub2api/ent/proxy"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apioptimizelog"
 	"github.com/Wei-Shaw/sub2api/ent/sub2apioptimizeschedule"
 	"github.com/Wei-Shaw/sub2api/ent/sub2apiprovider"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiproviderprobeconfig"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiproviderproberun"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiproviderprobetarget"
 )
 
 // Sub2APIProviderQuery is the builder for querying Sub2APIProvider entities.
@@ -26,8 +31,13 @@ type Sub2APIProviderQuery struct {
 	order                []sub2apiprovider.OrderOption
 	inters               []Interceptor
 	predicates           []predicate.Sub2APIProvider
+	withProxy            *ProxyQuery
 	withAccounts         *AccountQuery
 	withOptimizeSchedule *Sub2APIOptimizeScheduleQuery
+	withOptimizeLogs     *Sub2APIOptimizeLogQuery
+	withProbeConfig      *Sub2APIProviderProbeConfigQuery
+	withProbeRuns        *Sub2APIProviderProbeRunQuery
+	withProbeTargets     *Sub2APIProviderProbeTargetQuery
 	modifiers            []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -63,6 +73,28 @@ func (_q *Sub2APIProviderQuery) Unique(unique bool) *Sub2APIProviderQuery {
 func (_q *Sub2APIProviderQuery) Order(o ...sub2apiprovider.OrderOption) *Sub2APIProviderQuery {
 	_q.order = append(_q.order, o...)
 	return _q
+}
+
+// QueryProxy chains the current query on the "proxy" edge.
+func (_q *Sub2APIProviderQuery) QueryProxy() *ProxyQuery {
+	query := (&ProxyClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sub2apiprovider.Table, sub2apiprovider.FieldID, selector),
+			sqlgraph.To(proxy.Table, proxy.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, sub2apiprovider.ProxyTable, sub2apiprovider.ProxyColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // QueryAccounts chains the current query on the "accounts" edge.
@@ -102,6 +134,94 @@ func (_q *Sub2APIProviderQuery) QueryOptimizeSchedule() *Sub2APIOptimizeSchedule
 			sqlgraph.From(sub2apiprovider.Table, sub2apiprovider.FieldID, selector),
 			sqlgraph.To(sub2apioptimizeschedule.Table, sub2apioptimizeschedule.FieldID),
 			sqlgraph.Edge(sqlgraph.O2O, false, sub2apiprovider.OptimizeScheduleTable, sub2apiprovider.OptimizeScheduleColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryOptimizeLogs chains the current query on the "optimize_logs" edge.
+func (_q *Sub2APIProviderQuery) QueryOptimizeLogs() *Sub2APIOptimizeLogQuery {
+	query := (&Sub2APIOptimizeLogClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sub2apiprovider.Table, sub2apiprovider.FieldID, selector),
+			sqlgraph.To(sub2apioptimizelog.Table, sub2apioptimizelog.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, sub2apiprovider.OptimizeLogsTable, sub2apiprovider.OptimizeLogsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryProbeConfig chains the current query on the "probe_config" edge.
+func (_q *Sub2APIProviderQuery) QueryProbeConfig() *Sub2APIProviderProbeConfigQuery {
+	query := (&Sub2APIProviderProbeConfigClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sub2apiprovider.Table, sub2apiprovider.FieldID, selector),
+			sqlgraph.To(sub2apiproviderprobeconfig.Table, sub2apiproviderprobeconfig.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, sub2apiprovider.ProbeConfigTable, sub2apiprovider.ProbeConfigColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryProbeRuns chains the current query on the "probe_runs" edge.
+func (_q *Sub2APIProviderQuery) QueryProbeRuns() *Sub2APIProviderProbeRunQuery {
+	query := (&Sub2APIProviderProbeRunClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sub2apiprovider.Table, sub2apiprovider.FieldID, selector),
+			sqlgraph.To(sub2apiproviderproberun.Table, sub2apiproviderproberun.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, sub2apiprovider.ProbeRunsTable, sub2apiprovider.ProbeRunsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryProbeTargets chains the current query on the "probe_targets" edge.
+func (_q *Sub2APIProviderQuery) QueryProbeTargets() *Sub2APIProviderProbeTargetQuery {
+	query := (&Sub2APIProviderProbeTargetClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sub2apiprovider.Table, sub2apiprovider.FieldID, selector),
+			sqlgraph.To(sub2apiproviderprobetarget.Table, sub2apiproviderprobetarget.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, sub2apiprovider.ProbeTargetsTable, sub2apiprovider.ProbeTargetsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -301,12 +421,28 @@ func (_q *Sub2APIProviderQuery) Clone() *Sub2APIProviderQuery {
 		order:                append([]sub2apiprovider.OrderOption{}, _q.order...),
 		inters:               append([]Interceptor{}, _q.inters...),
 		predicates:           append([]predicate.Sub2APIProvider{}, _q.predicates...),
+		withProxy:            _q.withProxy.Clone(),
 		withAccounts:         _q.withAccounts.Clone(),
 		withOptimizeSchedule: _q.withOptimizeSchedule.Clone(),
+		withOptimizeLogs:     _q.withOptimizeLogs.Clone(),
+		withProbeConfig:      _q.withProbeConfig.Clone(),
+		withProbeRuns:        _q.withProbeRuns.Clone(),
+		withProbeTargets:     _q.withProbeTargets.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
 	}
+}
+
+// WithProxy tells the query-builder to eager-load the nodes that are connected to
+// the "proxy" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *Sub2APIProviderQuery) WithProxy(opts ...func(*ProxyQuery)) *Sub2APIProviderQuery {
+	query := (&ProxyClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withProxy = query
+	return _q
 }
 
 // WithAccounts tells the query-builder to eager-load the nodes that are connected to
@@ -328,6 +464,50 @@ func (_q *Sub2APIProviderQuery) WithOptimizeSchedule(opts ...func(*Sub2APIOptimi
 		opt(query)
 	}
 	_q.withOptimizeSchedule = query
+	return _q
+}
+
+// WithOptimizeLogs tells the query-builder to eager-load the nodes that are connected to
+// the "optimize_logs" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *Sub2APIProviderQuery) WithOptimizeLogs(opts ...func(*Sub2APIOptimizeLogQuery)) *Sub2APIProviderQuery {
+	query := (&Sub2APIOptimizeLogClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withOptimizeLogs = query
+	return _q
+}
+
+// WithProbeConfig tells the query-builder to eager-load the nodes that are connected to
+// the "probe_config" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *Sub2APIProviderQuery) WithProbeConfig(opts ...func(*Sub2APIProviderProbeConfigQuery)) *Sub2APIProviderQuery {
+	query := (&Sub2APIProviderProbeConfigClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withProbeConfig = query
+	return _q
+}
+
+// WithProbeRuns tells the query-builder to eager-load the nodes that are connected to
+// the "probe_runs" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *Sub2APIProviderQuery) WithProbeRuns(opts ...func(*Sub2APIProviderProbeRunQuery)) *Sub2APIProviderQuery {
+	query := (&Sub2APIProviderProbeRunClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withProbeRuns = query
+	return _q
+}
+
+// WithProbeTargets tells the query-builder to eager-load the nodes that are connected to
+// the "probe_targets" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *Sub2APIProviderQuery) WithProbeTargets(opts ...func(*Sub2APIProviderProbeTargetQuery)) *Sub2APIProviderQuery {
+	query := (&Sub2APIProviderProbeTargetClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withProbeTargets = query
 	return _q
 }
 
@@ -409,9 +589,14 @@ func (_q *Sub2APIProviderQuery) sqlAll(ctx context.Context, hooks ...queryHook) 
 	var (
 		nodes       = []*Sub2APIProvider{}
 		_spec       = _q.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [7]bool{
+			_q.withProxy != nil,
 			_q.withAccounts != nil,
 			_q.withOptimizeSchedule != nil,
+			_q.withOptimizeLogs != nil,
+			_q.withProbeConfig != nil,
+			_q.withProbeRuns != nil,
+			_q.withProbeTargets != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -435,6 +620,12 @@ func (_q *Sub2APIProviderQuery) sqlAll(ctx context.Context, hooks ...queryHook) 
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := _q.withProxy; query != nil {
+		if err := _q.loadProxy(ctx, query, nodes, nil,
+			func(n *Sub2APIProvider, e *Proxy) { n.Edges.Proxy = e }); err != nil {
+			return nil, err
+		}
+	}
 	if query := _q.withAccounts; query != nil {
 		if err := _q.loadAccounts(ctx, query, nodes,
 			func(n *Sub2APIProvider) { n.Edges.Accounts = []*Account{} },
@@ -448,9 +639,72 @@ func (_q *Sub2APIProviderQuery) sqlAll(ctx context.Context, hooks ...queryHook) 
 			return nil, err
 		}
 	}
+	if query := _q.withOptimizeLogs; query != nil {
+		if err := _q.loadOptimizeLogs(ctx, query, nodes,
+			func(n *Sub2APIProvider) { n.Edges.OptimizeLogs = []*Sub2APIOptimizeLog{} },
+			func(n *Sub2APIProvider, e *Sub2APIOptimizeLog) {
+				n.Edges.OptimizeLogs = append(n.Edges.OptimizeLogs, e)
+			}); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withProbeConfig; query != nil {
+		if err := _q.loadProbeConfig(ctx, query, nodes, nil,
+			func(n *Sub2APIProvider, e *Sub2APIProviderProbeConfig) { n.Edges.ProbeConfig = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withProbeRuns; query != nil {
+		if err := _q.loadProbeRuns(ctx, query, nodes,
+			func(n *Sub2APIProvider) { n.Edges.ProbeRuns = []*Sub2APIProviderProbeRun{} },
+			func(n *Sub2APIProvider, e *Sub2APIProviderProbeRun) { n.Edges.ProbeRuns = append(n.Edges.ProbeRuns, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withProbeTargets; query != nil {
+		if err := _q.loadProbeTargets(ctx, query, nodes,
+			func(n *Sub2APIProvider) { n.Edges.ProbeTargets = []*Sub2APIProviderProbeTarget{} },
+			func(n *Sub2APIProvider, e *Sub2APIProviderProbeTarget) {
+				n.Edges.ProbeTargets = append(n.Edges.ProbeTargets, e)
+			}); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
 }
 
+func (_q *Sub2APIProviderQuery) loadProxy(ctx context.Context, query *ProxyQuery, nodes []*Sub2APIProvider, init func(*Sub2APIProvider), assign func(*Sub2APIProvider, *Proxy)) error {
+	ids := make([]int64, 0, len(nodes))
+	nodeids := make(map[int64][]*Sub2APIProvider)
+	for i := range nodes {
+		if nodes[i].ProxyID == nil {
+			continue
+		}
+		fk := *nodes[i].ProxyID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(proxy.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "proxy_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
 func (_q *Sub2APIProviderQuery) loadAccounts(ctx context.Context, query *AccountQuery, nodes []*Sub2APIProvider, init func(*Sub2APIProvider), assign func(*Sub2APIProvider, *Account)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[int64]*Sub2APIProvider)
@@ -511,6 +765,123 @@ func (_q *Sub2APIProviderQuery) loadOptimizeSchedule(ctx context.Context, query 
 	}
 	return nil
 }
+func (_q *Sub2APIProviderQuery) loadOptimizeLogs(ctx context.Context, query *Sub2APIOptimizeLogQuery, nodes []*Sub2APIProvider, init func(*Sub2APIProvider), assign func(*Sub2APIProvider, *Sub2APIOptimizeLog)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Sub2APIProvider)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(sub2apioptimizelog.FieldProviderID)
+	}
+	query.Where(predicate.Sub2APIOptimizeLog(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(sub2apiprovider.OptimizeLogsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ProviderID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "provider_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *Sub2APIProviderQuery) loadProbeConfig(ctx context.Context, query *Sub2APIProviderProbeConfigQuery, nodes []*Sub2APIProvider, init func(*Sub2APIProvider), assign func(*Sub2APIProvider, *Sub2APIProviderProbeConfig)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Sub2APIProvider)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(sub2apiproviderprobeconfig.FieldProviderID)
+	}
+	query.Where(predicate.Sub2APIProviderProbeConfig(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(sub2apiprovider.ProbeConfigColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ProviderID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "provider_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *Sub2APIProviderQuery) loadProbeRuns(ctx context.Context, query *Sub2APIProviderProbeRunQuery, nodes []*Sub2APIProvider, init func(*Sub2APIProvider), assign func(*Sub2APIProvider, *Sub2APIProviderProbeRun)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Sub2APIProvider)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(sub2apiproviderproberun.FieldProviderID)
+	}
+	query.Where(predicate.Sub2APIProviderProbeRun(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(sub2apiprovider.ProbeRunsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ProviderID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "provider_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *Sub2APIProviderQuery) loadProbeTargets(ctx context.Context, query *Sub2APIProviderProbeTargetQuery, nodes []*Sub2APIProvider, init func(*Sub2APIProvider), assign func(*Sub2APIProvider, *Sub2APIProviderProbeTarget)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Sub2APIProvider)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(sub2apiproviderprobetarget.FieldProviderID)
+	}
+	query.Where(predicate.Sub2APIProviderProbeTarget(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(sub2apiprovider.ProbeTargetsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ProviderID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "provider_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
 
 func (_q *Sub2APIProviderQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := _q.querySpec()
@@ -539,6 +910,9 @@ func (_q *Sub2APIProviderQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != sub2apiprovider.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if _q.withProxy != nil {
+			_spec.Node.AddColumnOnce(sub2apiprovider.FieldProxyID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

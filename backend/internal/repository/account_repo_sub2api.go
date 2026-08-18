@@ -8,30 +8,95 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"sort"
 
+	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 )
 
 // UpdateProviderLink 更新 Account 的 Provider 关联
 func (r *accountRepository) UpdateProviderLink(ctx context.Context, accountID, providerID, providerAPIKeyID int64) error {
-	_, err := r.sql.ExecContext(ctx,
+	result, err := r.sql.ExecContext(ctx,
 		`UPDATE accounts
-		 SET provider_id = $1, provider_api_key_id = $2, updated_at = NOW()
-		 WHERE id = $3 AND deleted_at IS NULL`,
+			 SET provider_id = $1, provider_api_key_id = $2,
+			     proxy_id = (SELECT proxy_id FROM sub2api_providers WHERE id = $1 AND deleted_at IS NULL),
+			     proxy_fallback_origin_id = NULL, updated_at = NOW()
+			 WHERE id = $3 AND deleted_at IS NULL`,
 		providerID, providerAPIKeyID, accountID)
-	return err
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if err != nil || rows == 0 {
+		return err
+	}
+	if err := enqueueSchedulerOutbox(ctx, r.sql, service.SchedulerOutboxEventAccountChanged, &accountID, nil, nil); err != nil {
+		logger.LegacyPrintf("repository.account", "[SchedulerOutbox] enqueue provider link change failed: account=%d err=%v", accountID, err)
+	}
+	return nil
 }
 
 // ClearProviderLink 清除 Account 的 Provider 关联
 func (r *accountRepository) ClearProviderLink(ctx context.Context, accountID, providerID int64) error {
-	_, err := r.sql.ExecContext(ctx,
+	result, err := r.sql.ExecContext(ctx,
 		`UPDATE accounts
-		 SET provider_id = NULL, provider_api_key_id = NULL,
-		     remote_group_name = NULL, remote_group_multiplier = NULL, remote_group_synced_at = NULL,
+			 SET provider_id = NULL, provider_api_key_id = NULL,
+			     proxy_id = NULL, proxy_fallback_origin_id = NULL,
+			     remote_group_id = NULL, remote_group_name = NULL, remote_group_multiplier = NULL, remote_group_synced_at = NULL,
+		     sub2api_optimize_enabled = FALSE,
 		     updated_at = NOW()
 		 WHERE id = $1 AND provider_id = $2 AND deleted_at IS NULL`,
 		accountID, providerID)
-	return err
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if err != nil || rows == 0 {
+		return err
+	}
+	if err := enqueueSchedulerOutbox(ctx, r.sql, service.SchedulerOutboxEventAccountChanged, &accountID, nil, nil); err != nil {
+		logger.LegacyPrintf("repository.account", "[SchedulerOutbox] enqueue provider unlink change failed: account=%d err=%v", accountID, err)
+	}
+	return nil
+}
+
+// UpdateProviderAccountsProxy applies the Provider's selected route to all
+// linked accounts. Clearing the Provider proxy restores direct connections.
+func (r *accountRepository) UpdateProviderAccountsProxy(ctx context.Context, providerID int64, proxyID *int64) error {
+	rows, err := r.sql.QueryContext(ctx, `
+		UPDATE accounts
+		   SET proxy_id = $1, proxy_fallback_origin_id = NULL, updated_at = NOW()
+		 WHERE provider_id = $2 AND deleted_at IS NULL
+		 RETURNING id`, proxyID, providerID)
+	if err != nil {
+		return err
+	}
+	accountIDs := make([]int64, 0)
+	for rows.Next() {
+		var accountID int64
+		if err := rows.Scan(&accountID); err != nil {
+			_ = rows.Close()
+			return err
+		}
+		accountIDs = append(accountIDs, accountID)
+	}
+	if err := rows.Err(); err != nil {
+		_ = rows.Close()
+		return err
+	}
+	if err := rows.Close(); err != nil {
+		return err
+	}
+	if len(accountIDs) == 0 {
+		return nil
+	}
+	sort.Slice(accountIDs, func(i, j int) bool { return accountIDs[i] < accountIDs[j] })
+	if err := enqueueSchedulerOutbox(ctx, r.sql, service.SchedulerOutboxEventAccountBulkChanged, nil, nil, map[string]any{
+		"account_ids": accountIDs,
+	}); err != nil {
+		logger.LegacyPrintf("repository.account", "[SchedulerOutbox] enqueue provider proxy changes failed: provider=%d err=%v", providerID, err)
+	}
+	return nil
 }
 
 // UpdateRemoteGroupInfo 更新远程分组缓存信息
@@ -44,23 +109,46 @@ func (r *accountRepository) UpdateRemoteGroupInfo(ctx context.Context, accountID
 	return err
 }
 
-// UpdateSub2APIOptimizeSettings 全量覆盖账号的定时优化配置（是否参与 + 倍率上限 + 测试模型）。
-// enabled 独立控制是否参与定时优化；maxMultiplier/testModel 即使 enabled=false 也照常持久化保留，
-// 便于用户重新开启时沿用上次的配置。maxMultiplier 为 nil 表示未设上限；testModel 为 nil 表示按平台默认。
-func (r *accountRepository) UpdateSub2APIOptimizeSettings(ctx context.Context, accountID int64, enabled bool, minMultiplier, maxMultiplier *float64, testModel *string) error {
+// UpdateRemoteGroupBinding persists the remote group's stable ID together with
+// its display cache. It is intentionally an optional extension method so old
+// test repositories remain compatible with the primary AccountRepository.
+func (r *accountRepository) UpdateRemoteGroupBinding(ctx context.Context, accountID, groupID int64, groupName string, multiplier float64) error {
 	_, err := r.sql.ExecContext(ctx,
 		`UPDATE accounts
-		 SET sub2api_optimize_enabled = $1, sub2api_min_multiplier = $2, sub2api_max_multiplier = $3, sub2api_test_model = $4, updated_at = NOW()
-		 WHERE id = $5 AND deleted_at IS NULL`,
-		enabled, minMultiplier, maxMultiplier, testModel, accountID)
+		 SET remote_group_id = $1, remote_group_name = $2, remote_group_multiplier = $3,
+		     remote_group_synced_at = NOW(), updated_at = NOW()
+		 WHERE id = $4 AND deleted_at IS NULL`,
+		groupID, groupName, multiplier, accountID)
 	return err
+}
+
+// UpdateSub2APIOptimizeSettings 全量覆盖账号的定时优化配置（是否参与 + 倍率上限 + 测试模型）。
+// enabled 独立控制是否参与定时优化；三项配置在 enabled=false 时允许为空并照常持久化，
+// 便于用户逐项填写或关闭后保留。enabled=true 时由 service 和数据库约束保证三项均非空。
+func (r *accountRepository) UpdateSub2APIOptimizeSettings(ctx context.Context, providerID, accountID int64, enabled bool, minMultiplier, maxMultiplier *float64, testModel *string) error {
+	result, err := r.sql.ExecContext(ctx,
+		`UPDATE accounts
+		 SET sub2api_optimize_enabled = $1, sub2api_min_multiplier = $2, sub2api_max_multiplier = $3, sub2api_test_model = $4, updated_at = NOW()
+		 WHERE id = $5 AND provider_id = $6 AND provider_api_key_id IS NOT NULL AND deleted_at IS NULL`,
+		enabled, minMultiplier, maxMultiplier, testModel, accountID, providerID)
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
 }
 
 // ListByProviderID 获取关联到指定 Provider 的所有 Account（含远端分组信息）
 func (r *accountRepository) ListByProviderID(ctx context.Context, providerID int64) ([]service.Account, error) {
 	rows, err := r.sql.QueryContext(ctx, `
 		SELECT id, name, platform, status,
-		       provider_id, provider_api_key_id,
+		       provider_id, provider_api_key_id, remote_group_id,
 		       remote_group_name, remote_group_multiplier, remote_group_synced_at,
 		       sub2api_optimize_enabled, sub2api_min_multiplier, sub2api_max_multiplier, sub2api_test_model
 		  FROM accounts
@@ -76,7 +164,7 @@ func (r *accountRepository) ListByProviderID(ctx context.Context, providerID int
 	var accounts []service.Account
 	for rows.Next() {
 		var a service.Account
-		var provID, keyID sql.NullInt64
+		var provID, keyID, groupID sql.NullInt64
 		var groupName sql.NullString
 		var groupMult sql.NullFloat64
 		var groupSyncedAt sql.NullTime
@@ -86,7 +174,7 @@ func (r *accountRepository) ListByProviderID(ctx context.Context, providerID int
 		var optimizeEnabled sql.NullBool
 		if err := rows.Scan(
 			&a.ID, &a.Name, &a.Platform, &a.Status,
-			&provID, &keyID,
+			&provID, &keyID, &groupID,
 			&groupName, &groupMult, &groupSyncedAt,
 			&optimizeEnabled, &minMult, &maxMult, &testModel,
 		); err != nil {
@@ -99,6 +187,10 @@ func (r *accountRepository) ListByProviderID(ctx context.Context, providerID int
 		if keyID.Valid {
 			v := keyID.Int64
 			a.ProviderAPIKeyID = &v
+		}
+		if groupID.Valid {
+			v := groupID.Int64
+			a.RemoteGroupID = &v
 		}
 		if groupName.Valid {
 			a.RemoteGroupName = &groupName.String

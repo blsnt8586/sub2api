@@ -793,6 +793,8 @@ func registerSub2APIProviderRoutes(admin *gin.RouterGroup, h *handler.Handlers) 
 	{
 		providers.GET("", h.Admin.Sub2APIProvider.List)
 		providers.GET("/all", h.Admin.Sub2APIProvider.GetAll)
+		providers.GET("/health-overview", h.Admin.Sub2APIProvider.HealthOverview)
+		providers.GET("/remote-overviews", h.Admin.Sub2APIProvider.CachedRemoteOverviews)
 		providers.GET("/:id", h.Admin.Sub2APIProvider.GetByID)
 		providers.POST("", h.Admin.Sub2APIProvider.Create)
 		providers.PUT("/:id", h.Admin.Sub2APIProvider.Update)
@@ -801,6 +803,16 @@ func registerSub2APIProviderRoutes(admin *gin.RouterGroup, h *handler.Handlers) 
 		// 阶段2：路径探测和连接测试
 		providers.POST("/:id/detect-paths", h.Admin.Sub2APIProvider.DetectPaths)
 		providers.POST("/:id/test-connection", h.Admin.Sub2APIProvider.TestConnection)
+		providers.GET("/:id/remote-overview", h.Admin.Sub2APIProvider.RemoteOverview)
+		providers.GET("/:id/health", h.Admin.Sub2APIProvider.Health)
+		providers.GET("/:id/probe-config", h.Admin.Sub2APIProvider.GetProbeConfig)
+		providers.PUT("/:id/probe-config", h.Admin.Sub2APIProvider.UpdateProbeConfig)
+		providers.POST("/:id/probe/run", h.Admin.Sub2APIProvider.RunProbe)
+		providers.GET("/:id/probe/history", h.Admin.Sub2APIProvider.ProbeHistory)
+		providers.GET("/:id/probe-targets", h.Admin.Sub2APIProvider.ProbeTargets)
+		providers.PUT("/:id/probe-targets/:target_id", h.Admin.Sub2APIProvider.UpdateProbeTarget)
+		providers.POST("/:id/probe-targets/:target_id/run", h.Admin.Sub2APIProvider.RunProbeTarget)
+		providers.GET("/:id/probe-targets/:target_id/history", h.Admin.Sub2APIProvider.ProbeTargetHistory)
 
 		// 阶段3：Account 关联管理
 		providers.POST("/:id/link-account", h.Admin.Sub2APIProvider.LinkAccount)
@@ -813,6 +825,7 @@ func registerSub2APIProviderRoutes(admin *gin.RouterGroup, h *handler.Handlers) 
 
 		// 阶段5：定时优化配置
 		providers.GET("/:id/optimize-schedule", h.Admin.Sub2APIOptimize.Get)
+		providers.GET("/:id/optimize-logs", h.Admin.Sub2APIOptimize.ListLogs)
 		providers.PUT("/:id/optimize-schedule", h.Admin.Sub2APIOptimize.Upsert)
 		providers.DELETE("/:id/optimize-schedule", h.Admin.Sub2APIOptimize.Delete)
 		providers.POST("/:id/optimize-schedule/run", h.Admin.Sub2APIOptimize.RunNow)

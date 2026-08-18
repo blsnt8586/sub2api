@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/Wei-Shaw/sub2api/ent/sub2apioptimizelog"
 	"github.com/Wei-Shaw/sub2api/ent/sub2apioptimizeschedule"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiprovider"
 )
 
 // Sub2APIOptimizeLog is the model entity for the Sub2APIOptimizeLog schema.
@@ -23,9 +24,13 @@ type Sub2APIOptimizeLog struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
-	// 所属定时配置 ID
-	ScheduleID int64 `json:"schedule_id,omitempty"`
-	// 整体状态：success / partial / failed
+	// 所属上游 Provider ID
+	ProviderID int64 `json:"provider_id,omitempty"`
+	// 关联的定时配置 ID，可空
+	ScheduleID *int64 `json:"schedule_id,omitempty"`
+	// 触发方式：cron / schedule_now / probe_unhealthy / manual_account / manual_all / legacy
+	Trigger string `json:"trigger,omitempty"`
+	// 整体状态：success / partial / failed / skipped
 	Status string `json:"status,omitempty"`
 	// 处理账号总数
 	Total int `json:"total,omitempty"`
@@ -49,11 +54,24 @@ type Sub2APIOptimizeLog struct {
 
 // Sub2APIOptimizeLogEdges holds the relations/edges for other nodes in the graph.
 type Sub2APIOptimizeLogEdges struct {
+	// Provider holds the value of the provider edge.
+	Provider *Sub2APIProvider `json:"provider,omitempty"`
 	// Schedule holds the value of the schedule edge.
 	Schedule *Sub2APIOptimizeSchedule `json:"schedule,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
+}
+
+// ProviderOrErr returns the Provider value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e Sub2APIOptimizeLogEdges) ProviderOrErr() (*Sub2APIProvider, error) {
+	if e.Provider != nil {
+		return e.Provider, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: sub2apiprovider.Label}
+	}
+	return nil, &NotLoadedError{edge: "provider"}
 }
 
 // ScheduleOrErr returns the Schedule value or an error if the edge
@@ -61,7 +79,7 @@ type Sub2APIOptimizeLogEdges struct {
 func (e Sub2APIOptimizeLogEdges) ScheduleOrErr() (*Sub2APIOptimizeSchedule, error) {
 	if e.Schedule != nil {
 		return e.Schedule, nil
-	} else if e.loadedTypes[0] {
+	} else if e.loadedTypes[1] {
 		return nil, &NotFoundError{label: sub2apioptimizeschedule.Label}
 	}
 	return nil, &NotLoadedError{edge: "schedule"}
@@ -74,9 +92,9 @@ func (*Sub2APIOptimizeLog) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case sub2apioptimizelog.FieldDetail:
 			values[i] = new([]byte)
-		case sub2apioptimizelog.FieldID, sub2apioptimizelog.FieldScheduleID, sub2apioptimizelog.FieldTotal, sub2apioptimizelog.FieldOptimized, sub2apioptimizelog.FieldSkipped, sub2apioptimizelog.FieldFailed:
+		case sub2apioptimizelog.FieldID, sub2apioptimizelog.FieldProviderID, sub2apioptimizelog.FieldScheduleID, sub2apioptimizelog.FieldTotal, sub2apioptimizelog.FieldOptimized, sub2apioptimizelog.FieldSkipped, sub2apioptimizelog.FieldFailed:
 			values[i] = new(sql.NullInt64)
-		case sub2apioptimizelog.FieldStatus:
+		case sub2apioptimizelog.FieldTrigger, sub2apioptimizelog.FieldStatus:
 			values[i] = new(sql.NullString)
 		case sub2apioptimizelog.FieldCreatedAt, sub2apioptimizelog.FieldUpdatedAt, sub2apioptimizelog.FieldStartedAt, sub2apioptimizelog.FieldFinishedAt:
 			values[i] = new(sql.NullTime)
@@ -113,11 +131,24 @@ func (_m *Sub2APIOptimizeLog) assignValues(columns []string, values []any) error
 			} else if value.Valid {
 				_m.UpdatedAt = value.Time
 			}
+		case sub2apioptimizelog.FieldProviderID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field provider_id", values[i])
+			} else if value.Valid {
+				_m.ProviderID = value.Int64
+			}
 		case sub2apioptimizelog.FieldScheduleID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field schedule_id", values[i])
 			} else if value.Valid {
-				_m.ScheduleID = value.Int64
+				_m.ScheduleID = new(int64)
+				*_m.ScheduleID = value.Int64
+			}
+		case sub2apioptimizelog.FieldTrigger:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field trigger", values[i])
+			} else if value.Valid {
+				_m.Trigger = value.String
 			}
 		case sub2apioptimizelog.FieldStatus:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -184,6 +215,11 @@ func (_m *Sub2APIOptimizeLog) Value(name string) (ent.Value, error) {
 	return _m.selectValues.Get(name)
 }
 
+// QueryProvider queries the "provider" edge of the Sub2APIOptimizeLog entity.
+func (_m *Sub2APIOptimizeLog) QueryProvider() *Sub2APIProviderQuery {
+	return NewSub2APIOptimizeLogClient(_m.config).QueryProvider(_m)
+}
+
 // QuerySchedule queries the "schedule" edge of the Sub2APIOptimizeLog entity.
 func (_m *Sub2APIOptimizeLog) QuerySchedule() *Sub2APIOptimizeScheduleQuery {
 	return NewSub2APIOptimizeLogClient(_m.config).QuerySchedule(_m)
@@ -218,8 +254,16 @@ func (_m *Sub2APIOptimizeLog) String() string {
 	builder.WriteString("updated_at=")
 	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
-	builder.WriteString("schedule_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.ScheduleID))
+	builder.WriteString("provider_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ProviderID))
+	builder.WriteString(", ")
+	if v := _m.ScheduleID; v != nil {
+		builder.WriteString("schedule_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("trigger=")
+	builder.WriteString(_m.Trigger)
 	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(_m.Status)

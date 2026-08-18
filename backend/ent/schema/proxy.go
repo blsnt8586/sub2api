@@ -73,6 +73,9 @@ func (Proxy) Edges() []ent.Edge {
 		// accounts: 使用此代理的账户（反向边）
 		edge.From("accounts", Account.Type).
 			Ref("proxy"),
+		// sub2api_providers: 将此代理作为统一出口的上游实例（反向边）
+		edge.From("sub2api_providers", Sub2APIProvider.Type).
+			Ref("proxy"),
 		edge.To("backup_proxy", Proxy.Type).
 			Field("backup_proxy_id").
 			Unique(),

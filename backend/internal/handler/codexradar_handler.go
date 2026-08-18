@@ -43,12 +43,13 @@ func (h *CodexRadarHandler) enabled(c *gin.Context) bool {
 // codexRadarSummaryResponse 是摘要接口的响应体：第三方原始 JSON + 本平台附加的
 // 来源/署名元信息（前端据此渲染「非本站提供」免责说明与跳转链接）。
 type codexRadarSummaryResponse struct {
-	Enabled     bool   `json:"enabled"`
-	Available   bool   `json:"available"`
-	Source      string `json:"source"`      // 第三方来源站点首页
-	Attribution string `json:"attribution"` // 第三方数据署名
-	FetchedAt   string `json:"fetched_at"`  // 本平台缓存时间（RFC3339），空=尚无数据
-	Data        any    `json:"data"`        // 第三方 current.json 原样透传（json.RawMessage）
+	Enabled                bool   `json:"enabled"`
+	Available              bool   `json:"available"`
+	Source                 string `json:"source"`      // 第三方来源站点首页
+	Attribution            string `json:"attribution"` // 第三方数据署名
+	FetchedAt              string `json:"fetched_at"`  // 本平台缓存时间（RFC3339），空=尚无数据
+	RefreshIntervalSeconds int    `json:"refresh_interval_seconds"`
+	Data                   any    `json:"data"`
 }
 
 // Summary 返回缓存的第三方状态摘要 + 来源元信息。
@@ -62,12 +63,26 @@ func (h *CodexRadarHandler) Summary(c *gin.Context) {
 	snap := h.radarService.SummarySnapshot()
 
 	resp := codexRadarSummaryResponse{
-		Enabled:     true,
-		Available:   snap.Available,
-		Source:      service.CodexRadarSourceSite,
-		Attribution: service.CodexRadarAttribution,
+		Enabled:                true,
+		Available:              false,
+		Source:                 service.CodexRadarSourceSite,
+		Attribution:            service.CodexRadarAttribution,
+		RefreshIntervalSeconds: 3600,
 	}
-	if snap.Available {
+	data := h.radarService.DataSnapshot()
+	if data.Available {
+		resp.Available = true
+		resp.FetchedAt = data.FetchedAt.UTC().Format("2006-01-02T15:04:05Z07:00")
+		resp.Data = struct {
+			Recommendations json.RawMessage `json:"recommendations"`
+			Intelligence    json.RawMessage `json:"intelligence"`
+		}{
+			Recommendations: json.RawMessage(data.Recommendations),
+			Intelligence:    json.RawMessage(data.Intelligence),
+		}
+	} else if snap.Available {
+		resp.Available = true
+		// 旧 current.json 快照兼容，便于滚动升级期间已有缓存继续可读。
 		resp.FetchedAt = snap.FetchedAt.UTC().Format("2006-01-02T15:04:05Z07:00")
 		resp.Data = json.RawMessage(snap.JSON)
 	}

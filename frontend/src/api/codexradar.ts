@@ -8,7 +8,52 @@
 
 import { apiClient } from './client'
 
-/** 第三方摘要响应：原始 current.json 数据 + 本平台附加的来源/署名元信息。 */
+export interface CodexRadarRecommendationItem {
+  model?: string
+  effort?: string
+  iq?: number
+  passed?: number
+  samples?: number
+  average_cost_usd?: number
+  average_duration_minutes?: number
+  [key: string]: unknown
+}
+
+export interface CodexRadarRecommendationGroup {
+  key?: string
+  title?: string
+  rule?: string
+  items?: CodexRadarRecommendationItem[]
+  [key: string]: unknown
+}
+
+export interface CodexRadarIntelligencePoint {
+  model?: string
+  effort?: string
+  iq?: number
+  passed?: number
+  total?: number
+  average_price_usd?: number
+  average_minutes?: number
+  runs_24h?: number
+  runs_48h?: number
+  runs_total?: number
+  [key: string]: unknown
+}
+
+export interface CodexRadarData {
+  recommendations?: {
+    recommendations?: CodexRadarRecommendationGroup[]
+    [key: string]: unknown
+  }
+  intelligence?: {
+    points?: CodexRadarIntelligencePoint[]
+    [key: string]: unknown
+  }
+  [key: string]: unknown
+}
+
+/** 第三方摘要响应：两个结构化接口 + 本平台附加的来源元信息。 */
 export interface CodexRadarSummary {
   enabled: boolean
   available: boolean
@@ -18,8 +63,8 @@ export interface CodexRadarSummary {
   attribution: string
   /** 本平台缓存时间（RFC3339），空 = 尚无数据。 */
   fetched_at: string
-  /** 第三方 current.json 原样透传；结构以对方为准，弱类型消费。 */
-  data: Record<string, unknown> | null
+  refresh_interval_seconds: number
+  data: CodexRadarData | Record<string, unknown> | null
 }
 
 /** 拉取缓存的第三方状态摘要。 */

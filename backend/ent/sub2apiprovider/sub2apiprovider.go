@@ -31,10 +31,24 @@ const (
 	FieldStatus = "status"
 	// FieldNotes holds the string denoting the notes field in the database.
 	FieldNotes = "notes"
+	// FieldProxyID holds the string denoting the proxy_id field in the database.
+	FieldProxyID = "proxy_id"
 	// FieldEmail holds the string denoting the email field in the database.
 	FieldEmail = "email"
 	// FieldPasswordEncrypted holds the string denoting the password_encrypted field in the database.
 	FieldPasswordEncrypted = "password_encrypted"
+	// FieldAuthMode holds the string denoting the auth_mode field in the database.
+	FieldAuthMode = "auth_mode"
+	// FieldAccessTokenEncrypted holds the string denoting the access_token_encrypted field in the database.
+	FieldAccessTokenEncrypted = "access_token_encrypted"
+	// FieldRefreshTokenEncrypted holds the string denoting the refresh_token_encrypted field in the database.
+	FieldRefreshTokenEncrypted = "refresh_token_encrypted"
+	// FieldAccessTokenExpiresAt holds the string denoting the access_token_expires_at field in the database.
+	FieldAccessTokenExpiresAt = "access_token_expires_at"
+	// FieldLastTokenRefreshAt holds the string denoting the last_token_refresh_at field in the database.
+	FieldLastTokenRefreshAt = "last_token_refresh_at"
+	// FieldLastAuthError holds the string denoting the last_auth_error field in the database.
+	FieldLastAuthError = "last_auth_error"
 	// FieldAPIPathKeys holds the string denoting the api_path_keys field in the database.
 	FieldAPIPathKeys = "api_path_keys"
 	// FieldAPIPathGroups holds the string denoting the api_path_groups field in the database.
@@ -45,12 +59,29 @@ const (
 	FieldLastSyncStatus = "last_sync_status"
 	// FieldLastSyncError holds the string denoting the last_sync_error field in the database.
 	FieldLastSyncError = "last_sync_error"
+	// EdgeProxy holds the string denoting the proxy edge name in mutations.
+	EdgeProxy = "proxy"
 	// EdgeAccounts holds the string denoting the accounts edge name in mutations.
 	EdgeAccounts = "accounts"
 	// EdgeOptimizeSchedule holds the string denoting the optimize_schedule edge name in mutations.
 	EdgeOptimizeSchedule = "optimize_schedule"
+	// EdgeOptimizeLogs holds the string denoting the optimize_logs edge name in mutations.
+	EdgeOptimizeLogs = "optimize_logs"
+	// EdgeProbeConfig holds the string denoting the probe_config edge name in mutations.
+	EdgeProbeConfig = "probe_config"
+	// EdgeProbeRuns holds the string denoting the probe_runs edge name in mutations.
+	EdgeProbeRuns = "probe_runs"
+	// EdgeProbeTargets holds the string denoting the probe_targets edge name in mutations.
+	EdgeProbeTargets = "probe_targets"
 	// Table holds the table name of the sub2apiprovider in the database.
 	Table = "sub2api_providers"
+	// ProxyTable is the table that holds the proxy relation/edge.
+	ProxyTable = "sub2api_providers"
+	// ProxyInverseTable is the table name for the Proxy entity.
+	// It exists in this package in order to avoid circular dependency with the "proxy" package.
+	ProxyInverseTable = "proxies"
+	// ProxyColumn is the table column denoting the proxy relation/edge.
+	ProxyColumn = "proxy_id"
 	// AccountsTable is the table that holds the accounts relation/edge.
 	AccountsTable = "accounts"
 	// AccountsInverseTable is the table name for the Account entity.
@@ -65,6 +96,34 @@ const (
 	OptimizeScheduleInverseTable = "sub2api_optimize_schedules"
 	// OptimizeScheduleColumn is the table column denoting the optimize_schedule relation/edge.
 	OptimizeScheduleColumn = "provider_id"
+	// OptimizeLogsTable is the table that holds the optimize_logs relation/edge.
+	OptimizeLogsTable = "sub2api_optimize_logs"
+	// OptimizeLogsInverseTable is the table name for the Sub2APIOptimizeLog entity.
+	// It exists in this package in order to avoid circular dependency with the "sub2apioptimizelog" package.
+	OptimizeLogsInverseTable = "sub2api_optimize_logs"
+	// OptimizeLogsColumn is the table column denoting the optimize_logs relation/edge.
+	OptimizeLogsColumn = "provider_id"
+	// ProbeConfigTable is the table that holds the probe_config relation/edge.
+	ProbeConfigTable = "sub2api_provider_probe_configs"
+	// ProbeConfigInverseTable is the table name for the Sub2APIProviderProbeConfig entity.
+	// It exists in this package in order to avoid circular dependency with the "sub2apiproviderprobeconfig" package.
+	ProbeConfigInverseTable = "sub2api_provider_probe_configs"
+	// ProbeConfigColumn is the table column denoting the probe_config relation/edge.
+	ProbeConfigColumn = "provider_id"
+	// ProbeRunsTable is the table that holds the probe_runs relation/edge.
+	ProbeRunsTable = "sub2api_provider_probe_runs"
+	// ProbeRunsInverseTable is the table name for the Sub2APIProviderProbeRun entity.
+	// It exists in this package in order to avoid circular dependency with the "sub2apiproviderproberun" package.
+	ProbeRunsInverseTable = "sub2api_provider_probe_runs"
+	// ProbeRunsColumn is the table column denoting the probe_runs relation/edge.
+	ProbeRunsColumn = "provider_id"
+	// ProbeTargetsTable is the table that holds the probe_targets relation/edge.
+	ProbeTargetsTable = "sub2api_provider_probe_targets"
+	// ProbeTargetsInverseTable is the table name for the Sub2APIProviderProbeTarget entity.
+	// It exists in this package in order to avoid circular dependency with the "sub2apiproviderprobetarget" package.
+	ProbeTargetsInverseTable = "sub2api_provider_probe_targets"
+	// ProbeTargetsColumn is the table column denoting the probe_targets relation/edge.
+	ProbeTargetsColumn = "provider_id"
 )
 
 // Columns holds all SQL columns for sub2apiprovider fields.
@@ -78,8 +137,15 @@ var Columns = []string{
 	FieldProviderType,
 	FieldStatus,
 	FieldNotes,
+	FieldProxyID,
 	FieldEmail,
 	FieldPasswordEncrypted,
+	FieldAuthMode,
+	FieldAccessTokenEncrypted,
+	FieldRefreshTokenEncrypted,
+	FieldAccessTokenExpiresAt,
+	FieldLastTokenRefreshAt,
+	FieldLastAuthError,
 	FieldAPIPathKeys,
 	FieldAPIPathGroups,
 	FieldLastSyncAt,
@@ -125,8 +191,12 @@ var (
 	StatusValidator func(string) error
 	// EmailValidator is a validator for the "email" field. It is called by the builders before save.
 	EmailValidator func(string) error
-	// PasswordEncryptedValidator is a validator for the "password_encrypted" field. It is called by the builders before save.
-	PasswordEncryptedValidator func(string) error
+	// DefaultPasswordEncrypted holds the default value on creation for the "password_encrypted" field.
+	DefaultPasswordEncrypted string
+	// DefaultAuthMode holds the default value on creation for the "auth_mode" field.
+	DefaultAuthMode string
+	// AuthModeValidator is a validator for the "auth_mode" field. It is called by the builders before save.
+	AuthModeValidator func(string) error
 	// APIPathKeysValidator is a validator for the "api_path_keys" field. It is called by the builders before save.
 	APIPathKeysValidator func(string) error
 	// APIPathGroupsValidator is a validator for the "api_path_groups" field. It is called by the builders before save.
@@ -183,6 +253,11 @@ func ByNotes(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldNotes, opts...).ToFunc()
 }
 
+// ByProxyID orders the results by the proxy_id field.
+func ByProxyID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldProxyID, opts...).ToFunc()
+}
+
 // ByEmail orders the results by the email field.
 func ByEmail(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldEmail, opts...).ToFunc()
@@ -191,6 +266,36 @@ func ByEmail(opts ...sql.OrderTermOption) OrderOption {
 // ByPasswordEncrypted orders the results by the password_encrypted field.
 func ByPasswordEncrypted(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPasswordEncrypted, opts...).ToFunc()
+}
+
+// ByAuthMode orders the results by the auth_mode field.
+func ByAuthMode(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAuthMode, opts...).ToFunc()
+}
+
+// ByAccessTokenEncrypted orders the results by the access_token_encrypted field.
+func ByAccessTokenEncrypted(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAccessTokenEncrypted, opts...).ToFunc()
+}
+
+// ByRefreshTokenEncrypted orders the results by the refresh_token_encrypted field.
+func ByRefreshTokenEncrypted(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRefreshTokenEncrypted, opts...).ToFunc()
+}
+
+// ByAccessTokenExpiresAt orders the results by the access_token_expires_at field.
+func ByAccessTokenExpiresAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAccessTokenExpiresAt, opts...).ToFunc()
+}
+
+// ByLastTokenRefreshAt orders the results by the last_token_refresh_at field.
+func ByLastTokenRefreshAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLastTokenRefreshAt, opts...).ToFunc()
+}
+
+// ByLastAuthError orders the results by the last_auth_error field.
+func ByLastAuthError(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLastAuthError, opts...).ToFunc()
 }
 
 // ByAPIPathKeys orders the results by the api_path_keys field.
@@ -218,6 +323,13 @@ func ByLastSyncError(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLastSyncError, opts...).ToFunc()
 }
 
+// ByProxyField orders the results by proxy field.
+func ByProxyField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newProxyStep(), sql.OrderByField(field, opts...))
+	}
+}
+
 // ByAccountsCount orders the results by accounts count.
 func ByAccountsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -238,6 +350,62 @@ func ByOptimizeScheduleField(field string, opts ...sql.OrderTermOption) OrderOpt
 		sqlgraph.OrderByNeighborTerms(s, newOptimizeScheduleStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByOptimizeLogsCount orders the results by optimize_logs count.
+func ByOptimizeLogsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newOptimizeLogsStep(), opts...)
+	}
+}
+
+// ByOptimizeLogs orders the results by optimize_logs terms.
+func ByOptimizeLogs(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newOptimizeLogsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByProbeConfigField orders the results by probe_config field.
+func ByProbeConfigField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newProbeConfigStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// ByProbeRunsCount orders the results by probe_runs count.
+func ByProbeRunsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newProbeRunsStep(), opts...)
+	}
+}
+
+// ByProbeRuns orders the results by probe_runs terms.
+func ByProbeRuns(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newProbeRunsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByProbeTargetsCount orders the results by probe_targets count.
+func ByProbeTargetsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newProbeTargetsStep(), opts...)
+	}
+}
+
+// ByProbeTargets orders the results by probe_targets terms.
+func ByProbeTargets(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newProbeTargetsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+func newProxyStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ProxyInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, ProxyTable, ProxyColumn),
+	)
+}
 func newAccountsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -250,5 +418,33 @@ func newOptimizeScheduleStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(OptimizeScheduleInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2O, false, OptimizeScheduleTable, OptimizeScheduleColumn),
+	)
+}
+func newOptimizeLogsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(OptimizeLogsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, OptimizeLogsTable, OptimizeLogsColumn),
+	)
+}
+func newProbeConfigStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ProbeConfigInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, false, ProbeConfigTable, ProbeConfigColumn),
+	)
+}
+func newProbeRunsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ProbeRunsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ProbeRunsTable, ProbeRunsColumn),
+	)
+}
+func newProbeTargetsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ProbeTargetsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ProbeTargetsTable, ProbeTargetsColumn),
 	)
 }

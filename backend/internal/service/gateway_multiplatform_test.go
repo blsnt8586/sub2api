@@ -253,7 +253,7 @@ func (m *mockAccountRepoForPlatform) ListByProviderID(ctx context.Context, provi
 	return nil, nil
 }
 
-func (m *mockAccountRepoForPlatform) UpdateSub2APIOptimizeSettings(ctx context.Context, accountID int64, enabled bool, minMultiplier, maxMultiplier *float64, testModel *string) error {
+func (m *mockAccountRepoForPlatform) UpdateSub2APIOptimizeSettings(ctx context.Context, providerID, accountID int64, enabled bool, minMultiplier, maxMultiplier *float64, testModel *string) error {
 	return nil
 }
 

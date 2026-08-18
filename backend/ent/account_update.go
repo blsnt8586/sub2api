@@ -16,6 +16,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/predicate"
 	"github.com/Wei-Shaw/sub2api/ent/proxy"
 	"github.com/Wei-Shaw/sub2api/ent/sub2apiprovider"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiproviderprobetarget"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
 )
 
@@ -578,6 +579,33 @@ func (_u *AccountUpdate) ClearProviderAPIKeyID() *AccountUpdate {
 	return _u
 }
 
+// SetRemoteGroupID sets the "remote_group_id" field.
+func (_u *AccountUpdate) SetRemoteGroupID(v int64) *AccountUpdate {
+	_u.mutation.ResetRemoteGroupID()
+	_u.mutation.SetRemoteGroupID(v)
+	return _u
+}
+
+// SetNillableRemoteGroupID sets the "remote_group_id" field if the given value is not nil.
+func (_u *AccountUpdate) SetNillableRemoteGroupID(v *int64) *AccountUpdate {
+	if v != nil {
+		_u.SetRemoteGroupID(*v)
+	}
+	return _u
+}
+
+// AddRemoteGroupID adds value to the "remote_group_id" field.
+func (_u *AccountUpdate) AddRemoteGroupID(v int64) *AccountUpdate {
+	_u.mutation.AddRemoteGroupID(v)
+	return _u
+}
+
+// ClearRemoteGroupID clears the value of the "remote_group_id" field.
+func (_u *AccountUpdate) ClearRemoteGroupID() *AccountUpdate {
+	_u.mutation.ClearRemoteGroupID()
+	return _u
+}
+
 // SetRemoteGroupName sets the "remote_group_name" field.
 func (_u *AccountUpdate) SetRemoteGroupName(v string) *AccountUpdate {
 	_u.mutation.SetRemoteGroupName(v)
@@ -841,6 +869,21 @@ func (_u *AccountUpdate) SetProvider(v *Sub2APIProvider) *AccountUpdate {
 	return _u.SetProviderID(v.ID)
 }
 
+// AddSub2apiProbeTargetIDs adds the "sub2api_probe_targets" edge to the Sub2APIProviderProbeTarget entity by IDs.
+func (_u *AccountUpdate) AddSub2apiProbeTargetIDs(ids ...int64) *AccountUpdate {
+	_u.mutation.AddSub2apiProbeTargetIDs(ids...)
+	return _u
+}
+
+// AddSub2apiProbeTargets adds the "sub2api_probe_targets" edges to the Sub2APIProviderProbeTarget entity.
+func (_u *AccountUpdate) AddSub2apiProbeTargets(v ...*Sub2APIProviderProbeTarget) *AccountUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddSub2apiProbeTargetIDs(ids...)
+}
+
 // Mutation returns the AccountMutation object of the builder.
 func (_u *AccountUpdate) Mutation() *AccountMutation {
 	return _u.mutation
@@ -925,6 +968,27 @@ func (_u *AccountUpdate) RemoveUsageLogs(v ...*UsageLog) *AccountUpdate {
 func (_u *AccountUpdate) ClearProvider() *AccountUpdate {
 	_u.mutation.ClearProvider()
 	return _u
+}
+
+// ClearSub2apiProbeTargets clears all "sub2api_probe_targets" edges to the Sub2APIProviderProbeTarget entity.
+func (_u *AccountUpdate) ClearSub2apiProbeTargets() *AccountUpdate {
+	_u.mutation.ClearSub2apiProbeTargets()
+	return _u
+}
+
+// RemoveSub2apiProbeTargetIDs removes the "sub2api_probe_targets" edge to Sub2APIProviderProbeTarget entities by IDs.
+func (_u *AccountUpdate) RemoveSub2apiProbeTargetIDs(ids ...int64) *AccountUpdate {
+	_u.mutation.RemoveSub2apiProbeTargetIDs(ids...)
+	return _u
+}
+
+// RemoveSub2apiProbeTargets removes "sub2api_probe_targets" edges to Sub2APIProviderProbeTarget entities.
+func (_u *AccountUpdate) RemoveSub2apiProbeTargets(v ...*Sub2APIProviderProbeTarget) *AccountUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveSub2apiProbeTargetIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -1175,6 +1239,15 @@ func (_u *AccountUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.ProviderAPIKeyIDCleared() {
 		_spec.ClearField(account.FieldProviderAPIKeyID, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.RemoteGroupID(); ok {
+		_spec.SetField(account.FieldRemoteGroupID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedRemoteGroupID(); ok {
+		_spec.AddField(account.FieldRemoteGroupID, field.TypeInt64, value)
+	}
+	if _u.mutation.RemoteGroupIDCleared() {
+		_spec.ClearField(account.FieldRemoteGroupID, field.TypeInt64)
 	}
 	if value, ok := _u.mutation.RemoteGroupName(); ok {
 		_spec.SetField(account.FieldRemoteGroupName, field.TypeString, value)
@@ -1454,6 +1527,51 @@ func (_u *AccountUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(sub2apiprovider.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.Sub2apiProbeTargetsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   account.Sub2apiProbeTargetsTable,
+			Columns: []string{account.Sub2apiProbeTargetsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiproviderprobetarget.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSub2apiProbeTargetsIDs(); len(nodes) > 0 && !_u.mutation.Sub2apiProbeTargetsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   account.Sub2apiProbeTargetsTable,
+			Columns: []string{account.Sub2apiProbeTargetsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiproviderprobetarget.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.Sub2apiProbeTargetsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   account.Sub2apiProbeTargetsTable,
+			Columns: []string{account.Sub2apiProbeTargetsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiproviderprobetarget.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -2027,6 +2145,33 @@ func (_u *AccountUpdateOne) ClearProviderAPIKeyID() *AccountUpdateOne {
 	return _u
 }
 
+// SetRemoteGroupID sets the "remote_group_id" field.
+func (_u *AccountUpdateOne) SetRemoteGroupID(v int64) *AccountUpdateOne {
+	_u.mutation.ResetRemoteGroupID()
+	_u.mutation.SetRemoteGroupID(v)
+	return _u
+}
+
+// SetNillableRemoteGroupID sets the "remote_group_id" field if the given value is not nil.
+func (_u *AccountUpdateOne) SetNillableRemoteGroupID(v *int64) *AccountUpdateOne {
+	if v != nil {
+		_u.SetRemoteGroupID(*v)
+	}
+	return _u
+}
+
+// AddRemoteGroupID adds value to the "remote_group_id" field.
+func (_u *AccountUpdateOne) AddRemoteGroupID(v int64) *AccountUpdateOne {
+	_u.mutation.AddRemoteGroupID(v)
+	return _u
+}
+
+// ClearRemoteGroupID clears the value of the "remote_group_id" field.
+func (_u *AccountUpdateOne) ClearRemoteGroupID() *AccountUpdateOne {
+	_u.mutation.ClearRemoteGroupID()
+	return _u
+}
+
 // SetRemoteGroupName sets the "remote_group_name" field.
 func (_u *AccountUpdateOne) SetRemoteGroupName(v string) *AccountUpdateOne {
 	_u.mutation.SetRemoteGroupName(v)
@@ -2290,6 +2435,21 @@ func (_u *AccountUpdateOne) SetProvider(v *Sub2APIProvider) *AccountUpdateOne {
 	return _u.SetProviderID(v.ID)
 }
 
+// AddSub2apiProbeTargetIDs adds the "sub2api_probe_targets" edge to the Sub2APIProviderProbeTarget entity by IDs.
+func (_u *AccountUpdateOne) AddSub2apiProbeTargetIDs(ids ...int64) *AccountUpdateOne {
+	_u.mutation.AddSub2apiProbeTargetIDs(ids...)
+	return _u
+}
+
+// AddSub2apiProbeTargets adds the "sub2api_probe_targets" edges to the Sub2APIProviderProbeTarget entity.
+func (_u *AccountUpdateOne) AddSub2apiProbeTargets(v ...*Sub2APIProviderProbeTarget) *AccountUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddSub2apiProbeTargetIDs(ids...)
+}
+
 // Mutation returns the AccountMutation object of the builder.
 func (_u *AccountUpdateOne) Mutation() *AccountMutation {
 	return _u.mutation
@@ -2374,6 +2534,27 @@ func (_u *AccountUpdateOne) RemoveUsageLogs(v ...*UsageLog) *AccountUpdateOne {
 func (_u *AccountUpdateOne) ClearProvider() *AccountUpdateOne {
 	_u.mutation.ClearProvider()
 	return _u
+}
+
+// ClearSub2apiProbeTargets clears all "sub2api_probe_targets" edges to the Sub2APIProviderProbeTarget entity.
+func (_u *AccountUpdateOne) ClearSub2apiProbeTargets() *AccountUpdateOne {
+	_u.mutation.ClearSub2apiProbeTargets()
+	return _u
+}
+
+// RemoveSub2apiProbeTargetIDs removes the "sub2api_probe_targets" edge to Sub2APIProviderProbeTarget entities by IDs.
+func (_u *AccountUpdateOne) RemoveSub2apiProbeTargetIDs(ids ...int64) *AccountUpdateOne {
+	_u.mutation.RemoveSub2apiProbeTargetIDs(ids...)
+	return _u
+}
+
+// RemoveSub2apiProbeTargets removes "sub2api_probe_targets" edges to Sub2APIProviderProbeTarget entities.
+func (_u *AccountUpdateOne) RemoveSub2apiProbeTargets(v ...*Sub2APIProviderProbeTarget) *AccountUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveSub2apiProbeTargetIDs(ids...)
 }
 
 // Where appends a list predicates to the AccountUpdate builder.
@@ -2655,6 +2836,15 @@ func (_u *AccountUpdateOne) sqlSave(ctx context.Context) (_node *Account, err er
 	if _u.mutation.ProviderAPIKeyIDCleared() {
 		_spec.ClearField(account.FieldProviderAPIKeyID, field.TypeInt64)
 	}
+	if value, ok := _u.mutation.RemoteGroupID(); ok {
+		_spec.SetField(account.FieldRemoteGroupID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedRemoteGroupID(); ok {
+		_spec.AddField(account.FieldRemoteGroupID, field.TypeInt64, value)
+	}
+	if _u.mutation.RemoteGroupIDCleared() {
+		_spec.ClearField(account.FieldRemoteGroupID, field.TypeInt64)
+	}
 	if value, ok := _u.mutation.RemoteGroupName(); ok {
 		_spec.SetField(account.FieldRemoteGroupName, field.TypeString, value)
 	}
@@ -2933,6 +3123,51 @@ func (_u *AccountUpdateOne) sqlSave(ctx context.Context) (_node *Account, err er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(sub2apiprovider.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.Sub2apiProbeTargetsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   account.Sub2apiProbeTargetsTable,
+			Columns: []string{account.Sub2apiProbeTargetsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiproviderprobetarget.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSub2apiProbeTargetsIDs(); len(nodes) > 0 && !_u.mutation.Sub2apiProbeTargetsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   account.Sub2apiProbeTargetsTable,
+			Columns: []string{account.Sub2apiProbeTargetsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiproviderprobetarget.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.Sub2apiProbeTargetsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   account.Sub2apiProbeTargetsTable,
+			Columns: []string{account.Sub2apiProbeTargetsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiproviderprobetarget.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

@@ -339,6 +339,45 @@ DI 用 google/wire，新增 provider **必须**在对应 wire.go 注册，否则
 - `api/admin/sub2apiProviders.ts`、`utils/sub2apiValidation.ts`
 - 路由 `router/index.ts`、侧边栏 `AppSidebar.vue` 各加一项
 
+### 4.4 篡改猴浏览器凭据导入
+
+- `frontend/public/sub2api-credential-exporter.user.js`：在已登录的现有 Sub2API 页面读取标准
+  `auth_token` / `refresh_token` / `auth_user` localStorage，并在用户点击确认后导出版本化 JSON。
+  脚本同时捕获当前域可读取的 Cookie；`GM_cookie.list` 不可用时回退 `document.cookie`，不发起
+  跨域请求，也不把凭据上传到任何服务。
+- 导出后打开站内凭据面板：明确显示 AT/RT 状态，最多展示 5 条 Cookie 名称、域名、路径和安全
+  标记（不展示值），由用户点击按钮复制完整 JSON。剪贴板权限失败时可展开 JSON 手动复制。
+- Sub2API 普通登录态主要保存在 localStorage Token 对中；导出结果为 0 个 Cookie 是合法状态，
+  不影响 Token 对导入。Tampermonkey 稳定版也可能无法读取 HttpOnly Cookie。
+- `frontend/src/utils/sub2apiCredentialBundle.ts`：严格校验格式版本、来源 Origin、包大小和 Token
+  完整性。解析结果只暴露 Token 对、来源和 Cookie 数量，不暴露 Cookie 值。
+- `frontend/src/components/admin/Sub2APICredentialBundleImport.vue`：上游表单中的安装/导入入口。
+  导入后回填现有 `token_pair` 认证字段；原始 JSON 立即清空，Cookie 不进入保存请求或数据库。
+- Refresh Token 会轮换。应使用专用或临时浏览器会话导出并在导入后关闭，避免浏览器和 Provider
+  管理端并发刷新同一枚 RT。此能力不是新的上游授权协议，上游无需增加回调或私有 API。
+- Cloudflare Cookie 通常绑定浏览器 IP、User-Agent 和挑战状态。复制 Cookie 不能保证生产服务器
+  绕过 Cloudflare；Token 对只能免去交互式登录，后续 API 路径仍须允许服务器出口访问。
+
+### 4.5 上游账户余额与远程分组倍率
+
+吸收 `worryzyy/upstream-hub` 的余额/倍率监控思路，但复用本项目已有的 Provider token pair、
+Refresh Token 轮换、Cloudflare 错误分类和管理面板，不引入它的 GORM channel/session 模型。
+详细源码对比和分阶段方案见 `docs/UPSTREAM_HUB_INTEGRATION_ANALYSIS.md`。
+
+- 后端 `GET /api/v1/admin/sub2api-providers/:id/remote-overview`：管理员主动实时读取并刷新 Redis；
+  `GET /api/v1/admin/sub2api-providers/remote-overviews?ids=...` 批量读取本地快照，不访问上游。
+- `pkg/sub2api/client.go`：通过 `/api/v1/auth/me` 读取上游登录账户余额，通过
+  `/api/v1/groups/rates` 读取用户专属倍率。
+- `service/sub2api_provider_service.go`：把专属倍率与已探测的 groups path 返回结果合并；
+  专属倍率接口不可用时保留余额和分组，并回退分组默认倍率。
+- 平台连接探针复用同一个已认证 Client 和 Groups 自动采集资产；Redis 仅保存最新成功快照与
+  最近一次采集结果，TTL 24 小时。采集失败保留旧快照，且不影响平台健康状态。
+- `Sub2APIProviderCard.vue`：卡片只显示余额、可见分组数和倍率范围；完整目录在独立对话框。
+- 该数据是 Provider 登录账户的商业信息，不是账号真实模型可用性的证据，不能参与健康状态判断
+  或自动触发分组切换。
+- 第一阶段无 Ent schema、无 SQL migration、无独立定时任务，只复用平台连接探针周期，不影响
+  现有生产数据；后续余额历史、倍率变化和通知必须另建独立表并先做旧库迁移演练。
+
 ---
 
 ## 五、部署改动
@@ -414,25 +453,23 @@ cd backend && make build            # 产出 backend/bin/server
 
 ## 五之三、Codex 雷达（第三方数据代理，功能块 F）
 
-用户端 + 管理端共用一个页面，展示第三方社区站点 codexradar.com 的 Codex 观测数据（额度重置窗口、24/48h 预测、降智分、漫画摘要图）。本平台仅做代理缓存 + 署名转载，页面醒目标注「数据非本站提供、来源第三方」并提供跳转原站的详情链接。**默认关闭（opt-in）**，第三方数据来源需管理员显式启用。
+用户端 + 管理端共用一个页面，展示第三方社区站点 codexradar.com 的「站长推荐」和「综合智能」数据。本平台仅做代理缓存 + 署名转载，页面醒目标注「数据非本站提供、来源第三方」并提供跳转原站的详情链接。**默认关闭（opt-in）**，第三方数据来源需管理员显式启用。
 
 ### F.1 设计要点
 
-- **数据源**：图用稳定别名 `https://codexradar.com/assets/radar-high-readout-comic.png`（无时间戳，日更两次，CDN 4h 缓存）；摘要用公开 `https://codexradar.com/current.json`（`CORS:*`）。完整 API `/api/v1/current` 需授权（401），不使用。
-- **后端代理缓存**：不让终端用户浏览器直连第三方（省对方带宽、不受其抖动影响、图走本平台域名）。进程内 `atomic.Value` 缓存，30 分钟 TTL。
-- **图片后端优化（治大图跨境下载慢）**：源站漫画图约 2.2MB，跨境链路下载可达十余秒。拉取时在后端一次性 `optimizeCodexRadarImage`：若最长边超过 1080px 则等比缩放（绝不放大）+ 在 JPEG(q82)/PNG 里取更小的一份，通常压到几百 KB。优化只在拉取时做（不在请求热路径），任何解码/编码失败都原样透传原图（绝不因优化丢图）。`ETag` 改由**优化后字节内容**派生（`weakETag`，`W/"<sha256前16位>"`），内容不变则值稳定、支持 304。用 `x/image/draw`（CatmullRom，纯 Go，不破坏 `CGO_ENABLED=0` 静态编译）；JPEG 编码铺白底避免源图透明通道变黑。
+- **数据源**：仅代理原站两个公开结构化接口：`https://codexradar.com/api/radar-insights`（站长推荐）和 `https://codexradar.com/api/intelligence-efficiency-metrics`（综合智能）。不再采集原站图片、`current.json`、社区体感分、额度/Fast 雷达等其他区域。
+- **后端代理缓存**：不让终端用户浏览器直连第三方；进程内 `atomic.Value` 缓存，1 小时 TTL。
 - **懒加载 + stale-while-revalidate**：请求命中时按需刷新；缓存过期时先返回旧数据、后台异步刷新，不阻塞请求；失败按 30s 节流，绝不打爆对方。
-- **定时预热（治冷启动加载失败）**：cron `0 7-15 * * *`（时区取 `cfg.Timezone`，默认 Asia/Shanghai），07:00–15:00 每小时整点各拉一次（共 9 次），整点覆盖对方两段日更期（上午 7–9 / 下午 13–15）；另在进程启动后延迟 5s 做一次启动预热，治「重启后缓存空、首个用户吃 30s 同步阻塞导致前端超时/404」。预热走 `forceRefresh`（绕 TTL，仍受 singleflight + 30s 节流保护），且**仅在功能开关开启时**才拉取第三方（关闭时 cron 触发即跳过，不打对方）。与上游解耦：只注入「功能是否开启」只读回调 + 时区，不持有 `SettingService` 引用。
-- **鉴权**：图片接口需 JWT（Bearer 头），故前端用 axios 拉 blob → `URL.createObjectURL`，而非 `<img src>`（后者带不了 Authorization 头）。
-- **合规**：对方 `current.json` 要求署名「数据来自 Codex 雷达 codexradar.com」，接口 + 页面均已带；「二次开发使用需授权」一节由用户自行决定是否走对方授权流程，代码侧仅做免责标注 + 署名。
+- **定时预热（治冷启动加载失败）**：cron `0 * * * *`（时区取 `cfg.Timezone`，默认 Asia/Shanghai）每小时整点拉取；另在进程启动后延迟 5s 做一次启动预热。预热仅在功能开关开启时执行，与上游解耦。
+- **合规**：接口和页面均带署名「数据来自 Codex 雷达 codexradar.com」及原站链接；不采集用户私密数据。
 
 ### F.2 新增文件（零上游依赖，直接保留）
 
-- `backend/internal/service/codexradar_service.go` — 核心：`NewCodexRadarService`、`EnsureFresh`（懒加载+SWR）、`ImageSnapshot`/`SummarySnapshot`（只读快照）、`ConfigureScheduler`/`Start`/`Stop`/`warmup`/`forceRefresh`（定时预热）、`optimizeCodexRadarImage`/`weakETag`（图片压缩 + 内容派生 ETag）。仅引用 stdlib + `singleflight` + `robfig/cron` + `x/image/draw`，零上游符号；定时预热只依赖一个「功能是否开启」的只读回调，与 `SettingService` 解耦。
+- `backend/internal/service/codexradar_service.go` — 核心：`NewCodexRadarService`、`EnsureFresh`（懒加载+SWR）、`DataSnapshot`（两个 JSON 快照）、`ConfigureScheduler`/`Start`/`Stop`/`warmup`/`forceRefresh`（每小时预热）。
 - `backend/internal/service/codexradar_service_test.go` — 10 用例（拉取缓存/空态/SWR/上游报错保留旧数据 + 预热开关关闭跳过/开启拉取/forceRefresh 绕过 TTL/Start-Stop 幂等 + 图片缩放变小/非图透传）。
 - `backend/internal/handler/codexradar_handler.go` — `Image`（ETag 协商缓存 + 私有 1h 缓存，源站日更两次）、`Summary`（原始 JSON + source/attribution/fetched_at 元信息）。开关关闭返回 403。
-- `frontend/src/api/codexradar.ts` — `getCodexRadarSummary` + `fetchCodexRadarImageObjectURL`。
-- `frontend/src/views/user/CodexRadarView.vue` — 页面：头部 + 免责说明块（跳转原站）+ 关键指标卡片 + 漫画图 + 底部署名。
+- `frontend/src/api/codexradar.ts` — `getCodexRadarSummary` 及两类数据类型。
+- `frontend/src/views/user/CodexRadarView.vue` — 页面：站长推荐/综合智能两块数据看板、每小时自动刷新、加载/失败/空数据状态和来源署名。
 
 ### F.3 上游钩子
 
@@ -451,7 +488,7 @@ cd backend && make build            # 产出 backend/bin/server
 
 ### F.5 恢复要点（换机/重装）
 
-全部为新增文件 + opt-in 开关，上游同步几乎不冲突。若 `wire_gen.go` 被 `make generate` 覆盖，只需重新补 `codexRadarService`（用 `ProvideCodexRadarService(settingService, configConfig)`）/`codexRadarHandler` 两行构造 + `ProvideHandlers` 传参（见 F.3）——不涉及 `provideCleanup`。功能默认关闭，启用入口：系统设置 > 功能开关 > Codex 雷达。定时预热仅在开关开启时拉取第三方，07:00–15:00 每小时整点各一次（时区取 `config.timezone`，默认 Asia/Shanghai）。
+全部为新增文件 + opt-in 开关，上游同步几乎不冲突。若 `wire_gen.go` 被 `make generate` 覆盖，只需重新补 `codexRadarService`（用 `ProvideCodexRadarService(settingService, configConfig)`）/`codexRadarHandler` 两行构造 + `ProvideHandlers` 传参（见 F.3）——不涉及 `provideCleanup`。功能默认关闭，启用入口：系统设置 > 功能开关 > Codex 雷达。定时预热仅在开关开启时拉取第三方，每小时整点一次（时区取 `config.timezone`，默认 Asia/Shanghai），缓存 TTL 同为 1 小时。
 
 ---
 
@@ -527,6 +564,7 @@ fork 初期散落的平台分支（jimeng/grok 等）遍布 41 个文件，每�
 ### 🟢 LOW — 一般无冲突（fork 新增文件为主）
 
 - Sub2API 管理全套文件（`sub2api_provider*`、`sub2api_optimize*`）— 上游未涉及，直接保留
+- 上游管理日志强制保留 3 天：`Sub2APIProviderProbeRunner` 启动后及每小时通过独立 leader lock 分批物理删除 `sub2api_provider_probe_runs`、`sub2api_provider_probe_target_runs`、`sub2api_optimize_logs` 中 `created_at < now-72h` 的记录；同步时须保留 `DeleteUpstreamLogsBefore` 及其 runner 调用
 - AVI2API 客户端（`pkg/avi2api/`、`jimeng_video_*.go`、`jimeng_audio_service.go`、`avi2api_image_service.go`）— 新增文件，直接保留
 - **OpenAI/Codex 全局 system prompt 注入**（功能块 E）：核心逻辑全在新增文件 `openai_system_prompt_inject.go`(+test)，只引用自身符号 + stdlib/gjson/sjson，零上游依赖，直接保留
 - 设置存储链路（功能块 E 的 setting 接入）：`domain_constants.go` / `settings_view.go` / `setting_parse.go` / `setting_update.go` / `dto/settings.go` / `setting_handler{,_update,_audit}.go` 各 2~16 行**纯新增**，与 Claude OAuth/Codex UA 等既有设置同模式；追加式改动，冲突概率低，冲突时照抄相邻设置的写法即可

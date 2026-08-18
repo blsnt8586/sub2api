@@ -37,30 +37,31 @@ import (
 )
 
 const (
-	// CodexRadarImageURL 是「漫画摘要图」的稳定别名（无时间戳，日更两次，CDN 4h 缓存）。
-	CodexRadarImageURL = "https://codexradar.com/assets/radar-high-readout-comic.png"
-	// CodexRadarSummaryURL 是公开结构化状态 JSON（重置窗口 / 24-48h 预测 / 降智分等）。
-	CodexRadarSummaryURL = "https://codexradar.com/current.json"
+	// CodexRadarRecommendationsURL 是原站「站长推荐」数据接口。
+	CodexRadarRecommendationsURL = "https://codexradar.com/api/radar-insights"
+	// CodexRadarIntelligenceURL 是原站「综合智能」数据接口。
+	CodexRadarIntelligenceURL = "https://codexradar.com/api/intelligence-efficiency-metrics"
+	// 旧接口常量仅供兼容旧测试/调用方；默认服务不再抓取图片和 current.json。
+	CodexRadarImageURL   = ""
+	CodexRadarSummaryURL = ""
 	// CodexRadarSourceSite 第三方来源站点首页（用于前端「详情查看」跳转）。
 	CodexRadarSourceSite = "https://codexradar.com"
-	// CodexRadarAttribution 第三方数据署名（对方 current.json 要求的 attribution_text）。
+	// CodexRadarAttribution 第三方数据署名。
 	CodexRadarAttribution = "数据来自 Codex 雷达 codexradar.com"
 
-	// codexRadarCacheTTL 缓存新鲜期：对方日更两次，30 分钟足够及时且对对方很友好。
-	codexRadarCacheTTL = 30 * time.Minute
+	// codexRadarCacheTTL 缓存新鲜期：与本平台每小时同步周期一致。
+	codexRadarCacheTTL = time.Hour
 	// codexRadarMinRetry 拉取失败时的最小重试间隔，避免上游抖动时打爆对方。
 	codexRadarMinRetry = 30 * time.Second
-	// codexRadarFetchTimeout 单次拉取超时（图约 2.3MB）。
+	// codexRadarFetchTimeout 单次结构化数据拉取超时。
 	codexRadarFetchTimeout = 30 * time.Second
 	// codexRadarMaxImageBytes 图片大小上限（防御异常大响应），10MB。
 	codexRadarMaxImageBytes = 10 << 20
 	// codexRadarMaxSummaryBytes 摘要 JSON 大小上限，2MB。
 	codexRadarMaxSummaryBytes = 2 << 20
 
-	// codexRadarWarmupSchedule 定时预热计划：07:00–15:00 每小时整点各拉一次（共 9 次）。
-	// 对方日更两次（上午 7–9、下午 13–15），此窗口整点覆盖两段更新期且对对方友好。
-	// 5 段 cron：分 时 日 月 周。
-	codexRadarWarmupSchedule = "0 7-15 * * *"
+	// codexRadarWarmupSchedule 每小时整点刷新（5 段 cron：分 时 日 月 周）。
+	codexRadarWarmupSchedule = "0 * * * *"
 	// codexRadarStartupDelay 启动预热延迟：给 DB/迁移留出就绪时间后再读开关并拉取一次，
 	// 解决「进程重启后缓存为空、首个用户吃冷启动阻塞」的问题。
 	codexRadarStartupDelay = 5 * time.Second
@@ -77,12 +78,14 @@ const (
 
 // codexRadarSnapshot 是进程内缓存的一份不可变快照，通过 atomic.Value 零锁读取。
 type codexRadarSnapshot struct {
-	imageBytes   []byte
-	imageType    string
-	imageETag    string
-	summaryBytes []byte
-	fetchedAt    time.Time
-	ok           bool // 是否含至少一项可用数据
+	imageBytes           []byte
+	imageType            string
+	imageETag            string
+	summaryBytes         []byte
+	recommendationsBytes []byte
+	intelligenceBytes    []byte
+	fetchedAt            time.Time
+	ok                   bool // 是否含至少一项可用数据
 }
 
 // CodexRadarService 代理并缓存 codexradar.com 的公开数据。
@@ -93,10 +96,12 @@ type CodexRadarService struct {
 	sf              singleflight.Group
 	lastAttemptNano atomic.Int64
 
-	imageURL   string
-	summaryURL string
-	ttl        time.Duration
-	minRetry   time.Duration
+	imageURL           string
+	summaryURL         string
+	recommendationsURL string
+	intelligenceURL    string
+	ttl                time.Duration
+	minRetry           time.Duration
 
 	// —— 定时预热（可选，通过 ConfigureScheduler 注入；未配置则退化为纯懒加载）——
 	// enabledFn 是「功能开关是否开启」的只读回调，与上游 SettingService 解耦。
@@ -116,12 +121,14 @@ type CodexRadarService struct {
 // NewCodexRadarService 创建 Codex 雷达代理服务（wire 注入）。
 func NewCodexRadarService() *CodexRadarService {
 	return &CodexRadarService{
-		httpClient: &http.Client{Timeout: codexRadarFetchTimeout},
-		imageURL:   CodexRadarImageURL,
-		summaryURL: CodexRadarSummaryURL,
-		ttl:        codexRadarCacheTTL,
-		minRetry:   codexRadarMinRetry,
-		location:   time.Local,
+		httpClient:         &http.Client{Timeout: codexRadarFetchTimeout},
+		imageURL:           CodexRadarImageURL,
+		summaryURL:         CodexRadarSummaryURL,
+		recommendationsURL: CodexRadarRecommendationsURL,
+		intelligenceURL:    CodexRadarIntelligenceURL,
+		ttl:                codexRadarCacheTTL,
+		minRetry:           codexRadarMinRetry,
+		location:           time.Local,
 	}
 }
 
@@ -283,44 +290,71 @@ func (s *CodexRadarService) forceRefresh(ctx context.Context) {
 	})
 }
 
-// fetch 拉取图 + 摘要，构造新快照。任一部分失败时沿用旧快照对应部分（部分成功即可用）。
+// fetch 拉取「站长推荐」和「综合智能」两个结构化接口，构造新快照。
+// 旧 imageURL/summaryURL 非空时保留兼容抓取，但默认服务不会设置它们。
 func (s *CodexRadarService) fetch(ctx context.Context, prev *codexRadarSnapshot) *codexRadarSnapshot {
 	fetchCtx, cancel := context.WithTimeout(ctx, codexRadarFetchTimeout)
 	defer cancel()
 
 	next := &codexRadarSnapshot{fetchedAt: time.Now()}
 
-	if body, ctype, _, err := s.get(fetchCtx, s.imageURL, codexRadarMaxImageBytes); err == nil && len(body) > 0 {
-		// 后端侧优化：降分辨率 + 重编码，把 ~2.2MB 压到几百 KB，显著缩短跨境下载耗时。
-		// 优化在拉取时做一次（不在请求热路径），失败则原样保留，绝不因优化而丢图。
-		optBytes, optType := optimizeCodexRadarImage(body, ctype)
-		next.imageBytes = optBytes
-		next.imageType = optType
-		// ETag 由优化后字节内容派生（弱校验），内容不变则 ETag 不变，支持 304 协商缓存。
-		next.imageETag = weakETag(optBytes)
-	} else {
-		if err != nil {
-			slog.Warn("codexradar: fetch image failed", "error", err)
-		}
-		if prev != nil {
-			next.imageBytes = prev.imageBytes
-			next.imageType = prev.imageType
-			next.imageETag = prev.imageETag
-		}
-	}
-
-	if body, _, _, err := s.get(fetchCtx, s.summaryURL, codexRadarMaxSummaryBytes); err == nil && len(body) > 0 {
-		next.summaryBytes = body
-	} else {
-		if err != nil {
-			slog.Warn("codexradar: fetch summary failed", "error", err)
-		}
-		if prev != nil {
-			next.summaryBytes = prev.summaryBytes
+	if s.imageURL != "" {
+		if body, ctype, _, err := s.get(fetchCtx, s.imageURL, codexRadarMaxImageBytes); err == nil && len(body) > 0 {
+			// 后端侧优化：降分辨率 + 重编码，把 ~2.2MB 压到几百 KB，显著缩短跨境下载耗时。
+			// 优化在拉取时做一次（不在请求热路径），失败则原样保留，绝不因优化而丢图。
+			optBytes, optType := optimizeCodexRadarImage(body, ctype)
+			next.imageBytes = optBytes
+			next.imageType = optType
+			// ETag 由优化后字节内容派生（弱校验），内容不变则 ETag 不变，支持 304 协商缓存。
+			next.imageETag = weakETag(optBytes)
+		} else {
+			if err != nil {
+				slog.Warn("codexradar: fetch image failed", "error", err)
+			}
+			if prev != nil {
+				next.imageBytes = prev.imageBytes
+				next.imageType = prev.imageType
+				next.imageETag = prev.imageETag
+			}
 		}
 	}
 
-	next.ok = len(next.imageBytes) > 0 || len(next.summaryBytes) > 0
+	if s.summaryURL != "" {
+		if body, _, _, err := s.get(fetchCtx, s.summaryURL, codexRadarMaxSummaryBytes); err == nil && len(body) > 0 {
+			next.summaryBytes = body
+		} else {
+			if err != nil {
+				slog.Warn("codexradar: fetch summary failed", "error", err)
+			}
+			if prev != nil {
+				next.summaryBytes = prev.summaryBytes
+			}
+		}
+	}
+
+	if body, _, _, err := s.get(fetchCtx, s.recommendationsURL, codexRadarMaxSummaryBytes); err == nil && len(body) > 0 {
+		next.recommendationsBytes = body
+	} else if err != nil {
+		slog.Warn("codexradar: fetch recommendations failed", "error", err)
+		if prev != nil {
+			next.recommendationsBytes = prev.recommendationsBytes
+		}
+	} else if prev != nil {
+		next.recommendationsBytes = prev.recommendationsBytes
+	}
+
+	if body, _, _, err := s.get(fetchCtx, s.intelligenceURL, codexRadarMaxSummaryBytes); err == nil && len(body) > 0 {
+		next.intelligenceBytes = body
+	} else if err != nil {
+		slog.Warn("codexradar: fetch intelligence failed", "error", err)
+		if prev != nil {
+			next.intelligenceBytes = prev.intelligenceBytes
+		}
+	} else if prev != nil {
+		next.intelligenceBytes = prev.intelligenceBytes
+	}
+
+	next.ok = len(next.imageBytes) > 0 || len(next.summaryBytes) > 0 || len(next.recommendationsBytes) > 0 || len(next.intelligenceBytes) > 0
 	if !next.ok {
 		return nil // 全部失败且无旧数据可沿用：不覆盖缓存
 	}
@@ -472,6 +506,28 @@ type CodexRadarSummaryResult struct {
 	JSON      []byte
 	FetchedAt time.Time
 	Available bool
+}
+
+// CodexRadarDataResult 是两个结构化雷达接口的只读快照。
+type CodexRadarDataResult struct {
+	Recommendations []byte
+	Intelligence    []byte
+	FetchedAt       time.Time
+	Available       bool
+}
+
+// DataSnapshot 返回「站长推荐」与「综合智能」的原始 JSON，不触发网络。
+func (s *CodexRadarService) DataSnapshot() CodexRadarDataResult {
+	snap, _ := s.cache.Load().(*codexRadarSnapshot)
+	if snap == nil || (len(snap.recommendationsBytes) == 0 && len(snap.intelligenceBytes) == 0) {
+		return CodexRadarDataResult{}
+	}
+	return CodexRadarDataResult{
+		Recommendations: snap.recommendationsBytes,
+		Intelligence:    snap.intelligenceBytes,
+		FetchedAt:       snap.fetchedAt,
+		Available:       len(snap.recommendationsBytes) > 0 || len(snap.intelligenceBytes) > 0,
+	}
 }
 
 // SummarySnapshot 返回当前缓存的摘要 JSON 视图（不触发网络）。

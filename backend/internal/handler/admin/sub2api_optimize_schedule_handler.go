@@ -2,6 +2,8 @@ package admin
 
 import (
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
 	"github.com/Wei-Shaw/sub2api/internal/service"
@@ -34,6 +36,72 @@ func (h *Sub2APIOptimizeScheduleHandler) Get(c *gin.Context) {
 	}
 	// info 为 nil 表示尚未配置，返回 null
 	response.Success(c, info)
+}
+
+// ListLogs returns paginated Provider-owned optimization audit history.
+// GET /api/v1/admin/sub2api-providers/:id/optimize-logs
+func (h *Sub2APIOptimizeScheduleHandler) ListLogs(c *gin.Context) {
+	providerID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || providerID <= 0 {
+		response.BadRequest(c, "Invalid provider ID")
+		return
+	}
+
+	filter := service.OptimizeLogFilter{
+		Trigger:  strings.TrimSpace(c.Query("trigger")),
+		Status:   strings.TrimSpace(c.Query("status")),
+		Keyword:  strings.TrimSpace(c.Query("keyword")),
+		Page:     1,
+		PageSize: 20,
+	}
+	if value := strings.TrimSpace(c.Query("page")); value != "" {
+		filter.Page, err = strconv.Atoi(value)
+		if err != nil || filter.Page < 1 {
+			response.BadRequest(c, "Invalid page")
+			return
+		}
+	}
+	if value := strings.TrimSpace(c.Query("page_size")); value != "" {
+		filter.PageSize, err = strconv.Atoi(value)
+		if err != nil || filter.PageSize < 1 {
+			response.BadRequest(c, "Invalid page_size")
+			return
+		}
+		if filter.PageSize > 100 {
+			filter.PageSize = 100
+		}
+	}
+	if value := strings.TrimSpace(c.Query("account_id")); value != "" {
+		accountID, parseErr := strconv.ParseInt(value, 10, 64)
+		if parseErr != nil || accountID <= 0 {
+			response.BadRequest(c, "Invalid account_id")
+			return
+		}
+		filter.AccountID = &accountID
+	}
+	if value := strings.TrimSpace(c.Query("from")); value != "" {
+		from, parseErr := time.Parse(time.RFC3339, value)
+		if parseErr != nil {
+			response.BadRequest(c, "Invalid from time; expected RFC3339")
+			return
+		}
+		filter.From = &from
+	}
+	if value := strings.TrimSpace(c.Query("to")); value != "" {
+		to, parseErr := time.Parse(time.RFC3339, value)
+		if parseErr != nil {
+			response.BadRequest(c, "Invalid to time; expected RFC3339")
+			return
+		}
+		filter.To = &to
+	}
+
+	items, total, err := h.scheduleService.ListLogs(c.Request.Context(), providerID, filter)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Paginated(c, items, total, filter.Page, filter.PageSize)
 }
 
 // UpsertScheduleRequest 创建/更新定时配置请求
@@ -167,6 +235,11 @@ type UpdateAccountSettingsRequest struct {
 // UpdateAccountSettings 更新关联账号的定时优化设置（倍率上限、测试模型）
 // PUT /api/v1/admin/sub2api-providers/:id/accounts/:account_id/optimize-settings
 func (h *Sub2APIOptimizeScheduleHandler) UpdateAccountSettings(c *gin.Context) {
+	providerID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, "Invalid provider ID")
+		return
+	}
 	accountID, err := strconv.ParseInt(c.Param("account_id"), 10, 64)
 	if err != nil {
 		response.BadRequest(c, "Invalid account ID")
@@ -180,7 +253,7 @@ func (h *Sub2APIOptimizeScheduleHandler) UpdateAccountSettings(c *gin.Context) {
 	}
 
 	enabled := req.Enabled != nil && *req.Enabled
-	if err := h.scheduleService.UpdateAccountOptimizeSettings(c.Request.Context(), accountID, enabled, req.MinMultiplier, req.MaxMultiplier, req.TestModel); err != nil {
+	if err := h.scheduleService.UpdateAccountOptimizeSettings(c.Request.Context(), providerID, accountID, enabled, req.MinMultiplier, req.MaxMultiplier, req.TestModel); err != nil {
 		response.ErrorFrom(c, err)
 		return
 	}

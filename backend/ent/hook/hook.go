@@ -393,6 +393,54 @@ func (f Sub2APIProviderFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Va
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.Sub2APIProviderMutation", m)
 }
 
+// The Sub2APIProviderProbeConfigFunc type is an adapter to allow the use of ordinary
+// function as Sub2APIProviderProbeConfig mutator.
+type Sub2APIProviderProbeConfigFunc func(context.Context, *ent.Sub2APIProviderProbeConfigMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f Sub2APIProviderProbeConfigFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.Sub2APIProviderProbeConfigMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.Sub2APIProviderProbeConfigMutation", m)
+}
+
+// The Sub2APIProviderProbeRunFunc type is an adapter to allow the use of ordinary
+// function as Sub2APIProviderProbeRun mutator.
+type Sub2APIProviderProbeRunFunc func(context.Context, *ent.Sub2APIProviderProbeRunMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f Sub2APIProviderProbeRunFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.Sub2APIProviderProbeRunMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.Sub2APIProviderProbeRunMutation", m)
+}
+
+// The Sub2APIProviderProbeTargetFunc type is an adapter to allow the use of ordinary
+// function as Sub2APIProviderProbeTarget mutator.
+type Sub2APIProviderProbeTargetFunc func(context.Context, *ent.Sub2APIProviderProbeTargetMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f Sub2APIProviderProbeTargetFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.Sub2APIProviderProbeTargetMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.Sub2APIProviderProbeTargetMutation", m)
+}
+
+// The Sub2APIProviderProbeTargetRunFunc type is an adapter to allow the use of ordinary
+// function as Sub2APIProviderProbeTargetRun mutator.
+type Sub2APIProviderProbeTargetRunFunc func(context.Context, *ent.Sub2APIProviderProbeTargetRunMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f Sub2APIProviderProbeTargetRunFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.Sub2APIProviderProbeTargetRunMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.Sub2APIProviderProbeTargetRunMutation", m)
+}
+
 // The SubscriptionPlanFunc type is an adapter to allow the use of ordinary
 // function as SubscriptionPlan mutator.
 type SubscriptionPlanFunc func(context.Context, *ent.SubscriptionPlanMutation) (ent.Value, error)

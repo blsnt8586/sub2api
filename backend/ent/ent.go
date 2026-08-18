@@ -44,6 +44,10 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/sub2apioptimizelog"
 	"github.com/Wei-Shaw/sub2api/ent/sub2apioptimizeschedule"
 	"github.com/Wei-Shaw/sub2api/ent/sub2apiprovider"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiproviderprobeconfig"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiproviderproberun"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiproviderprobetarget"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiproviderprobetargetrun"
 	"github.com/Wei-Shaw/sub2api/ent/subscriptionplan"
 	"github.com/Wei-Shaw/sub2api/ent/tlsfingerprintprofile"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
@@ -146,6 +150,10 @@ func checkColumn(t, c string) error {
 			sub2apioptimizelog.Table:            sub2apioptimizelog.ValidColumn,
 			sub2apioptimizeschedule.Table:       sub2apioptimizeschedule.ValidColumn,
 			sub2apiprovider.Table:               sub2apiprovider.ValidColumn,
+			sub2apiproviderprobeconfig.Table:    sub2apiproviderprobeconfig.ValidColumn,
+			sub2apiproviderproberun.Table:       sub2apiproviderproberun.ValidColumn,
+			sub2apiproviderprobetarget.Table:    sub2apiproviderprobetarget.ValidColumn,
+			sub2apiproviderprobetargetrun.Table: sub2apiproviderprobetargetrun.ValidColumn,
 			subscriptionplan.Table:              subscriptionplan.ValidColumn,
 			tlsfingerprintprofile.Table:         tlsfingerprintprofile.ValidColumn,
 			usagecleanuptask.Table:              usagecleanuptask.ValidColumn,

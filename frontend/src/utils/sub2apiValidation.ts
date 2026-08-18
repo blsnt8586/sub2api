@@ -3,6 +3,7 @@
  */
 
 export interface OptimizeConfig {
+  sub2api_optimize_enabled?: boolean
   sub2api_max_multiplier?: number | null
   sub2api_min_multiplier?: number | null
   sub2api_test_model?: string | null
@@ -33,9 +34,33 @@ export function findIncompleteAccounts<T extends OptimizeConfig & { name: string
   return accounts.filter(acc => !isOptimizeConfigComplete(acc))
 }
 
+/** 只返回已经开启参与、但三项必填配置不完整的账号。 */
+export function findIncompleteParticipatingAccounts<T extends OptimizeConfig & { name: string }>(
+  accounts: T[]
+): T[] {
+  return accounts.filter(
+    acc => acc.sub2api_optimize_enabled === true && !isOptimizeConfigComplete(acc)
+  )
+}
+
+export type MultiplierRangeState = 'unknown' | 'unbounded' | 'within' | 'below' | 'above'
+
+/** 按账号自己的倍率上下限判断当前远端倍率是否越界。 */
+export function getMultiplierRangeState(
+  current: number | null | undefined,
+  min: number | null | undefined,
+  max: number | null | undefined
+): MultiplierRangeState {
+  if (current == null || !Number.isFinite(current)) return 'unknown'
+  if (min != null && current < min) return 'below'
+  if (max != null && current > max) return 'above'
+  if (min != null || max != null) return 'within'
+  return 'unbounded'
+}
+
 /**
  * 返回单个账号首个缺失字段对应的必填错误提示，配置完整时返回 null。
- * 用于「开启参与」「手动优化」等需要给出具体缺哪个字段的入口。
+ * 用于「开启参与」等需要给出具体缺哪个字段的入口。
  * @param config 账号配置对象
  * @param t i18n翻译函数
  * @returns 错误提示文案，配置完整时为 null
@@ -103,7 +128,7 @@ export function validateMinMultiplier(
 ): MultiplierValidation {
   const trimmed = raw.trim()
 
-  // 空输入=清除下限，视为有效
+  // 关闭参与时可以清除；开启参与时由调用方阻止清空。
   if (trimmed === '') {
     return { valid: true, value: undefined }
   }

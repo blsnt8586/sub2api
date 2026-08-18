@@ -102,6 +102,18 @@ type Sub2APIOptimizeSchedule func(*sql.Selector)
 // Sub2APIProvider is the predicate function for sub2apiprovider builders.
 type Sub2APIProvider func(*sql.Selector)
 
+// Sub2APIProviderProbeConfig is the predicate function for sub2apiproviderprobeconfig builders.
+type Sub2APIProviderProbeConfig func(*sql.Selector)
+
+// Sub2APIProviderProbeRun is the predicate function for sub2apiproviderproberun builders.
+type Sub2APIProviderProbeRun func(*sql.Selector)
+
+// Sub2APIProviderProbeTarget is the predicate function for sub2apiproviderprobetarget builders.
+type Sub2APIProviderProbeTarget func(*sql.Selector)
+
+// Sub2APIProviderProbeTargetRun is the predicate function for sub2apiproviderprobetargetrun builders.
+type Sub2APIProviderProbeTargetRun func(*sql.Selector)
+
 // SubscriptionPlan is the predicate function for subscriptionplan builders.
 type SubscriptionPlan func(*sql.Selector)
 

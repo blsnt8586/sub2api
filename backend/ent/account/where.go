@@ -200,6 +200,11 @@ func ProviderAPIKeyID(v int64) predicate.Account {
 	return predicate.Account(sql.FieldEQ(FieldProviderAPIKeyID, v))
 }
 
+// RemoteGroupID applies equality check predicate on the "remote_group_id" field. It's identical to RemoteGroupIDEQ.
+func RemoteGroupID(v int64) predicate.Account {
+	return predicate.Account(sql.FieldEQ(FieldRemoteGroupID, v))
+}
+
 // RemoteGroupName applies equality check predicate on the "remote_group_name" field. It's identical to RemoteGroupNameEQ.
 func RemoteGroupName(v string) predicate.Account {
 	return predicate.Account(sql.FieldEQ(FieldRemoteGroupName, v))
@@ -1680,6 +1685,56 @@ func ProviderAPIKeyIDNotNil() predicate.Account {
 	return predicate.Account(sql.FieldNotNull(FieldProviderAPIKeyID))
 }
 
+// RemoteGroupIDEQ applies the EQ predicate on the "remote_group_id" field.
+func RemoteGroupIDEQ(v int64) predicate.Account {
+	return predicate.Account(sql.FieldEQ(FieldRemoteGroupID, v))
+}
+
+// RemoteGroupIDNEQ applies the NEQ predicate on the "remote_group_id" field.
+func RemoteGroupIDNEQ(v int64) predicate.Account {
+	return predicate.Account(sql.FieldNEQ(FieldRemoteGroupID, v))
+}
+
+// RemoteGroupIDIn applies the In predicate on the "remote_group_id" field.
+func RemoteGroupIDIn(vs ...int64) predicate.Account {
+	return predicate.Account(sql.FieldIn(FieldRemoteGroupID, vs...))
+}
+
+// RemoteGroupIDNotIn applies the NotIn predicate on the "remote_group_id" field.
+func RemoteGroupIDNotIn(vs ...int64) predicate.Account {
+	return predicate.Account(sql.FieldNotIn(FieldRemoteGroupID, vs...))
+}
+
+// RemoteGroupIDGT applies the GT predicate on the "remote_group_id" field.
+func RemoteGroupIDGT(v int64) predicate.Account {
+	return predicate.Account(sql.FieldGT(FieldRemoteGroupID, v))
+}
+
+// RemoteGroupIDGTE applies the GTE predicate on the "remote_group_id" field.
+func RemoteGroupIDGTE(v int64) predicate.Account {
+	return predicate.Account(sql.FieldGTE(FieldRemoteGroupID, v))
+}
+
+// RemoteGroupIDLT applies the LT predicate on the "remote_group_id" field.
+func RemoteGroupIDLT(v int64) predicate.Account {
+	return predicate.Account(sql.FieldLT(FieldRemoteGroupID, v))
+}
+
+// RemoteGroupIDLTE applies the LTE predicate on the "remote_group_id" field.
+func RemoteGroupIDLTE(v int64) predicate.Account {
+	return predicate.Account(sql.FieldLTE(FieldRemoteGroupID, v))
+}
+
+// RemoteGroupIDIsNil applies the IsNil predicate on the "remote_group_id" field.
+func RemoteGroupIDIsNil() predicate.Account {
+	return predicate.Account(sql.FieldIsNull(FieldRemoteGroupID))
+}
+
+// RemoteGroupIDNotNil applies the NotNil predicate on the "remote_group_id" field.
+func RemoteGroupIDNotNil() predicate.Account {
+	return predicate.Account(sql.FieldNotNull(FieldRemoteGroupID))
+}
+
 // RemoteGroupNameEQ applies the EQ predicate on the "remote_group_name" field.
 func RemoteGroupNameEQ(v string) predicate.Account {
 	return predicate.Account(sql.FieldEQ(FieldRemoteGroupName, v))
@@ -2220,6 +2275,29 @@ func HasProvider() predicate.Account {
 func HasProviderWith(preds ...predicate.Sub2APIProvider) predicate.Account {
 	return predicate.Account(func(s *sql.Selector) {
 		step := newProviderStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasSub2apiProbeTargets applies the HasEdge predicate on the "sub2api_probe_targets" edge.
+func HasSub2apiProbeTargets() predicate.Account {
+	return predicate.Account(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, Sub2apiProbeTargetsTable, Sub2apiProbeTargetsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasSub2apiProbeTargetsWith applies the HasEdge predicate on the "sub2api_probe_targets" edge with a given conditions (other predicates).
+func HasSub2apiProbeTargetsWith(preds ...predicate.Sub2APIProviderProbeTarget) predicate.Account {
+	return predicate.Account(func(s *sql.Selector) {
+		step := newSub2apiProbeTargetsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

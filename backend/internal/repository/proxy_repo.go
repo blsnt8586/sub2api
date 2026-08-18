@@ -469,10 +469,15 @@ func (r *proxyRepository) ExistsByHostPortAuth(ctx context.Context, host string,
 	return count > 0, err
 }
 
-// CountAccountsByProxyID returns the number of accounts using a specific proxy
+// CountAccountsByProxyID returns the number of runtime bindings using a proxy.
+// Provider-only bindings are included so a proxy cannot be soft-deleted while
+// it is still needed for control-plane requests.
 func (r *proxyRepository) CountAccountsByProxyID(ctx context.Context, proxyID int64) (int64, error) {
 	var count int64
-	if err := scanSingleRow(ctx, r.sql, "SELECT COUNT(*) FROM accounts WHERE proxy_id = $1 AND deleted_at IS NULL", []any{proxyID}, &count); err != nil {
+	if err := scanSingleRow(ctx, r.sql, `
+		SELECT
+			(SELECT COUNT(*) FROM accounts WHERE proxy_id = $1 AND deleted_at IS NULL) +
+			(SELECT COUNT(*) FROM sub2api_providers WHERE proxy_id = $1 AND deleted_at IS NULL)`, []any{proxyID}, &count); err != nil {
 		return 0, err
 	}
 	return count, nil
@@ -737,6 +742,19 @@ func (r *proxyRepository) sweepOneExpiredProxyOnExec(ctx context.Context, exec s
 			return nil, err
 		}
 		return nil, nil
+	}
+	if target == nil {
+		if _, err := exec.ExecContext(ctx, `
+			UPDATE sub2api_providers SET proxy_id=NULL, updated_at=NOW()
+			WHERE proxy_id=$1 AND deleted_at IS NULL`, proxyID); err != nil {
+			return nil, err
+		}
+	} else {
+		if _, err := exec.ExecContext(ctx, `
+			UPDATE sub2api_providers SET proxy_id=$2, updated_at=NOW()
+			WHERE proxy_id=$1 AND deleted_at IS NULL`, proxyID, *target); err != nil {
+			return nil, err
+		}
 	}
 	var (
 		rows *sql.Rows

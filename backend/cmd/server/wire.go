@@ -113,6 +113,7 @@ func provideCleanup(
 	channelMonitorV2Aggregator *service.ChannelMonitorV2Aggregator,
 	quotaFlusher *service.UserPlatformQuotaUsageFlusher,
 	sub2APIOptimizeRunner *service.Sub2APIOptimizeRunnerService,
+	sub2APIProviderProbeRunner *service.Sub2APIProviderProbeRunner,
 	upstreamBillingProbe *service.UpstreamBillingProbeService,
 	ollamaCloudUsage *service.OllamaCloudUsageService,
 	auditLog *service.AuditLogService,
@@ -315,6 +316,12 @@ func provideCleanup(
 				}
 				return nil
 			}},
+			{"Sub2APIProviderProbeRunner", func() error {
+				if sub2APIProviderProbeRunner != nil {
+					sub2APIProviderProbeRunner.Stop()
+				}
+				return nil
+			}},
 			{"BackupService", func() error {
 				if backupSvc != nil {
 					backupSvc.Stop()
@@ -328,12 +335,12 @@ func provideCleanup(
 				return nil
 			}},
 			{"ChannelMonitorV2Aggregator", func() error {
-			if channelMonitorV2Aggregator != nil {
-				channelMonitorV2Aggregator.Stop()
-			}
-			return nil
-		}},
-		{"ChannelMonitorRunner", func() error {
+				if channelMonitorV2Aggregator != nil {
+					channelMonitorV2Aggregator.Stop()
+				}
+				return nil
+			}},
+			{"ChannelMonitorRunner", func() error {
 				if channelMonitorRunner != nil {
 					channelMonitorRunner.Stop()
 				}

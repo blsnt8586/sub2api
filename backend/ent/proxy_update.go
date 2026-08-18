@@ -14,6 +14,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/account"
 	"github.com/Wei-Shaw/sub2api/ent/predicate"
 	"github.com/Wei-Shaw/sub2api/ent/proxy"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiprovider"
 )
 
 // ProxyUpdate is the builder for updating Proxy entities.
@@ -262,6 +263,21 @@ func (_u *ProxyUpdate) AddAccounts(v ...*Account) *ProxyUpdate {
 	return _u.AddAccountIDs(ids...)
 }
 
+// AddSub2apiProviderIDs adds the "sub2api_providers" edge to the Sub2APIProvider entity by IDs.
+func (_u *ProxyUpdate) AddSub2apiProviderIDs(ids ...int64) *ProxyUpdate {
+	_u.mutation.AddSub2apiProviderIDs(ids...)
+	return _u
+}
+
+// AddSub2apiProviders adds the "sub2api_providers" edges to the Sub2APIProvider entity.
+func (_u *ProxyUpdate) AddSub2apiProviders(v ...*Sub2APIProvider) *ProxyUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddSub2apiProviderIDs(ids...)
+}
+
 // SetBackupProxy sets the "backup_proxy" edge to the Proxy entity.
 func (_u *ProxyUpdate) SetBackupProxy(v *Proxy) *ProxyUpdate {
 	return _u.SetBackupProxyID(v.ID)
@@ -291,6 +307,27 @@ func (_u *ProxyUpdate) RemoveAccounts(v ...*Account) *ProxyUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveAccountIDs(ids...)
+}
+
+// ClearSub2apiProviders clears all "sub2api_providers" edges to the Sub2APIProvider entity.
+func (_u *ProxyUpdate) ClearSub2apiProviders() *ProxyUpdate {
+	_u.mutation.ClearSub2apiProviders()
+	return _u
+}
+
+// RemoveSub2apiProviderIDs removes the "sub2api_providers" edge to Sub2APIProvider entities by IDs.
+func (_u *ProxyUpdate) RemoveSub2apiProviderIDs(ids ...int64) *ProxyUpdate {
+	_u.mutation.RemoveSub2apiProviderIDs(ids...)
+	return _u
+}
+
+// RemoveSub2apiProviders removes "sub2api_providers" edges to Sub2APIProvider entities.
+func (_u *ProxyUpdate) RemoveSub2apiProviders(v ...*Sub2APIProvider) *ProxyUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveSub2apiProviderIDs(ids...)
 }
 
 // ClearBackupProxy clears the "backup_proxy" edge to the Proxy entity.
@@ -485,6 +522,51 @@ func (_u *ProxyUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(account.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.Sub2apiProvidersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   proxy.Sub2apiProvidersTable,
+			Columns: []string{proxy.Sub2apiProvidersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiprovider.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSub2apiProvidersIDs(); len(nodes) > 0 && !_u.mutation.Sub2apiProvidersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   proxy.Sub2apiProvidersTable,
+			Columns: []string{proxy.Sub2apiProvidersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiprovider.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.Sub2apiProvidersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   proxy.Sub2apiProvidersTable,
+			Columns: []string{proxy.Sub2apiProvidersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiprovider.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -774,6 +856,21 @@ func (_u *ProxyUpdateOne) AddAccounts(v ...*Account) *ProxyUpdateOne {
 	return _u.AddAccountIDs(ids...)
 }
 
+// AddSub2apiProviderIDs adds the "sub2api_providers" edge to the Sub2APIProvider entity by IDs.
+func (_u *ProxyUpdateOne) AddSub2apiProviderIDs(ids ...int64) *ProxyUpdateOne {
+	_u.mutation.AddSub2apiProviderIDs(ids...)
+	return _u
+}
+
+// AddSub2apiProviders adds the "sub2api_providers" edges to the Sub2APIProvider entity.
+func (_u *ProxyUpdateOne) AddSub2apiProviders(v ...*Sub2APIProvider) *ProxyUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddSub2apiProviderIDs(ids...)
+}
+
 // SetBackupProxy sets the "backup_proxy" edge to the Proxy entity.
 func (_u *ProxyUpdateOne) SetBackupProxy(v *Proxy) *ProxyUpdateOne {
 	return _u.SetBackupProxyID(v.ID)
@@ -803,6 +900,27 @@ func (_u *ProxyUpdateOne) RemoveAccounts(v ...*Account) *ProxyUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveAccountIDs(ids...)
+}
+
+// ClearSub2apiProviders clears all "sub2api_providers" edges to the Sub2APIProvider entity.
+func (_u *ProxyUpdateOne) ClearSub2apiProviders() *ProxyUpdateOne {
+	_u.mutation.ClearSub2apiProviders()
+	return _u
+}
+
+// RemoveSub2apiProviderIDs removes the "sub2api_providers" edge to Sub2APIProvider entities by IDs.
+func (_u *ProxyUpdateOne) RemoveSub2apiProviderIDs(ids ...int64) *ProxyUpdateOne {
+	_u.mutation.RemoveSub2apiProviderIDs(ids...)
+	return _u
+}
+
+// RemoveSub2apiProviders removes "sub2api_providers" edges to Sub2APIProvider entities.
+func (_u *ProxyUpdateOne) RemoveSub2apiProviders(v ...*Sub2APIProvider) *ProxyUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveSub2apiProviderIDs(ids...)
 }
 
 // ClearBackupProxy clears the "backup_proxy" edge to the Proxy entity.
@@ -1027,6 +1145,51 @@ func (_u *ProxyUpdateOne) sqlSave(ctx context.Context) (_node *Proxy, err error)
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(account.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.Sub2apiProvidersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   proxy.Sub2apiProvidersTable,
+			Columns: []string{proxy.Sub2apiProvidersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiprovider.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedSub2apiProvidersIDs(); len(nodes) > 0 && !_u.mutation.Sub2apiProvidersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   proxy.Sub2apiProvidersTable,
+			Columns: []string{proxy.Sub2apiProvidersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiprovider.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.Sub2apiProvidersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   proxy.Sub2apiProvidersTable,
+			Columns: []string{proxy.Sub2apiProvidersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiprovider.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

@@ -15,6 +15,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/predicate"
 	"github.com/Wei-Shaw/sub2api/ent/sub2apioptimizelog"
 	"github.com/Wei-Shaw/sub2api/ent/sub2apioptimizeschedule"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiprovider"
 )
 
 // Sub2APIOptimizeLogQuery is the builder for querying Sub2APIOptimizeLog entities.
@@ -24,6 +25,7 @@ type Sub2APIOptimizeLogQuery struct {
 	order        []sub2apioptimizelog.OrderOption
 	inters       []Interceptor
 	predicates   []predicate.Sub2APIOptimizeLog
+	withProvider *Sub2APIProviderQuery
 	withSchedule *Sub2APIOptimizeScheduleQuery
 	modifiers    []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
@@ -60,6 +62,28 @@ func (_q *Sub2APIOptimizeLogQuery) Unique(unique bool) *Sub2APIOptimizeLogQuery 
 func (_q *Sub2APIOptimizeLogQuery) Order(o ...sub2apioptimizelog.OrderOption) *Sub2APIOptimizeLogQuery {
 	_q.order = append(_q.order, o...)
 	return _q
+}
+
+// QueryProvider chains the current query on the "provider" edge.
+func (_q *Sub2APIOptimizeLogQuery) QueryProvider() *Sub2APIProviderQuery {
+	query := (&Sub2APIProviderClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sub2apioptimizelog.Table, sub2apioptimizelog.FieldID, selector),
+			sqlgraph.To(sub2apiprovider.Table, sub2apiprovider.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, sub2apioptimizelog.ProviderTable, sub2apioptimizelog.ProviderColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // QuerySchedule chains the current query on the "schedule" edge.
@@ -276,11 +300,23 @@ func (_q *Sub2APIOptimizeLogQuery) Clone() *Sub2APIOptimizeLogQuery {
 		order:        append([]sub2apioptimizelog.OrderOption{}, _q.order...),
 		inters:       append([]Interceptor{}, _q.inters...),
 		predicates:   append([]predicate.Sub2APIOptimizeLog{}, _q.predicates...),
+		withProvider: _q.withProvider.Clone(),
 		withSchedule: _q.withSchedule.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
 	}
+}
+
+// WithProvider tells the query-builder to eager-load the nodes that are connected to
+// the "provider" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *Sub2APIOptimizeLogQuery) WithProvider(opts ...func(*Sub2APIProviderQuery)) *Sub2APIOptimizeLogQuery {
+	query := (&Sub2APIProviderClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withProvider = query
+	return _q
 }
 
 // WithSchedule tells the query-builder to eager-load the nodes that are connected to
@@ -372,7 +408,8 @@ func (_q *Sub2APIOptimizeLogQuery) sqlAll(ctx context.Context, hooks ...queryHoo
 	var (
 		nodes       = []*Sub2APIOptimizeLog{}
 		_spec       = _q.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
+			_q.withProvider != nil,
 			_q.withSchedule != nil,
 		}
 	)
@@ -397,6 +434,12 @@ func (_q *Sub2APIOptimizeLogQuery) sqlAll(ctx context.Context, hooks ...queryHoo
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := _q.withProvider; query != nil {
+		if err := _q.loadProvider(ctx, query, nodes, nil,
+			func(n *Sub2APIOptimizeLog, e *Sub2APIProvider) { n.Edges.Provider = e }); err != nil {
+			return nil, err
+		}
+	}
 	if query := _q.withSchedule; query != nil {
 		if err := _q.loadSchedule(ctx, query, nodes, nil,
 			func(n *Sub2APIOptimizeLog, e *Sub2APIOptimizeSchedule) { n.Edges.Schedule = e }); err != nil {
@@ -406,11 +449,43 @@ func (_q *Sub2APIOptimizeLogQuery) sqlAll(ctx context.Context, hooks ...queryHoo
 	return nodes, nil
 }
 
+func (_q *Sub2APIOptimizeLogQuery) loadProvider(ctx context.Context, query *Sub2APIProviderQuery, nodes []*Sub2APIOptimizeLog, init func(*Sub2APIOptimizeLog), assign func(*Sub2APIOptimizeLog, *Sub2APIProvider)) error {
+	ids := make([]int64, 0, len(nodes))
+	nodeids := make(map[int64][]*Sub2APIOptimizeLog)
+	for i := range nodes {
+		fk := nodes[i].ProviderID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(sub2apiprovider.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "provider_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
 func (_q *Sub2APIOptimizeLogQuery) loadSchedule(ctx context.Context, query *Sub2APIOptimizeScheduleQuery, nodes []*Sub2APIOptimizeLog, init func(*Sub2APIOptimizeLog), assign func(*Sub2APIOptimizeLog, *Sub2APIOptimizeSchedule)) error {
 	ids := make([]int64, 0, len(nodes))
 	nodeids := make(map[int64][]*Sub2APIOptimizeLog)
 	for i := range nodes {
-		fk := nodes[i].ScheduleID
+		if nodes[i].ScheduleID == nil {
+			continue
+		}
+		fk := *nodes[i].ScheduleID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -463,6 +538,9 @@ func (_q *Sub2APIOptimizeLogQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != sub2apioptimizelog.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if _q.withProvider != nil {
+			_spec.Node.AddColumnOnce(sub2apioptimizelog.FieldProviderID)
 		}
 		if _q.withSchedule != nil {
 			_spec.Node.AddColumnOnce(sub2apioptimizelog.FieldScheduleID)

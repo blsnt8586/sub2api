@@ -77,3 +77,23 @@ func TestLeaderLockCache_TTLExpires(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, ok, "lock should be re-acquirable after the TTL expires")
 }
+
+func TestLeaderLockCache_ExtendIsCompareAndExpire(t *testing.T) {
+	cache, mr := newLeaderLockTestCache(t)
+	ctx := context.Background()
+	const key = "sub2api:probe:auto-optimize:target:5"
+
+	ok, err := cache.TryAcquireLeaderLock(ctx, key, "A", time.Minute)
+	require.NoError(t, err)
+	require.True(t, ok)
+
+	extended, err := cache.ExtendLeaderLock(ctx, key, "A", time.Hour)
+	require.NoError(t, err)
+	require.True(t, extended)
+	require.InDelta(t, time.Hour.Seconds(), mr.TTL(leaderLockKeyPrefix+key).Seconds(), 1)
+
+	extended, err = cache.ExtendLeaderLock(ctx, key, "B", 2*time.Hour)
+	require.NoError(t, err)
+	require.False(t, extended, "non-owner must not change the lock TTL")
+	require.InDelta(t, time.Hour.Seconds(), mr.TTL(leaderLockKeyPrefix+key).Seconds(), 1)
+}

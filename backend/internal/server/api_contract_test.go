@@ -905,6 +905,7 @@ func TestAPIContracts(t *testing.T) {
 					"max_codex_version": "",
 					"codex_cli_only_blacklist": "",
 					"codex_cli_only_whitelist": "",
+					"codex_radar_enabled": false,
 					"compact_home_enabled": false,
 					"codex_cli_only_allow_app_server_clients": false,
 					"codex_cli_only_engine_fingerprint_signals": "[{\"type\":\"header_prefix\",\"match\":[\"x-codex-\"],\"required\":true},{\"type\":\"header_exact\",\"match\":[\"session-id\",\"session_id\"],\"required\":false},{\"type\":\"header_exact\",\"match\":[\"thread-id\",\"thread_id\"],\"required\":false},{\"type\":\"body_path\",\"match\":[\"client_metadata.x-codex-window-id\",\"client_metadata.x-codex-installation-id\"],\"required\":false}]",
@@ -1229,6 +1230,7 @@ func TestAPIContracts(t *testing.T) {
 					"max_codex_version": "",
 					"codex_cli_only_blacklist": "",
 					"codex_cli_only_whitelist": "",
+					"codex_radar_enabled": false,
 					"compact_home_enabled": false,
 					"codex_cli_only_allow_app_server_clients": false,
 					"codex_cli_only_engine_fingerprint_signals": "[{\"type\":\"header_prefix\",\"match\":[\"x-codex-\"],\"required\":true},{\"type\":\"header_exact\",\"match\":[\"session-id\",\"session_id\"],\"required\":false},{\"type\":\"header_exact\",\"match\":[\"thread-id\",\"thread_id\"],\"required\":false},{\"type\":\"body_path\",\"match\":[\"client_metadata.x-codex-window-id\",\"client_metadata.x-codex-installation-id\"],\"required\":false}]",
@@ -2069,7 +2071,7 @@ func (s *stubAccountRepo) UpdateRemoteGroupInfo(ctx context.Context, accountID i
 	return nil
 }
 
-func (s *stubAccountRepo) UpdateSub2APIOptimizeSettings(ctx context.Context, accountID int64, enabled bool, minMultiplier, maxMultiplier *float64, testModel *string) error { // [CUSTOM]
+func (s *stubAccountRepo) UpdateSub2APIOptimizeSettings(ctx context.Context, providerID, accountID int64, enabled bool, minMultiplier, maxMultiplier *float64, testModel *string) error { // [CUSTOM]
 	return nil
 }
 

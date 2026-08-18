@@ -280,6 +280,9 @@ var ProviderSet = wire.NewSet(
 	admin.NewAffiliateHandler,
 	admin.NewComplianceHandler,
 	admin.NewAuditLogHandler,
+	admin.NewSub2APIProviderHandler,
+	admin.NewSub2APIOptimizeScheduleHandler,
+	NewCodexRadarHandler,
 
 	// AdminHandlers and Handlers constructors
 	ProvideAdminHandlers,

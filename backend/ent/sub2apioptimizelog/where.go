@@ -65,9 +65,19 @@ func UpdatedAt(v time.Time) predicate.Sub2APIOptimizeLog {
 	return predicate.Sub2APIOptimizeLog(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
+// ProviderID applies equality check predicate on the "provider_id" field. It's identical to ProviderIDEQ.
+func ProviderID(v int64) predicate.Sub2APIOptimizeLog {
+	return predicate.Sub2APIOptimizeLog(sql.FieldEQ(FieldProviderID, v))
+}
+
 // ScheduleID applies equality check predicate on the "schedule_id" field. It's identical to ScheduleIDEQ.
 func ScheduleID(v int64) predicate.Sub2APIOptimizeLog {
 	return predicate.Sub2APIOptimizeLog(sql.FieldEQ(FieldScheduleID, v))
+}
+
+// Trigger applies equality check predicate on the "trigger" field. It's identical to TriggerEQ.
+func Trigger(v string) predicate.Sub2APIOptimizeLog {
+	return predicate.Sub2APIOptimizeLog(sql.FieldEQ(FieldTrigger, v))
 }
 
 // Status applies equality check predicate on the "status" field. It's identical to StatusEQ.
@@ -185,6 +195,26 @@ func UpdatedAtLTE(v time.Time) predicate.Sub2APIOptimizeLog {
 	return predicate.Sub2APIOptimizeLog(sql.FieldLTE(FieldUpdatedAt, v))
 }
 
+// ProviderIDEQ applies the EQ predicate on the "provider_id" field.
+func ProviderIDEQ(v int64) predicate.Sub2APIOptimizeLog {
+	return predicate.Sub2APIOptimizeLog(sql.FieldEQ(FieldProviderID, v))
+}
+
+// ProviderIDNEQ applies the NEQ predicate on the "provider_id" field.
+func ProviderIDNEQ(v int64) predicate.Sub2APIOptimizeLog {
+	return predicate.Sub2APIOptimizeLog(sql.FieldNEQ(FieldProviderID, v))
+}
+
+// ProviderIDIn applies the In predicate on the "provider_id" field.
+func ProviderIDIn(vs ...int64) predicate.Sub2APIOptimizeLog {
+	return predicate.Sub2APIOptimizeLog(sql.FieldIn(FieldProviderID, vs...))
+}
+
+// ProviderIDNotIn applies the NotIn predicate on the "provider_id" field.
+func ProviderIDNotIn(vs ...int64) predicate.Sub2APIOptimizeLog {
+	return predicate.Sub2APIOptimizeLog(sql.FieldNotIn(FieldProviderID, vs...))
+}
+
 // ScheduleIDEQ applies the EQ predicate on the "schedule_id" field.
 func ScheduleIDEQ(v int64) predicate.Sub2APIOptimizeLog {
 	return predicate.Sub2APIOptimizeLog(sql.FieldEQ(FieldScheduleID, v))
@@ -203,6 +233,81 @@ func ScheduleIDIn(vs ...int64) predicate.Sub2APIOptimizeLog {
 // ScheduleIDNotIn applies the NotIn predicate on the "schedule_id" field.
 func ScheduleIDNotIn(vs ...int64) predicate.Sub2APIOptimizeLog {
 	return predicate.Sub2APIOptimizeLog(sql.FieldNotIn(FieldScheduleID, vs...))
+}
+
+// ScheduleIDIsNil applies the IsNil predicate on the "schedule_id" field.
+func ScheduleIDIsNil() predicate.Sub2APIOptimizeLog {
+	return predicate.Sub2APIOptimizeLog(sql.FieldIsNull(FieldScheduleID))
+}
+
+// ScheduleIDNotNil applies the NotNil predicate on the "schedule_id" field.
+func ScheduleIDNotNil() predicate.Sub2APIOptimizeLog {
+	return predicate.Sub2APIOptimizeLog(sql.FieldNotNull(FieldScheduleID))
+}
+
+// TriggerEQ applies the EQ predicate on the "trigger" field.
+func TriggerEQ(v string) predicate.Sub2APIOptimizeLog {
+	return predicate.Sub2APIOptimizeLog(sql.FieldEQ(FieldTrigger, v))
+}
+
+// TriggerNEQ applies the NEQ predicate on the "trigger" field.
+func TriggerNEQ(v string) predicate.Sub2APIOptimizeLog {
+	return predicate.Sub2APIOptimizeLog(sql.FieldNEQ(FieldTrigger, v))
+}
+
+// TriggerIn applies the In predicate on the "trigger" field.
+func TriggerIn(vs ...string) predicate.Sub2APIOptimizeLog {
+	return predicate.Sub2APIOptimizeLog(sql.FieldIn(FieldTrigger, vs...))
+}
+
+// TriggerNotIn applies the NotIn predicate on the "trigger" field.
+func TriggerNotIn(vs ...string) predicate.Sub2APIOptimizeLog {
+	return predicate.Sub2APIOptimizeLog(sql.FieldNotIn(FieldTrigger, vs...))
+}
+
+// TriggerGT applies the GT predicate on the "trigger" field.
+func TriggerGT(v string) predicate.Sub2APIOptimizeLog {
+	return predicate.Sub2APIOptimizeLog(sql.FieldGT(FieldTrigger, v))
+}
+
+// TriggerGTE applies the GTE predicate on the "trigger" field.
+func TriggerGTE(v string) predicate.Sub2APIOptimizeLog {
+	return predicate.Sub2APIOptimizeLog(sql.FieldGTE(FieldTrigger, v))
+}
+
+// TriggerLT applies the LT predicate on the "trigger" field.
+func TriggerLT(v string) predicate.Sub2APIOptimizeLog {
+	return predicate.Sub2APIOptimizeLog(sql.FieldLT(FieldTrigger, v))
+}
+
+// TriggerLTE applies the LTE predicate on the "trigger" field.
+func TriggerLTE(v string) predicate.Sub2APIOptimizeLog {
+	return predicate.Sub2APIOptimizeLog(sql.FieldLTE(FieldTrigger, v))
+}
+
+// TriggerContains applies the Contains predicate on the "trigger" field.
+func TriggerContains(v string) predicate.Sub2APIOptimizeLog {
+	return predicate.Sub2APIOptimizeLog(sql.FieldContains(FieldTrigger, v))
+}
+
+// TriggerHasPrefix applies the HasPrefix predicate on the "trigger" field.
+func TriggerHasPrefix(v string) predicate.Sub2APIOptimizeLog {
+	return predicate.Sub2APIOptimizeLog(sql.FieldHasPrefix(FieldTrigger, v))
+}
+
+// TriggerHasSuffix applies the HasSuffix predicate on the "trigger" field.
+func TriggerHasSuffix(v string) predicate.Sub2APIOptimizeLog {
+	return predicate.Sub2APIOptimizeLog(sql.FieldHasSuffix(FieldTrigger, v))
+}
+
+// TriggerEqualFold applies the EqualFold predicate on the "trigger" field.
+func TriggerEqualFold(v string) predicate.Sub2APIOptimizeLog {
+	return predicate.Sub2APIOptimizeLog(sql.FieldEqualFold(FieldTrigger, v))
+}
+
+// TriggerContainsFold applies the ContainsFold predicate on the "trigger" field.
+func TriggerContainsFold(v string) predicate.Sub2APIOptimizeLog {
+	return predicate.Sub2APIOptimizeLog(sql.FieldContainsFold(FieldTrigger, v))
 }
 
 // StatusEQ applies the EQ predicate on the "status" field.
@@ -538,6 +643,29 @@ func FinishedAtIsNil() predicate.Sub2APIOptimizeLog {
 // FinishedAtNotNil applies the NotNil predicate on the "finished_at" field.
 func FinishedAtNotNil() predicate.Sub2APIOptimizeLog {
 	return predicate.Sub2APIOptimizeLog(sql.FieldNotNull(FieldFinishedAt))
+}
+
+// HasProvider applies the HasEdge predicate on the "provider" edge.
+func HasProvider() predicate.Sub2APIOptimizeLog {
+	return predicate.Sub2APIOptimizeLog(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, ProviderTable, ProviderColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasProviderWith applies the HasEdge predicate on the "provider" edge with a given conditions (other predicates).
+func HasProviderWith(preds ...predicate.Sub2APIProvider) predicate.Sub2APIOptimizeLog {
+	return predicate.Sub2APIOptimizeLog(func(s *sql.Selector) {
+		step := newProviderStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
 }
 
 // HasSchedule applies the HasEdge predicate on the "schedule" edge.

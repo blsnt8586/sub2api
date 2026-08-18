@@ -217,7 +217,7 @@ func (m *mockAccountRepoForGemini) ListByProviderID(ctx context.Context, provide
 	return nil, nil
 }
 
-func (m *mockAccountRepoForGemini) UpdateSub2APIOptimizeSettings(ctx context.Context, accountID int64, enabled bool, minMultiplier, maxMultiplier *float64, testModel *string) error {
+func (m *mockAccountRepoForGemini) UpdateSub2APIOptimizeSettings(ctx context.Context, providerID, accountID int64, enabled bool, minMultiplier, maxMultiplier *float64, testModel *string) error {
 	return nil
 }
 

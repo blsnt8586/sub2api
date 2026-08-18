@@ -1,5 +1,19 @@
 package domain
 
+const (
+	Sub2APIProviderAuthModePassword  = "password"
+	Sub2APIProviderAuthModeTokenPair = "token_pair"
+)
+
+func IsValidSub2APIProviderAuthMode(mode string) bool {
+	switch mode {
+	case Sub2APIProviderAuthModePassword, Sub2APIProviderAuthModeTokenPair:
+		return true
+	default:
+		return false
+	}
+}
+
 // Sub2API Provider 相关常量
 
 const (

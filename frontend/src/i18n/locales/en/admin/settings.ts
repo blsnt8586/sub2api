@@ -49,6 +49,13 @@ export default {
           priceDescription: 'Pricing notes (Markdown)',
           priceDescriptionHint: 'Rendered at the top of the plaza page. Use it for billing rules, exchange rates, promotions, etc.',
         },
+        codexRadar: {
+          title: 'Codex Radar',
+          description: 'Show the source site\'s owner recommendations and comprehensive intelligence metrics through a server-side cache.',
+          enabled: 'Enable Codex Radar',
+          enabledHint: 'Shows the user sidebar entry and syncs codexradar.com once per hour.',
+          sourceLink: 'Open codexradar.com',
+        },
         riskControl: {
           title: 'Risk Control',
           description: 'Enable the content moderation menu and gateway audit entry point. Disabled by default.',

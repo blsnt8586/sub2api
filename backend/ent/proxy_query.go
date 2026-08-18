@@ -16,18 +16,20 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/account"
 	"github.com/Wei-Shaw/sub2api/ent/predicate"
 	"github.com/Wei-Shaw/sub2api/ent/proxy"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiprovider"
 )
 
 // ProxyQuery is the builder for querying Proxy entities.
 type ProxyQuery struct {
 	config
-	ctx             *QueryContext
-	order           []proxy.OrderOption
-	inters          []Interceptor
-	predicates      []predicate.Proxy
-	withAccounts    *AccountQuery
-	withBackupProxy *ProxyQuery
-	modifiers       []func(*sql.Selector)
+	ctx                  *QueryContext
+	order                []proxy.OrderOption
+	inters               []Interceptor
+	predicates           []predicate.Proxy
+	withAccounts         *AccountQuery
+	withSub2apiProviders *Sub2APIProviderQuery
+	withBackupProxy      *ProxyQuery
+	modifiers            []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -79,6 +81,28 @@ func (_q *ProxyQuery) QueryAccounts() *AccountQuery {
 			sqlgraph.From(proxy.Table, proxy.FieldID, selector),
 			sqlgraph.To(account.Table, account.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, true, proxy.AccountsTable, proxy.AccountsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QuerySub2apiProviders chains the current query on the "sub2api_providers" edge.
+func (_q *ProxyQuery) QuerySub2apiProviders() *Sub2APIProviderQuery {
+	query := (&Sub2APIProviderClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(proxy.Table, proxy.FieldID, selector),
+			sqlgraph.To(sub2apiprovider.Table, sub2apiprovider.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, proxy.Sub2apiProvidersTable, proxy.Sub2apiProvidersColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -295,13 +319,14 @@ func (_q *ProxyQuery) Clone() *ProxyQuery {
 		return nil
 	}
 	return &ProxyQuery{
-		config:          _q.config,
-		ctx:             _q.ctx.Clone(),
-		order:           append([]proxy.OrderOption{}, _q.order...),
-		inters:          append([]Interceptor{}, _q.inters...),
-		predicates:      append([]predicate.Proxy{}, _q.predicates...),
-		withAccounts:    _q.withAccounts.Clone(),
-		withBackupProxy: _q.withBackupProxy.Clone(),
+		config:               _q.config,
+		ctx:                  _q.ctx.Clone(),
+		order:                append([]proxy.OrderOption{}, _q.order...),
+		inters:               append([]Interceptor{}, _q.inters...),
+		predicates:           append([]predicate.Proxy{}, _q.predicates...),
+		withAccounts:         _q.withAccounts.Clone(),
+		withSub2apiProviders: _q.withSub2apiProviders.Clone(),
+		withBackupProxy:      _q.withBackupProxy.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -316,6 +341,17 @@ func (_q *ProxyQuery) WithAccounts(opts ...func(*AccountQuery)) *ProxyQuery {
 		opt(query)
 	}
 	_q.withAccounts = query
+	return _q
+}
+
+// WithSub2apiProviders tells the query-builder to eager-load the nodes that are connected to
+// the "sub2api_providers" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *ProxyQuery) WithSub2apiProviders(opts ...func(*Sub2APIProviderQuery)) *ProxyQuery {
+	query := (&Sub2APIProviderClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withSub2apiProviders = query
 	return _q
 }
 
@@ -408,8 +444,9 @@ func (_q *ProxyQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Proxy,
 	var (
 		nodes       = []*Proxy{}
 		_spec       = _q.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			_q.withAccounts != nil,
+			_q.withSub2apiProviders != nil,
 			_q.withBackupProxy != nil,
 		}
 	)
@@ -441,6 +478,13 @@ func (_q *ProxyQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Proxy,
 			return nil, err
 		}
 	}
+	if query := _q.withSub2apiProviders; query != nil {
+		if err := _q.loadSub2apiProviders(ctx, query, nodes,
+			func(n *Proxy) { n.Edges.Sub2apiProviders = []*Sub2APIProvider{} },
+			func(n *Proxy, e *Sub2APIProvider) { n.Edges.Sub2apiProviders = append(n.Edges.Sub2apiProviders, e) }); err != nil {
+			return nil, err
+		}
+	}
 	if query := _q.withBackupProxy; query != nil {
 		if err := _q.loadBackupProxy(ctx, query, nodes, nil,
 			func(n *Proxy, e *Proxy) { n.Edges.BackupProxy = e }); err != nil {
@@ -465,6 +509,39 @@ func (_q *ProxyQuery) loadAccounts(ctx context.Context, query *AccountQuery, nod
 	}
 	query.Where(predicate.Account(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(proxy.AccountsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ProxyID
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "proxy_id" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "proxy_id" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *ProxyQuery) loadSub2apiProviders(ctx context.Context, query *Sub2APIProviderQuery, nodes []*Proxy, init func(*Proxy), assign func(*Proxy, *Sub2APIProvider)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int64]*Proxy)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(sub2apiprovider.FieldProxyID)
+	}
+	query.Where(predicate.Sub2APIProvider(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(proxy.Sub2apiProvidersColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

@@ -2,13 +2,15 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
 	"github.com/Wei-Shaw/sub2api/ent/schema/mixins"
 )
 
-// Sub2APIOptimizeLog 每次定时优化任务的执行记录
+// Sub2APIOptimizeLog records every Provider group optimization attempt,
+// regardless of whether it was triggered by cron, probe linkage, or an admin.
 type Sub2APIOptimizeLog struct {
 	ent.Schema
 }
@@ -21,15 +23,27 @@ func (Sub2APIOptimizeLog) Mixin() []ent.Mixin {
 
 func (Sub2APIOptimizeLog) Fields() []ent.Field {
 	return []ent.Field{
-		// schedule_id: 所属定时配置
+		// provider_id is the stable audit owner. Logs must remain queryable even
+		// when a schedule is disabled or deleted.
+		field.Int64("provider_id").
+			Comment("所属上游 Provider ID"),
+
+		// schedule_id is present only for cron/schedule-now runs.
 		field.Int64("schedule_id").
-			Comment("所属定时配置 ID"),
+			Optional().
+			Nillable().
+			Comment("关联的定时配置 ID，可空"),
+
+		field.String("trigger").
+			MaxLen(32).
+			Default("legacy").
+			Comment("触发方式：cron / schedule_now / probe_unhealthy / manual_account / manual_all / legacy"),
 
 		// status: 整体运行状态
 		field.String("status").
 			MaxLen(16).
 			Default("success").
-			Comment("整体状态：success / partial / failed"),
+			Comment("整体状态：success / partial / failed / skipped"),
 
 		// total: 处理的账号总数
 		field.Int("total").
@@ -72,18 +86,29 @@ func (Sub2APIOptimizeLog) Fields() []ent.Field {
 
 func (Sub2APIOptimizeLog) Edges() []ent.Edge {
 	return []ent.Edge{
-		// schedule: 所属定时配置（反向）
+		edge.From("provider", Sub2APIProvider.Type).
+			Ref("optimize_logs").
+			Field("provider_id").
+			Required().
+			Unique().
+			Annotations(entsql.OnDelete(entsql.Cascade)),
+
+		// Schedule deletion must not remove audit history.
 		edge.From("schedule", Sub2APIOptimizeSchedule.Type).
 			Ref("logs").
 			Field("schedule_id").
-			Required().
 			Unique(),
 	}
 }
 
 func (Sub2APIOptimizeLog) Indexes() []ent.Index {
 	return []ent.Index{
-		// 按 schedule_id + 创建时间排序，方便取最近N条日志
+		index.Fields("provider_id", "created_at").
+			StorageKey("idx_sub2api_optimize_logs_provider_created"),
+		index.Fields("provider_id", "trigger", "created_at").
+			StorageKey("idx_sub2api_optimize_logs_provider_trigger_created"),
+		index.Fields("provider_id", "status", "created_at").
+			StorageKey("idx_sub2api_optimize_logs_provider_status_created"),
 		index.Fields("schedule_id", "created_at"),
 	}
 }

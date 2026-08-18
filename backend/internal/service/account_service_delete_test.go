@@ -243,7 +243,7 @@ func (s *accountRepoStub) ListByProviderID(ctx context.Context, providerID int64
 	return nil, nil
 }
 
-func (s *accountRepoStub) UpdateSub2APIOptimizeSettings(ctx context.Context, accountID int64, enabled bool, minMultiplier, maxMultiplier *float64, testModel *string) error {
+func (s *accountRepoStub) UpdateSub2APIOptimizeSettings(ctx context.Context, providerID, accountID int64, enabled bool, minMultiplier, maxMultiplier *float64, testModel *string) error {
 	return nil
 }
 

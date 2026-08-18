@@ -346,6 +346,9 @@ type UpdateSettingsRequest struct {
 	ModelPlazaRequireAuth *bool   `json:"model_plaza_require_auth"`
 	ModelPlazaDescription *string `json:"model_plaza_description"`
 
+	// Codex 雷达第三方数据看板开关
+	CodexRadarEnabled *bool `json:"codex_radar_enabled"`
+
 	// Affiliate (邀请返利) feature switch
 	AffiliateEnabled *bool `json:"affiliate_enabled"`
 
@@ -1931,6 +1934,12 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 			}
 			return previousSettings.ModelPlazaDescription
 		}(),
+		CodexRadarEnabled: func() bool {
+			if req.CodexRadarEnabled != nil {
+				return *req.CodexRadarEnabled
+			}
+			return previousSettings.CodexRadarEnabled
+		}(),
 		AffiliateEnabled: func() bool {
 			if req.AffiliateEnabled != nil {
 				return *req.AffiliateEnabled
@@ -2352,6 +2361,7 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		ModelPlazaEnabled:     updatedSettings.ModelPlazaEnabled,
 		ModelPlazaRequireAuth: updatedSettings.ModelPlazaRequireAuth,
 		ModelPlazaDescription: updatedSettings.ModelPlazaDescription,
+		CodexRadarEnabled:     updatedSettings.CodexRadarEnabled,
 
 		AffiliateEnabled: updatedSettings.AffiliateEnabled,
 

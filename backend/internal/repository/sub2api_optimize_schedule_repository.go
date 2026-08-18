@@ -2,8 +2,11 @@ package repository
 
 import (
 	"context"
+	"encoding/json"
+	"strings"
 	"time"
 
+	entsql "entgo.io/ent/dialect/sql"
 	"github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/ent/sub2apioptimizelog"
 	"github.com/Wei-Shaw/sub2api/ent/sub2apioptimizeschedule"
@@ -101,12 +104,16 @@ func (r *Sub2APIOptimizeScheduleRepository) ListDue(ctx context.Context, now tim
 // CreateLog 写入一条运行日志
 func (r *Sub2APIOptimizeScheduleRepository) CreateLog(ctx context.Context, input *service.CreateOptimizeLogInput) (*ent.Sub2APIOptimizeLog, error) {
 	b := r.client.Sub2APIOptimizeLog.Create().
-		SetScheduleID(input.ScheduleID).
+		SetProviderID(input.ProviderID).
+		SetTrigger(input.Trigger).
 		SetStatus(input.Status).
 		SetTotal(input.Total).
 		SetOptimized(input.Optimized).
 		SetSkipped(input.Skipped).
 		SetFailed(input.Failed)
+	if input.ScheduleID != nil {
+		b = b.SetScheduleID(*input.ScheduleID)
+	}
 	if input.Detail != nil {
 		b = b.SetDetail(input.Detail)
 	}
@@ -119,11 +126,61 @@ func (r *Sub2APIOptimizeScheduleRepository) CreateLog(ctx context.Context, input
 	return b.Save(ctx)
 }
 
-// ListRecentLogs 取最近 N 条日志
-func (r *Sub2APIOptimizeScheduleRepository) ListRecentLogs(ctx context.Context, scheduleID int64, limit int) ([]*ent.Sub2APIOptimizeLog, error) {
-	return r.client.Sub2APIOptimizeLog.Query().
-		Where(sub2apioptimizelog.ScheduleID(scheduleID)).
-		Order(ent.Desc(sub2apioptimizelog.FieldCreatedAt)).
-		Limit(limit).
+var optimizeLogLikeEscaper = strings.NewReplacer(`\`, `\\`, "%", `\%`, "_", `\_`)
+
+// ListLogs returns only one Provider's audit records and applies every user
+// value as a bound argument. PostgreSQL JSONB containment keeps account
+// filtering exact instead of relying on ambiguous text matching.
+func (r *Sub2APIOptimizeScheduleRepository) ListLogs(ctx context.Context, providerID int64, filter service.OptimizeLogFilter) ([]*ent.Sub2APIOptimizeLog, int64, error) {
+	q := r.client.Sub2APIOptimizeLog.Query().
+		Where(sub2apioptimizelog.ProviderID(providerID))
+	if filter.Trigger != "" {
+		q = q.Where(sub2apioptimizelog.TriggerEQ(filter.Trigger))
+	}
+	if filter.Status != "" {
+		q = q.Where(sub2apioptimizelog.StatusEQ(filter.Status))
+	}
+	if filter.AccountID != nil {
+		value, err := json.Marshal([]map[string]int64{{"account_id": *filter.AccountID}})
+		if err != nil {
+			return nil, 0, err
+		}
+		q = q.Where(func(selector *entsql.Selector) {
+			selector.Where(entsql.P(func(builder *entsql.Builder) {
+				builder.Ident(selector.C(sub2apioptimizelog.FieldDetail)).
+					WriteString(" @> ").
+					Arg(string(value)).
+					WriteString("::jsonb")
+			}))
+		})
+	}
+	if filter.Keyword != "" {
+		pattern := "%" + strings.ToLower(optimizeLogLikeEscaper.Replace(filter.Keyword)) + "%"
+		q = q.Where(func(selector *entsql.Selector) {
+			selector.Where(entsql.P(func(builder *entsql.Builder) {
+				builder.WriteString("LOWER(CAST(").
+					Ident(selector.C(sub2apioptimizelog.FieldDetail)).
+					WriteString(" AS TEXT)) LIKE ").
+					Arg(pattern).
+					WriteString(` ESCAPE '\'`)
+			}))
+		})
+	}
+	if filter.From != nil {
+		q = q.Where(sub2apioptimizelog.CreatedAtGTE(*filter.From))
+	}
+	if filter.To != nil {
+		q = q.Where(sub2apioptimizelog.CreatedAtLTE(*filter.To))
+	}
+
+	total, err := q.Clone().Count(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	logs, err := q.
+		Order(ent.Desc(sub2apioptimizelog.FieldCreatedAt), ent.Desc(sub2apioptimizelog.FieldID)).
+		Offset((filter.Page - 1) * filter.PageSize).
+		Limit(filter.PageSize).
 		All(ctx)
+	return logs, int64(total), err
 }

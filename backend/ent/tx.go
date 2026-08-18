@@ -78,6 +78,14 @@ type Tx struct {
 	Sub2APIOptimizeSchedule *Sub2APIOptimizeScheduleClient
 	// Sub2APIProvider is the client for interacting with the Sub2APIProvider builders.
 	Sub2APIProvider *Sub2APIProviderClient
+	// Sub2APIProviderProbeConfig is the client for interacting with the Sub2APIProviderProbeConfig builders.
+	Sub2APIProviderProbeConfig *Sub2APIProviderProbeConfigClient
+	// Sub2APIProviderProbeRun is the client for interacting with the Sub2APIProviderProbeRun builders.
+	Sub2APIProviderProbeRun *Sub2APIProviderProbeRunClient
+	// Sub2APIProviderProbeTarget is the client for interacting with the Sub2APIProviderProbeTarget builders.
+	Sub2APIProviderProbeTarget *Sub2APIProviderProbeTargetClient
+	// Sub2APIProviderProbeTargetRun is the client for interacting with the Sub2APIProviderProbeTargetRun builders.
+	Sub2APIProviderProbeTargetRun *Sub2APIProviderProbeTargetRunClient
 	// SubscriptionPlan is the client for interacting with the SubscriptionPlan builders.
 	SubscriptionPlan *SubscriptionPlanClient
 	// TLSFingerprintProfile is the client for interacting with the TLSFingerprintProfile builders.
@@ -261,6 +269,10 @@ func (tx *Tx) init() {
 	tx.Sub2APIOptimizeLog = NewSub2APIOptimizeLogClient(tx.config)
 	tx.Sub2APIOptimizeSchedule = NewSub2APIOptimizeScheduleClient(tx.config)
 	tx.Sub2APIProvider = NewSub2APIProviderClient(tx.config)
+	tx.Sub2APIProviderProbeConfig = NewSub2APIProviderProbeConfigClient(tx.config)
+	tx.Sub2APIProviderProbeRun = NewSub2APIProviderProbeRunClient(tx.config)
+	tx.Sub2APIProviderProbeTarget = NewSub2APIProviderProbeTargetClient(tx.config)
+	tx.Sub2APIProviderProbeTargetRun = NewSub2APIProviderProbeTargetRunClient(tx.config)
 	tx.SubscriptionPlan = NewSubscriptionPlanClient(tx.config)
 	tx.TLSFingerprintProfile = NewTLSFingerprintProfileClient(tx.config)
 	tx.UsageCleanupTask = NewUsageCleanupTaskClient(tx.config)

@@ -21,7 +21,42 @@ func newTestRadarService(imageURL, summaryURL string) *CodexRadarService {
 	s := NewCodexRadarService()
 	s.imageURL = imageURL
 	s.summaryURL = summaryURL
+	s.recommendationsURL = ""
+	s.intelligenceURL = ""
 	return s
+}
+
+func TestCodexRadarService_FetchesStructuredDatasets(t *testing.T) {
+	var recommendationHits, intelligenceHits atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/recommendations":
+			recommendationHits.Add(1)
+			_, _ = w.Write([]byte(`{"recommendations":[{"key":"daily","title":"日常开发","items":[]}]}`))
+		case "/intelligence":
+			intelligenceHits.Add(1)
+			_, _ = w.Write([]byte(`{"points":[{"model":"gpt-5.6-sol","effort":"low","iq":80}]}`))
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer srv.Close()
+
+	s := NewCodexRadarService()
+	s.imageURL = ""
+	s.summaryURL = ""
+	s.recommendationsURL = srv.URL + "/recommendations"
+	s.intelligenceURL = srv.URL + "/intelligence"
+	s.EnsureFresh(context.Background())
+
+	snap := s.DataSnapshot()
+	if !snap.Available || len(snap.Recommendations) == 0 || len(snap.Intelligence) == 0 {
+		t.Fatalf("structured snapshot not available: %+v", snap)
+	}
+	if recommendationHits.Load() != 1 || intelligenceHits.Load() != 1 {
+		t.Fatalf("unexpected upstream hits: recommendations=%d intelligence=%d", recommendationHits.Load(), intelligenceHits.Load())
+	}
 }
 
 func TestCodexRadarService_FetchAndCache(t *testing.T) {

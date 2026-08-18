@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/Wei-Shaw/sub2api/ent/account"
 	"github.com/Wei-Shaw/sub2api/ent/proxy"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiprovider"
 )
 
 // ProxyCreate is the builder for creating a Proxy entity.
@@ -200,6 +201,21 @@ func (_c *ProxyCreate) AddAccounts(v ...*Account) *ProxyCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddAccountIDs(ids...)
+}
+
+// AddSub2apiProviderIDs adds the "sub2api_providers" edge to the Sub2APIProvider entity by IDs.
+func (_c *ProxyCreate) AddSub2apiProviderIDs(ids ...int64) *ProxyCreate {
+	_c.mutation.AddSub2apiProviderIDs(ids...)
+	return _c
+}
+
+// AddSub2apiProviders adds the "sub2api_providers" edges to the Sub2APIProvider entity.
+func (_c *ProxyCreate) AddSub2apiProviders(v ...*Sub2APIProvider) *ProxyCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddSub2apiProviderIDs(ids...)
 }
 
 // SetBackupProxy sets the "backup_proxy" edge to the Proxy entity.
@@ -425,6 +441,22 @@ func (_c *ProxyCreate) createSpec() (*Proxy, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(account.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.Sub2apiProvidersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: true,
+			Table:   proxy.Sub2apiProvidersTable,
+			Columns: []string{proxy.Sub2apiProvidersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiprovider.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

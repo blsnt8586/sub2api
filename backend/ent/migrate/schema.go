@@ -125,6 +125,7 @@ var (
 		{Name: "session_window_end", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "session_window_status", Type: field.TypeString, Nullable: true, Size: 20},
 		{Name: "provider_api_key_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "remote_group_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "remote_group_name", Type: field.TypeString, Nullable: true, Size: 100},
 		{Name: "remote_group_multiplier", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(10,4)"}},
 		{Name: "remote_group_synced_at", Type: field.TypeTime, Nullable: true},
@@ -145,19 +146,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "accounts_proxies_proxy",
-				Columns:    []*schema.Column{AccountsColumns[38]},
+				Columns:    []*schema.Column{AccountsColumns[39]},
 				RefColumns: []*schema.Column{ProxiesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "accounts_accounts_children",
-				Columns:    []*schema.Column{AccountsColumns[39]},
+				Columns:    []*schema.Column{AccountsColumns[40]},
 				RefColumns: []*schema.Column{AccountsColumns[0]},
 				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "accounts_sub2api_providers_accounts",
-				Columns:    []*schema.Column{AccountsColumns[40]},
+				Columns:    []*schema.Column{AccountsColumns[41]},
 				RefColumns: []*schema.Column{Sub2apiProvidersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -181,7 +182,7 @@ var (
 			{
 				Name:    "account_proxy_id",
 				Unique:  false,
-				Columns: []*schema.Column{AccountsColumns[38]},
+				Columns: []*schema.Column{AccountsColumns[39]},
 			},
 			{
 				Name:    "account_priority",
@@ -231,7 +232,7 @@ var (
 			{
 				Name:    "account_parent_account_id",
 				Unique:  false,
-				Columns: []*schema.Column{AccountsColumns[39]},
+				Columns: []*schema.Column{AccountsColumns[40]},
 			},
 		},
 	}
@@ -1548,6 +1549,7 @@ var (
 		{Name: "id", Type: field.TypeInt64, Increment: true},
 		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "trigger", Type: field.TypeString, Size: 32, Default: "legacy"},
 		{Name: "status", Type: field.TypeString, Size: 16, Default: "success"},
 		{Name: "total", Type: field.TypeInt, Default: 0},
 		{Name: "optimized", Type: field.TypeInt, Default: 0},
@@ -1556,7 +1558,8 @@ var (
 		{Name: "detail", Type: field.TypeJSON, Nullable: true},
 		{Name: "started_at", Type: field.TypeTime, Nullable: true},
 		{Name: "finished_at", Type: field.TypeTime, Nullable: true},
-		{Name: "schedule_id", Type: field.TypeInt64},
+		{Name: "schedule_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "provider_id", Type: field.TypeInt64},
 	}
 	// Sub2apiOptimizeLogsTable holds the schema information for the "sub2api_optimize_logs" table.
 	Sub2apiOptimizeLogsTable = &schema.Table{
@@ -1566,16 +1569,37 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "sub2api_optimize_logs_sub2api_optimize_schedules_logs",
-				Columns:    []*schema.Column{Sub2apiOptimizeLogsColumns[11]},
+				Columns:    []*schema.Column{Sub2apiOptimizeLogsColumns[12]},
 				RefColumns: []*schema.Column{Sub2apiOptimizeSchedulesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "sub2api_optimize_logs_sub2api_providers_optimize_logs",
+				Columns:    []*schema.Column{Sub2apiOptimizeLogsColumns[13]},
+				RefColumns: []*schema.Column{Sub2apiProvidersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 		},
 		Indexes: []*schema.Index{
 			{
+				Name:    "idx_sub2api_optimize_logs_provider_created",
+				Unique:  false,
+				Columns: []*schema.Column{Sub2apiOptimizeLogsColumns[13], Sub2apiOptimizeLogsColumns[1]},
+			},
+			{
+				Name:    "idx_sub2api_optimize_logs_provider_trigger_created",
+				Unique:  false,
+				Columns: []*schema.Column{Sub2apiOptimizeLogsColumns[13], Sub2apiOptimizeLogsColumns[3], Sub2apiOptimizeLogsColumns[1]},
+			},
+			{
+				Name:    "idx_sub2api_optimize_logs_provider_status_created",
+				Unique:  false,
+				Columns: []*schema.Column{Sub2apiOptimizeLogsColumns[13], Sub2apiOptimizeLogsColumns[4], Sub2apiOptimizeLogsColumns[1]},
+			},
+			{
 				Name:    "sub2apioptimizelog_schedule_id_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{Sub2apiOptimizeLogsColumns[11], Sub2apiOptimizeLogsColumns[1]},
+				Columns: []*schema.Column{Sub2apiOptimizeLogsColumns[12], Sub2apiOptimizeLogsColumns[1]},
 			},
 		},
 	}
@@ -1623,23 +1647,43 @@ var (
 		{Name: "status", Type: field.TypeString, Size: 20, Default: "active"},
 		{Name: "notes", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "email", Type: field.TypeString, Size: 200},
-		{Name: "password_encrypted", Type: field.TypeString, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "password_encrypted", Type: field.TypeString, Default: "", SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "auth_mode", Type: field.TypeString, Size: 32, Default: "password"},
+		{Name: "access_token_encrypted", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "refresh_token_encrypted", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "access_token_expires_at", Type: field.TypeTime, Nullable: true},
+		{Name: "last_token_refresh_at", Type: field.TypeTime, Nullable: true},
+		{Name: "last_auth_error", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "api_path_keys", Type: field.TypeString, Nullable: true, Size: 100},
 		{Name: "api_path_groups", Type: field.TypeString, Nullable: true, Size: 100},
 		{Name: "last_sync_at", Type: field.TypeTime, Nullable: true},
 		{Name: "last_sync_status", Type: field.TypeString, Nullable: true, Size: 20},
 		{Name: "last_sync_error", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "proxy_id", Type: field.TypeInt64, Nullable: true},
 	}
 	// Sub2apiProvidersTable holds the schema information for the "sub2api_providers" table.
 	Sub2apiProvidersTable = &schema.Table{
 		Name:       "sub2api_providers",
 		Columns:    Sub2apiProvidersColumns,
 		PrimaryKey: []*schema.Column{Sub2apiProvidersColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "sub2api_providers_proxies_proxy",
+				Columns:    []*schema.Column{Sub2apiProvidersColumns[22]},
+				RefColumns: []*schema.Column{ProxiesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
 		Indexes: []*schema.Index{
 			{
 				Name:    "sub2apiprovider_status",
 				Unique:  false,
 				Columns: []*schema.Column{Sub2apiProvidersColumns[7]},
+			},
+			{
+				Name:    "sub2apiprovider_proxy_id",
+				Unique:  false,
+				Columns: []*schema.Column{Sub2apiProvidersColumns[22]},
 			},
 			{
 				Name:    "sub2apiprovider_deleted_at",
@@ -1653,6 +1697,209 @@ var (
 				Annotation: &entsql.IndexAnnotation{
 					Where: "deleted_at IS NULL",
 				},
+			},
+		},
+	}
+	// Sub2apiProviderProbeConfigsColumns holds the columns for the "sub2api_provider_probe_configs" table.
+	Sub2apiProviderProbeConfigsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "control_enabled", Type: field.TypeBool, Default: true},
+		{Name: "control_interval_seconds", Type: field.TypeInt, Default: 1800},
+		{Name: "data_enabled", Type: field.TypeBool, Default: false},
+		{Name: "data_interval_seconds", Type: field.TypeInt, Default: 1800},
+		{Name: "selected_account_ids", Type: field.TypeJSON, SchemaType: map[string]string{"postgres": "jsonb"}},
+		{Name: "allow_media_probe", Type: field.TypeBool, Default: false},
+		{Name: "timeout_seconds", Type: field.TypeInt, Default: 15},
+		{Name: "degraded_latency_ms", Type: field.TypeInt, Default: 2000},
+		{Name: "failure_threshold", Type: field.TypeInt, Default: 3},
+		{Name: "recovery_threshold", Type: field.TypeInt, Default: 2},
+		{Name: "last_control_run_at", Type: field.TypeTime, Nullable: true},
+		{Name: "last_data_run_at", Type: field.TypeTime, Nullable: true},
+		{Name: "provider_id", Type: field.TypeInt64, Unique: true},
+	}
+	// Sub2apiProviderProbeConfigsTable holds the schema information for the "sub2api_provider_probe_configs" table.
+	Sub2apiProviderProbeConfigsTable = &schema.Table{
+		Name:       "sub2api_provider_probe_configs",
+		Columns:    Sub2apiProviderProbeConfigsColumns,
+		PrimaryKey: []*schema.Column{Sub2apiProviderProbeConfigsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "sub2api_provider_probe_configs_sub2api_providers_probe_config",
+				Columns:    []*schema.Column{Sub2apiProviderProbeConfigsColumns[15]},
+				RefColumns: []*schema.Column{Sub2apiProvidersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "sub2apiproviderprobeconfig_provider_id",
+				Unique:  true,
+				Columns: []*schema.Column{Sub2apiProviderProbeConfigsColumns[15]},
+			},
+		},
+	}
+	// Sub2apiProviderProbeRunsColumns holds the columns for the "sub2api_provider_probe_runs" table.
+	Sub2apiProviderProbeRunsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "overall_status", Type: field.TypeEnum, Enums: []string{"healthy", "degraded", "unhealthy", "unknown"}},
+		{Name: "control_status", Type: field.TypeEnum, Enums: []string{"healthy", "degraded", "unhealthy", "unknown"}},
+		{Name: "data_status", Type: field.TypeEnum, Enums: []string{"healthy", "degraded", "unhealthy", "unknown"}},
+		{Name: "traffic_status", Type: field.TypeEnum, Enums: []string{"healthy", "degraded", "unhealthy", "unknown"}},
+		{Name: "login_latency_ms", Type: field.TypeInt, Nullable: true},
+		{Name: "health_latency_ms", Type: field.TypeInt, Nullable: true},
+		{Name: "keys_latency_ms", Type: field.TypeInt, Nullable: true},
+		{Name: "groups_latency_ms", Type: field.TypeInt, Nullable: true},
+		{Name: "data_probe_count", Type: field.TypeInt, Default: 0},
+		{Name: "data_probe_success", Type: field.TypeInt, Default: 0},
+		{Name: "data_probe_failed", Type: field.TypeInt, Default: 0},
+		{Name: "traffic_request_count", Type: field.TypeInt, Default: 0},
+		{Name: "traffic_success_rate", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(7,4)"}},
+		{Name: "traffic_p95_latency_ms", Type: field.TypeInt, Nullable: true},
+		{Name: "error_category", Type: field.TypeString, Nullable: true, Size: 64},
+		{Name: "error_message", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "details", Type: field.TypeJSON, SchemaType: map[string]string{"postgres": "jsonb"}},
+		{Name: "started_at", Type: field.TypeTime},
+		{Name: "finished_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "provider_id", Type: field.TypeInt64},
+	}
+	// Sub2apiProviderProbeRunsTable holds the schema information for the "sub2api_provider_probe_runs" table.
+	Sub2apiProviderProbeRunsTable = &schema.Table{
+		Name:       "sub2api_provider_probe_runs",
+		Columns:    Sub2apiProviderProbeRunsColumns,
+		PrimaryKey: []*schema.Column{Sub2apiProviderProbeRunsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "sub2api_provider_probe_runs_sub2api_providers_probe_runs",
+				Columns:    []*schema.Column{Sub2apiProviderProbeRunsColumns[21]},
+				RefColumns: []*schema.Column{Sub2apiProvidersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "sub2apiproviderproberun_provider_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{Sub2apiProviderProbeRunsColumns[21], Sub2apiProviderProbeRunsColumns[20]},
+			},
+			{
+				Name:    "sub2apiproviderproberun_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{Sub2apiProviderProbeRunsColumns[20]},
+			},
+		},
+	}
+	// Sub2apiProviderProbeTargetsColumns holds the columns for the "sub2api_provider_probe_targets" table.
+	Sub2apiProviderProbeTargetsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "provider_api_key_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "remote_group_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "remote_group_name", Type: field.TypeString, Nullable: true, Size: 100, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "platform", Type: field.TypeString, Size: 50, Default: ""},
+		{Name: "enabled", Type: field.TypeBool, Default: false},
+		{Name: "interval_seconds", Type: field.TypeInt, Default: 30},
+		{Name: "test_model", Type: field.TypeString, Nullable: true, Size: 160},
+		{Name: "allow_media_probe", Type: field.TypeBool, Default: false},
+		{Name: "timeout_seconds", Type: field.TypeInt, Default: 60},
+		{Name: "degraded_latency_ms", Type: field.TypeInt, Default: 5000},
+		{Name: "failure_threshold", Type: field.TypeInt, Default: 3},
+		{Name: "recovery_threshold", Type: field.TypeInt, Default: 2},
+		{Name: "last_run_at", Type: field.TypeTime, Nullable: true},
+		{Name: "route_changed_at", Type: field.TypeTime, Nullable: true},
+		{Name: "account_id", Type: field.TypeInt64},
+		{Name: "provider_id", Type: field.TypeInt64},
+	}
+	// Sub2apiProviderProbeTargetsTable holds the schema information for the "sub2api_provider_probe_targets" table.
+	Sub2apiProviderProbeTargetsTable = &schema.Table{
+		Name:       "sub2api_provider_probe_targets",
+		Columns:    Sub2apiProviderProbeTargetsColumns,
+		PrimaryKey: []*schema.Column{Sub2apiProviderProbeTargetsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "sub2api_provider_probe_targets_accounts_sub2api_probe_targets",
+				Columns:    []*schema.Column{Sub2apiProviderProbeTargetsColumns[17]},
+				RefColumns: []*schema.Column{AccountsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "sub2api_provider_probe_targets_sub2api_providers_probe_targets",
+				Columns:    []*schema.Column{Sub2apiProviderProbeTargetsColumns[18]},
+				RefColumns: []*schema.Column{Sub2apiProvidersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "sub2apiproviderprobetarget_provider_id_account_id",
+				Unique:  true,
+				Columns: []*schema.Column{Sub2apiProviderProbeTargetsColumns[18], Sub2apiProviderProbeTargetsColumns[17]},
+			},
+			{
+				Name:    "sub2apiproviderprobetarget_provider_id_enabled_last_run_at",
+				Unique:  false,
+				Columns: []*schema.Column{Sub2apiProviderProbeTargetsColumns[18], Sub2apiProviderProbeTargetsColumns[7], Sub2apiProviderProbeTargetsColumns[15]},
+			},
+			{
+				Name:    "sub2apiproviderprobetarget_account_id",
+				Unique:  false,
+				Columns: []*schema.Column{Sub2apiProviderProbeTargetsColumns[17]},
+			},
+		},
+	}
+	// Sub2apiProviderProbeTargetRunsColumns holds the columns for the "sub2api_provider_probe_target_runs" table.
+	Sub2apiProviderProbeTargetRunsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt64, Increment: true},
+		{Name: "provider_id", Type: field.TypeInt64},
+		{Name: "account_id", Type: field.TypeInt64},
+		{Name: "provider_api_key_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "remote_group_id", Type: field.TypeInt64, Nullable: true},
+		{Name: "remote_group_name", Type: field.TypeString, Nullable: true, Size: 100, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "platform", Type: field.TypeString, Size: 50, Default: ""},
+		{Name: "model_id", Type: field.TypeString, Nullable: true, Size: 160},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"healthy", "degraded", "unhealthy", "unknown"}},
+		{Name: "latency_ms", Type: field.TypeInt, Nullable: true},
+		{Name: "traffic_request_count", Type: field.TypeInt, Default: 0},
+		{Name: "traffic_success_rate", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(7,4)"}},
+		{Name: "traffic_p95_latency_ms", Type: field.TypeInt, Nullable: true},
+		{Name: "error_category", Type: field.TypeString, Nullable: true, Size: 64},
+		{Name: "error_message", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "started_at", Type: field.TypeTime},
+		{Name: "finished_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "target_id", Type: field.TypeInt64},
+	}
+	// Sub2apiProviderProbeTargetRunsTable holds the schema information for the "sub2api_provider_probe_target_runs" table.
+	Sub2apiProviderProbeTargetRunsTable = &schema.Table{
+		Name:       "sub2api_provider_probe_target_runs",
+		Columns:    Sub2apiProviderProbeTargetRunsColumns,
+		PrimaryKey: []*schema.Column{Sub2apiProviderProbeTargetRunsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "sub2api_provider_probe_target_runs_sub2api_provider_probe_targets_runs",
+				Columns:    []*schema.Column{Sub2apiProviderProbeTargetRunsColumns[18]},
+				RefColumns: []*schema.Column{Sub2apiProviderProbeTargetsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "sub2apiproviderprobetargetrun_target_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{Sub2apiProviderProbeTargetRunsColumns[18], Sub2apiProviderProbeTargetRunsColumns[17]},
+			},
+			{
+				Name:    "sub2apiproviderprobetargetrun_provider_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{Sub2apiProviderProbeTargetRunsColumns[1], Sub2apiProviderProbeTargetRunsColumns[17]},
+			},
+			{
+				Name:    "sub2apiproviderprobetargetrun_account_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{Sub2apiProviderProbeTargetRunsColumns[2], Sub2apiProviderProbeTargetRunsColumns[17]},
 			},
 		},
 	}
@@ -2240,6 +2487,10 @@ var (
 		Sub2apiOptimizeLogsTable,
 		Sub2apiOptimizeSchedulesTable,
 		Sub2apiProvidersTable,
+		Sub2apiProviderProbeConfigsTable,
+		Sub2apiProviderProbeRunsTable,
+		Sub2apiProviderProbeTargetsTable,
+		Sub2apiProviderProbeTargetRunsTable,
 		SubscriptionPlansTable,
 		TLSFingerprintProfilesTable,
 		UsageCleanupTasksTable,
@@ -2366,9 +2617,28 @@ func init() {
 		Table: "settings",
 	}
 	Sub2apiOptimizeLogsTable.ForeignKeys[0].RefTable = Sub2apiOptimizeSchedulesTable
+	Sub2apiOptimizeLogsTable.ForeignKeys[1].RefTable = Sub2apiProvidersTable
 	Sub2apiOptimizeSchedulesTable.ForeignKeys[0].RefTable = Sub2apiProvidersTable
+	Sub2apiProvidersTable.ForeignKeys[0].RefTable = ProxiesTable
 	Sub2apiProvidersTable.Annotation = &entsql.Annotation{
 		Table: "sub2api_providers",
+	}
+	Sub2apiProviderProbeConfigsTable.ForeignKeys[0].RefTable = Sub2apiProvidersTable
+	Sub2apiProviderProbeConfigsTable.Annotation = &entsql.Annotation{
+		Table: "sub2api_provider_probe_configs",
+	}
+	Sub2apiProviderProbeRunsTable.ForeignKeys[0].RefTable = Sub2apiProvidersTable
+	Sub2apiProviderProbeRunsTable.Annotation = &entsql.Annotation{
+		Table: "sub2api_provider_probe_runs",
+	}
+	Sub2apiProviderProbeTargetsTable.ForeignKeys[0].RefTable = AccountsTable
+	Sub2apiProviderProbeTargetsTable.ForeignKeys[1].RefTable = Sub2apiProvidersTable
+	Sub2apiProviderProbeTargetsTable.Annotation = &entsql.Annotation{
+		Table: "sub2api_provider_probe_targets",
+	}
+	Sub2apiProviderProbeTargetRunsTable.ForeignKeys[0].RefTable = Sub2apiProviderProbeTargetsTable
+	Sub2apiProviderProbeTargetRunsTable.Annotation = &entsql.Annotation{
+		Table: "sub2api_provider_probe_target_runs",
 	}
 	SubscriptionPlansTable.Annotation = &entsql.Annotation{
 		Table: "subscription_plans",

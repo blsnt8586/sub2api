@@ -45,6 +45,10 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/sub2apioptimizelog"
 	"github.com/Wei-Shaw/sub2api/ent/sub2apioptimizeschedule"
 	"github.com/Wei-Shaw/sub2api/ent/sub2apiprovider"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiproviderprobeconfig"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiproviderproberun"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiproviderprobetarget"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiproviderprobetargetrun"
 	"github.com/Wei-Shaw/sub2api/ent/subscriptionplan"
 	"github.com/Wei-Shaw/sub2api/ent/tlsfingerprintprofile"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
@@ -99,6 +103,10 @@ const (
 	TypeSub2APIOptimizeLog            = "Sub2APIOptimizeLog"
 	TypeSub2APIOptimizeSchedule       = "Sub2APIOptimizeSchedule"
 	TypeSub2APIProvider               = "Sub2APIProvider"
+	TypeSub2APIProviderProbeConfig    = "Sub2APIProviderProbeConfig"
+	TypeSub2APIProviderProbeRun       = "Sub2APIProviderProbeRun"
+	TypeSub2APIProviderProbeTarget    = "Sub2APIProviderProbeTarget"
+	TypeSub2APIProviderProbeTargetRun = "Sub2APIProviderProbeTargetRun"
 	TypeSubscriptionPlan              = "SubscriptionPlan"
 	TypeTLSFingerprintProfile         = "TLSFingerprintProfile"
 	TypeUsageCleanupTask              = "UsageCleanupTask"
@@ -2288,74 +2296,79 @@ func (m *APIKeyMutation) ResetEdge(name string) error {
 // AccountMutation represents an operation that mutates the Account nodes in the graph.
 type AccountMutation struct {
 	config
-	op                          Op
-	typ                         string
-	id                          *int64
-	created_at                  *time.Time
-	updated_at                  *time.Time
-	deleted_at                  *time.Time
-	name                        *string
-	notes                       *string
-	platform                    *string
-	_type                       *string
-	credentials                 *map[string]interface{}
-	extra                       *map[string]interface{}
-	proxy_fallback_origin_id    *int64
-	addproxy_fallback_origin_id *int64
-	concurrency                 *int
-	addconcurrency              *int
-	load_factor                 *int
-	addload_factor              *int
-	priority                    *int
-	addpriority                 *int
-	rate_multiplier             *float64
-	addrate_multiplier          *float64
-	status                      *string
-	error_message               *string
-	last_used_at                *time.Time
-	expires_at                  *time.Time
-	auto_pause_on_expired       *bool
-	schedulable                 *bool
-	rate_limited_at             *time.Time
-	rate_limit_reset_at         *time.Time
-	overload_until              *time.Time
-	temp_unschedulable_until    *time.Time
-	temp_unschedulable_reason   *string
-	session_window_start        *time.Time
-	session_window_end          *time.Time
-	session_window_status       *string
-	provider_api_key_id         *int64
-	addprovider_api_key_id      *int64
-	remote_group_name           *string
-	remote_group_multiplier     *float64
-	addremote_group_multiplier  *float64
-	remote_group_synced_at      *time.Time
-	sub2api_optimize_enabled    *bool
-	sub2api_max_multiplier      *float64
-	addsub2api_max_multiplier   *float64
-	sub2api_min_multiplier      *float64
-	addsub2api_min_multiplier   *float64
-	sub2api_test_model          *string
-	quota_dimension             *account.QuotaDimension
-	clearedFields               map[string]struct{}
-	groups                      map[int64]struct{}
-	removedgroups               map[int64]struct{}
-	clearedgroups               bool
-	proxy                       *int64
-	clearedproxy                bool
-	parent                      *int64
-	clearedparent               bool
-	children                    map[int64]struct{}
-	removedchildren             map[int64]struct{}
-	clearedchildren             bool
-	usage_logs                  map[int64]struct{}
-	removedusage_logs           map[int64]struct{}
-	clearedusage_logs           bool
-	provider                    *int64
-	clearedprovider             bool
-	done                        bool
-	oldValue                    func(context.Context) (*Account, error)
-	predicates                  []predicate.Account
+	op                           Op
+	typ                          string
+	id                           *int64
+	created_at                   *time.Time
+	updated_at                   *time.Time
+	deleted_at                   *time.Time
+	name                         *string
+	notes                        *string
+	platform                     *string
+	_type                        *string
+	credentials                  *map[string]interface{}
+	extra                        *map[string]interface{}
+	proxy_fallback_origin_id     *int64
+	addproxy_fallback_origin_id  *int64
+	concurrency                  *int
+	addconcurrency               *int
+	load_factor                  *int
+	addload_factor               *int
+	priority                     *int
+	addpriority                  *int
+	rate_multiplier              *float64
+	addrate_multiplier           *float64
+	status                       *string
+	error_message                *string
+	last_used_at                 *time.Time
+	expires_at                   *time.Time
+	auto_pause_on_expired        *bool
+	schedulable                  *bool
+	rate_limited_at              *time.Time
+	rate_limit_reset_at          *time.Time
+	overload_until               *time.Time
+	temp_unschedulable_until     *time.Time
+	temp_unschedulable_reason    *string
+	session_window_start         *time.Time
+	session_window_end           *time.Time
+	session_window_status        *string
+	provider_api_key_id          *int64
+	addprovider_api_key_id       *int64
+	remote_group_id              *int64
+	addremote_group_id           *int64
+	remote_group_name            *string
+	remote_group_multiplier      *float64
+	addremote_group_multiplier   *float64
+	remote_group_synced_at       *time.Time
+	sub2api_optimize_enabled     *bool
+	sub2api_max_multiplier       *float64
+	addsub2api_max_multiplier    *float64
+	sub2api_min_multiplier       *float64
+	addsub2api_min_multiplier    *float64
+	sub2api_test_model           *string
+	quota_dimension              *account.QuotaDimension
+	clearedFields                map[string]struct{}
+	groups                       map[int64]struct{}
+	removedgroups                map[int64]struct{}
+	clearedgroups                bool
+	proxy                        *int64
+	clearedproxy                 bool
+	parent                       *int64
+	clearedparent                bool
+	children                     map[int64]struct{}
+	removedchildren              map[int64]struct{}
+	clearedchildren              bool
+	usage_logs                   map[int64]struct{}
+	removedusage_logs            map[int64]struct{}
+	clearedusage_logs            bool
+	provider                     *int64
+	clearedprovider              bool
+	sub2api_probe_targets        map[int64]struct{}
+	removedsub2api_probe_targets map[int64]struct{}
+	clearedsub2api_probe_targets bool
+	done                         bool
+	oldValue                     func(context.Context) (*Account, error)
+	predicates                   []predicate.Account
 }
 
 var _ ent.Mutation = (*AccountMutation)(nil)
@@ -3929,6 +3942,76 @@ func (m *AccountMutation) ResetProviderAPIKeyID() {
 	delete(m.clearedFields, account.FieldProviderAPIKeyID)
 }
 
+// SetRemoteGroupID sets the "remote_group_id" field.
+func (m *AccountMutation) SetRemoteGroupID(i int64) {
+	m.remote_group_id = &i
+	m.addremote_group_id = nil
+}
+
+// RemoteGroupID returns the value of the "remote_group_id" field in the mutation.
+func (m *AccountMutation) RemoteGroupID() (r int64, exists bool) {
+	v := m.remote_group_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRemoteGroupID returns the old "remote_group_id" field's value of the Account entity.
+// If the Account object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AccountMutation) OldRemoteGroupID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRemoteGroupID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRemoteGroupID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRemoteGroupID: %w", err)
+	}
+	return oldValue.RemoteGroupID, nil
+}
+
+// AddRemoteGroupID adds i to the "remote_group_id" field.
+func (m *AccountMutation) AddRemoteGroupID(i int64) {
+	if m.addremote_group_id != nil {
+		*m.addremote_group_id += i
+	} else {
+		m.addremote_group_id = &i
+	}
+}
+
+// AddedRemoteGroupID returns the value that was added to the "remote_group_id" field in this mutation.
+func (m *AccountMutation) AddedRemoteGroupID() (r int64, exists bool) {
+	v := m.addremote_group_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearRemoteGroupID clears the value of the "remote_group_id" field.
+func (m *AccountMutation) ClearRemoteGroupID() {
+	m.remote_group_id = nil
+	m.addremote_group_id = nil
+	m.clearedFields[account.FieldRemoteGroupID] = struct{}{}
+}
+
+// RemoteGroupIDCleared returns if the "remote_group_id" field was cleared in this mutation.
+func (m *AccountMutation) RemoteGroupIDCleared() bool {
+	_, ok := m.clearedFields[account.FieldRemoteGroupID]
+	return ok
+}
+
+// ResetRemoteGroupID resets all changes to the "remote_group_id" field.
+func (m *AccountMutation) ResetRemoteGroupID() {
+	m.remote_group_id = nil
+	m.addremote_group_id = nil
+	delete(m.clearedFields, account.FieldRemoteGroupID)
+}
+
 // SetRemoteGroupName sets the "remote_group_name" field.
 func (m *AccountMutation) SetRemoteGroupName(s string) {
 	m.remote_group_name = &s
@@ -4663,6 +4746,60 @@ func (m *AccountMutation) ResetProvider() {
 	m.clearedprovider = false
 }
 
+// AddSub2apiProbeTargetIDs adds the "sub2api_probe_targets" edge to the Sub2APIProviderProbeTarget entity by ids.
+func (m *AccountMutation) AddSub2apiProbeTargetIDs(ids ...int64) {
+	if m.sub2api_probe_targets == nil {
+		m.sub2api_probe_targets = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.sub2api_probe_targets[ids[i]] = struct{}{}
+	}
+}
+
+// ClearSub2apiProbeTargets clears the "sub2api_probe_targets" edge to the Sub2APIProviderProbeTarget entity.
+func (m *AccountMutation) ClearSub2apiProbeTargets() {
+	m.clearedsub2api_probe_targets = true
+}
+
+// Sub2apiProbeTargetsCleared reports if the "sub2api_probe_targets" edge to the Sub2APIProviderProbeTarget entity was cleared.
+func (m *AccountMutation) Sub2apiProbeTargetsCleared() bool {
+	return m.clearedsub2api_probe_targets
+}
+
+// RemoveSub2apiProbeTargetIDs removes the "sub2api_probe_targets" edge to the Sub2APIProviderProbeTarget entity by IDs.
+func (m *AccountMutation) RemoveSub2apiProbeTargetIDs(ids ...int64) {
+	if m.removedsub2api_probe_targets == nil {
+		m.removedsub2api_probe_targets = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.sub2api_probe_targets, ids[i])
+		m.removedsub2api_probe_targets[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedSub2apiProbeTargets returns the removed IDs of the "sub2api_probe_targets" edge to the Sub2APIProviderProbeTarget entity.
+func (m *AccountMutation) RemovedSub2apiProbeTargetsIDs() (ids []int64) {
+	for id := range m.removedsub2api_probe_targets {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// Sub2apiProbeTargetsIDs returns the "sub2api_probe_targets" edge IDs in the mutation.
+func (m *AccountMutation) Sub2apiProbeTargetsIDs() (ids []int64) {
+	for id := range m.sub2api_probe_targets {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetSub2apiProbeTargets resets all changes to the "sub2api_probe_targets" edge.
+func (m *AccountMutation) ResetSub2apiProbeTargets() {
+	m.sub2api_probe_targets = nil
+	m.clearedsub2api_probe_targets = false
+	m.removedsub2api_probe_targets = nil
+}
+
 // Where appends a list predicates to the AccountMutation builder.
 func (m *AccountMutation) Where(ps ...predicate.Account) {
 	m.predicates = append(m.predicates, ps...)
@@ -4697,7 +4834,7 @@ func (m *AccountMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AccountMutation) Fields() []string {
-	fields := make([]string, 0, 40)
+	fields := make([]string, 0, 41)
 	if m.created_at != nil {
 		fields = append(fields, account.FieldCreatedAt)
 	}
@@ -4790,6 +4927,9 @@ func (m *AccountMutation) Fields() []string {
 	}
 	if m.provider_api_key_id != nil {
 		fields = append(fields, account.FieldProviderAPIKeyID)
+	}
+	if m.remote_group_id != nil {
+		fields = append(fields, account.FieldRemoteGroupID)
 	}
 	if m.remote_group_name != nil {
 		fields = append(fields, account.FieldRemoteGroupName)
@@ -4888,6 +5028,8 @@ func (m *AccountMutation) Field(name string) (ent.Value, bool) {
 		return m.ProviderID()
 	case account.FieldProviderAPIKeyID:
 		return m.ProviderAPIKeyID()
+	case account.FieldRemoteGroupID:
+		return m.RemoteGroupID()
 	case account.FieldRemoteGroupName:
 		return m.RemoteGroupName()
 	case account.FieldRemoteGroupMultiplier:
@@ -4977,6 +5119,8 @@ func (m *AccountMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldProviderID(ctx)
 	case account.FieldProviderAPIKeyID:
 		return m.OldProviderAPIKeyID(ctx)
+	case account.FieldRemoteGroupID:
+		return m.OldRemoteGroupID(ctx)
 	case account.FieldRemoteGroupName:
 		return m.OldRemoteGroupName(ctx)
 	case account.FieldRemoteGroupMultiplier:
@@ -5221,6 +5365,13 @@ func (m *AccountMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetProviderAPIKeyID(v)
 		return nil
+	case account.FieldRemoteGroupID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRemoteGroupID(v)
+		return nil
 	case account.FieldRemoteGroupName:
 		v, ok := value.(string)
 		if !ok {
@@ -5310,6 +5461,9 @@ func (m *AccountMutation) AddedFields() []string {
 	if m.addprovider_api_key_id != nil {
 		fields = append(fields, account.FieldProviderAPIKeyID)
 	}
+	if m.addremote_group_id != nil {
+		fields = append(fields, account.FieldRemoteGroupID)
+	}
 	if m.addremote_group_multiplier != nil {
 		fields = append(fields, account.FieldRemoteGroupMultiplier)
 	}
@@ -5339,6 +5493,8 @@ func (m *AccountMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedRateMultiplier()
 	case account.FieldProviderAPIKeyID:
 		return m.AddedProviderAPIKeyID()
+	case account.FieldRemoteGroupID:
+		return m.AddedRemoteGroupID()
 	case account.FieldRemoteGroupMultiplier:
 		return m.AddedRemoteGroupMultiplier()
 	case account.FieldSub2apiMaxMultiplier:
@@ -5395,6 +5551,13 @@ func (m *AccountMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddProviderAPIKeyID(v)
+		return nil
+	case account.FieldRemoteGroupID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRemoteGroupID(v)
 		return nil
 	case account.FieldRemoteGroupMultiplier:
 		v, ok := value.(float64)
@@ -5478,6 +5641,9 @@ func (m *AccountMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(account.FieldProviderAPIKeyID) {
 		fields = append(fields, account.FieldProviderAPIKeyID)
+	}
+	if m.FieldCleared(account.FieldRemoteGroupID) {
+		fields = append(fields, account.FieldRemoteGroupID)
 	}
 	if m.FieldCleared(account.FieldRemoteGroupName) {
 		fields = append(fields, account.FieldRemoteGroupName)
@@ -5567,6 +5733,9 @@ func (m *AccountMutation) ClearField(name string) error {
 		return nil
 	case account.FieldProviderAPIKeyID:
 		m.ClearProviderAPIKeyID()
+		return nil
+	case account.FieldRemoteGroupID:
+		m.ClearRemoteGroupID()
 		return nil
 	case account.FieldRemoteGroupName:
 		m.ClearRemoteGroupName()
@@ -5690,6 +5859,9 @@ func (m *AccountMutation) ResetField(name string) error {
 	case account.FieldProviderAPIKeyID:
 		m.ResetProviderAPIKeyID()
 		return nil
+	case account.FieldRemoteGroupID:
+		m.ResetRemoteGroupID()
+		return nil
 	case account.FieldRemoteGroupName:
 		m.ResetRemoteGroupName()
 		return nil
@@ -5723,7 +5895,7 @@ func (m *AccountMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *AccountMutation) AddedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 7)
 	if m.groups != nil {
 		edges = append(edges, account.EdgeGroups)
 	}
@@ -5741,6 +5913,9 @@ func (m *AccountMutation) AddedEdges() []string {
 	}
 	if m.provider != nil {
 		edges = append(edges, account.EdgeProvider)
+	}
+	if m.sub2api_probe_targets != nil {
+		edges = append(edges, account.EdgeSub2apiProbeTargets)
 	}
 	return edges
 }
@@ -5779,13 +5954,19 @@ func (m *AccountMutation) AddedIDs(name string) []ent.Value {
 		if id := m.provider; id != nil {
 			return []ent.Value{*id}
 		}
+	case account.EdgeSub2apiProbeTargets:
+		ids := make([]ent.Value, 0, len(m.sub2api_probe_targets))
+		for id := range m.sub2api_probe_targets {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *AccountMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 7)
 	if m.removedgroups != nil {
 		edges = append(edges, account.EdgeGroups)
 	}
@@ -5794,6 +5975,9 @@ func (m *AccountMutation) RemovedEdges() []string {
 	}
 	if m.removedusage_logs != nil {
 		edges = append(edges, account.EdgeUsageLogs)
+	}
+	if m.removedsub2api_probe_targets != nil {
+		edges = append(edges, account.EdgeSub2apiProbeTargets)
 	}
 	return edges
 }
@@ -5820,13 +6004,19 @@ func (m *AccountMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case account.EdgeSub2apiProbeTargets:
+		ids := make([]ent.Value, 0, len(m.removedsub2api_probe_targets))
+		for id := range m.removedsub2api_probe_targets {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *AccountMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 6)
+	edges := make([]string, 0, 7)
 	if m.clearedgroups {
 		edges = append(edges, account.EdgeGroups)
 	}
@@ -5844,6 +6034,9 @@ func (m *AccountMutation) ClearedEdges() []string {
 	}
 	if m.clearedprovider {
 		edges = append(edges, account.EdgeProvider)
+	}
+	if m.clearedsub2api_probe_targets {
+		edges = append(edges, account.EdgeSub2apiProbeTargets)
 	}
 	return edges
 }
@@ -5864,6 +6057,8 @@ func (m *AccountMutation) EdgeCleared(name string) bool {
 		return m.clearedusage_logs
 	case account.EdgeProvider:
 		return m.clearedprovider
+	case account.EdgeSub2apiProbeTargets:
+		return m.clearedsub2api_probe_targets
 	}
 	return false
 }
@@ -5906,6 +6101,9 @@ func (m *AccountMutation) ResetEdge(name string) error {
 		return nil
 	case account.EdgeProvider:
 		m.ResetProvider()
+		return nil
+	case account.EdgeSub2apiProbeTargets:
+		m.ResetSub2apiProbeTargets()
 		return nil
 	}
 	return fmt.Errorf("unknown Account edge %s", name)
@@ -38243,33 +38441,36 @@ func (m *PromoCodeUsageMutation) ResetEdge(name string) error {
 // ProxyMutation represents an operation that mutates the Proxy nodes in the graph.
 type ProxyMutation struct {
 	config
-	op                  Op
-	typ                 string
-	id                  *int64
-	created_at          *time.Time
-	updated_at          *time.Time
-	deleted_at          *time.Time
-	name                *string
-	protocol            *string
-	host                *string
-	port                *int
-	addport             *int
-	username            *string
-	password            *string
-	status              *string
-	expires_at          *time.Time
-	fallback_mode       *string
-	expiry_warn_days    *int
-	addexpiry_warn_days *int
-	clearedFields       map[string]struct{}
-	accounts            map[int64]struct{}
-	removedaccounts     map[int64]struct{}
-	clearedaccounts     bool
-	backup_proxy        *int64
-	clearedbackup_proxy bool
-	done                bool
-	oldValue            func(context.Context) (*Proxy, error)
-	predicates          []predicate.Proxy
+	op                       Op
+	typ                      string
+	id                       *int64
+	created_at               *time.Time
+	updated_at               *time.Time
+	deleted_at               *time.Time
+	name                     *string
+	protocol                 *string
+	host                     *string
+	port                     *int
+	addport                  *int
+	username                 *string
+	password                 *string
+	status                   *string
+	expires_at               *time.Time
+	fallback_mode            *string
+	expiry_warn_days         *int
+	addexpiry_warn_days      *int
+	clearedFields            map[string]struct{}
+	accounts                 map[int64]struct{}
+	removedaccounts          map[int64]struct{}
+	clearedaccounts          bool
+	sub2api_providers        map[int64]struct{}
+	removedsub2api_providers map[int64]struct{}
+	clearedsub2api_providers bool
+	backup_proxy             *int64
+	clearedbackup_proxy      bool
+	done                     bool
+	oldValue                 func(context.Context) (*Proxy, error)
+	predicates               []predicate.Proxy
 }
 
 var _ ent.Mutation = (*ProxyMutation)(nil)
@@ -39033,6 +39234,60 @@ func (m *ProxyMutation) ResetAccounts() {
 	m.removedaccounts = nil
 }
 
+// AddSub2apiProviderIDs adds the "sub2api_providers" edge to the Sub2APIProvider entity by ids.
+func (m *ProxyMutation) AddSub2apiProviderIDs(ids ...int64) {
+	if m.sub2api_providers == nil {
+		m.sub2api_providers = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.sub2api_providers[ids[i]] = struct{}{}
+	}
+}
+
+// ClearSub2apiProviders clears the "sub2api_providers" edge to the Sub2APIProvider entity.
+func (m *ProxyMutation) ClearSub2apiProviders() {
+	m.clearedsub2api_providers = true
+}
+
+// Sub2apiProvidersCleared reports if the "sub2api_providers" edge to the Sub2APIProvider entity was cleared.
+func (m *ProxyMutation) Sub2apiProvidersCleared() bool {
+	return m.clearedsub2api_providers
+}
+
+// RemoveSub2apiProviderIDs removes the "sub2api_providers" edge to the Sub2APIProvider entity by IDs.
+func (m *ProxyMutation) RemoveSub2apiProviderIDs(ids ...int64) {
+	if m.removedsub2api_providers == nil {
+		m.removedsub2api_providers = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.sub2api_providers, ids[i])
+		m.removedsub2api_providers[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedSub2apiProviders returns the removed IDs of the "sub2api_providers" edge to the Sub2APIProvider entity.
+func (m *ProxyMutation) RemovedSub2apiProvidersIDs() (ids []int64) {
+	for id := range m.removedsub2api_providers {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// Sub2apiProvidersIDs returns the "sub2api_providers" edge IDs in the mutation.
+func (m *ProxyMutation) Sub2apiProvidersIDs() (ids []int64) {
+	for id := range m.sub2api_providers {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetSub2apiProviders resets all changes to the "sub2api_providers" edge.
+func (m *ProxyMutation) ResetSub2apiProviders() {
+	m.sub2api_providers = nil
+	m.clearedsub2api_providers = false
+	m.removedsub2api_providers = nil
+}
+
 // ClearBackupProxy clears the "backup_proxy" edge to the Proxy entity.
 func (m *ProxyMutation) ClearBackupProxy() {
 	m.clearedbackup_proxy = true
@@ -39474,9 +39729,12 @@ func (m *ProxyMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *ProxyMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.accounts != nil {
 		edges = append(edges, proxy.EdgeAccounts)
+	}
+	if m.sub2api_providers != nil {
+		edges = append(edges, proxy.EdgeSub2apiProviders)
 	}
 	if m.backup_proxy != nil {
 		edges = append(edges, proxy.EdgeBackupProxy)
@@ -39494,6 +39752,12 @@ func (m *ProxyMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case proxy.EdgeSub2apiProviders:
+		ids := make([]ent.Value, 0, len(m.sub2api_providers))
+		for id := range m.sub2api_providers {
+			ids = append(ids, id)
+		}
+		return ids
 	case proxy.EdgeBackupProxy:
 		if id := m.backup_proxy; id != nil {
 			return []ent.Value{*id}
@@ -39504,9 +39768,12 @@ func (m *ProxyMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *ProxyMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.removedaccounts != nil {
 		edges = append(edges, proxy.EdgeAccounts)
+	}
+	if m.removedsub2api_providers != nil {
+		edges = append(edges, proxy.EdgeSub2apiProviders)
 	}
 	return edges
 }
@@ -39521,15 +39788,24 @@ func (m *ProxyMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case proxy.EdgeSub2apiProviders:
+		ids := make([]ent.Value, 0, len(m.removedsub2api_providers))
+		for id := range m.removedsub2api_providers {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *ProxyMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedaccounts {
 		edges = append(edges, proxy.EdgeAccounts)
+	}
+	if m.clearedsub2api_providers {
+		edges = append(edges, proxy.EdgeSub2apiProviders)
 	}
 	if m.clearedbackup_proxy {
 		edges = append(edges, proxy.EdgeBackupProxy)
@@ -39543,6 +39819,8 @@ func (m *ProxyMutation) EdgeCleared(name string) bool {
 	switch name {
 	case proxy.EdgeAccounts:
 		return m.clearedaccounts
+	case proxy.EdgeSub2apiProviders:
+		return m.clearedsub2api_providers
 	case proxy.EdgeBackupProxy:
 		return m.clearedbackup_proxy
 	}
@@ -39566,6 +39844,9 @@ func (m *ProxyMutation) ResetEdge(name string) error {
 	switch name {
 	case proxy.EdgeAccounts:
 		m.ResetAccounts()
+		return nil
+	case proxy.EdgeSub2apiProviders:
+		m.ResetSub2apiProviders()
 		return nil
 	case proxy.EdgeBackupProxy:
 		m.ResetBackupProxy()
@@ -41650,6 +41931,7 @@ type Sub2APIOptimizeLogMutation struct {
 	id              *int64
 	created_at      *time.Time
 	updated_at      *time.Time
+	trigger         *string
 	status          *string
 	total           *int
 	addtotal        *int
@@ -41664,6 +41946,8 @@ type Sub2APIOptimizeLogMutation struct {
 	started_at      *time.Time
 	finished_at     *time.Time
 	clearedFields   map[string]struct{}
+	provider        *int64
+	clearedprovider bool
 	schedule        *int64
 	clearedschedule bool
 	done            bool
@@ -41841,6 +42125,42 @@ func (m *Sub2APIOptimizeLogMutation) ResetUpdatedAt() {
 	m.updated_at = nil
 }
 
+// SetProviderID sets the "provider_id" field.
+func (m *Sub2APIOptimizeLogMutation) SetProviderID(i int64) {
+	m.provider = &i
+}
+
+// ProviderID returns the value of the "provider_id" field in the mutation.
+func (m *Sub2APIOptimizeLogMutation) ProviderID() (r int64, exists bool) {
+	v := m.provider
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProviderID returns the old "provider_id" field's value of the Sub2APIOptimizeLog entity.
+// If the Sub2APIOptimizeLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIOptimizeLogMutation) OldProviderID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProviderID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProviderID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProviderID: %w", err)
+	}
+	return oldValue.ProviderID, nil
+}
+
+// ResetProviderID resets all changes to the "provider_id" field.
+func (m *Sub2APIOptimizeLogMutation) ResetProviderID() {
+	m.provider = nil
+}
+
 // SetScheduleID sets the "schedule_id" field.
 func (m *Sub2APIOptimizeLogMutation) SetScheduleID(i int64) {
 	m.schedule = &i
@@ -41858,7 +42178,7 @@ func (m *Sub2APIOptimizeLogMutation) ScheduleID() (r int64, exists bool) {
 // OldScheduleID returns the old "schedule_id" field's value of the Sub2APIOptimizeLog entity.
 // If the Sub2APIOptimizeLog object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *Sub2APIOptimizeLogMutation) OldScheduleID(ctx context.Context) (v int64, err error) {
+func (m *Sub2APIOptimizeLogMutation) OldScheduleID(ctx context.Context) (v *int64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldScheduleID is only allowed on UpdateOne operations")
 	}
@@ -41872,9 +42192,58 @@ func (m *Sub2APIOptimizeLogMutation) OldScheduleID(ctx context.Context) (v int64
 	return oldValue.ScheduleID, nil
 }
 
+// ClearScheduleID clears the value of the "schedule_id" field.
+func (m *Sub2APIOptimizeLogMutation) ClearScheduleID() {
+	m.schedule = nil
+	m.clearedFields[sub2apioptimizelog.FieldScheduleID] = struct{}{}
+}
+
+// ScheduleIDCleared returns if the "schedule_id" field was cleared in this mutation.
+func (m *Sub2APIOptimizeLogMutation) ScheduleIDCleared() bool {
+	_, ok := m.clearedFields[sub2apioptimizelog.FieldScheduleID]
+	return ok
+}
+
 // ResetScheduleID resets all changes to the "schedule_id" field.
 func (m *Sub2APIOptimizeLogMutation) ResetScheduleID() {
 	m.schedule = nil
+	delete(m.clearedFields, sub2apioptimizelog.FieldScheduleID)
+}
+
+// SetTrigger sets the "trigger" field.
+func (m *Sub2APIOptimizeLogMutation) SetTrigger(s string) {
+	m.trigger = &s
+}
+
+// Trigger returns the value of the "trigger" field in the mutation.
+func (m *Sub2APIOptimizeLogMutation) Trigger() (r string, exists bool) {
+	v := m.trigger
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTrigger returns the old "trigger" field's value of the Sub2APIOptimizeLog entity.
+// If the Sub2APIOptimizeLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIOptimizeLogMutation) OldTrigger(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTrigger is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTrigger requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTrigger: %w", err)
+	}
+	return oldValue.Trigger, nil
+}
+
+// ResetTrigger resets all changes to the "trigger" field.
+func (m *Sub2APIOptimizeLogMutation) ResetTrigger() {
+	m.trigger = nil
 }
 
 // SetStatus sets the "status" field.
@@ -42300,6 +42669,33 @@ func (m *Sub2APIOptimizeLogMutation) ResetFinishedAt() {
 	delete(m.clearedFields, sub2apioptimizelog.FieldFinishedAt)
 }
 
+// ClearProvider clears the "provider" edge to the Sub2APIProvider entity.
+func (m *Sub2APIOptimizeLogMutation) ClearProvider() {
+	m.clearedprovider = true
+	m.clearedFields[sub2apioptimizelog.FieldProviderID] = struct{}{}
+}
+
+// ProviderCleared reports if the "provider" edge to the Sub2APIProvider entity was cleared.
+func (m *Sub2APIOptimizeLogMutation) ProviderCleared() bool {
+	return m.clearedprovider
+}
+
+// ProviderIDs returns the "provider" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ProviderID instead. It exists only for internal usage by the builders.
+func (m *Sub2APIOptimizeLogMutation) ProviderIDs() (ids []int64) {
+	if id := m.provider; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetProvider resets all changes to the "provider" edge.
+func (m *Sub2APIOptimizeLogMutation) ResetProvider() {
+	m.provider = nil
+	m.clearedprovider = false
+}
+
 // ClearSchedule clears the "schedule" edge to the Sub2APIOptimizeSchedule entity.
 func (m *Sub2APIOptimizeLogMutation) ClearSchedule() {
 	m.clearedschedule = true
@@ -42308,7 +42704,7 @@ func (m *Sub2APIOptimizeLogMutation) ClearSchedule() {
 
 // ScheduleCleared reports if the "schedule" edge to the Sub2APIOptimizeSchedule entity was cleared.
 func (m *Sub2APIOptimizeLogMutation) ScheduleCleared() bool {
-	return m.clearedschedule
+	return m.ScheduleIDCleared() || m.clearedschedule
 }
 
 // ScheduleIDs returns the "schedule" edge IDs in the mutation.
@@ -42361,15 +42757,21 @@ func (m *Sub2APIOptimizeLogMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *Sub2APIOptimizeLogMutation) Fields() []string {
-	fields := make([]string, 0, 11)
+	fields := make([]string, 0, 13)
 	if m.created_at != nil {
 		fields = append(fields, sub2apioptimizelog.FieldCreatedAt)
 	}
 	if m.updated_at != nil {
 		fields = append(fields, sub2apioptimizelog.FieldUpdatedAt)
 	}
+	if m.provider != nil {
+		fields = append(fields, sub2apioptimizelog.FieldProviderID)
+	}
 	if m.schedule != nil {
 		fields = append(fields, sub2apioptimizelog.FieldScheduleID)
+	}
+	if m.trigger != nil {
+		fields = append(fields, sub2apioptimizelog.FieldTrigger)
 	}
 	if m.status != nil {
 		fields = append(fields, sub2apioptimizelog.FieldStatus)
@@ -42407,8 +42809,12 @@ func (m *Sub2APIOptimizeLogMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case sub2apioptimizelog.FieldUpdatedAt:
 		return m.UpdatedAt()
+	case sub2apioptimizelog.FieldProviderID:
+		return m.ProviderID()
 	case sub2apioptimizelog.FieldScheduleID:
 		return m.ScheduleID()
+	case sub2apioptimizelog.FieldTrigger:
+		return m.Trigger()
 	case sub2apioptimizelog.FieldStatus:
 		return m.Status()
 	case sub2apioptimizelog.FieldTotal:
@@ -42438,8 +42844,12 @@ func (m *Sub2APIOptimizeLogMutation) OldField(ctx context.Context, name string) 
 		return m.OldCreatedAt(ctx)
 	case sub2apioptimizelog.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
+	case sub2apioptimizelog.FieldProviderID:
+		return m.OldProviderID(ctx)
 	case sub2apioptimizelog.FieldScheduleID:
 		return m.OldScheduleID(ctx)
+	case sub2apioptimizelog.FieldTrigger:
+		return m.OldTrigger(ctx)
 	case sub2apioptimizelog.FieldStatus:
 		return m.OldStatus(ctx)
 	case sub2apioptimizelog.FieldTotal:
@@ -42479,12 +42889,26 @@ func (m *Sub2APIOptimizeLogMutation) SetField(name string, value ent.Value) erro
 		}
 		m.SetUpdatedAt(v)
 		return nil
+	case sub2apioptimizelog.FieldProviderID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProviderID(v)
+		return nil
 	case sub2apioptimizelog.FieldScheduleID:
 		v, ok := value.(int64)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetScheduleID(v)
+		return nil
+	case sub2apioptimizelog.FieldTrigger:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTrigger(v)
 		return nil
 	case sub2apioptimizelog.FieldStatus:
 		v, ok := value.(string)
@@ -42623,6 +43047,9 @@ func (m *Sub2APIOptimizeLogMutation) AddField(name string, value ent.Value) erro
 // mutation.
 func (m *Sub2APIOptimizeLogMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(sub2apioptimizelog.FieldScheduleID) {
+		fields = append(fields, sub2apioptimizelog.FieldScheduleID)
+	}
 	if m.FieldCleared(sub2apioptimizelog.FieldDetail) {
 		fields = append(fields, sub2apioptimizelog.FieldDetail)
 	}
@@ -42646,6 +43073,9 @@ func (m *Sub2APIOptimizeLogMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *Sub2APIOptimizeLogMutation) ClearField(name string) error {
 	switch name {
+	case sub2apioptimizelog.FieldScheduleID:
+		m.ClearScheduleID()
+		return nil
 	case sub2apioptimizelog.FieldDetail:
 		m.ClearDetail()
 		return nil
@@ -42669,8 +43099,14 @@ func (m *Sub2APIOptimizeLogMutation) ResetField(name string) error {
 	case sub2apioptimizelog.FieldUpdatedAt:
 		m.ResetUpdatedAt()
 		return nil
+	case sub2apioptimizelog.FieldProviderID:
+		m.ResetProviderID()
+		return nil
 	case sub2apioptimizelog.FieldScheduleID:
 		m.ResetScheduleID()
+		return nil
+	case sub2apioptimizelog.FieldTrigger:
+		m.ResetTrigger()
 		return nil
 	case sub2apioptimizelog.FieldStatus:
 		m.ResetStatus()
@@ -42702,7 +43138,10 @@ func (m *Sub2APIOptimizeLogMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *Sub2APIOptimizeLogMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
+	if m.provider != nil {
+		edges = append(edges, sub2apioptimizelog.EdgeProvider)
+	}
 	if m.schedule != nil {
 		edges = append(edges, sub2apioptimizelog.EdgeSchedule)
 	}
@@ -42713,6 +43152,10 @@ func (m *Sub2APIOptimizeLogMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *Sub2APIOptimizeLogMutation) AddedIDs(name string) []ent.Value {
 	switch name {
+	case sub2apioptimizelog.EdgeProvider:
+		if id := m.provider; id != nil {
+			return []ent.Value{*id}
+		}
 	case sub2apioptimizelog.EdgeSchedule:
 		if id := m.schedule; id != nil {
 			return []ent.Value{*id}
@@ -42723,7 +43166,7 @@ func (m *Sub2APIOptimizeLogMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *Sub2APIOptimizeLogMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	return edges
 }
 
@@ -42735,7 +43178,10 @@ func (m *Sub2APIOptimizeLogMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *Sub2APIOptimizeLogMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
+	if m.clearedprovider {
+		edges = append(edges, sub2apioptimizelog.EdgeProvider)
+	}
 	if m.clearedschedule {
 		edges = append(edges, sub2apioptimizelog.EdgeSchedule)
 	}
@@ -42746,6 +43192,8 @@ func (m *Sub2APIOptimizeLogMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *Sub2APIOptimizeLogMutation) EdgeCleared(name string) bool {
 	switch name {
+	case sub2apioptimizelog.EdgeProvider:
+		return m.clearedprovider
 	case sub2apioptimizelog.EdgeSchedule:
 		return m.clearedschedule
 	}
@@ -42756,6 +43204,9 @@ func (m *Sub2APIOptimizeLogMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *Sub2APIOptimizeLogMutation) ClearEdge(name string) error {
 	switch name {
+	case sub2apioptimizelog.EdgeProvider:
+		m.ClearProvider()
+		return nil
 	case sub2apioptimizelog.EdgeSchedule:
 		m.ClearSchedule()
 		return nil
@@ -42767,6 +43218,9 @@ func (m *Sub2APIOptimizeLogMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *Sub2APIOptimizeLogMutation) ResetEdge(name string) error {
 	switch name {
+	case sub2apioptimizelog.EdgeProvider:
+		m.ResetProvider()
+		return nil
 	case sub2apioptimizelog.EdgeSchedule:
 		m.ResetSchedule()
 		return nil
@@ -43623,17 +44077,36 @@ type Sub2APIProviderMutation struct {
 	notes                    *string
 	email                    *string
 	password_encrypted       *string
+	auth_mode                *string
+	access_token_encrypted   *string
+	refresh_token_encrypted  *string
+	access_token_expires_at  *time.Time
+	last_token_refresh_at    *time.Time
+	last_auth_error          *string
 	api_path_keys            *string
 	api_path_groups          *string
 	last_sync_at             *time.Time
 	last_sync_status         *string
 	last_sync_error          *string
 	clearedFields            map[string]struct{}
+	proxy                    *int64
+	clearedproxy             bool
 	accounts                 map[int64]struct{}
 	removedaccounts          map[int64]struct{}
 	clearedaccounts          bool
 	optimize_schedule        *int64
 	clearedoptimize_schedule bool
+	optimize_logs            map[int64]struct{}
+	removedoptimize_logs     map[int64]struct{}
+	clearedoptimize_logs     bool
+	probe_config             *int64
+	clearedprobe_config      bool
+	probe_runs               map[int64]struct{}
+	removedprobe_runs        map[int64]struct{}
+	clearedprobe_runs        bool
+	probe_targets            map[int64]struct{}
+	removedprobe_targets     map[int64]struct{}
+	clearedprobe_targets     bool
 	done                     bool
 	oldValue                 func(context.Context) (*Sub2APIProvider, error)
 	predicates               []predicate.Sub2APIProvider
@@ -44051,6 +44524,55 @@ func (m *Sub2APIProviderMutation) ResetNotes() {
 	delete(m.clearedFields, sub2apiprovider.FieldNotes)
 }
 
+// SetProxyID sets the "proxy_id" field.
+func (m *Sub2APIProviderMutation) SetProxyID(i int64) {
+	m.proxy = &i
+}
+
+// ProxyID returns the value of the "proxy_id" field in the mutation.
+func (m *Sub2APIProviderMutation) ProxyID() (r int64, exists bool) {
+	v := m.proxy
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProxyID returns the old "proxy_id" field's value of the Sub2APIProvider entity.
+// If the Sub2APIProvider object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderMutation) OldProxyID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProxyID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProxyID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProxyID: %w", err)
+	}
+	return oldValue.ProxyID, nil
+}
+
+// ClearProxyID clears the value of the "proxy_id" field.
+func (m *Sub2APIProviderMutation) ClearProxyID() {
+	m.proxy = nil
+	m.clearedFields[sub2apiprovider.FieldProxyID] = struct{}{}
+}
+
+// ProxyIDCleared returns if the "proxy_id" field was cleared in this mutation.
+func (m *Sub2APIProviderMutation) ProxyIDCleared() bool {
+	_, ok := m.clearedFields[sub2apiprovider.FieldProxyID]
+	return ok
+}
+
+// ResetProxyID resets all changes to the "proxy_id" field.
+func (m *Sub2APIProviderMutation) ResetProxyID() {
+	m.proxy = nil
+	delete(m.clearedFields, sub2apiprovider.FieldProxyID)
+}
+
 // SetEmail sets the "email" field.
 func (m *Sub2APIProviderMutation) SetEmail(s string) {
 	m.email = &s
@@ -44121,6 +44643,287 @@ func (m *Sub2APIProviderMutation) OldPasswordEncrypted(ctx context.Context) (v s
 // ResetPasswordEncrypted resets all changes to the "password_encrypted" field.
 func (m *Sub2APIProviderMutation) ResetPasswordEncrypted() {
 	m.password_encrypted = nil
+}
+
+// SetAuthMode sets the "auth_mode" field.
+func (m *Sub2APIProviderMutation) SetAuthMode(s string) {
+	m.auth_mode = &s
+}
+
+// AuthMode returns the value of the "auth_mode" field in the mutation.
+func (m *Sub2APIProviderMutation) AuthMode() (r string, exists bool) {
+	v := m.auth_mode
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAuthMode returns the old "auth_mode" field's value of the Sub2APIProvider entity.
+// If the Sub2APIProvider object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderMutation) OldAuthMode(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAuthMode is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAuthMode requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAuthMode: %w", err)
+	}
+	return oldValue.AuthMode, nil
+}
+
+// ResetAuthMode resets all changes to the "auth_mode" field.
+func (m *Sub2APIProviderMutation) ResetAuthMode() {
+	m.auth_mode = nil
+}
+
+// SetAccessTokenEncrypted sets the "access_token_encrypted" field.
+func (m *Sub2APIProviderMutation) SetAccessTokenEncrypted(s string) {
+	m.access_token_encrypted = &s
+}
+
+// AccessTokenEncrypted returns the value of the "access_token_encrypted" field in the mutation.
+func (m *Sub2APIProviderMutation) AccessTokenEncrypted() (r string, exists bool) {
+	v := m.access_token_encrypted
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAccessTokenEncrypted returns the old "access_token_encrypted" field's value of the Sub2APIProvider entity.
+// If the Sub2APIProvider object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderMutation) OldAccessTokenEncrypted(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAccessTokenEncrypted is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAccessTokenEncrypted requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAccessTokenEncrypted: %w", err)
+	}
+	return oldValue.AccessTokenEncrypted, nil
+}
+
+// ClearAccessTokenEncrypted clears the value of the "access_token_encrypted" field.
+func (m *Sub2APIProviderMutation) ClearAccessTokenEncrypted() {
+	m.access_token_encrypted = nil
+	m.clearedFields[sub2apiprovider.FieldAccessTokenEncrypted] = struct{}{}
+}
+
+// AccessTokenEncryptedCleared returns if the "access_token_encrypted" field was cleared in this mutation.
+func (m *Sub2APIProviderMutation) AccessTokenEncryptedCleared() bool {
+	_, ok := m.clearedFields[sub2apiprovider.FieldAccessTokenEncrypted]
+	return ok
+}
+
+// ResetAccessTokenEncrypted resets all changes to the "access_token_encrypted" field.
+func (m *Sub2APIProviderMutation) ResetAccessTokenEncrypted() {
+	m.access_token_encrypted = nil
+	delete(m.clearedFields, sub2apiprovider.FieldAccessTokenEncrypted)
+}
+
+// SetRefreshTokenEncrypted sets the "refresh_token_encrypted" field.
+func (m *Sub2APIProviderMutation) SetRefreshTokenEncrypted(s string) {
+	m.refresh_token_encrypted = &s
+}
+
+// RefreshTokenEncrypted returns the value of the "refresh_token_encrypted" field in the mutation.
+func (m *Sub2APIProviderMutation) RefreshTokenEncrypted() (r string, exists bool) {
+	v := m.refresh_token_encrypted
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRefreshTokenEncrypted returns the old "refresh_token_encrypted" field's value of the Sub2APIProvider entity.
+// If the Sub2APIProvider object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderMutation) OldRefreshTokenEncrypted(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRefreshTokenEncrypted is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRefreshTokenEncrypted requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRefreshTokenEncrypted: %w", err)
+	}
+	return oldValue.RefreshTokenEncrypted, nil
+}
+
+// ClearRefreshTokenEncrypted clears the value of the "refresh_token_encrypted" field.
+func (m *Sub2APIProviderMutation) ClearRefreshTokenEncrypted() {
+	m.refresh_token_encrypted = nil
+	m.clearedFields[sub2apiprovider.FieldRefreshTokenEncrypted] = struct{}{}
+}
+
+// RefreshTokenEncryptedCleared returns if the "refresh_token_encrypted" field was cleared in this mutation.
+func (m *Sub2APIProviderMutation) RefreshTokenEncryptedCleared() bool {
+	_, ok := m.clearedFields[sub2apiprovider.FieldRefreshTokenEncrypted]
+	return ok
+}
+
+// ResetRefreshTokenEncrypted resets all changes to the "refresh_token_encrypted" field.
+func (m *Sub2APIProviderMutation) ResetRefreshTokenEncrypted() {
+	m.refresh_token_encrypted = nil
+	delete(m.clearedFields, sub2apiprovider.FieldRefreshTokenEncrypted)
+}
+
+// SetAccessTokenExpiresAt sets the "access_token_expires_at" field.
+func (m *Sub2APIProviderMutation) SetAccessTokenExpiresAt(t time.Time) {
+	m.access_token_expires_at = &t
+}
+
+// AccessTokenExpiresAt returns the value of the "access_token_expires_at" field in the mutation.
+func (m *Sub2APIProviderMutation) AccessTokenExpiresAt() (r time.Time, exists bool) {
+	v := m.access_token_expires_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAccessTokenExpiresAt returns the old "access_token_expires_at" field's value of the Sub2APIProvider entity.
+// If the Sub2APIProvider object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderMutation) OldAccessTokenExpiresAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAccessTokenExpiresAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAccessTokenExpiresAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAccessTokenExpiresAt: %w", err)
+	}
+	return oldValue.AccessTokenExpiresAt, nil
+}
+
+// ClearAccessTokenExpiresAt clears the value of the "access_token_expires_at" field.
+func (m *Sub2APIProviderMutation) ClearAccessTokenExpiresAt() {
+	m.access_token_expires_at = nil
+	m.clearedFields[sub2apiprovider.FieldAccessTokenExpiresAt] = struct{}{}
+}
+
+// AccessTokenExpiresAtCleared returns if the "access_token_expires_at" field was cleared in this mutation.
+func (m *Sub2APIProviderMutation) AccessTokenExpiresAtCleared() bool {
+	_, ok := m.clearedFields[sub2apiprovider.FieldAccessTokenExpiresAt]
+	return ok
+}
+
+// ResetAccessTokenExpiresAt resets all changes to the "access_token_expires_at" field.
+func (m *Sub2APIProviderMutation) ResetAccessTokenExpiresAt() {
+	m.access_token_expires_at = nil
+	delete(m.clearedFields, sub2apiprovider.FieldAccessTokenExpiresAt)
+}
+
+// SetLastTokenRefreshAt sets the "last_token_refresh_at" field.
+func (m *Sub2APIProviderMutation) SetLastTokenRefreshAt(t time.Time) {
+	m.last_token_refresh_at = &t
+}
+
+// LastTokenRefreshAt returns the value of the "last_token_refresh_at" field in the mutation.
+func (m *Sub2APIProviderMutation) LastTokenRefreshAt() (r time.Time, exists bool) {
+	v := m.last_token_refresh_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastTokenRefreshAt returns the old "last_token_refresh_at" field's value of the Sub2APIProvider entity.
+// If the Sub2APIProvider object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderMutation) OldLastTokenRefreshAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastTokenRefreshAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastTokenRefreshAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastTokenRefreshAt: %w", err)
+	}
+	return oldValue.LastTokenRefreshAt, nil
+}
+
+// ClearLastTokenRefreshAt clears the value of the "last_token_refresh_at" field.
+func (m *Sub2APIProviderMutation) ClearLastTokenRefreshAt() {
+	m.last_token_refresh_at = nil
+	m.clearedFields[sub2apiprovider.FieldLastTokenRefreshAt] = struct{}{}
+}
+
+// LastTokenRefreshAtCleared returns if the "last_token_refresh_at" field was cleared in this mutation.
+func (m *Sub2APIProviderMutation) LastTokenRefreshAtCleared() bool {
+	_, ok := m.clearedFields[sub2apiprovider.FieldLastTokenRefreshAt]
+	return ok
+}
+
+// ResetLastTokenRefreshAt resets all changes to the "last_token_refresh_at" field.
+func (m *Sub2APIProviderMutation) ResetLastTokenRefreshAt() {
+	m.last_token_refresh_at = nil
+	delete(m.clearedFields, sub2apiprovider.FieldLastTokenRefreshAt)
+}
+
+// SetLastAuthError sets the "last_auth_error" field.
+func (m *Sub2APIProviderMutation) SetLastAuthError(s string) {
+	m.last_auth_error = &s
+}
+
+// LastAuthError returns the value of the "last_auth_error" field in the mutation.
+func (m *Sub2APIProviderMutation) LastAuthError() (r string, exists bool) {
+	v := m.last_auth_error
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastAuthError returns the old "last_auth_error" field's value of the Sub2APIProvider entity.
+// If the Sub2APIProvider object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderMutation) OldLastAuthError(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastAuthError is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastAuthError requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastAuthError: %w", err)
+	}
+	return oldValue.LastAuthError, nil
+}
+
+// ClearLastAuthError clears the value of the "last_auth_error" field.
+func (m *Sub2APIProviderMutation) ClearLastAuthError() {
+	m.last_auth_error = nil
+	m.clearedFields[sub2apiprovider.FieldLastAuthError] = struct{}{}
+}
+
+// LastAuthErrorCleared returns if the "last_auth_error" field was cleared in this mutation.
+func (m *Sub2APIProviderMutation) LastAuthErrorCleared() bool {
+	_, ok := m.clearedFields[sub2apiprovider.FieldLastAuthError]
+	return ok
+}
+
+// ResetLastAuthError resets all changes to the "last_auth_error" field.
+func (m *Sub2APIProviderMutation) ResetLastAuthError() {
+	m.last_auth_error = nil
+	delete(m.clearedFields, sub2apiprovider.FieldLastAuthError)
 }
 
 // SetAPIPathKeys sets the "api_path_keys" field.
@@ -44368,6 +45171,33 @@ func (m *Sub2APIProviderMutation) ResetLastSyncError() {
 	delete(m.clearedFields, sub2apiprovider.FieldLastSyncError)
 }
 
+// ClearProxy clears the "proxy" edge to the Proxy entity.
+func (m *Sub2APIProviderMutation) ClearProxy() {
+	m.clearedproxy = true
+	m.clearedFields[sub2apiprovider.FieldProxyID] = struct{}{}
+}
+
+// ProxyCleared reports if the "proxy" edge to the Proxy entity was cleared.
+func (m *Sub2APIProviderMutation) ProxyCleared() bool {
+	return m.ProxyIDCleared() || m.clearedproxy
+}
+
+// ProxyIDs returns the "proxy" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ProxyID instead. It exists only for internal usage by the builders.
+func (m *Sub2APIProviderMutation) ProxyIDs() (ids []int64) {
+	if id := m.proxy; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetProxy resets all changes to the "proxy" edge.
+func (m *Sub2APIProviderMutation) ResetProxy() {
+	m.proxy = nil
+	m.clearedproxy = false
+}
+
 // AddAccountIDs adds the "accounts" edge to the Account entity by ids.
 func (m *Sub2APIProviderMutation) AddAccountIDs(ids ...int64) {
 	if m.accounts == nil {
@@ -44461,6 +45291,207 @@ func (m *Sub2APIProviderMutation) ResetOptimizeSchedule() {
 	m.clearedoptimize_schedule = false
 }
 
+// AddOptimizeLogIDs adds the "optimize_logs" edge to the Sub2APIOptimizeLog entity by ids.
+func (m *Sub2APIProviderMutation) AddOptimizeLogIDs(ids ...int64) {
+	if m.optimize_logs == nil {
+		m.optimize_logs = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.optimize_logs[ids[i]] = struct{}{}
+	}
+}
+
+// ClearOptimizeLogs clears the "optimize_logs" edge to the Sub2APIOptimizeLog entity.
+func (m *Sub2APIProviderMutation) ClearOptimizeLogs() {
+	m.clearedoptimize_logs = true
+}
+
+// OptimizeLogsCleared reports if the "optimize_logs" edge to the Sub2APIOptimizeLog entity was cleared.
+func (m *Sub2APIProviderMutation) OptimizeLogsCleared() bool {
+	return m.clearedoptimize_logs
+}
+
+// RemoveOptimizeLogIDs removes the "optimize_logs" edge to the Sub2APIOptimizeLog entity by IDs.
+func (m *Sub2APIProviderMutation) RemoveOptimizeLogIDs(ids ...int64) {
+	if m.removedoptimize_logs == nil {
+		m.removedoptimize_logs = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.optimize_logs, ids[i])
+		m.removedoptimize_logs[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedOptimizeLogs returns the removed IDs of the "optimize_logs" edge to the Sub2APIOptimizeLog entity.
+func (m *Sub2APIProviderMutation) RemovedOptimizeLogsIDs() (ids []int64) {
+	for id := range m.removedoptimize_logs {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// OptimizeLogsIDs returns the "optimize_logs" edge IDs in the mutation.
+func (m *Sub2APIProviderMutation) OptimizeLogsIDs() (ids []int64) {
+	for id := range m.optimize_logs {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetOptimizeLogs resets all changes to the "optimize_logs" edge.
+func (m *Sub2APIProviderMutation) ResetOptimizeLogs() {
+	m.optimize_logs = nil
+	m.clearedoptimize_logs = false
+	m.removedoptimize_logs = nil
+}
+
+// SetProbeConfigID sets the "probe_config" edge to the Sub2APIProviderProbeConfig entity by id.
+func (m *Sub2APIProviderMutation) SetProbeConfigID(id int64) {
+	m.probe_config = &id
+}
+
+// ClearProbeConfig clears the "probe_config" edge to the Sub2APIProviderProbeConfig entity.
+func (m *Sub2APIProviderMutation) ClearProbeConfig() {
+	m.clearedprobe_config = true
+}
+
+// ProbeConfigCleared reports if the "probe_config" edge to the Sub2APIProviderProbeConfig entity was cleared.
+func (m *Sub2APIProviderMutation) ProbeConfigCleared() bool {
+	return m.clearedprobe_config
+}
+
+// ProbeConfigID returns the "probe_config" edge ID in the mutation.
+func (m *Sub2APIProviderMutation) ProbeConfigID() (id int64, exists bool) {
+	if m.probe_config != nil {
+		return *m.probe_config, true
+	}
+	return
+}
+
+// ProbeConfigIDs returns the "probe_config" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ProbeConfigID instead. It exists only for internal usage by the builders.
+func (m *Sub2APIProviderMutation) ProbeConfigIDs() (ids []int64) {
+	if id := m.probe_config; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetProbeConfig resets all changes to the "probe_config" edge.
+func (m *Sub2APIProviderMutation) ResetProbeConfig() {
+	m.probe_config = nil
+	m.clearedprobe_config = false
+}
+
+// AddProbeRunIDs adds the "probe_runs" edge to the Sub2APIProviderProbeRun entity by ids.
+func (m *Sub2APIProviderMutation) AddProbeRunIDs(ids ...int64) {
+	if m.probe_runs == nil {
+		m.probe_runs = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.probe_runs[ids[i]] = struct{}{}
+	}
+}
+
+// ClearProbeRuns clears the "probe_runs" edge to the Sub2APIProviderProbeRun entity.
+func (m *Sub2APIProviderMutation) ClearProbeRuns() {
+	m.clearedprobe_runs = true
+}
+
+// ProbeRunsCleared reports if the "probe_runs" edge to the Sub2APIProviderProbeRun entity was cleared.
+func (m *Sub2APIProviderMutation) ProbeRunsCleared() bool {
+	return m.clearedprobe_runs
+}
+
+// RemoveProbeRunIDs removes the "probe_runs" edge to the Sub2APIProviderProbeRun entity by IDs.
+func (m *Sub2APIProviderMutation) RemoveProbeRunIDs(ids ...int64) {
+	if m.removedprobe_runs == nil {
+		m.removedprobe_runs = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.probe_runs, ids[i])
+		m.removedprobe_runs[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedProbeRuns returns the removed IDs of the "probe_runs" edge to the Sub2APIProviderProbeRun entity.
+func (m *Sub2APIProviderMutation) RemovedProbeRunsIDs() (ids []int64) {
+	for id := range m.removedprobe_runs {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ProbeRunsIDs returns the "probe_runs" edge IDs in the mutation.
+func (m *Sub2APIProviderMutation) ProbeRunsIDs() (ids []int64) {
+	for id := range m.probe_runs {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetProbeRuns resets all changes to the "probe_runs" edge.
+func (m *Sub2APIProviderMutation) ResetProbeRuns() {
+	m.probe_runs = nil
+	m.clearedprobe_runs = false
+	m.removedprobe_runs = nil
+}
+
+// AddProbeTargetIDs adds the "probe_targets" edge to the Sub2APIProviderProbeTarget entity by ids.
+func (m *Sub2APIProviderMutation) AddProbeTargetIDs(ids ...int64) {
+	if m.probe_targets == nil {
+		m.probe_targets = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.probe_targets[ids[i]] = struct{}{}
+	}
+}
+
+// ClearProbeTargets clears the "probe_targets" edge to the Sub2APIProviderProbeTarget entity.
+func (m *Sub2APIProviderMutation) ClearProbeTargets() {
+	m.clearedprobe_targets = true
+}
+
+// ProbeTargetsCleared reports if the "probe_targets" edge to the Sub2APIProviderProbeTarget entity was cleared.
+func (m *Sub2APIProviderMutation) ProbeTargetsCleared() bool {
+	return m.clearedprobe_targets
+}
+
+// RemoveProbeTargetIDs removes the "probe_targets" edge to the Sub2APIProviderProbeTarget entity by IDs.
+func (m *Sub2APIProviderMutation) RemoveProbeTargetIDs(ids ...int64) {
+	if m.removedprobe_targets == nil {
+		m.removedprobe_targets = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.probe_targets, ids[i])
+		m.removedprobe_targets[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedProbeTargets returns the removed IDs of the "probe_targets" edge to the Sub2APIProviderProbeTarget entity.
+func (m *Sub2APIProviderMutation) RemovedProbeTargetsIDs() (ids []int64) {
+	for id := range m.removedprobe_targets {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ProbeTargetsIDs returns the "probe_targets" edge IDs in the mutation.
+func (m *Sub2APIProviderMutation) ProbeTargetsIDs() (ids []int64) {
+	for id := range m.probe_targets {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetProbeTargets resets all changes to the "probe_targets" edge.
+func (m *Sub2APIProviderMutation) ResetProbeTargets() {
+	m.probe_targets = nil
+	m.clearedprobe_targets = false
+	m.removedprobe_targets = nil
+}
+
 // Where appends a list predicates to the Sub2APIProviderMutation builder.
 func (m *Sub2APIProviderMutation) Where(ps ...predicate.Sub2APIProvider) {
 	m.predicates = append(m.predicates, ps...)
@@ -44495,7 +45526,7 @@ func (m *Sub2APIProviderMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *Sub2APIProviderMutation) Fields() []string {
-	fields := make([]string, 0, 15)
+	fields := make([]string, 0, 22)
 	if m.created_at != nil {
 		fields = append(fields, sub2apiprovider.FieldCreatedAt)
 	}
@@ -44520,11 +45551,32 @@ func (m *Sub2APIProviderMutation) Fields() []string {
 	if m.notes != nil {
 		fields = append(fields, sub2apiprovider.FieldNotes)
 	}
+	if m.proxy != nil {
+		fields = append(fields, sub2apiprovider.FieldProxyID)
+	}
 	if m.email != nil {
 		fields = append(fields, sub2apiprovider.FieldEmail)
 	}
 	if m.password_encrypted != nil {
 		fields = append(fields, sub2apiprovider.FieldPasswordEncrypted)
+	}
+	if m.auth_mode != nil {
+		fields = append(fields, sub2apiprovider.FieldAuthMode)
+	}
+	if m.access_token_encrypted != nil {
+		fields = append(fields, sub2apiprovider.FieldAccessTokenEncrypted)
+	}
+	if m.refresh_token_encrypted != nil {
+		fields = append(fields, sub2apiprovider.FieldRefreshTokenEncrypted)
+	}
+	if m.access_token_expires_at != nil {
+		fields = append(fields, sub2apiprovider.FieldAccessTokenExpiresAt)
+	}
+	if m.last_token_refresh_at != nil {
+		fields = append(fields, sub2apiprovider.FieldLastTokenRefreshAt)
+	}
+	if m.last_auth_error != nil {
+		fields = append(fields, sub2apiprovider.FieldLastAuthError)
 	}
 	if m.api_path_keys != nil {
 		fields = append(fields, sub2apiprovider.FieldAPIPathKeys)
@@ -44565,10 +45617,24 @@ func (m *Sub2APIProviderMutation) Field(name string) (ent.Value, bool) {
 		return m.Status()
 	case sub2apiprovider.FieldNotes:
 		return m.Notes()
+	case sub2apiprovider.FieldProxyID:
+		return m.ProxyID()
 	case sub2apiprovider.FieldEmail:
 		return m.Email()
 	case sub2apiprovider.FieldPasswordEncrypted:
 		return m.PasswordEncrypted()
+	case sub2apiprovider.FieldAuthMode:
+		return m.AuthMode()
+	case sub2apiprovider.FieldAccessTokenEncrypted:
+		return m.AccessTokenEncrypted()
+	case sub2apiprovider.FieldRefreshTokenEncrypted:
+		return m.RefreshTokenEncrypted()
+	case sub2apiprovider.FieldAccessTokenExpiresAt:
+		return m.AccessTokenExpiresAt()
+	case sub2apiprovider.FieldLastTokenRefreshAt:
+		return m.LastTokenRefreshAt()
+	case sub2apiprovider.FieldLastAuthError:
+		return m.LastAuthError()
 	case sub2apiprovider.FieldAPIPathKeys:
 		return m.APIPathKeys()
 	case sub2apiprovider.FieldAPIPathGroups:
@@ -44604,10 +45670,24 @@ func (m *Sub2APIProviderMutation) OldField(ctx context.Context, name string) (en
 		return m.OldStatus(ctx)
 	case sub2apiprovider.FieldNotes:
 		return m.OldNotes(ctx)
+	case sub2apiprovider.FieldProxyID:
+		return m.OldProxyID(ctx)
 	case sub2apiprovider.FieldEmail:
 		return m.OldEmail(ctx)
 	case sub2apiprovider.FieldPasswordEncrypted:
 		return m.OldPasswordEncrypted(ctx)
+	case sub2apiprovider.FieldAuthMode:
+		return m.OldAuthMode(ctx)
+	case sub2apiprovider.FieldAccessTokenEncrypted:
+		return m.OldAccessTokenEncrypted(ctx)
+	case sub2apiprovider.FieldRefreshTokenEncrypted:
+		return m.OldRefreshTokenEncrypted(ctx)
+	case sub2apiprovider.FieldAccessTokenExpiresAt:
+		return m.OldAccessTokenExpiresAt(ctx)
+	case sub2apiprovider.FieldLastTokenRefreshAt:
+		return m.OldLastTokenRefreshAt(ctx)
+	case sub2apiprovider.FieldLastAuthError:
+		return m.OldLastAuthError(ctx)
 	case sub2apiprovider.FieldAPIPathKeys:
 		return m.OldAPIPathKeys(ctx)
 	case sub2apiprovider.FieldAPIPathGroups:
@@ -44683,6 +45763,13 @@ func (m *Sub2APIProviderMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetNotes(v)
 		return nil
+	case sub2apiprovider.FieldProxyID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProxyID(v)
+		return nil
 	case sub2apiprovider.FieldEmail:
 		v, ok := value.(string)
 		if !ok {
@@ -44696,6 +45783,48 @@ func (m *Sub2APIProviderMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetPasswordEncrypted(v)
+		return nil
+	case sub2apiprovider.FieldAuthMode:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAuthMode(v)
+		return nil
+	case sub2apiprovider.FieldAccessTokenEncrypted:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccessTokenEncrypted(v)
+		return nil
+	case sub2apiprovider.FieldRefreshTokenEncrypted:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRefreshTokenEncrypted(v)
+		return nil
+	case sub2apiprovider.FieldAccessTokenExpiresAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccessTokenExpiresAt(v)
+		return nil
+	case sub2apiprovider.FieldLastTokenRefreshAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastTokenRefreshAt(v)
+		return nil
+	case sub2apiprovider.FieldLastAuthError:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastAuthError(v)
 		return nil
 	case sub2apiprovider.FieldAPIPathKeys:
 		v, ok := value.(string)
@@ -44739,13 +45868,16 @@ func (m *Sub2APIProviderMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *Sub2APIProviderMutation) AddedFields() []string {
-	return nil
+	var fields []string
+	return fields
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *Sub2APIProviderMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	}
 	return nil, false
 }
 
@@ -44767,6 +45899,24 @@ func (m *Sub2APIProviderMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(sub2apiprovider.FieldNotes) {
 		fields = append(fields, sub2apiprovider.FieldNotes)
+	}
+	if m.FieldCleared(sub2apiprovider.FieldProxyID) {
+		fields = append(fields, sub2apiprovider.FieldProxyID)
+	}
+	if m.FieldCleared(sub2apiprovider.FieldAccessTokenEncrypted) {
+		fields = append(fields, sub2apiprovider.FieldAccessTokenEncrypted)
+	}
+	if m.FieldCleared(sub2apiprovider.FieldRefreshTokenEncrypted) {
+		fields = append(fields, sub2apiprovider.FieldRefreshTokenEncrypted)
+	}
+	if m.FieldCleared(sub2apiprovider.FieldAccessTokenExpiresAt) {
+		fields = append(fields, sub2apiprovider.FieldAccessTokenExpiresAt)
+	}
+	if m.FieldCleared(sub2apiprovider.FieldLastTokenRefreshAt) {
+		fields = append(fields, sub2apiprovider.FieldLastTokenRefreshAt)
+	}
+	if m.FieldCleared(sub2apiprovider.FieldLastAuthError) {
+		fields = append(fields, sub2apiprovider.FieldLastAuthError)
 	}
 	if m.FieldCleared(sub2apiprovider.FieldAPIPathKeys) {
 		fields = append(fields, sub2apiprovider.FieldAPIPathKeys)
@@ -44802,6 +45952,24 @@ func (m *Sub2APIProviderMutation) ClearField(name string) error {
 		return nil
 	case sub2apiprovider.FieldNotes:
 		m.ClearNotes()
+		return nil
+	case sub2apiprovider.FieldProxyID:
+		m.ClearProxyID()
+		return nil
+	case sub2apiprovider.FieldAccessTokenEncrypted:
+		m.ClearAccessTokenEncrypted()
+		return nil
+	case sub2apiprovider.FieldRefreshTokenEncrypted:
+		m.ClearRefreshTokenEncrypted()
+		return nil
+	case sub2apiprovider.FieldAccessTokenExpiresAt:
+		m.ClearAccessTokenExpiresAt()
+		return nil
+	case sub2apiprovider.FieldLastTokenRefreshAt:
+		m.ClearLastTokenRefreshAt()
+		return nil
+	case sub2apiprovider.FieldLastAuthError:
+		m.ClearLastAuthError()
 		return nil
 	case sub2apiprovider.FieldAPIPathKeys:
 		m.ClearAPIPathKeys()
@@ -44850,11 +46018,32 @@ func (m *Sub2APIProviderMutation) ResetField(name string) error {
 	case sub2apiprovider.FieldNotes:
 		m.ResetNotes()
 		return nil
+	case sub2apiprovider.FieldProxyID:
+		m.ResetProxyID()
+		return nil
 	case sub2apiprovider.FieldEmail:
 		m.ResetEmail()
 		return nil
 	case sub2apiprovider.FieldPasswordEncrypted:
 		m.ResetPasswordEncrypted()
+		return nil
+	case sub2apiprovider.FieldAuthMode:
+		m.ResetAuthMode()
+		return nil
+	case sub2apiprovider.FieldAccessTokenEncrypted:
+		m.ResetAccessTokenEncrypted()
+		return nil
+	case sub2apiprovider.FieldRefreshTokenEncrypted:
+		m.ResetRefreshTokenEncrypted()
+		return nil
+	case sub2apiprovider.FieldAccessTokenExpiresAt:
+		m.ResetAccessTokenExpiresAt()
+		return nil
+	case sub2apiprovider.FieldLastTokenRefreshAt:
+		m.ResetLastTokenRefreshAt()
+		return nil
+	case sub2apiprovider.FieldLastAuthError:
+		m.ResetLastAuthError()
 		return nil
 	case sub2apiprovider.FieldAPIPathKeys:
 		m.ResetAPIPathKeys()
@@ -44877,12 +46066,27 @@ func (m *Sub2APIProviderMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *Sub2APIProviderMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 7)
+	if m.proxy != nil {
+		edges = append(edges, sub2apiprovider.EdgeProxy)
+	}
 	if m.accounts != nil {
 		edges = append(edges, sub2apiprovider.EdgeAccounts)
 	}
 	if m.optimize_schedule != nil {
 		edges = append(edges, sub2apiprovider.EdgeOptimizeSchedule)
+	}
+	if m.optimize_logs != nil {
+		edges = append(edges, sub2apiprovider.EdgeOptimizeLogs)
+	}
+	if m.probe_config != nil {
+		edges = append(edges, sub2apiprovider.EdgeProbeConfig)
+	}
+	if m.probe_runs != nil {
+		edges = append(edges, sub2apiprovider.EdgeProbeRuns)
+	}
+	if m.probe_targets != nil {
+		edges = append(edges, sub2apiprovider.EdgeProbeTargets)
 	}
 	return edges
 }
@@ -44891,6 +46095,10 @@ func (m *Sub2APIProviderMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *Sub2APIProviderMutation) AddedIDs(name string) []ent.Value {
 	switch name {
+	case sub2apiprovider.EdgeProxy:
+		if id := m.proxy; id != nil {
+			return []ent.Value{*id}
+		}
 	case sub2apiprovider.EdgeAccounts:
 		ids := make([]ent.Value, 0, len(m.accounts))
 		for id := range m.accounts {
@@ -44901,15 +46109,46 @@ func (m *Sub2APIProviderMutation) AddedIDs(name string) []ent.Value {
 		if id := m.optimize_schedule; id != nil {
 			return []ent.Value{*id}
 		}
+	case sub2apiprovider.EdgeOptimizeLogs:
+		ids := make([]ent.Value, 0, len(m.optimize_logs))
+		for id := range m.optimize_logs {
+			ids = append(ids, id)
+		}
+		return ids
+	case sub2apiprovider.EdgeProbeConfig:
+		if id := m.probe_config; id != nil {
+			return []ent.Value{*id}
+		}
+	case sub2apiprovider.EdgeProbeRuns:
+		ids := make([]ent.Value, 0, len(m.probe_runs))
+		for id := range m.probe_runs {
+			ids = append(ids, id)
+		}
+		return ids
+	case sub2apiprovider.EdgeProbeTargets:
+		ids := make([]ent.Value, 0, len(m.probe_targets))
+		for id := range m.probe_targets {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *Sub2APIProviderMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 7)
 	if m.removedaccounts != nil {
 		edges = append(edges, sub2apiprovider.EdgeAccounts)
+	}
+	if m.removedoptimize_logs != nil {
+		edges = append(edges, sub2apiprovider.EdgeOptimizeLogs)
+	}
+	if m.removedprobe_runs != nil {
+		edges = append(edges, sub2apiprovider.EdgeProbeRuns)
+	}
+	if m.removedprobe_targets != nil {
+		edges = append(edges, sub2apiprovider.EdgeProbeTargets)
 	}
 	return edges
 }
@@ -44924,18 +46163,51 @@ func (m *Sub2APIProviderMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case sub2apiprovider.EdgeOptimizeLogs:
+		ids := make([]ent.Value, 0, len(m.removedoptimize_logs))
+		for id := range m.removedoptimize_logs {
+			ids = append(ids, id)
+		}
+		return ids
+	case sub2apiprovider.EdgeProbeRuns:
+		ids := make([]ent.Value, 0, len(m.removedprobe_runs))
+		for id := range m.removedprobe_runs {
+			ids = append(ids, id)
+		}
+		return ids
+	case sub2apiprovider.EdgeProbeTargets:
+		ids := make([]ent.Value, 0, len(m.removedprobe_targets))
+		for id := range m.removedprobe_targets {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *Sub2APIProviderMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 7)
+	if m.clearedproxy {
+		edges = append(edges, sub2apiprovider.EdgeProxy)
+	}
 	if m.clearedaccounts {
 		edges = append(edges, sub2apiprovider.EdgeAccounts)
 	}
 	if m.clearedoptimize_schedule {
 		edges = append(edges, sub2apiprovider.EdgeOptimizeSchedule)
+	}
+	if m.clearedoptimize_logs {
+		edges = append(edges, sub2apiprovider.EdgeOptimizeLogs)
+	}
+	if m.clearedprobe_config {
+		edges = append(edges, sub2apiprovider.EdgeProbeConfig)
+	}
+	if m.clearedprobe_runs {
+		edges = append(edges, sub2apiprovider.EdgeProbeRuns)
+	}
+	if m.clearedprobe_targets {
+		edges = append(edges, sub2apiprovider.EdgeProbeTargets)
 	}
 	return edges
 }
@@ -44944,10 +46216,20 @@ func (m *Sub2APIProviderMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *Sub2APIProviderMutation) EdgeCleared(name string) bool {
 	switch name {
+	case sub2apiprovider.EdgeProxy:
+		return m.clearedproxy
 	case sub2apiprovider.EdgeAccounts:
 		return m.clearedaccounts
 	case sub2apiprovider.EdgeOptimizeSchedule:
 		return m.clearedoptimize_schedule
+	case sub2apiprovider.EdgeOptimizeLogs:
+		return m.clearedoptimize_logs
+	case sub2apiprovider.EdgeProbeConfig:
+		return m.clearedprobe_config
+	case sub2apiprovider.EdgeProbeRuns:
+		return m.clearedprobe_runs
+	case sub2apiprovider.EdgeProbeTargets:
+		return m.clearedprobe_targets
 	}
 	return false
 }
@@ -44956,8 +46238,14 @@ func (m *Sub2APIProviderMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *Sub2APIProviderMutation) ClearEdge(name string) error {
 	switch name {
+	case sub2apiprovider.EdgeProxy:
+		m.ClearProxy()
+		return nil
 	case sub2apiprovider.EdgeOptimizeSchedule:
 		m.ClearOptimizeSchedule()
+		return nil
+	case sub2apiprovider.EdgeProbeConfig:
+		m.ClearProbeConfig()
 		return nil
 	}
 	return fmt.Errorf("unknown Sub2APIProvider unique edge %s", name)
@@ -44967,14 +46255,6903 @@ func (m *Sub2APIProviderMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *Sub2APIProviderMutation) ResetEdge(name string) error {
 	switch name {
+	case sub2apiprovider.EdgeProxy:
+		m.ResetProxy()
+		return nil
 	case sub2apiprovider.EdgeAccounts:
 		m.ResetAccounts()
 		return nil
 	case sub2apiprovider.EdgeOptimizeSchedule:
 		m.ResetOptimizeSchedule()
 		return nil
+	case sub2apiprovider.EdgeOptimizeLogs:
+		m.ResetOptimizeLogs()
+		return nil
+	case sub2apiprovider.EdgeProbeConfig:
+		m.ResetProbeConfig()
+		return nil
+	case sub2apiprovider.EdgeProbeRuns:
+		m.ResetProbeRuns()
+		return nil
+	case sub2apiprovider.EdgeProbeTargets:
+		m.ResetProbeTargets()
+		return nil
 	}
 	return fmt.Errorf("unknown Sub2APIProvider edge %s", name)
+}
+
+// Sub2APIProviderProbeConfigMutation represents an operation that mutates the Sub2APIProviderProbeConfig nodes in the graph.
+type Sub2APIProviderProbeConfigMutation struct {
+	config
+	op                          Op
+	typ                         string
+	id                          *int64
+	created_at                  *time.Time
+	updated_at                  *time.Time
+	control_enabled             *bool
+	control_interval_seconds    *int
+	addcontrol_interval_seconds *int
+	data_enabled                *bool
+	data_interval_seconds       *int
+	adddata_interval_seconds    *int
+	selected_account_ids        *[]int64
+	appendselected_account_ids  []int64
+	allow_media_probe           *bool
+	timeout_seconds             *int
+	addtimeout_seconds          *int
+	degraded_latency_ms         *int
+	adddegraded_latency_ms      *int
+	failure_threshold           *int
+	addfailure_threshold        *int
+	recovery_threshold          *int
+	addrecovery_threshold       *int
+	last_control_run_at         *time.Time
+	last_data_run_at            *time.Time
+	clearedFields               map[string]struct{}
+	provider                    *int64
+	clearedprovider             bool
+	done                        bool
+	oldValue                    func(context.Context) (*Sub2APIProviderProbeConfig, error)
+	predicates                  []predicate.Sub2APIProviderProbeConfig
+}
+
+var _ ent.Mutation = (*Sub2APIProviderProbeConfigMutation)(nil)
+
+// sub2apiproviderprobeconfigOption allows management of the mutation configuration using functional options.
+type sub2apiproviderprobeconfigOption func(*Sub2APIProviderProbeConfigMutation)
+
+// newSub2APIProviderProbeConfigMutation creates new mutation for the Sub2APIProviderProbeConfig entity.
+func newSub2APIProviderProbeConfigMutation(c config, op Op, opts ...sub2apiproviderprobeconfigOption) *Sub2APIProviderProbeConfigMutation {
+	m := &Sub2APIProviderProbeConfigMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeSub2APIProviderProbeConfig,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withSub2APIProviderProbeConfigID sets the ID field of the mutation.
+func withSub2APIProviderProbeConfigID(id int64) sub2apiproviderprobeconfigOption {
+	return func(m *Sub2APIProviderProbeConfigMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Sub2APIProviderProbeConfig
+		)
+		m.oldValue = func(ctx context.Context) (*Sub2APIProviderProbeConfig, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Sub2APIProviderProbeConfig.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withSub2APIProviderProbeConfig sets the old Sub2APIProviderProbeConfig of the mutation.
+func withSub2APIProviderProbeConfig(node *Sub2APIProviderProbeConfig) sub2apiproviderprobeconfigOption {
+	return func(m *Sub2APIProviderProbeConfigMutation) {
+		m.oldValue = func(context.Context) (*Sub2APIProviderProbeConfig, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m Sub2APIProviderProbeConfigMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m Sub2APIProviderProbeConfigMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *Sub2APIProviderProbeConfigMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *Sub2APIProviderProbeConfigMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Sub2APIProviderProbeConfig.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *Sub2APIProviderProbeConfigMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *Sub2APIProviderProbeConfigMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the Sub2APIProviderProbeConfig entity.
+// If the Sub2APIProviderProbeConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeConfigMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *Sub2APIProviderProbeConfigMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *Sub2APIProviderProbeConfigMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *Sub2APIProviderProbeConfigMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the Sub2APIProviderProbeConfig entity.
+// If the Sub2APIProviderProbeConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeConfigMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *Sub2APIProviderProbeConfigMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetProviderID sets the "provider_id" field.
+func (m *Sub2APIProviderProbeConfigMutation) SetProviderID(i int64) {
+	m.provider = &i
+}
+
+// ProviderID returns the value of the "provider_id" field in the mutation.
+func (m *Sub2APIProviderProbeConfigMutation) ProviderID() (r int64, exists bool) {
+	v := m.provider
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProviderID returns the old "provider_id" field's value of the Sub2APIProviderProbeConfig entity.
+// If the Sub2APIProviderProbeConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeConfigMutation) OldProviderID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProviderID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProviderID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProviderID: %w", err)
+	}
+	return oldValue.ProviderID, nil
+}
+
+// ResetProviderID resets all changes to the "provider_id" field.
+func (m *Sub2APIProviderProbeConfigMutation) ResetProviderID() {
+	m.provider = nil
+}
+
+// SetControlEnabled sets the "control_enabled" field.
+func (m *Sub2APIProviderProbeConfigMutation) SetControlEnabled(b bool) {
+	m.control_enabled = &b
+}
+
+// ControlEnabled returns the value of the "control_enabled" field in the mutation.
+func (m *Sub2APIProviderProbeConfigMutation) ControlEnabled() (r bool, exists bool) {
+	v := m.control_enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldControlEnabled returns the old "control_enabled" field's value of the Sub2APIProviderProbeConfig entity.
+// If the Sub2APIProviderProbeConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeConfigMutation) OldControlEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldControlEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldControlEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldControlEnabled: %w", err)
+	}
+	return oldValue.ControlEnabled, nil
+}
+
+// ResetControlEnabled resets all changes to the "control_enabled" field.
+func (m *Sub2APIProviderProbeConfigMutation) ResetControlEnabled() {
+	m.control_enabled = nil
+}
+
+// SetControlIntervalSeconds sets the "control_interval_seconds" field.
+func (m *Sub2APIProviderProbeConfigMutation) SetControlIntervalSeconds(i int) {
+	m.control_interval_seconds = &i
+	m.addcontrol_interval_seconds = nil
+}
+
+// ControlIntervalSeconds returns the value of the "control_interval_seconds" field in the mutation.
+func (m *Sub2APIProviderProbeConfigMutation) ControlIntervalSeconds() (r int, exists bool) {
+	v := m.control_interval_seconds
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldControlIntervalSeconds returns the old "control_interval_seconds" field's value of the Sub2APIProviderProbeConfig entity.
+// If the Sub2APIProviderProbeConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeConfigMutation) OldControlIntervalSeconds(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldControlIntervalSeconds is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldControlIntervalSeconds requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldControlIntervalSeconds: %w", err)
+	}
+	return oldValue.ControlIntervalSeconds, nil
+}
+
+// AddControlIntervalSeconds adds i to the "control_interval_seconds" field.
+func (m *Sub2APIProviderProbeConfigMutation) AddControlIntervalSeconds(i int) {
+	if m.addcontrol_interval_seconds != nil {
+		*m.addcontrol_interval_seconds += i
+	} else {
+		m.addcontrol_interval_seconds = &i
+	}
+}
+
+// AddedControlIntervalSeconds returns the value that was added to the "control_interval_seconds" field in this mutation.
+func (m *Sub2APIProviderProbeConfigMutation) AddedControlIntervalSeconds() (r int, exists bool) {
+	v := m.addcontrol_interval_seconds
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetControlIntervalSeconds resets all changes to the "control_interval_seconds" field.
+func (m *Sub2APIProviderProbeConfigMutation) ResetControlIntervalSeconds() {
+	m.control_interval_seconds = nil
+	m.addcontrol_interval_seconds = nil
+}
+
+// SetDataEnabled sets the "data_enabled" field.
+func (m *Sub2APIProviderProbeConfigMutation) SetDataEnabled(b bool) {
+	m.data_enabled = &b
+}
+
+// DataEnabled returns the value of the "data_enabled" field in the mutation.
+func (m *Sub2APIProviderProbeConfigMutation) DataEnabled() (r bool, exists bool) {
+	v := m.data_enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDataEnabled returns the old "data_enabled" field's value of the Sub2APIProviderProbeConfig entity.
+// If the Sub2APIProviderProbeConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeConfigMutation) OldDataEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDataEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDataEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDataEnabled: %w", err)
+	}
+	return oldValue.DataEnabled, nil
+}
+
+// ResetDataEnabled resets all changes to the "data_enabled" field.
+func (m *Sub2APIProviderProbeConfigMutation) ResetDataEnabled() {
+	m.data_enabled = nil
+}
+
+// SetDataIntervalSeconds sets the "data_interval_seconds" field.
+func (m *Sub2APIProviderProbeConfigMutation) SetDataIntervalSeconds(i int) {
+	m.data_interval_seconds = &i
+	m.adddata_interval_seconds = nil
+}
+
+// DataIntervalSeconds returns the value of the "data_interval_seconds" field in the mutation.
+func (m *Sub2APIProviderProbeConfigMutation) DataIntervalSeconds() (r int, exists bool) {
+	v := m.data_interval_seconds
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDataIntervalSeconds returns the old "data_interval_seconds" field's value of the Sub2APIProviderProbeConfig entity.
+// If the Sub2APIProviderProbeConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeConfigMutation) OldDataIntervalSeconds(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDataIntervalSeconds is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDataIntervalSeconds requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDataIntervalSeconds: %w", err)
+	}
+	return oldValue.DataIntervalSeconds, nil
+}
+
+// AddDataIntervalSeconds adds i to the "data_interval_seconds" field.
+func (m *Sub2APIProviderProbeConfigMutation) AddDataIntervalSeconds(i int) {
+	if m.adddata_interval_seconds != nil {
+		*m.adddata_interval_seconds += i
+	} else {
+		m.adddata_interval_seconds = &i
+	}
+}
+
+// AddedDataIntervalSeconds returns the value that was added to the "data_interval_seconds" field in this mutation.
+func (m *Sub2APIProviderProbeConfigMutation) AddedDataIntervalSeconds() (r int, exists bool) {
+	v := m.adddata_interval_seconds
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDataIntervalSeconds resets all changes to the "data_interval_seconds" field.
+func (m *Sub2APIProviderProbeConfigMutation) ResetDataIntervalSeconds() {
+	m.data_interval_seconds = nil
+	m.adddata_interval_seconds = nil
+}
+
+// SetSelectedAccountIds sets the "selected_account_ids" field.
+func (m *Sub2APIProviderProbeConfigMutation) SetSelectedAccountIds(i []int64) {
+	m.selected_account_ids = &i
+	m.appendselected_account_ids = nil
+}
+
+// SelectedAccountIds returns the value of the "selected_account_ids" field in the mutation.
+func (m *Sub2APIProviderProbeConfigMutation) SelectedAccountIds() (r []int64, exists bool) {
+	v := m.selected_account_ids
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSelectedAccountIds returns the old "selected_account_ids" field's value of the Sub2APIProviderProbeConfig entity.
+// If the Sub2APIProviderProbeConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeConfigMutation) OldSelectedAccountIds(ctx context.Context) (v []int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSelectedAccountIds is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSelectedAccountIds requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSelectedAccountIds: %w", err)
+	}
+	return oldValue.SelectedAccountIds, nil
+}
+
+// AppendSelectedAccountIds adds i to the "selected_account_ids" field.
+func (m *Sub2APIProviderProbeConfigMutation) AppendSelectedAccountIds(i []int64) {
+	m.appendselected_account_ids = append(m.appendselected_account_ids, i...)
+}
+
+// AppendedSelectedAccountIds returns the list of values that were appended to the "selected_account_ids" field in this mutation.
+func (m *Sub2APIProviderProbeConfigMutation) AppendedSelectedAccountIds() ([]int64, bool) {
+	if len(m.appendselected_account_ids) == 0 {
+		return nil, false
+	}
+	return m.appendselected_account_ids, true
+}
+
+// ResetSelectedAccountIds resets all changes to the "selected_account_ids" field.
+func (m *Sub2APIProviderProbeConfigMutation) ResetSelectedAccountIds() {
+	m.selected_account_ids = nil
+	m.appendselected_account_ids = nil
+}
+
+// SetAllowMediaProbe sets the "allow_media_probe" field.
+func (m *Sub2APIProviderProbeConfigMutation) SetAllowMediaProbe(b bool) {
+	m.allow_media_probe = &b
+}
+
+// AllowMediaProbe returns the value of the "allow_media_probe" field in the mutation.
+func (m *Sub2APIProviderProbeConfigMutation) AllowMediaProbe() (r bool, exists bool) {
+	v := m.allow_media_probe
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAllowMediaProbe returns the old "allow_media_probe" field's value of the Sub2APIProviderProbeConfig entity.
+// If the Sub2APIProviderProbeConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeConfigMutation) OldAllowMediaProbe(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAllowMediaProbe is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAllowMediaProbe requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAllowMediaProbe: %w", err)
+	}
+	return oldValue.AllowMediaProbe, nil
+}
+
+// ResetAllowMediaProbe resets all changes to the "allow_media_probe" field.
+func (m *Sub2APIProviderProbeConfigMutation) ResetAllowMediaProbe() {
+	m.allow_media_probe = nil
+}
+
+// SetTimeoutSeconds sets the "timeout_seconds" field.
+func (m *Sub2APIProviderProbeConfigMutation) SetTimeoutSeconds(i int) {
+	m.timeout_seconds = &i
+	m.addtimeout_seconds = nil
+}
+
+// TimeoutSeconds returns the value of the "timeout_seconds" field in the mutation.
+func (m *Sub2APIProviderProbeConfigMutation) TimeoutSeconds() (r int, exists bool) {
+	v := m.timeout_seconds
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTimeoutSeconds returns the old "timeout_seconds" field's value of the Sub2APIProviderProbeConfig entity.
+// If the Sub2APIProviderProbeConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeConfigMutation) OldTimeoutSeconds(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTimeoutSeconds is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTimeoutSeconds requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTimeoutSeconds: %w", err)
+	}
+	return oldValue.TimeoutSeconds, nil
+}
+
+// AddTimeoutSeconds adds i to the "timeout_seconds" field.
+func (m *Sub2APIProviderProbeConfigMutation) AddTimeoutSeconds(i int) {
+	if m.addtimeout_seconds != nil {
+		*m.addtimeout_seconds += i
+	} else {
+		m.addtimeout_seconds = &i
+	}
+}
+
+// AddedTimeoutSeconds returns the value that was added to the "timeout_seconds" field in this mutation.
+func (m *Sub2APIProviderProbeConfigMutation) AddedTimeoutSeconds() (r int, exists bool) {
+	v := m.addtimeout_seconds
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetTimeoutSeconds resets all changes to the "timeout_seconds" field.
+func (m *Sub2APIProviderProbeConfigMutation) ResetTimeoutSeconds() {
+	m.timeout_seconds = nil
+	m.addtimeout_seconds = nil
+}
+
+// SetDegradedLatencyMs sets the "degraded_latency_ms" field.
+func (m *Sub2APIProviderProbeConfigMutation) SetDegradedLatencyMs(i int) {
+	m.degraded_latency_ms = &i
+	m.adddegraded_latency_ms = nil
+}
+
+// DegradedLatencyMs returns the value of the "degraded_latency_ms" field in the mutation.
+func (m *Sub2APIProviderProbeConfigMutation) DegradedLatencyMs() (r int, exists bool) {
+	v := m.degraded_latency_ms
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDegradedLatencyMs returns the old "degraded_latency_ms" field's value of the Sub2APIProviderProbeConfig entity.
+// If the Sub2APIProviderProbeConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeConfigMutation) OldDegradedLatencyMs(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDegradedLatencyMs is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDegradedLatencyMs requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDegradedLatencyMs: %w", err)
+	}
+	return oldValue.DegradedLatencyMs, nil
+}
+
+// AddDegradedLatencyMs adds i to the "degraded_latency_ms" field.
+func (m *Sub2APIProviderProbeConfigMutation) AddDegradedLatencyMs(i int) {
+	if m.adddegraded_latency_ms != nil {
+		*m.adddegraded_latency_ms += i
+	} else {
+		m.adddegraded_latency_ms = &i
+	}
+}
+
+// AddedDegradedLatencyMs returns the value that was added to the "degraded_latency_ms" field in this mutation.
+func (m *Sub2APIProviderProbeConfigMutation) AddedDegradedLatencyMs() (r int, exists bool) {
+	v := m.adddegraded_latency_ms
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDegradedLatencyMs resets all changes to the "degraded_latency_ms" field.
+func (m *Sub2APIProviderProbeConfigMutation) ResetDegradedLatencyMs() {
+	m.degraded_latency_ms = nil
+	m.adddegraded_latency_ms = nil
+}
+
+// SetFailureThreshold sets the "failure_threshold" field.
+func (m *Sub2APIProviderProbeConfigMutation) SetFailureThreshold(i int) {
+	m.failure_threshold = &i
+	m.addfailure_threshold = nil
+}
+
+// FailureThreshold returns the value of the "failure_threshold" field in the mutation.
+func (m *Sub2APIProviderProbeConfigMutation) FailureThreshold() (r int, exists bool) {
+	v := m.failure_threshold
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFailureThreshold returns the old "failure_threshold" field's value of the Sub2APIProviderProbeConfig entity.
+// If the Sub2APIProviderProbeConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeConfigMutation) OldFailureThreshold(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFailureThreshold is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFailureThreshold requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFailureThreshold: %w", err)
+	}
+	return oldValue.FailureThreshold, nil
+}
+
+// AddFailureThreshold adds i to the "failure_threshold" field.
+func (m *Sub2APIProviderProbeConfigMutation) AddFailureThreshold(i int) {
+	if m.addfailure_threshold != nil {
+		*m.addfailure_threshold += i
+	} else {
+		m.addfailure_threshold = &i
+	}
+}
+
+// AddedFailureThreshold returns the value that was added to the "failure_threshold" field in this mutation.
+func (m *Sub2APIProviderProbeConfigMutation) AddedFailureThreshold() (r int, exists bool) {
+	v := m.addfailure_threshold
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetFailureThreshold resets all changes to the "failure_threshold" field.
+func (m *Sub2APIProviderProbeConfigMutation) ResetFailureThreshold() {
+	m.failure_threshold = nil
+	m.addfailure_threshold = nil
+}
+
+// SetRecoveryThreshold sets the "recovery_threshold" field.
+func (m *Sub2APIProviderProbeConfigMutation) SetRecoveryThreshold(i int) {
+	m.recovery_threshold = &i
+	m.addrecovery_threshold = nil
+}
+
+// RecoveryThreshold returns the value of the "recovery_threshold" field in the mutation.
+func (m *Sub2APIProviderProbeConfigMutation) RecoveryThreshold() (r int, exists bool) {
+	v := m.recovery_threshold
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRecoveryThreshold returns the old "recovery_threshold" field's value of the Sub2APIProviderProbeConfig entity.
+// If the Sub2APIProviderProbeConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeConfigMutation) OldRecoveryThreshold(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRecoveryThreshold is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRecoveryThreshold requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRecoveryThreshold: %w", err)
+	}
+	return oldValue.RecoveryThreshold, nil
+}
+
+// AddRecoveryThreshold adds i to the "recovery_threshold" field.
+func (m *Sub2APIProviderProbeConfigMutation) AddRecoveryThreshold(i int) {
+	if m.addrecovery_threshold != nil {
+		*m.addrecovery_threshold += i
+	} else {
+		m.addrecovery_threshold = &i
+	}
+}
+
+// AddedRecoveryThreshold returns the value that was added to the "recovery_threshold" field in this mutation.
+func (m *Sub2APIProviderProbeConfigMutation) AddedRecoveryThreshold() (r int, exists bool) {
+	v := m.addrecovery_threshold
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetRecoveryThreshold resets all changes to the "recovery_threshold" field.
+func (m *Sub2APIProviderProbeConfigMutation) ResetRecoveryThreshold() {
+	m.recovery_threshold = nil
+	m.addrecovery_threshold = nil
+}
+
+// SetLastControlRunAt sets the "last_control_run_at" field.
+func (m *Sub2APIProviderProbeConfigMutation) SetLastControlRunAt(t time.Time) {
+	m.last_control_run_at = &t
+}
+
+// LastControlRunAt returns the value of the "last_control_run_at" field in the mutation.
+func (m *Sub2APIProviderProbeConfigMutation) LastControlRunAt() (r time.Time, exists bool) {
+	v := m.last_control_run_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastControlRunAt returns the old "last_control_run_at" field's value of the Sub2APIProviderProbeConfig entity.
+// If the Sub2APIProviderProbeConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeConfigMutation) OldLastControlRunAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastControlRunAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastControlRunAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastControlRunAt: %w", err)
+	}
+	return oldValue.LastControlRunAt, nil
+}
+
+// ClearLastControlRunAt clears the value of the "last_control_run_at" field.
+func (m *Sub2APIProviderProbeConfigMutation) ClearLastControlRunAt() {
+	m.last_control_run_at = nil
+	m.clearedFields[sub2apiproviderprobeconfig.FieldLastControlRunAt] = struct{}{}
+}
+
+// LastControlRunAtCleared returns if the "last_control_run_at" field was cleared in this mutation.
+func (m *Sub2APIProviderProbeConfigMutation) LastControlRunAtCleared() bool {
+	_, ok := m.clearedFields[sub2apiproviderprobeconfig.FieldLastControlRunAt]
+	return ok
+}
+
+// ResetLastControlRunAt resets all changes to the "last_control_run_at" field.
+func (m *Sub2APIProviderProbeConfigMutation) ResetLastControlRunAt() {
+	m.last_control_run_at = nil
+	delete(m.clearedFields, sub2apiproviderprobeconfig.FieldLastControlRunAt)
+}
+
+// SetLastDataRunAt sets the "last_data_run_at" field.
+func (m *Sub2APIProviderProbeConfigMutation) SetLastDataRunAt(t time.Time) {
+	m.last_data_run_at = &t
+}
+
+// LastDataRunAt returns the value of the "last_data_run_at" field in the mutation.
+func (m *Sub2APIProviderProbeConfigMutation) LastDataRunAt() (r time.Time, exists bool) {
+	v := m.last_data_run_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastDataRunAt returns the old "last_data_run_at" field's value of the Sub2APIProviderProbeConfig entity.
+// If the Sub2APIProviderProbeConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeConfigMutation) OldLastDataRunAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastDataRunAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastDataRunAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastDataRunAt: %w", err)
+	}
+	return oldValue.LastDataRunAt, nil
+}
+
+// ClearLastDataRunAt clears the value of the "last_data_run_at" field.
+func (m *Sub2APIProviderProbeConfigMutation) ClearLastDataRunAt() {
+	m.last_data_run_at = nil
+	m.clearedFields[sub2apiproviderprobeconfig.FieldLastDataRunAt] = struct{}{}
+}
+
+// LastDataRunAtCleared returns if the "last_data_run_at" field was cleared in this mutation.
+func (m *Sub2APIProviderProbeConfigMutation) LastDataRunAtCleared() bool {
+	_, ok := m.clearedFields[sub2apiproviderprobeconfig.FieldLastDataRunAt]
+	return ok
+}
+
+// ResetLastDataRunAt resets all changes to the "last_data_run_at" field.
+func (m *Sub2APIProviderProbeConfigMutation) ResetLastDataRunAt() {
+	m.last_data_run_at = nil
+	delete(m.clearedFields, sub2apiproviderprobeconfig.FieldLastDataRunAt)
+}
+
+// ClearProvider clears the "provider" edge to the Sub2APIProvider entity.
+func (m *Sub2APIProviderProbeConfigMutation) ClearProvider() {
+	m.clearedprovider = true
+	m.clearedFields[sub2apiproviderprobeconfig.FieldProviderID] = struct{}{}
+}
+
+// ProviderCleared reports if the "provider" edge to the Sub2APIProvider entity was cleared.
+func (m *Sub2APIProviderProbeConfigMutation) ProviderCleared() bool {
+	return m.clearedprovider
+}
+
+// ProviderIDs returns the "provider" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ProviderID instead. It exists only for internal usage by the builders.
+func (m *Sub2APIProviderProbeConfigMutation) ProviderIDs() (ids []int64) {
+	if id := m.provider; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetProvider resets all changes to the "provider" edge.
+func (m *Sub2APIProviderProbeConfigMutation) ResetProvider() {
+	m.provider = nil
+	m.clearedprovider = false
+}
+
+// Where appends a list predicates to the Sub2APIProviderProbeConfigMutation builder.
+func (m *Sub2APIProviderProbeConfigMutation) Where(ps ...predicate.Sub2APIProviderProbeConfig) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the Sub2APIProviderProbeConfigMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *Sub2APIProviderProbeConfigMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Sub2APIProviderProbeConfig, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *Sub2APIProviderProbeConfigMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *Sub2APIProviderProbeConfigMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (Sub2APIProviderProbeConfig).
+func (m *Sub2APIProviderProbeConfigMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *Sub2APIProviderProbeConfigMutation) Fields() []string {
+	fields := make([]string, 0, 15)
+	if m.created_at != nil {
+		fields = append(fields, sub2apiproviderprobeconfig.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, sub2apiproviderprobeconfig.FieldUpdatedAt)
+	}
+	if m.provider != nil {
+		fields = append(fields, sub2apiproviderprobeconfig.FieldProviderID)
+	}
+	if m.control_enabled != nil {
+		fields = append(fields, sub2apiproviderprobeconfig.FieldControlEnabled)
+	}
+	if m.control_interval_seconds != nil {
+		fields = append(fields, sub2apiproviderprobeconfig.FieldControlIntervalSeconds)
+	}
+	if m.data_enabled != nil {
+		fields = append(fields, sub2apiproviderprobeconfig.FieldDataEnabled)
+	}
+	if m.data_interval_seconds != nil {
+		fields = append(fields, sub2apiproviderprobeconfig.FieldDataIntervalSeconds)
+	}
+	if m.selected_account_ids != nil {
+		fields = append(fields, sub2apiproviderprobeconfig.FieldSelectedAccountIds)
+	}
+	if m.allow_media_probe != nil {
+		fields = append(fields, sub2apiproviderprobeconfig.FieldAllowMediaProbe)
+	}
+	if m.timeout_seconds != nil {
+		fields = append(fields, sub2apiproviderprobeconfig.FieldTimeoutSeconds)
+	}
+	if m.degraded_latency_ms != nil {
+		fields = append(fields, sub2apiproviderprobeconfig.FieldDegradedLatencyMs)
+	}
+	if m.failure_threshold != nil {
+		fields = append(fields, sub2apiproviderprobeconfig.FieldFailureThreshold)
+	}
+	if m.recovery_threshold != nil {
+		fields = append(fields, sub2apiproviderprobeconfig.FieldRecoveryThreshold)
+	}
+	if m.last_control_run_at != nil {
+		fields = append(fields, sub2apiproviderprobeconfig.FieldLastControlRunAt)
+	}
+	if m.last_data_run_at != nil {
+		fields = append(fields, sub2apiproviderprobeconfig.FieldLastDataRunAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *Sub2APIProviderProbeConfigMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case sub2apiproviderprobeconfig.FieldCreatedAt:
+		return m.CreatedAt()
+	case sub2apiproviderprobeconfig.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case sub2apiproviderprobeconfig.FieldProviderID:
+		return m.ProviderID()
+	case sub2apiproviderprobeconfig.FieldControlEnabled:
+		return m.ControlEnabled()
+	case sub2apiproviderprobeconfig.FieldControlIntervalSeconds:
+		return m.ControlIntervalSeconds()
+	case sub2apiproviderprobeconfig.FieldDataEnabled:
+		return m.DataEnabled()
+	case sub2apiproviderprobeconfig.FieldDataIntervalSeconds:
+		return m.DataIntervalSeconds()
+	case sub2apiproviderprobeconfig.FieldSelectedAccountIds:
+		return m.SelectedAccountIds()
+	case sub2apiproviderprobeconfig.FieldAllowMediaProbe:
+		return m.AllowMediaProbe()
+	case sub2apiproviderprobeconfig.FieldTimeoutSeconds:
+		return m.TimeoutSeconds()
+	case sub2apiproviderprobeconfig.FieldDegradedLatencyMs:
+		return m.DegradedLatencyMs()
+	case sub2apiproviderprobeconfig.FieldFailureThreshold:
+		return m.FailureThreshold()
+	case sub2apiproviderprobeconfig.FieldRecoveryThreshold:
+		return m.RecoveryThreshold()
+	case sub2apiproviderprobeconfig.FieldLastControlRunAt:
+		return m.LastControlRunAt()
+	case sub2apiproviderprobeconfig.FieldLastDataRunAt:
+		return m.LastDataRunAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *Sub2APIProviderProbeConfigMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case sub2apiproviderprobeconfig.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case sub2apiproviderprobeconfig.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case sub2apiproviderprobeconfig.FieldProviderID:
+		return m.OldProviderID(ctx)
+	case sub2apiproviderprobeconfig.FieldControlEnabled:
+		return m.OldControlEnabled(ctx)
+	case sub2apiproviderprobeconfig.FieldControlIntervalSeconds:
+		return m.OldControlIntervalSeconds(ctx)
+	case sub2apiproviderprobeconfig.FieldDataEnabled:
+		return m.OldDataEnabled(ctx)
+	case sub2apiproviderprobeconfig.FieldDataIntervalSeconds:
+		return m.OldDataIntervalSeconds(ctx)
+	case sub2apiproviderprobeconfig.FieldSelectedAccountIds:
+		return m.OldSelectedAccountIds(ctx)
+	case sub2apiproviderprobeconfig.FieldAllowMediaProbe:
+		return m.OldAllowMediaProbe(ctx)
+	case sub2apiproviderprobeconfig.FieldTimeoutSeconds:
+		return m.OldTimeoutSeconds(ctx)
+	case sub2apiproviderprobeconfig.FieldDegradedLatencyMs:
+		return m.OldDegradedLatencyMs(ctx)
+	case sub2apiproviderprobeconfig.FieldFailureThreshold:
+		return m.OldFailureThreshold(ctx)
+	case sub2apiproviderprobeconfig.FieldRecoveryThreshold:
+		return m.OldRecoveryThreshold(ctx)
+	case sub2apiproviderprobeconfig.FieldLastControlRunAt:
+		return m.OldLastControlRunAt(ctx)
+	case sub2apiproviderprobeconfig.FieldLastDataRunAt:
+		return m.OldLastDataRunAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown Sub2APIProviderProbeConfig field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *Sub2APIProviderProbeConfigMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case sub2apiproviderprobeconfig.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case sub2apiproviderprobeconfig.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case sub2apiproviderprobeconfig.FieldProviderID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProviderID(v)
+		return nil
+	case sub2apiproviderprobeconfig.FieldControlEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetControlEnabled(v)
+		return nil
+	case sub2apiproviderprobeconfig.FieldControlIntervalSeconds:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetControlIntervalSeconds(v)
+		return nil
+	case sub2apiproviderprobeconfig.FieldDataEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDataEnabled(v)
+		return nil
+	case sub2apiproviderprobeconfig.FieldDataIntervalSeconds:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDataIntervalSeconds(v)
+		return nil
+	case sub2apiproviderprobeconfig.FieldSelectedAccountIds:
+		v, ok := value.([]int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSelectedAccountIds(v)
+		return nil
+	case sub2apiproviderprobeconfig.FieldAllowMediaProbe:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAllowMediaProbe(v)
+		return nil
+	case sub2apiproviderprobeconfig.FieldTimeoutSeconds:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTimeoutSeconds(v)
+		return nil
+	case sub2apiproviderprobeconfig.FieldDegradedLatencyMs:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDegradedLatencyMs(v)
+		return nil
+	case sub2apiproviderprobeconfig.FieldFailureThreshold:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFailureThreshold(v)
+		return nil
+	case sub2apiproviderprobeconfig.FieldRecoveryThreshold:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRecoveryThreshold(v)
+		return nil
+	case sub2apiproviderprobeconfig.FieldLastControlRunAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastControlRunAt(v)
+		return nil
+	case sub2apiproviderprobeconfig.FieldLastDataRunAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastDataRunAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Sub2APIProviderProbeConfig field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *Sub2APIProviderProbeConfigMutation) AddedFields() []string {
+	var fields []string
+	if m.addcontrol_interval_seconds != nil {
+		fields = append(fields, sub2apiproviderprobeconfig.FieldControlIntervalSeconds)
+	}
+	if m.adddata_interval_seconds != nil {
+		fields = append(fields, sub2apiproviderprobeconfig.FieldDataIntervalSeconds)
+	}
+	if m.addtimeout_seconds != nil {
+		fields = append(fields, sub2apiproviderprobeconfig.FieldTimeoutSeconds)
+	}
+	if m.adddegraded_latency_ms != nil {
+		fields = append(fields, sub2apiproviderprobeconfig.FieldDegradedLatencyMs)
+	}
+	if m.addfailure_threshold != nil {
+		fields = append(fields, sub2apiproviderprobeconfig.FieldFailureThreshold)
+	}
+	if m.addrecovery_threshold != nil {
+		fields = append(fields, sub2apiproviderprobeconfig.FieldRecoveryThreshold)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *Sub2APIProviderProbeConfigMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case sub2apiproviderprobeconfig.FieldControlIntervalSeconds:
+		return m.AddedControlIntervalSeconds()
+	case sub2apiproviderprobeconfig.FieldDataIntervalSeconds:
+		return m.AddedDataIntervalSeconds()
+	case sub2apiproviderprobeconfig.FieldTimeoutSeconds:
+		return m.AddedTimeoutSeconds()
+	case sub2apiproviderprobeconfig.FieldDegradedLatencyMs:
+		return m.AddedDegradedLatencyMs()
+	case sub2apiproviderprobeconfig.FieldFailureThreshold:
+		return m.AddedFailureThreshold()
+	case sub2apiproviderprobeconfig.FieldRecoveryThreshold:
+		return m.AddedRecoveryThreshold()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *Sub2APIProviderProbeConfigMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case sub2apiproviderprobeconfig.FieldControlIntervalSeconds:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddControlIntervalSeconds(v)
+		return nil
+	case sub2apiproviderprobeconfig.FieldDataIntervalSeconds:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDataIntervalSeconds(v)
+		return nil
+	case sub2apiproviderprobeconfig.FieldTimeoutSeconds:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTimeoutSeconds(v)
+		return nil
+	case sub2apiproviderprobeconfig.FieldDegradedLatencyMs:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDegradedLatencyMs(v)
+		return nil
+	case sub2apiproviderprobeconfig.FieldFailureThreshold:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddFailureThreshold(v)
+		return nil
+	case sub2apiproviderprobeconfig.FieldRecoveryThreshold:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRecoveryThreshold(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Sub2APIProviderProbeConfig numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *Sub2APIProviderProbeConfigMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(sub2apiproviderprobeconfig.FieldLastControlRunAt) {
+		fields = append(fields, sub2apiproviderprobeconfig.FieldLastControlRunAt)
+	}
+	if m.FieldCleared(sub2apiproviderprobeconfig.FieldLastDataRunAt) {
+		fields = append(fields, sub2apiproviderprobeconfig.FieldLastDataRunAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *Sub2APIProviderProbeConfigMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *Sub2APIProviderProbeConfigMutation) ClearField(name string) error {
+	switch name {
+	case sub2apiproviderprobeconfig.FieldLastControlRunAt:
+		m.ClearLastControlRunAt()
+		return nil
+	case sub2apiproviderprobeconfig.FieldLastDataRunAt:
+		m.ClearLastDataRunAt()
+		return nil
+	}
+	return fmt.Errorf("unknown Sub2APIProviderProbeConfig nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *Sub2APIProviderProbeConfigMutation) ResetField(name string) error {
+	switch name {
+	case sub2apiproviderprobeconfig.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case sub2apiproviderprobeconfig.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case sub2apiproviderprobeconfig.FieldProviderID:
+		m.ResetProviderID()
+		return nil
+	case sub2apiproviderprobeconfig.FieldControlEnabled:
+		m.ResetControlEnabled()
+		return nil
+	case sub2apiproviderprobeconfig.FieldControlIntervalSeconds:
+		m.ResetControlIntervalSeconds()
+		return nil
+	case sub2apiproviderprobeconfig.FieldDataEnabled:
+		m.ResetDataEnabled()
+		return nil
+	case sub2apiproviderprobeconfig.FieldDataIntervalSeconds:
+		m.ResetDataIntervalSeconds()
+		return nil
+	case sub2apiproviderprobeconfig.FieldSelectedAccountIds:
+		m.ResetSelectedAccountIds()
+		return nil
+	case sub2apiproviderprobeconfig.FieldAllowMediaProbe:
+		m.ResetAllowMediaProbe()
+		return nil
+	case sub2apiproviderprobeconfig.FieldTimeoutSeconds:
+		m.ResetTimeoutSeconds()
+		return nil
+	case sub2apiproviderprobeconfig.FieldDegradedLatencyMs:
+		m.ResetDegradedLatencyMs()
+		return nil
+	case sub2apiproviderprobeconfig.FieldFailureThreshold:
+		m.ResetFailureThreshold()
+		return nil
+	case sub2apiproviderprobeconfig.FieldRecoveryThreshold:
+		m.ResetRecoveryThreshold()
+		return nil
+	case sub2apiproviderprobeconfig.FieldLastControlRunAt:
+		m.ResetLastControlRunAt()
+		return nil
+	case sub2apiproviderprobeconfig.FieldLastDataRunAt:
+		m.ResetLastDataRunAt()
+		return nil
+	}
+	return fmt.Errorf("unknown Sub2APIProviderProbeConfig field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *Sub2APIProviderProbeConfigMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.provider != nil {
+		edges = append(edges, sub2apiproviderprobeconfig.EdgeProvider)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *Sub2APIProviderProbeConfigMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case sub2apiproviderprobeconfig.EdgeProvider:
+		if id := m.provider; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *Sub2APIProviderProbeConfigMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *Sub2APIProviderProbeConfigMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *Sub2APIProviderProbeConfigMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedprovider {
+		edges = append(edges, sub2apiproviderprobeconfig.EdgeProvider)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *Sub2APIProviderProbeConfigMutation) EdgeCleared(name string) bool {
+	switch name {
+	case sub2apiproviderprobeconfig.EdgeProvider:
+		return m.clearedprovider
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *Sub2APIProviderProbeConfigMutation) ClearEdge(name string) error {
+	switch name {
+	case sub2apiproviderprobeconfig.EdgeProvider:
+		m.ClearProvider()
+		return nil
+	}
+	return fmt.Errorf("unknown Sub2APIProviderProbeConfig unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *Sub2APIProviderProbeConfigMutation) ResetEdge(name string) error {
+	switch name {
+	case sub2apiproviderprobeconfig.EdgeProvider:
+		m.ResetProvider()
+		return nil
+	}
+	return fmt.Errorf("unknown Sub2APIProviderProbeConfig edge %s", name)
+}
+
+// Sub2APIProviderProbeRunMutation represents an operation that mutates the Sub2APIProviderProbeRun nodes in the graph.
+type Sub2APIProviderProbeRunMutation struct {
+	config
+	op                        Op
+	typ                       string
+	id                        *int64
+	overall_status            *sub2apiproviderproberun.OverallStatus
+	control_status            *sub2apiproviderproberun.ControlStatus
+	data_status               *sub2apiproviderproberun.DataStatus
+	traffic_status            *sub2apiproviderproberun.TrafficStatus
+	login_latency_ms          *int
+	addlogin_latency_ms       *int
+	health_latency_ms         *int
+	addhealth_latency_ms      *int
+	keys_latency_ms           *int
+	addkeys_latency_ms        *int
+	groups_latency_ms         *int
+	addgroups_latency_ms      *int
+	data_probe_count          *int
+	adddata_probe_count       *int
+	data_probe_success        *int
+	adddata_probe_success     *int
+	data_probe_failed         *int
+	adddata_probe_failed      *int
+	traffic_request_count     *int
+	addtraffic_request_count  *int
+	traffic_success_rate      *float64
+	addtraffic_success_rate   *float64
+	traffic_p95_latency_ms    *int
+	addtraffic_p95_latency_ms *int
+	error_category            *string
+	error_message             *string
+	details                   *map[string]interface{}
+	started_at                *time.Time
+	finished_at               *time.Time
+	created_at                *time.Time
+	clearedFields             map[string]struct{}
+	provider                  *int64
+	clearedprovider           bool
+	done                      bool
+	oldValue                  func(context.Context) (*Sub2APIProviderProbeRun, error)
+	predicates                []predicate.Sub2APIProviderProbeRun
+}
+
+var _ ent.Mutation = (*Sub2APIProviderProbeRunMutation)(nil)
+
+// sub2apiproviderproberunOption allows management of the mutation configuration using functional options.
+type sub2apiproviderproberunOption func(*Sub2APIProviderProbeRunMutation)
+
+// newSub2APIProviderProbeRunMutation creates new mutation for the Sub2APIProviderProbeRun entity.
+func newSub2APIProviderProbeRunMutation(c config, op Op, opts ...sub2apiproviderproberunOption) *Sub2APIProviderProbeRunMutation {
+	m := &Sub2APIProviderProbeRunMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeSub2APIProviderProbeRun,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withSub2APIProviderProbeRunID sets the ID field of the mutation.
+func withSub2APIProviderProbeRunID(id int64) sub2apiproviderproberunOption {
+	return func(m *Sub2APIProviderProbeRunMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Sub2APIProviderProbeRun
+		)
+		m.oldValue = func(ctx context.Context) (*Sub2APIProviderProbeRun, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Sub2APIProviderProbeRun.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withSub2APIProviderProbeRun sets the old Sub2APIProviderProbeRun of the mutation.
+func withSub2APIProviderProbeRun(node *Sub2APIProviderProbeRun) sub2apiproviderproberunOption {
+	return func(m *Sub2APIProviderProbeRunMutation) {
+		m.oldValue = func(context.Context) (*Sub2APIProviderProbeRun, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m Sub2APIProviderProbeRunMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m Sub2APIProviderProbeRunMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *Sub2APIProviderProbeRunMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *Sub2APIProviderProbeRunMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Sub2APIProviderProbeRun.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetProviderID sets the "provider_id" field.
+func (m *Sub2APIProviderProbeRunMutation) SetProviderID(i int64) {
+	m.provider = &i
+}
+
+// ProviderID returns the value of the "provider_id" field in the mutation.
+func (m *Sub2APIProviderProbeRunMutation) ProviderID() (r int64, exists bool) {
+	v := m.provider
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProviderID returns the old "provider_id" field's value of the Sub2APIProviderProbeRun entity.
+// If the Sub2APIProviderProbeRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeRunMutation) OldProviderID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProviderID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProviderID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProviderID: %w", err)
+	}
+	return oldValue.ProviderID, nil
+}
+
+// ResetProviderID resets all changes to the "provider_id" field.
+func (m *Sub2APIProviderProbeRunMutation) ResetProviderID() {
+	m.provider = nil
+}
+
+// SetOverallStatus sets the "overall_status" field.
+func (m *Sub2APIProviderProbeRunMutation) SetOverallStatus(ss sub2apiproviderproberun.OverallStatus) {
+	m.overall_status = &ss
+}
+
+// OverallStatus returns the value of the "overall_status" field in the mutation.
+func (m *Sub2APIProviderProbeRunMutation) OverallStatus() (r sub2apiproviderproberun.OverallStatus, exists bool) {
+	v := m.overall_status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOverallStatus returns the old "overall_status" field's value of the Sub2APIProviderProbeRun entity.
+// If the Sub2APIProviderProbeRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeRunMutation) OldOverallStatus(ctx context.Context) (v sub2apiproviderproberun.OverallStatus, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOverallStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOverallStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOverallStatus: %w", err)
+	}
+	return oldValue.OverallStatus, nil
+}
+
+// ResetOverallStatus resets all changes to the "overall_status" field.
+func (m *Sub2APIProviderProbeRunMutation) ResetOverallStatus() {
+	m.overall_status = nil
+}
+
+// SetControlStatus sets the "control_status" field.
+func (m *Sub2APIProviderProbeRunMutation) SetControlStatus(ss sub2apiproviderproberun.ControlStatus) {
+	m.control_status = &ss
+}
+
+// ControlStatus returns the value of the "control_status" field in the mutation.
+func (m *Sub2APIProviderProbeRunMutation) ControlStatus() (r sub2apiproviderproberun.ControlStatus, exists bool) {
+	v := m.control_status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldControlStatus returns the old "control_status" field's value of the Sub2APIProviderProbeRun entity.
+// If the Sub2APIProviderProbeRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeRunMutation) OldControlStatus(ctx context.Context) (v sub2apiproviderproberun.ControlStatus, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldControlStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldControlStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldControlStatus: %w", err)
+	}
+	return oldValue.ControlStatus, nil
+}
+
+// ResetControlStatus resets all changes to the "control_status" field.
+func (m *Sub2APIProviderProbeRunMutation) ResetControlStatus() {
+	m.control_status = nil
+}
+
+// SetDataStatus sets the "data_status" field.
+func (m *Sub2APIProviderProbeRunMutation) SetDataStatus(ss sub2apiproviderproberun.DataStatus) {
+	m.data_status = &ss
+}
+
+// DataStatus returns the value of the "data_status" field in the mutation.
+func (m *Sub2APIProviderProbeRunMutation) DataStatus() (r sub2apiproviderproberun.DataStatus, exists bool) {
+	v := m.data_status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDataStatus returns the old "data_status" field's value of the Sub2APIProviderProbeRun entity.
+// If the Sub2APIProviderProbeRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeRunMutation) OldDataStatus(ctx context.Context) (v sub2apiproviderproberun.DataStatus, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDataStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDataStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDataStatus: %w", err)
+	}
+	return oldValue.DataStatus, nil
+}
+
+// ResetDataStatus resets all changes to the "data_status" field.
+func (m *Sub2APIProviderProbeRunMutation) ResetDataStatus() {
+	m.data_status = nil
+}
+
+// SetTrafficStatus sets the "traffic_status" field.
+func (m *Sub2APIProviderProbeRunMutation) SetTrafficStatus(ss sub2apiproviderproberun.TrafficStatus) {
+	m.traffic_status = &ss
+}
+
+// TrafficStatus returns the value of the "traffic_status" field in the mutation.
+func (m *Sub2APIProviderProbeRunMutation) TrafficStatus() (r sub2apiproviderproberun.TrafficStatus, exists bool) {
+	v := m.traffic_status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTrafficStatus returns the old "traffic_status" field's value of the Sub2APIProviderProbeRun entity.
+// If the Sub2APIProviderProbeRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeRunMutation) OldTrafficStatus(ctx context.Context) (v sub2apiproviderproberun.TrafficStatus, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTrafficStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTrafficStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTrafficStatus: %w", err)
+	}
+	return oldValue.TrafficStatus, nil
+}
+
+// ResetTrafficStatus resets all changes to the "traffic_status" field.
+func (m *Sub2APIProviderProbeRunMutation) ResetTrafficStatus() {
+	m.traffic_status = nil
+}
+
+// SetLoginLatencyMs sets the "login_latency_ms" field.
+func (m *Sub2APIProviderProbeRunMutation) SetLoginLatencyMs(i int) {
+	m.login_latency_ms = &i
+	m.addlogin_latency_ms = nil
+}
+
+// LoginLatencyMs returns the value of the "login_latency_ms" field in the mutation.
+func (m *Sub2APIProviderProbeRunMutation) LoginLatencyMs() (r int, exists bool) {
+	v := m.login_latency_ms
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLoginLatencyMs returns the old "login_latency_ms" field's value of the Sub2APIProviderProbeRun entity.
+// If the Sub2APIProviderProbeRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeRunMutation) OldLoginLatencyMs(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLoginLatencyMs is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLoginLatencyMs requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLoginLatencyMs: %w", err)
+	}
+	return oldValue.LoginLatencyMs, nil
+}
+
+// AddLoginLatencyMs adds i to the "login_latency_ms" field.
+func (m *Sub2APIProviderProbeRunMutation) AddLoginLatencyMs(i int) {
+	if m.addlogin_latency_ms != nil {
+		*m.addlogin_latency_ms += i
+	} else {
+		m.addlogin_latency_ms = &i
+	}
+}
+
+// AddedLoginLatencyMs returns the value that was added to the "login_latency_ms" field in this mutation.
+func (m *Sub2APIProviderProbeRunMutation) AddedLoginLatencyMs() (r int, exists bool) {
+	v := m.addlogin_latency_ms
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearLoginLatencyMs clears the value of the "login_latency_ms" field.
+func (m *Sub2APIProviderProbeRunMutation) ClearLoginLatencyMs() {
+	m.login_latency_ms = nil
+	m.addlogin_latency_ms = nil
+	m.clearedFields[sub2apiproviderproberun.FieldLoginLatencyMs] = struct{}{}
+}
+
+// LoginLatencyMsCleared returns if the "login_latency_ms" field was cleared in this mutation.
+func (m *Sub2APIProviderProbeRunMutation) LoginLatencyMsCleared() bool {
+	_, ok := m.clearedFields[sub2apiproviderproberun.FieldLoginLatencyMs]
+	return ok
+}
+
+// ResetLoginLatencyMs resets all changes to the "login_latency_ms" field.
+func (m *Sub2APIProviderProbeRunMutation) ResetLoginLatencyMs() {
+	m.login_latency_ms = nil
+	m.addlogin_latency_ms = nil
+	delete(m.clearedFields, sub2apiproviderproberun.FieldLoginLatencyMs)
+}
+
+// SetHealthLatencyMs sets the "health_latency_ms" field.
+func (m *Sub2APIProviderProbeRunMutation) SetHealthLatencyMs(i int) {
+	m.health_latency_ms = &i
+	m.addhealth_latency_ms = nil
+}
+
+// HealthLatencyMs returns the value of the "health_latency_ms" field in the mutation.
+func (m *Sub2APIProviderProbeRunMutation) HealthLatencyMs() (r int, exists bool) {
+	v := m.health_latency_ms
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHealthLatencyMs returns the old "health_latency_ms" field's value of the Sub2APIProviderProbeRun entity.
+// If the Sub2APIProviderProbeRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeRunMutation) OldHealthLatencyMs(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHealthLatencyMs is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHealthLatencyMs requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHealthLatencyMs: %w", err)
+	}
+	return oldValue.HealthLatencyMs, nil
+}
+
+// AddHealthLatencyMs adds i to the "health_latency_ms" field.
+func (m *Sub2APIProviderProbeRunMutation) AddHealthLatencyMs(i int) {
+	if m.addhealth_latency_ms != nil {
+		*m.addhealth_latency_ms += i
+	} else {
+		m.addhealth_latency_ms = &i
+	}
+}
+
+// AddedHealthLatencyMs returns the value that was added to the "health_latency_ms" field in this mutation.
+func (m *Sub2APIProviderProbeRunMutation) AddedHealthLatencyMs() (r int, exists bool) {
+	v := m.addhealth_latency_ms
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearHealthLatencyMs clears the value of the "health_latency_ms" field.
+func (m *Sub2APIProviderProbeRunMutation) ClearHealthLatencyMs() {
+	m.health_latency_ms = nil
+	m.addhealth_latency_ms = nil
+	m.clearedFields[sub2apiproviderproberun.FieldHealthLatencyMs] = struct{}{}
+}
+
+// HealthLatencyMsCleared returns if the "health_latency_ms" field was cleared in this mutation.
+func (m *Sub2APIProviderProbeRunMutation) HealthLatencyMsCleared() bool {
+	_, ok := m.clearedFields[sub2apiproviderproberun.FieldHealthLatencyMs]
+	return ok
+}
+
+// ResetHealthLatencyMs resets all changes to the "health_latency_ms" field.
+func (m *Sub2APIProviderProbeRunMutation) ResetHealthLatencyMs() {
+	m.health_latency_ms = nil
+	m.addhealth_latency_ms = nil
+	delete(m.clearedFields, sub2apiproviderproberun.FieldHealthLatencyMs)
+}
+
+// SetKeysLatencyMs sets the "keys_latency_ms" field.
+func (m *Sub2APIProviderProbeRunMutation) SetKeysLatencyMs(i int) {
+	m.keys_latency_ms = &i
+	m.addkeys_latency_ms = nil
+}
+
+// KeysLatencyMs returns the value of the "keys_latency_ms" field in the mutation.
+func (m *Sub2APIProviderProbeRunMutation) KeysLatencyMs() (r int, exists bool) {
+	v := m.keys_latency_ms
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldKeysLatencyMs returns the old "keys_latency_ms" field's value of the Sub2APIProviderProbeRun entity.
+// If the Sub2APIProviderProbeRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeRunMutation) OldKeysLatencyMs(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldKeysLatencyMs is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldKeysLatencyMs requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldKeysLatencyMs: %w", err)
+	}
+	return oldValue.KeysLatencyMs, nil
+}
+
+// AddKeysLatencyMs adds i to the "keys_latency_ms" field.
+func (m *Sub2APIProviderProbeRunMutation) AddKeysLatencyMs(i int) {
+	if m.addkeys_latency_ms != nil {
+		*m.addkeys_latency_ms += i
+	} else {
+		m.addkeys_latency_ms = &i
+	}
+}
+
+// AddedKeysLatencyMs returns the value that was added to the "keys_latency_ms" field in this mutation.
+func (m *Sub2APIProviderProbeRunMutation) AddedKeysLatencyMs() (r int, exists bool) {
+	v := m.addkeys_latency_ms
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearKeysLatencyMs clears the value of the "keys_latency_ms" field.
+func (m *Sub2APIProviderProbeRunMutation) ClearKeysLatencyMs() {
+	m.keys_latency_ms = nil
+	m.addkeys_latency_ms = nil
+	m.clearedFields[sub2apiproviderproberun.FieldKeysLatencyMs] = struct{}{}
+}
+
+// KeysLatencyMsCleared returns if the "keys_latency_ms" field was cleared in this mutation.
+func (m *Sub2APIProviderProbeRunMutation) KeysLatencyMsCleared() bool {
+	_, ok := m.clearedFields[sub2apiproviderproberun.FieldKeysLatencyMs]
+	return ok
+}
+
+// ResetKeysLatencyMs resets all changes to the "keys_latency_ms" field.
+func (m *Sub2APIProviderProbeRunMutation) ResetKeysLatencyMs() {
+	m.keys_latency_ms = nil
+	m.addkeys_latency_ms = nil
+	delete(m.clearedFields, sub2apiproviderproberun.FieldKeysLatencyMs)
+}
+
+// SetGroupsLatencyMs sets the "groups_latency_ms" field.
+func (m *Sub2APIProviderProbeRunMutation) SetGroupsLatencyMs(i int) {
+	m.groups_latency_ms = &i
+	m.addgroups_latency_ms = nil
+}
+
+// GroupsLatencyMs returns the value of the "groups_latency_ms" field in the mutation.
+func (m *Sub2APIProviderProbeRunMutation) GroupsLatencyMs() (r int, exists bool) {
+	v := m.groups_latency_ms
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGroupsLatencyMs returns the old "groups_latency_ms" field's value of the Sub2APIProviderProbeRun entity.
+// If the Sub2APIProviderProbeRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeRunMutation) OldGroupsLatencyMs(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGroupsLatencyMs is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGroupsLatencyMs requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGroupsLatencyMs: %w", err)
+	}
+	return oldValue.GroupsLatencyMs, nil
+}
+
+// AddGroupsLatencyMs adds i to the "groups_latency_ms" field.
+func (m *Sub2APIProviderProbeRunMutation) AddGroupsLatencyMs(i int) {
+	if m.addgroups_latency_ms != nil {
+		*m.addgroups_latency_ms += i
+	} else {
+		m.addgroups_latency_ms = &i
+	}
+}
+
+// AddedGroupsLatencyMs returns the value that was added to the "groups_latency_ms" field in this mutation.
+func (m *Sub2APIProviderProbeRunMutation) AddedGroupsLatencyMs() (r int, exists bool) {
+	v := m.addgroups_latency_ms
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearGroupsLatencyMs clears the value of the "groups_latency_ms" field.
+func (m *Sub2APIProviderProbeRunMutation) ClearGroupsLatencyMs() {
+	m.groups_latency_ms = nil
+	m.addgroups_latency_ms = nil
+	m.clearedFields[sub2apiproviderproberun.FieldGroupsLatencyMs] = struct{}{}
+}
+
+// GroupsLatencyMsCleared returns if the "groups_latency_ms" field was cleared in this mutation.
+func (m *Sub2APIProviderProbeRunMutation) GroupsLatencyMsCleared() bool {
+	_, ok := m.clearedFields[sub2apiproviderproberun.FieldGroupsLatencyMs]
+	return ok
+}
+
+// ResetGroupsLatencyMs resets all changes to the "groups_latency_ms" field.
+func (m *Sub2APIProviderProbeRunMutation) ResetGroupsLatencyMs() {
+	m.groups_latency_ms = nil
+	m.addgroups_latency_ms = nil
+	delete(m.clearedFields, sub2apiproviderproberun.FieldGroupsLatencyMs)
+}
+
+// SetDataProbeCount sets the "data_probe_count" field.
+func (m *Sub2APIProviderProbeRunMutation) SetDataProbeCount(i int) {
+	m.data_probe_count = &i
+	m.adddata_probe_count = nil
+}
+
+// DataProbeCount returns the value of the "data_probe_count" field in the mutation.
+func (m *Sub2APIProviderProbeRunMutation) DataProbeCount() (r int, exists bool) {
+	v := m.data_probe_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDataProbeCount returns the old "data_probe_count" field's value of the Sub2APIProviderProbeRun entity.
+// If the Sub2APIProviderProbeRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeRunMutation) OldDataProbeCount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDataProbeCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDataProbeCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDataProbeCount: %w", err)
+	}
+	return oldValue.DataProbeCount, nil
+}
+
+// AddDataProbeCount adds i to the "data_probe_count" field.
+func (m *Sub2APIProviderProbeRunMutation) AddDataProbeCount(i int) {
+	if m.adddata_probe_count != nil {
+		*m.adddata_probe_count += i
+	} else {
+		m.adddata_probe_count = &i
+	}
+}
+
+// AddedDataProbeCount returns the value that was added to the "data_probe_count" field in this mutation.
+func (m *Sub2APIProviderProbeRunMutation) AddedDataProbeCount() (r int, exists bool) {
+	v := m.adddata_probe_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDataProbeCount resets all changes to the "data_probe_count" field.
+func (m *Sub2APIProviderProbeRunMutation) ResetDataProbeCount() {
+	m.data_probe_count = nil
+	m.adddata_probe_count = nil
+}
+
+// SetDataProbeSuccess sets the "data_probe_success" field.
+func (m *Sub2APIProviderProbeRunMutation) SetDataProbeSuccess(i int) {
+	m.data_probe_success = &i
+	m.adddata_probe_success = nil
+}
+
+// DataProbeSuccess returns the value of the "data_probe_success" field in the mutation.
+func (m *Sub2APIProviderProbeRunMutation) DataProbeSuccess() (r int, exists bool) {
+	v := m.data_probe_success
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDataProbeSuccess returns the old "data_probe_success" field's value of the Sub2APIProviderProbeRun entity.
+// If the Sub2APIProviderProbeRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeRunMutation) OldDataProbeSuccess(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDataProbeSuccess is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDataProbeSuccess requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDataProbeSuccess: %w", err)
+	}
+	return oldValue.DataProbeSuccess, nil
+}
+
+// AddDataProbeSuccess adds i to the "data_probe_success" field.
+func (m *Sub2APIProviderProbeRunMutation) AddDataProbeSuccess(i int) {
+	if m.adddata_probe_success != nil {
+		*m.adddata_probe_success += i
+	} else {
+		m.adddata_probe_success = &i
+	}
+}
+
+// AddedDataProbeSuccess returns the value that was added to the "data_probe_success" field in this mutation.
+func (m *Sub2APIProviderProbeRunMutation) AddedDataProbeSuccess() (r int, exists bool) {
+	v := m.adddata_probe_success
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDataProbeSuccess resets all changes to the "data_probe_success" field.
+func (m *Sub2APIProviderProbeRunMutation) ResetDataProbeSuccess() {
+	m.data_probe_success = nil
+	m.adddata_probe_success = nil
+}
+
+// SetDataProbeFailed sets the "data_probe_failed" field.
+func (m *Sub2APIProviderProbeRunMutation) SetDataProbeFailed(i int) {
+	m.data_probe_failed = &i
+	m.adddata_probe_failed = nil
+}
+
+// DataProbeFailed returns the value of the "data_probe_failed" field in the mutation.
+func (m *Sub2APIProviderProbeRunMutation) DataProbeFailed() (r int, exists bool) {
+	v := m.data_probe_failed
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDataProbeFailed returns the old "data_probe_failed" field's value of the Sub2APIProviderProbeRun entity.
+// If the Sub2APIProviderProbeRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeRunMutation) OldDataProbeFailed(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDataProbeFailed is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDataProbeFailed requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDataProbeFailed: %w", err)
+	}
+	return oldValue.DataProbeFailed, nil
+}
+
+// AddDataProbeFailed adds i to the "data_probe_failed" field.
+func (m *Sub2APIProviderProbeRunMutation) AddDataProbeFailed(i int) {
+	if m.adddata_probe_failed != nil {
+		*m.adddata_probe_failed += i
+	} else {
+		m.adddata_probe_failed = &i
+	}
+}
+
+// AddedDataProbeFailed returns the value that was added to the "data_probe_failed" field in this mutation.
+func (m *Sub2APIProviderProbeRunMutation) AddedDataProbeFailed() (r int, exists bool) {
+	v := m.adddata_probe_failed
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDataProbeFailed resets all changes to the "data_probe_failed" field.
+func (m *Sub2APIProviderProbeRunMutation) ResetDataProbeFailed() {
+	m.data_probe_failed = nil
+	m.adddata_probe_failed = nil
+}
+
+// SetTrafficRequestCount sets the "traffic_request_count" field.
+func (m *Sub2APIProviderProbeRunMutation) SetTrafficRequestCount(i int) {
+	m.traffic_request_count = &i
+	m.addtraffic_request_count = nil
+}
+
+// TrafficRequestCount returns the value of the "traffic_request_count" field in the mutation.
+func (m *Sub2APIProviderProbeRunMutation) TrafficRequestCount() (r int, exists bool) {
+	v := m.traffic_request_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTrafficRequestCount returns the old "traffic_request_count" field's value of the Sub2APIProviderProbeRun entity.
+// If the Sub2APIProviderProbeRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeRunMutation) OldTrafficRequestCount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTrafficRequestCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTrafficRequestCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTrafficRequestCount: %w", err)
+	}
+	return oldValue.TrafficRequestCount, nil
+}
+
+// AddTrafficRequestCount adds i to the "traffic_request_count" field.
+func (m *Sub2APIProviderProbeRunMutation) AddTrafficRequestCount(i int) {
+	if m.addtraffic_request_count != nil {
+		*m.addtraffic_request_count += i
+	} else {
+		m.addtraffic_request_count = &i
+	}
+}
+
+// AddedTrafficRequestCount returns the value that was added to the "traffic_request_count" field in this mutation.
+func (m *Sub2APIProviderProbeRunMutation) AddedTrafficRequestCount() (r int, exists bool) {
+	v := m.addtraffic_request_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetTrafficRequestCount resets all changes to the "traffic_request_count" field.
+func (m *Sub2APIProviderProbeRunMutation) ResetTrafficRequestCount() {
+	m.traffic_request_count = nil
+	m.addtraffic_request_count = nil
+}
+
+// SetTrafficSuccessRate sets the "traffic_success_rate" field.
+func (m *Sub2APIProviderProbeRunMutation) SetTrafficSuccessRate(f float64) {
+	m.traffic_success_rate = &f
+	m.addtraffic_success_rate = nil
+}
+
+// TrafficSuccessRate returns the value of the "traffic_success_rate" field in the mutation.
+func (m *Sub2APIProviderProbeRunMutation) TrafficSuccessRate() (r float64, exists bool) {
+	v := m.traffic_success_rate
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTrafficSuccessRate returns the old "traffic_success_rate" field's value of the Sub2APIProviderProbeRun entity.
+// If the Sub2APIProviderProbeRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeRunMutation) OldTrafficSuccessRate(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTrafficSuccessRate is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTrafficSuccessRate requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTrafficSuccessRate: %w", err)
+	}
+	return oldValue.TrafficSuccessRate, nil
+}
+
+// AddTrafficSuccessRate adds f to the "traffic_success_rate" field.
+func (m *Sub2APIProviderProbeRunMutation) AddTrafficSuccessRate(f float64) {
+	if m.addtraffic_success_rate != nil {
+		*m.addtraffic_success_rate += f
+	} else {
+		m.addtraffic_success_rate = &f
+	}
+}
+
+// AddedTrafficSuccessRate returns the value that was added to the "traffic_success_rate" field in this mutation.
+func (m *Sub2APIProviderProbeRunMutation) AddedTrafficSuccessRate() (r float64, exists bool) {
+	v := m.addtraffic_success_rate
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearTrafficSuccessRate clears the value of the "traffic_success_rate" field.
+func (m *Sub2APIProviderProbeRunMutation) ClearTrafficSuccessRate() {
+	m.traffic_success_rate = nil
+	m.addtraffic_success_rate = nil
+	m.clearedFields[sub2apiproviderproberun.FieldTrafficSuccessRate] = struct{}{}
+}
+
+// TrafficSuccessRateCleared returns if the "traffic_success_rate" field was cleared in this mutation.
+func (m *Sub2APIProviderProbeRunMutation) TrafficSuccessRateCleared() bool {
+	_, ok := m.clearedFields[sub2apiproviderproberun.FieldTrafficSuccessRate]
+	return ok
+}
+
+// ResetTrafficSuccessRate resets all changes to the "traffic_success_rate" field.
+func (m *Sub2APIProviderProbeRunMutation) ResetTrafficSuccessRate() {
+	m.traffic_success_rate = nil
+	m.addtraffic_success_rate = nil
+	delete(m.clearedFields, sub2apiproviderproberun.FieldTrafficSuccessRate)
+}
+
+// SetTrafficP95LatencyMs sets the "traffic_p95_latency_ms" field.
+func (m *Sub2APIProviderProbeRunMutation) SetTrafficP95LatencyMs(i int) {
+	m.traffic_p95_latency_ms = &i
+	m.addtraffic_p95_latency_ms = nil
+}
+
+// TrafficP95LatencyMs returns the value of the "traffic_p95_latency_ms" field in the mutation.
+func (m *Sub2APIProviderProbeRunMutation) TrafficP95LatencyMs() (r int, exists bool) {
+	v := m.traffic_p95_latency_ms
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTrafficP95LatencyMs returns the old "traffic_p95_latency_ms" field's value of the Sub2APIProviderProbeRun entity.
+// If the Sub2APIProviderProbeRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeRunMutation) OldTrafficP95LatencyMs(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTrafficP95LatencyMs is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTrafficP95LatencyMs requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTrafficP95LatencyMs: %w", err)
+	}
+	return oldValue.TrafficP95LatencyMs, nil
+}
+
+// AddTrafficP95LatencyMs adds i to the "traffic_p95_latency_ms" field.
+func (m *Sub2APIProviderProbeRunMutation) AddTrafficP95LatencyMs(i int) {
+	if m.addtraffic_p95_latency_ms != nil {
+		*m.addtraffic_p95_latency_ms += i
+	} else {
+		m.addtraffic_p95_latency_ms = &i
+	}
+}
+
+// AddedTrafficP95LatencyMs returns the value that was added to the "traffic_p95_latency_ms" field in this mutation.
+func (m *Sub2APIProviderProbeRunMutation) AddedTrafficP95LatencyMs() (r int, exists bool) {
+	v := m.addtraffic_p95_latency_ms
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearTrafficP95LatencyMs clears the value of the "traffic_p95_latency_ms" field.
+func (m *Sub2APIProviderProbeRunMutation) ClearTrafficP95LatencyMs() {
+	m.traffic_p95_latency_ms = nil
+	m.addtraffic_p95_latency_ms = nil
+	m.clearedFields[sub2apiproviderproberun.FieldTrafficP95LatencyMs] = struct{}{}
+}
+
+// TrafficP95LatencyMsCleared returns if the "traffic_p95_latency_ms" field was cleared in this mutation.
+func (m *Sub2APIProviderProbeRunMutation) TrafficP95LatencyMsCleared() bool {
+	_, ok := m.clearedFields[sub2apiproviderproberun.FieldTrafficP95LatencyMs]
+	return ok
+}
+
+// ResetTrafficP95LatencyMs resets all changes to the "traffic_p95_latency_ms" field.
+func (m *Sub2APIProviderProbeRunMutation) ResetTrafficP95LatencyMs() {
+	m.traffic_p95_latency_ms = nil
+	m.addtraffic_p95_latency_ms = nil
+	delete(m.clearedFields, sub2apiproviderproberun.FieldTrafficP95LatencyMs)
+}
+
+// SetErrorCategory sets the "error_category" field.
+func (m *Sub2APIProviderProbeRunMutation) SetErrorCategory(s string) {
+	m.error_category = &s
+}
+
+// ErrorCategory returns the value of the "error_category" field in the mutation.
+func (m *Sub2APIProviderProbeRunMutation) ErrorCategory() (r string, exists bool) {
+	v := m.error_category
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldErrorCategory returns the old "error_category" field's value of the Sub2APIProviderProbeRun entity.
+// If the Sub2APIProviderProbeRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeRunMutation) OldErrorCategory(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldErrorCategory is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldErrorCategory requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldErrorCategory: %w", err)
+	}
+	return oldValue.ErrorCategory, nil
+}
+
+// ClearErrorCategory clears the value of the "error_category" field.
+func (m *Sub2APIProviderProbeRunMutation) ClearErrorCategory() {
+	m.error_category = nil
+	m.clearedFields[sub2apiproviderproberun.FieldErrorCategory] = struct{}{}
+}
+
+// ErrorCategoryCleared returns if the "error_category" field was cleared in this mutation.
+func (m *Sub2APIProviderProbeRunMutation) ErrorCategoryCleared() bool {
+	_, ok := m.clearedFields[sub2apiproviderproberun.FieldErrorCategory]
+	return ok
+}
+
+// ResetErrorCategory resets all changes to the "error_category" field.
+func (m *Sub2APIProviderProbeRunMutation) ResetErrorCategory() {
+	m.error_category = nil
+	delete(m.clearedFields, sub2apiproviderproberun.FieldErrorCategory)
+}
+
+// SetErrorMessage sets the "error_message" field.
+func (m *Sub2APIProviderProbeRunMutation) SetErrorMessage(s string) {
+	m.error_message = &s
+}
+
+// ErrorMessage returns the value of the "error_message" field in the mutation.
+func (m *Sub2APIProviderProbeRunMutation) ErrorMessage() (r string, exists bool) {
+	v := m.error_message
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldErrorMessage returns the old "error_message" field's value of the Sub2APIProviderProbeRun entity.
+// If the Sub2APIProviderProbeRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeRunMutation) OldErrorMessage(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldErrorMessage is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldErrorMessage requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldErrorMessage: %w", err)
+	}
+	return oldValue.ErrorMessage, nil
+}
+
+// ClearErrorMessage clears the value of the "error_message" field.
+func (m *Sub2APIProviderProbeRunMutation) ClearErrorMessage() {
+	m.error_message = nil
+	m.clearedFields[sub2apiproviderproberun.FieldErrorMessage] = struct{}{}
+}
+
+// ErrorMessageCleared returns if the "error_message" field was cleared in this mutation.
+func (m *Sub2APIProviderProbeRunMutation) ErrorMessageCleared() bool {
+	_, ok := m.clearedFields[sub2apiproviderproberun.FieldErrorMessage]
+	return ok
+}
+
+// ResetErrorMessage resets all changes to the "error_message" field.
+func (m *Sub2APIProviderProbeRunMutation) ResetErrorMessage() {
+	m.error_message = nil
+	delete(m.clearedFields, sub2apiproviderproberun.FieldErrorMessage)
+}
+
+// SetDetails sets the "details" field.
+func (m *Sub2APIProviderProbeRunMutation) SetDetails(value map[string]interface{}) {
+	m.details = &value
+}
+
+// Details returns the value of the "details" field in the mutation.
+func (m *Sub2APIProviderProbeRunMutation) Details() (r map[string]interface{}, exists bool) {
+	v := m.details
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDetails returns the old "details" field's value of the Sub2APIProviderProbeRun entity.
+// If the Sub2APIProviderProbeRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeRunMutation) OldDetails(ctx context.Context) (v map[string]interface{}, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDetails is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDetails requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDetails: %w", err)
+	}
+	return oldValue.Details, nil
+}
+
+// ResetDetails resets all changes to the "details" field.
+func (m *Sub2APIProviderProbeRunMutation) ResetDetails() {
+	m.details = nil
+}
+
+// SetStartedAt sets the "started_at" field.
+func (m *Sub2APIProviderProbeRunMutation) SetStartedAt(t time.Time) {
+	m.started_at = &t
+}
+
+// StartedAt returns the value of the "started_at" field in the mutation.
+func (m *Sub2APIProviderProbeRunMutation) StartedAt() (r time.Time, exists bool) {
+	v := m.started_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStartedAt returns the old "started_at" field's value of the Sub2APIProviderProbeRun entity.
+// If the Sub2APIProviderProbeRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeRunMutation) OldStartedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStartedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStartedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStartedAt: %w", err)
+	}
+	return oldValue.StartedAt, nil
+}
+
+// ResetStartedAt resets all changes to the "started_at" field.
+func (m *Sub2APIProviderProbeRunMutation) ResetStartedAt() {
+	m.started_at = nil
+}
+
+// SetFinishedAt sets the "finished_at" field.
+func (m *Sub2APIProviderProbeRunMutation) SetFinishedAt(t time.Time) {
+	m.finished_at = &t
+}
+
+// FinishedAt returns the value of the "finished_at" field in the mutation.
+func (m *Sub2APIProviderProbeRunMutation) FinishedAt() (r time.Time, exists bool) {
+	v := m.finished_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFinishedAt returns the old "finished_at" field's value of the Sub2APIProviderProbeRun entity.
+// If the Sub2APIProviderProbeRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeRunMutation) OldFinishedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFinishedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFinishedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFinishedAt: %w", err)
+	}
+	return oldValue.FinishedAt, nil
+}
+
+// ResetFinishedAt resets all changes to the "finished_at" field.
+func (m *Sub2APIProviderProbeRunMutation) ResetFinishedAt() {
+	m.finished_at = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *Sub2APIProviderProbeRunMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *Sub2APIProviderProbeRunMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the Sub2APIProviderProbeRun entity.
+// If the Sub2APIProviderProbeRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeRunMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *Sub2APIProviderProbeRunMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// ClearProvider clears the "provider" edge to the Sub2APIProvider entity.
+func (m *Sub2APIProviderProbeRunMutation) ClearProvider() {
+	m.clearedprovider = true
+	m.clearedFields[sub2apiproviderproberun.FieldProviderID] = struct{}{}
+}
+
+// ProviderCleared reports if the "provider" edge to the Sub2APIProvider entity was cleared.
+func (m *Sub2APIProviderProbeRunMutation) ProviderCleared() bool {
+	return m.clearedprovider
+}
+
+// ProviderIDs returns the "provider" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ProviderID instead. It exists only for internal usage by the builders.
+func (m *Sub2APIProviderProbeRunMutation) ProviderIDs() (ids []int64) {
+	if id := m.provider; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetProvider resets all changes to the "provider" edge.
+func (m *Sub2APIProviderProbeRunMutation) ResetProvider() {
+	m.provider = nil
+	m.clearedprovider = false
+}
+
+// Where appends a list predicates to the Sub2APIProviderProbeRunMutation builder.
+func (m *Sub2APIProviderProbeRunMutation) Where(ps ...predicate.Sub2APIProviderProbeRun) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the Sub2APIProviderProbeRunMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *Sub2APIProviderProbeRunMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Sub2APIProviderProbeRun, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *Sub2APIProviderProbeRunMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *Sub2APIProviderProbeRunMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (Sub2APIProviderProbeRun).
+func (m *Sub2APIProviderProbeRunMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *Sub2APIProviderProbeRunMutation) Fields() []string {
+	fields := make([]string, 0, 21)
+	if m.provider != nil {
+		fields = append(fields, sub2apiproviderproberun.FieldProviderID)
+	}
+	if m.overall_status != nil {
+		fields = append(fields, sub2apiproviderproberun.FieldOverallStatus)
+	}
+	if m.control_status != nil {
+		fields = append(fields, sub2apiproviderproberun.FieldControlStatus)
+	}
+	if m.data_status != nil {
+		fields = append(fields, sub2apiproviderproberun.FieldDataStatus)
+	}
+	if m.traffic_status != nil {
+		fields = append(fields, sub2apiproviderproberun.FieldTrafficStatus)
+	}
+	if m.login_latency_ms != nil {
+		fields = append(fields, sub2apiproviderproberun.FieldLoginLatencyMs)
+	}
+	if m.health_latency_ms != nil {
+		fields = append(fields, sub2apiproviderproberun.FieldHealthLatencyMs)
+	}
+	if m.keys_latency_ms != nil {
+		fields = append(fields, sub2apiproviderproberun.FieldKeysLatencyMs)
+	}
+	if m.groups_latency_ms != nil {
+		fields = append(fields, sub2apiproviderproberun.FieldGroupsLatencyMs)
+	}
+	if m.data_probe_count != nil {
+		fields = append(fields, sub2apiproviderproberun.FieldDataProbeCount)
+	}
+	if m.data_probe_success != nil {
+		fields = append(fields, sub2apiproviderproberun.FieldDataProbeSuccess)
+	}
+	if m.data_probe_failed != nil {
+		fields = append(fields, sub2apiproviderproberun.FieldDataProbeFailed)
+	}
+	if m.traffic_request_count != nil {
+		fields = append(fields, sub2apiproviderproberun.FieldTrafficRequestCount)
+	}
+	if m.traffic_success_rate != nil {
+		fields = append(fields, sub2apiproviderproberun.FieldTrafficSuccessRate)
+	}
+	if m.traffic_p95_latency_ms != nil {
+		fields = append(fields, sub2apiproviderproberun.FieldTrafficP95LatencyMs)
+	}
+	if m.error_category != nil {
+		fields = append(fields, sub2apiproviderproberun.FieldErrorCategory)
+	}
+	if m.error_message != nil {
+		fields = append(fields, sub2apiproviderproberun.FieldErrorMessage)
+	}
+	if m.details != nil {
+		fields = append(fields, sub2apiproviderproberun.FieldDetails)
+	}
+	if m.started_at != nil {
+		fields = append(fields, sub2apiproviderproberun.FieldStartedAt)
+	}
+	if m.finished_at != nil {
+		fields = append(fields, sub2apiproviderproberun.FieldFinishedAt)
+	}
+	if m.created_at != nil {
+		fields = append(fields, sub2apiproviderproberun.FieldCreatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *Sub2APIProviderProbeRunMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case sub2apiproviderproberun.FieldProviderID:
+		return m.ProviderID()
+	case sub2apiproviderproberun.FieldOverallStatus:
+		return m.OverallStatus()
+	case sub2apiproviderproberun.FieldControlStatus:
+		return m.ControlStatus()
+	case sub2apiproviderproberun.FieldDataStatus:
+		return m.DataStatus()
+	case sub2apiproviderproberun.FieldTrafficStatus:
+		return m.TrafficStatus()
+	case sub2apiproviderproberun.FieldLoginLatencyMs:
+		return m.LoginLatencyMs()
+	case sub2apiproviderproberun.FieldHealthLatencyMs:
+		return m.HealthLatencyMs()
+	case sub2apiproviderproberun.FieldKeysLatencyMs:
+		return m.KeysLatencyMs()
+	case sub2apiproviderproberun.FieldGroupsLatencyMs:
+		return m.GroupsLatencyMs()
+	case sub2apiproviderproberun.FieldDataProbeCount:
+		return m.DataProbeCount()
+	case sub2apiproviderproberun.FieldDataProbeSuccess:
+		return m.DataProbeSuccess()
+	case sub2apiproviderproberun.FieldDataProbeFailed:
+		return m.DataProbeFailed()
+	case sub2apiproviderproberun.FieldTrafficRequestCount:
+		return m.TrafficRequestCount()
+	case sub2apiproviderproberun.FieldTrafficSuccessRate:
+		return m.TrafficSuccessRate()
+	case sub2apiproviderproberun.FieldTrafficP95LatencyMs:
+		return m.TrafficP95LatencyMs()
+	case sub2apiproviderproberun.FieldErrorCategory:
+		return m.ErrorCategory()
+	case sub2apiproviderproberun.FieldErrorMessage:
+		return m.ErrorMessage()
+	case sub2apiproviderproberun.FieldDetails:
+		return m.Details()
+	case sub2apiproviderproberun.FieldStartedAt:
+		return m.StartedAt()
+	case sub2apiproviderproberun.FieldFinishedAt:
+		return m.FinishedAt()
+	case sub2apiproviderproberun.FieldCreatedAt:
+		return m.CreatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *Sub2APIProviderProbeRunMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case sub2apiproviderproberun.FieldProviderID:
+		return m.OldProviderID(ctx)
+	case sub2apiproviderproberun.FieldOverallStatus:
+		return m.OldOverallStatus(ctx)
+	case sub2apiproviderproberun.FieldControlStatus:
+		return m.OldControlStatus(ctx)
+	case sub2apiproviderproberun.FieldDataStatus:
+		return m.OldDataStatus(ctx)
+	case sub2apiproviderproberun.FieldTrafficStatus:
+		return m.OldTrafficStatus(ctx)
+	case sub2apiproviderproberun.FieldLoginLatencyMs:
+		return m.OldLoginLatencyMs(ctx)
+	case sub2apiproviderproberun.FieldHealthLatencyMs:
+		return m.OldHealthLatencyMs(ctx)
+	case sub2apiproviderproberun.FieldKeysLatencyMs:
+		return m.OldKeysLatencyMs(ctx)
+	case sub2apiproviderproberun.FieldGroupsLatencyMs:
+		return m.OldGroupsLatencyMs(ctx)
+	case sub2apiproviderproberun.FieldDataProbeCount:
+		return m.OldDataProbeCount(ctx)
+	case sub2apiproviderproberun.FieldDataProbeSuccess:
+		return m.OldDataProbeSuccess(ctx)
+	case sub2apiproviderproberun.FieldDataProbeFailed:
+		return m.OldDataProbeFailed(ctx)
+	case sub2apiproviderproberun.FieldTrafficRequestCount:
+		return m.OldTrafficRequestCount(ctx)
+	case sub2apiproviderproberun.FieldTrafficSuccessRate:
+		return m.OldTrafficSuccessRate(ctx)
+	case sub2apiproviderproberun.FieldTrafficP95LatencyMs:
+		return m.OldTrafficP95LatencyMs(ctx)
+	case sub2apiproviderproberun.FieldErrorCategory:
+		return m.OldErrorCategory(ctx)
+	case sub2apiproviderproberun.FieldErrorMessage:
+		return m.OldErrorMessage(ctx)
+	case sub2apiproviderproberun.FieldDetails:
+		return m.OldDetails(ctx)
+	case sub2apiproviderproberun.FieldStartedAt:
+		return m.OldStartedAt(ctx)
+	case sub2apiproviderproberun.FieldFinishedAt:
+		return m.OldFinishedAt(ctx)
+	case sub2apiproviderproberun.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown Sub2APIProviderProbeRun field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *Sub2APIProviderProbeRunMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case sub2apiproviderproberun.FieldProviderID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProviderID(v)
+		return nil
+	case sub2apiproviderproberun.FieldOverallStatus:
+		v, ok := value.(sub2apiproviderproberun.OverallStatus)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOverallStatus(v)
+		return nil
+	case sub2apiproviderproberun.FieldControlStatus:
+		v, ok := value.(sub2apiproviderproberun.ControlStatus)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetControlStatus(v)
+		return nil
+	case sub2apiproviderproberun.FieldDataStatus:
+		v, ok := value.(sub2apiproviderproberun.DataStatus)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDataStatus(v)
+		return nil
+	case sub2apiproviderproberun.FieldTrafficStatus:
+		v, ok := value.(sub2apiproviderproberun.TrafficStatus)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTrafficStatus(v)
+		return nil
+	case sub2apiproviderproberun.FieldLoginLatencyMs:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLoginLatencyMs(v)
+		return nil
+	case sub2apiproviderproberun.FieldHealthLatencyMs:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHealthLatencyMs(v)
+		return nil
+	case sub2apiproviderproberun.FieldKeysLatencyMs:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetKeysLatencyMs(v)
+		return nil
+	case sub2apiproviderproberun.FieldGroupsLatencyMs:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGroupsLatencyMs(v)
+		return nil
+	case sub2apiproviderproberun.FieldDataProbeCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDataProbeCount(v)
+		return nil
+	case sub2apiproviderproberun.FieldDataProbeSuccess:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDataProbeSuccess(v)
+		return nil
+	case sub2apiproviderproberun.FieldDataProbeFailed:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDataProbeFailed(v)
+		return nil
+	case sub2apiproviderproberun.FieldTrafficRequestCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTrafficRequestCount(v)
+		return nil
+	case sub2apiproviderproberun.FieldTrafficSuccessRate:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTrafficSuccessRate(v)
+		return nil
+	case sub2apiproviderproberun.FieldTrafficP95LatencyMs:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTrafficP95LatencyMs(v)
+		return nil
+	case sub2apiproviderproberun.FieldErrorCategory:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetErrorCategory(v)
+		return nil
+	case sub2apiproviderproberun.FieldErrorMessage:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetErrorMessage(v)
+		return nil
+	case sub2apiproviderproberun.FieldDetails:
+		v, ok := value.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDetails(v)
+		return nil
+	case sub2apiproviderproberun.FieldStartedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStartedAt(v)
+		return nil
+	case sub2apiproviderproberun.FieldFinishedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFinishedAt(v)
+		return nil
+	case sub2apiproviderproberun.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Sub2APIProviderProbeRun field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *Sub2APIProviderProbeRunMutation) AddedFields() []string {
+	var fields []string
+	if m.addlogin_latency_ms != nil {
+		fields = append(fields, sub2apiproviderproberun.FieldLoginLatencyMs)
+	}
+	if m.addhealth_latency_ms != nil {
+		fields = append(fields, sub2apiproviderproberun.FieldHealthLatencyMs)
+	}
+	if m.addkeys_latency_ms != nil {
+		fields = append(fields, sub2apiproviderproberun.FieldKeysLatencyMs)
+	}
+	if m.addgroups_latency_ms != nil {
+		fields = append(fields, sub2apiproviderproberun.FieldGroupsLatencyMs)
+	}
+	if m.adddata_probe_count != nil {
+		fields = append(fields, sub2apiproviderproberun.FieldDataProbeCount)
+	}
+	if m.adddata_probe_success != nil {
+		fields = append(fields, sub2apiproviderproberun.FieldDataProbeSuccess)
+	}
+	if m.adddata_probe_failed != nil {
+		fields = append(fields, sub2apiproviderproberun.FieldDataProbeFailed)
+	}
+	if m.addtraffic_request_count != nil {
+		fields = append(fields, sub2apiproviderproberun.FieldTrafficRequestCount)
+	}
+	if m.addtraffic_success_rate != nil {
+		fields = append(fields, sub2apiproviderproberun.FieldTrafficSuccessRate)
+	}
+	if m.addtraffic_p95_latency_ms != nil {
+		fields = append(fields, sub2apiproviderproberun.FieldTrafficP95LatencyMs)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *Sub2APIProviderProbeRunMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case sub2apiproviderproberun.FieldLoginLatencyMs:
+		return m.AddedLoginLatencyMs()
+	case sub2apiproviderproberun.FieldHealthLatencyMs:
+		return m.AddedHealthLatencyMs()
+	case sub2apiproviderproberun.FieldKeysLatencyMs:
+		return m.AddedKeysLatencyMs()
+	case sub2apiproviderproberun.FieldGroupsLatencyMs:
+		return m.AddedGroupsLatencyMs()
+	case sub2apiproviderproberun.FieldDataProbeCount:
+		return m.AddedDataProbeCount()
+	case sub2apiproviderproberun.FieldDataProbeSuccess:
+		return m.AddedDataProbeSuccess()
+	case sub2apiproviderproberun.FieldDataProbeFailed:
+		return m.AddedDataProbeFailed()
+	case sub2apiproviderproberun.FieldTrafficRequestCount:
+		return m.AddedTrafficRequestCount()
+	case sub2apiproviderproberun.FieldTrafficSuccessRate:
+		return m.AddedTrafficSuccessRate()
+	case sub2apiproviderproberun.FieldTrafficP95LatencyMs:
+		return m.AddedTrafficP95LatencyMs()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *Sub2APIProviderProbeRunMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case sub2apiproviderproberun.FieldLoginLatencyMs:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddLoginLatencyMs(v)
+		return nil
+	case sub2apiproviderproberun.FieldHealthLatencyMs:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddHealthLatencyMs(v)
+		return nil
+	case sub2apiproviderproberun.FieldKeysLatencyMs:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddKeysLatencyMs(v)
+		return nil
+	case sub2apiproviderproberun.FieldGroupsLatencyMs:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddGroupsLatencyMs(v)
+		return nil
+	case sub2apiproviderproberun.FieldDataProbeCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDataProbeCount(v)
+		return nil
+	case sub2apiproviderproberun.FieldDataProbeSuccess:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDataProbeSuccess(v)
+		return nil
+	case sub2apiproviderproberun.FieldDataProbeFailed:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDataProbeFailed(v)
+		return nil
+	case sub2apiproviderproberun.FieldTrafficRequestCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTrafficRequestCount(v)
+		return nil
+	case sub2apiproviderproberun.FieldTrafficSuccessRate:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTrafficSuccessRate(v)
+		return nil
+	case sub2apiproviderproberun.FieldTrafficP95LatencyMs:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTrafficP95LatencyMs(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Sub2APIProviderProbeRun numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *Sub2APIProviderProbeRunMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(sub2apiproviderproberun.FieldLoginLatencyMs) {
+		fields = append(fields, sub2apiproviderproberun.FieldLoginLatencyMs)
+	}
+	if m.FieldCleared(sub2apiproviderproberun.FieldHealthLatencyMs) {
+		fields = append(fields, sub2apiproviderproberun.FieldHealthLatencyMs)
+	}
+	if m.FieldCleared(sub2apiproviderproberun.FieldKeysLatencyMs) {
+		fields = append(fields, sub2apiproviderproberun.FieldKeysLatencyMs)
+	}
+	if m.FieldCleared(sub2apiproviderproberun.FieldGroupsLatencyMs) {
+		fields = append(fields, sub2apiproviderproberun.FieldGroupsLatencyMs)
+	}
+	if m.FieldCleared(sub2apiproviderproberun.FieldTrafficSuccessRate) {
+		fields = append(fields, sub2apiproviderproberun.FieldTrafficSuccessRate)
+	}
+	if m.FieldCleared(sub2apiproviderproberun.FieldTrafficP95LatencyMs) {
+		fields = append(fields, sub2apiproviderproberun.FieldTrafficP95LatencyMs)
+	}
+	if m.FieldCleared(sub2apiproviderproberun.FieldErrorCategory) {
+		fields = append(fields, sub2apiproviderproberun.FieldErrorCategory)
+	}
+	if m.FieldCleared(sub2apiproviderproberun.FieldErrorMessage) {
+		fields = append(fields, sub2apiproviderproberun.FieldErrorMessage)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *Sub2APIProviderProbeRunMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *Sub2APIProviderProbeRunMutation) ClearField(name string) error {
+	switch name {
+	case sub2apiproviderproberun.FieldLoginLatencyMs:
+		m.ClearLoginLatencyMs()
+		return nil
+	case sub2apiproviderproberun.FieldHealthLatencyMs:
+		m.ClearHealthLatencyMs()
+		return nil
+	case sub2apiproviderproberun.FieldKeysLatencyMs:
+		m.ClearKeysLatencyMs()
+		return nil
+	case sub2apiproviderproberun.FieldGroupsLatencyMs:
+		m.ClearGroupsLatencyMs()
+		return nil
+	case sub2apiproviderproberun.FieldTrafficSuccessRate:
+		m.ClearTrafficSuccessRate()
+		return nil
+	case sub2apiproviderproberun.FieldTrafficP95LatencyMs:
+		m.ClearTrafficP95LatencyMs()
+		return nil
+	case sub2apiproviderproberun.FieldErrorCategory:
+		m.ClearErrorCategory()
+		return nil
+	case sub2apiproviderproberun.FieldErrorMessage:
+		m.ClearErrorMessage()
+		return nil
+	}
+	return fmt.Errorf("unknown Sub2APIProviderProbeRun nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *Sub2APIProviderProbeRunMutation) ResetField(name string) error {
+	switch name {
+	case sub2apiproviderproberun.FieldProviderID:
+		m.ResetProviderID()
+		return nil
+	case sub2apiproviderproberun.FieldOverallStatus:
+		m.ResetOverallStatus()
+		return nil
+	case sub2apiproviderproberun.FieldControlStatus:
+		m.ResetControlStatus()
+		return nil
+	case sub2apiproviderproberun.FieldDataStatus:
+		m.ResetDataStatus()
+		return nil
+	case sub2apiproviderproberun.FieldTrafficStatus:
+		m.ResetTrafficStatus()
+		return nil
+	case sub2apiproviderproberun.FieldLoginLatencyMs:
+		m.ResetLoginLatencyMs()
+		return nil
+	case sub2apiproviderproberun.FieldHealthLatencyMs:
+		m.ResetHealthLatencyMs()
+		return nil
+	case sub2apiproviderproberun.FieldKeysLatencyMs:
+		m.ResetKeysLatencyMs()
+		return nil
+	case sub2apiproviderproberun.FieldGroupsLatencyMs:
+		m.ResetGroupsLatencyMs()
+		return nil
+	case sub2apiproviderproberun.FieldDataProbeCount:
+		m.ResetDataProbeCount()
+		return nil
+	case sub2apiproviderproberun.FieldDataProbeSuccess:
+		m.ResetDataProbeSuccess()
+		return nil
+	case sub2apiproviderproberun.FieldDataProbeFailed:
+		m.ResetDataProbeFailed()
+		return nil
+	case sub2apiproviderproberun.FieldTrafficRequestCount:
+		m.ResetTrafficRequestCount()
+		return nil
+	case sub2apiproviderproberun.FieldTrafficSuccessRate:
+		m.ResetTrafficSuccessRate()
+		return nil
+	case sub2apiproviderproberun.FieldTrafficP95LatencyMs:
+		m.ResetTrafficP95LatencyMs()
+		return nil
+	case sub2apiproviderproberun.FieldErrorCategory:
+		m.ResetErrorCategory()
+		return nil
+	case sub2apiproviderproberun.FieldErrorMessage:
+		m.ResetErrorMessage()
+		return nil
+	case sub2apiproviderproberun.FieldDetails:
+		m.ResetDetails()
+		return nil
+	case sub2apiproviderproberun.FieldStartedAt:
+		m.ResetStartedAt()
+		return nil
+	case sub2apiproviderproberun.FieldFinishedAt:
+		m.ResetFinishedAt()
+		return nil
+	case sub2apiproviderproberun.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown Sub2APIProviderProbeRun field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *Sub2APIProviderProbeRunMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.provider != nil {
+		edges = append(edges, sub2apiproviderproberun.EdgeProvider)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *Sub2APIProviderProbeRunMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case sub2apiproviderproberun.EdgeProvider:
+		if id := m.provider; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *Sub2APIProviderProbeRunMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *Sub2APIProviderProbeRunMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *Sub2APIProviderProbeRunMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedprovider {
+		edges = append(edges, sub2apiproviderproberun.EdgeProvider)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *Sub2APIProviderProbeRunMutation) EdgeCleared(name string) bool {
+	switch name {
+	case sub2apiproviderproberun.EdgeProvider:
+		return m.clearedprovider
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *Sub2APIProviderProbeRunMutation) ClearEdge(name string) error {
+	switch name {
+	case sub2apiproviderproberun.EdgeProvider:
+		m.ClearProvider()
+		return nil
+	}
+	return fmt.Errorf("unknown Sub2APIProviderProbeRun unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *Sub2APIProviderProbeRunMutation) ResetEdge(name string) error {
+	switch name {
+	case sub2apiproviderproberun.EdgeProvider:
+		m.ResetProvider()
+		return nil
+	}
+	return fmt.Errorf("unknown Sub2APIProviderProbeRun edge %s", name)
+}
+
+// Sub2APIProviderProbeTargetMutation represents an operation that mutates the Sub2APIProviderProbeTarget nodes in the graph.
+type Sub2APIProviderProbeTargetMutation struct {
+	config
+	op                     Op
+	typ                    string
+	id                     *int64
+	created_at             *time.Time
+	updated_at             *time.Time
+	provider_api_key_id    *int64
+	addprovider_api_key_id *int64
+	remote_group_id        *int64
+	addremote_group_id     *int64
+	remote_group_name      *string
+	platform               *string
+	enabled                *bool
+	interval_seconds       *int
+	addinterval_seconds    *int
+	test_model             *string
+	allow_media_probe      *bool
+	timeout_seconds        *int
+	addtimeout_seconds     *int
+	degraded_latency_ms    *int
+	adddegraded_latency_ms *int
+	failure_threshold      *int
+	addfailure_threshold   *int
+	recovery_threshold     *int
+	addrecovery_threshold  *int
+	last_run_at            *time.Time
+	route_changed_at       *time.Time
+	clearedFields          map[string]struct{}
+	provider               *int64
+	clearedprovider        bool
+	account                *int64
+	clearedaccount         bool
+	runs                   map[int64]struct{}
+	removedruns            map[int64]struct{}
+	clearedruns            bool
+	done                   bool
+	oldValue               func(context.Context) (*Sub2APIProviderProbeTarget, error)
+	predicates             []predicate.Sub2APIProviderProbeTarget
+}
+
+var _ ent.Mutation = (*Sub2APIProviderProbeTargetMutation)(nil)
+
+// sub2apiproviderprobetargetOption allows management of the mutation configuration using functional options.
+type sub2apiproviderprobetargetOption func(*Sub2APIProviderProbeTargetMutation)
+
+// newSub2APIProviderProbeTargetMutation creates new mutation for the Sub2APIProviderProbeTarget entity.
+func newSub2APIProviderProbeTargetMutation(c config, op Op, opts ...sub2apiproviderprobetargetOption) *Sub2APIProviderProbeTargetMutation {
+	m := &Sub2APIProviderProbeTargetMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeSub2APIProviderProbeTarget,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withSub2APIProviderProbeTargetID sets the ID field of the mutation.
+func withSub2APIProviderProbeTargetID(id int64) sub2apiproviderprobetargetOption {
+	return func(m *Sub2APIProviderProbeTargetMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Sub2APIProviderProbeTarget
+		)
+		m.oldValue = func(ctx context.Context) (*Sub2APIProviderProbeTarget, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Sub2APIProviderProbeTarget.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withSub2APIProviderProbeTarget sets the old Sub2APIProviderProbeTarget of the mutation.
+func withSub2APIProviderProbeTarget(node *Sub2APIProviderProbeTarget) sub2apiproviderprobetargetOption {
+	return func(m *Sub2APIProviderProbeTargetMutation) {
+		m.oldValue = func(context.Context) (*Sub2APIProviderProbeTarget, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m Sub2APIProviderProbeTargetMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m Sub2APIProviderProbeTargetMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *Sub2APIProviderProbeTargetMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *Sub2APIProviderProbeTargetMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Sub2APIProviderProbeTarget.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *Sub2APIProviderProbeTargetMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *Sub2APIProviderProbeTargetMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the Sub2APIProviderProbeTarget entity.
+// If the Sub2APIProviderProbeTarget object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *Sub2APIProviderProbeTargetMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *Sub2APIProviderProbeTargetMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *Sub2APIProviderProbeTargetMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the Sub2APIProviderProbeTarget entity.
+// If the Sub2APIProviderProbeTarget object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *Sub2APIProviderProbeTargetMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetProviderID sets the "provider_id" field.
+func (m *Sub2APIProviderProbeTargetMutation) SetProviderID(i int64) {
+	m.provider = &i
+}
+
+// ProviderID returns the value of the "provider_id" field in the mutation.
+func (m *Sub2APIProviderProbeTargetMutation) ProviderID() (r int64, exists bool) {
+	v := m.provider
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProviderID returns the old "provider_id" field's value of the Sub2APIProviderProbeTarget entity.
+// If the Sub2APIProviderProbeTarget object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetMutation) OldProviderID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProviderID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProviderID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProviderID: %w", err)
+	}
+	return oldValue.ProviderID, nil
+}
+
+// ResetProviderID resets all changes to the "provider_id" field.
+func (m *Sub2APIProviderProbeTargetMutation) ResetProviderID() {
+	m.provider = nil
+}
+
+// SetAccountID sets the "account_id" field.
+func (m *Sub2APIProviderProbeTargetMutation) SetAccountID(i int64) {
+	m.account = &i
+}
+
+// AccountID returns the value of the "account_id" field in the mutation.
+func (m *Sub2APIProviderProbeTargetMutation) AccountID() (r int64, exists bool) {
+	v := m.account
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAccountID returns the old "account_id" field's value of the Sub2APIProviderProbeTarget entity.
+// If the Sub2APIProviderProbeTarget object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetMutation) OldAccountID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAccountID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAccountID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAccountID: %w", err)
+	}
+	return oldValue.AccountID, nil
+}
+
+// ResetAccountID resets all changes to the "account_id" field.
+func (m *Sub2APIProviderProbeTargetMutation) ResetAccountID() {
+	m.account = nil
+}
+
+// SetProviderAPIKeyID sets the "provider_api_key_id" field.
+func (m *Sub2APIProviderProbeTargetMutation) SetProviderAPIKeyID(i int64) {
+	m.provider_api_key_id = &i
+	m.addprovider_api_key_id = nil
+}
+
+// ProviderAPIKeyID returns the value of the "provider_api_key_id" field in the mutation.
+func (m *Sub2APIProviderProbeTargetMutation) ProviderAPIKeyID() (r int64, exists bool) {
+	v := m.provider_api_key_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProviderAPIKeyID returns the old "provider_api_key_id" field's value of the Sub2APIProviderProbeTarget entity.
+// If the Sub2APIProviderProbeTarget object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetMutation) OldProviderAPIKeyID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProviderAPIKeyID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProviderAPIKeyID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProviderAPIKeyID: %w", err)
+	}
+	return oldValue.ProviderAPIKeyID, nil
+}
+
+// AddProviderAPIKeyID adds i to the "provider_api_key_id" field.
+func (m *Sub2APIProviderProbeTargetMutation) AddProviderAPIKeyID(i int64) {
+	if m.addprovider_api_key_id != nil {
+		*m.addprovider_api_key_id += i
+	} else {
+		m.addprovider_api_key_id = &i
+	}
+}
+
+// AddedProviderAPIKeyID returns the value that was added to the "provider_api_key_id" field in this mutation.
+func (m *Sub2APIProviderProbeTargetMutation) AddedProviderAPIKeyID() (r int64, exists bool) {
+	v := m.addprovider_api_key_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearProviderAPIKeyID clears the value of the "provider_api_key_id" field.
+func (m *Sub2APIProviderProbeTargetMutation) ClearProviderAPIKeyID() {
+	m.provider_api_key_id = nil
+	m.addprovider_api_key_id = nil
+	m.clearedFields[sub2apiproviderprobetarget.FieldProviderAPIKeyID] = struct{}{}
+}
+
+// ProviderAPIKeyIDCleared returns if the "provider_api_key_id" field was cleared in this mutation.
+func (m *Sub2APIProviderProbeTargetMutation) ProviderAPIKeyIDCleared() bool {
+	_, ok := m.clearedFields[sub2apiproviderprobetarget.FieldProviderAPIKeyID]
+	return ok
+}
+
+// ResetProviderAPIKeyID resets all changes to the "provider_api_key_id" field.
+func (m *Sub2APIProviderProbeTargetMutation) ResetProviderAPIKeyID() {
+	m.provider_api_key_id = nil
+	m.addprovider_api_key_id = nil
+	delete(m.clearedFields, sub2apiproviderprobetarget.FieldProviderAPIKeyID)
+}
+
+// SetRemoteGroupID sets the "remote_group_id" field.
+func (m *Sub2APIProviderProbeTargetMutation) SetRemoteGroupID(i int64) {
+	m.remote_group_id = &i
+	m.addremote_group_id = nil
+}
+
+// RemoteGroupID returns the value of the "remote_group_id" field in the mutation.
+func (m *Sub2APIProviderProbeTargetMutation) RemoteGroupID() (r int64, exists bool) {
+	v := m.remote_group_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRemoteGroupID returns the old "remote_group_id" field's value of the Sub2APIProviderProbeTarget entity.
+// If the Sub2APIProviderProbeTarget object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetMutation) OldRemoteGroupID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRemoteGroupID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRemoteGroupID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRemoteGroupID: %w", err)
+	}
+	return oldValue.RemoteGroupID, nil
+}
+
+// AddRemoteGroupID adds i to the "remote_group_id" field.
+func (m *Sub2APIProviderProbeTargetMutation) AddRemoteGroupID(i int64) {
+	if m.addremote_group_id != nil {
+		*m.addremote_group_id += i
+	} else {
+		m.addremote_group_id = &i
+	}
+}
+
+// AddedRemoteGroupID returns the value that was added to the "remote_group_id" field in this mutation.
+func (m *Sub2APIProviderProbeTargetMutation) AddedRemoteGroupID() (r int64, exists bool) {
+	v := m.addremote_group_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearRemoteGroupID clears the value of the "remote_group_id" field.
+func (m *Sub2APIProviderProbeTargetMutation) ClearRemoteGroupID() {
+	m.remote_group_id = nil
+	m.addremote_group_id = nil
+	m.clearedFields[sub2apiproviderprobetarget.FieldRemoteGroupID] = struct{}{}
+}
+
+// RemoteGroupIDCleared returns if the "remote_group_id" field was cleared in this mutation.
+func (m *Sub2APIProviderProbeTargetMutation) RemoteGroupIDCleared() bool {
+	_, ok := m.clearedFields[sub2apiproviderprobetarget.FieldRemoteGroupID]
+	return ok
+}
+
+// ResetRemoteGroupID resets all changes to the "remote_group_id" field.
+func (m *Sub2APIProviderProbeTargetMutation) ResetRemoteGroupID() {
+	m.remote_group_id = nil
+	m.addremote_group_id = nil
+	delete(m.clearedFields, sub2apiproviderprobetarget.FieldRemoteGroupID)
+}
+
+// SetRemoteGroupName sets the "remote_group_name" field.
+func (m *Sub2APIProviderProbeTargetMutation) SetRemoteGroupName(s string) {
+	m.remote_group_name = &s
+}
+
+// RemoteGroupName returns the value of the "remote_group_name" field in the mutation.
+func (m *Sub2APIProviderProbeTargetMutation) RemoteGroupName() (r string, exists bool) {
+	v := m.remote_group_name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRemoteGroupName returns the old "remote_group_name" field's value of the Sub2APIProviderProbeTarget entity.
+// If the Sub2APIProviderProbeTarget object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetMutation) OldRemoteGroupName(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRemoteGroupName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRemoteGroupName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRemoteGroupName: %w", err)
+	}
+	return oldValue.RemoteGroupName, nil
+}
+
+// ClearRemoteGroupName clears the value of the "remote_group_name" field.
+func (m *Sub2APIProviderProbeTargetMutation) ClearRemoteGroupName() {
+	m.remote_group_name = nil
+	m.clearedFields[sub2apiproviderprobetarget.FieldRemoteGroupName] = struct{}{}
+}
+
+// RemoteGroupNameCleared returns if the "remote_group_name" field was cleared in this mutation.
+func (m *Sub2APIProviderProbeTargetMutation) RemoteGroupNameCleared() bool {
+	_, ok := m.clearedFields[sub2apiproviderprobetarget.FieldRemoteGroupName]
+	return ok
+}
+
+// ResetRemoteGroupName resets all changes to the "remote_group_name" field.
+func (m *Sub2APIProviderProbeTargetMutation) ResetRemoteGroupName() {
+	m.remote_group_name = nil
+	delete(m.clearedFields, sub2apiproviderprobetarget.FieldRemoteGroupName)
+}
+
+// SetPlatform sets the "platform" field.
+func (m *Sub2APIProviderProbeTargetMutation) SetPlatform(s string) {
+	m.platform = &s
+}
+
+// Platform returns the value of the "platform" field in the mutation.
+func (m *Sub2APIProviderProbeTargetMutation) Platform() (r string, exists bool) {
+	v := m.platform
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPlatform returns the old "platform" field's value of the Sub2APIProviderProbeTarget entity.
+// If the Sub2APIProviderProbeTarget object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetMutation) OldPlatform(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPlatform is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPlatform requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPlatform: %w", err)
+	}
+	return oldValue.Platform, nil
+}
+
+// ResetPlatform resets all changes to the "platform" field.
+func (m *Sub2APIProviderProbeTargetMutation) ResetPlatform() {
+	m.platform = nil
+}
+
+// SetEnabled sets the "enabled" field.
+func (m *Sub2APIProviderProbeTargetMutation) SetEnabled(b bool) {
+	m.enabled = &b
+}
+
+// Enabled returns the value of the "enabled" field in the mutation.
+func (m *Sub2APIProviderProbeTargetMutation) Enabled() (r bool, exists bool) {
+	v := m.enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEnabled returns the old "enabled" field's value of the Sub2APIProviderProbeTarget entity.
+// If the Sub2APIProviderProbeTarget object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetMutation) OldEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEnabled: %w", err)
+	}
+	return oldValue.Enabled, nil
+}
+
+// ResetEnabled resets all changes to the "enabled" field.
+func (m *Sub2APIProviderProbeTargetMutation) ResetEnabled() {
+	m.enabled = nil
+}
+
+// SetIntervalSeconds sets the "interval_seconds" field.
+func (m *Sub2APIProviderProbeTargetMutation) SetIntervalSeconds(i int) {
+	m.interval_seconds = &i
+	m.addinterval_seconds = nil
+}
+
+// IntervalSeconds returns the value of the "interval_seconds" field in the mutation.
+func (m *Sub2APIProviderProbeTargetMutation) IntervalSeconds() (r int, exists bool) {
+	v := m.interval_seconds
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIntervalSeconds returns the old "interval_seconds" field's value of the Sub2APIProviderProbeTarget entity.
+// If the Sub2APIProviderProbeTarget object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetMutation) OldIntervalSeconds(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIntervalSeconds is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIntervalSeconds requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIntervalSeconds: %w", err)
+	}
+	return oldValue.IntervalSeconds, nil
+}
+
+// AddIntervalSeconds adds i to the "interval_seconds" field.
+func (m *Sub2APIProviderProbeTargetMutation) AddIntervalSeconds(i int) {
+	if m.addinterval_seconds != nil {
+		*m.addinterval_seconds += i
+	} else {
+		m.addinterval_seconds = &i
+	}
+}
+
+// AddedIntervalSeconds returns the value that was added to the "interval_seconds" field in this mutation.
+func (m *Sub2APIProviderProbeTargetMutation) AddedIntervalSeconds() (r int, exists bool) {
+	v := m.addinterval_seconds
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetIntervalSeconds resets all changes to the "interval_seconds" field.
+func (m *Sub2APIProviderProbeTargetMutation) ResetIntervalSeconds() {
+	m.interval_seconds = nil
+	m.addinterval_seconds = nil
+}
+
+// SetTestModel sets the "test_model" field.
+func (m *Sub2APIProviderProbeTargetMutation) SetTestModel(s string) {
+	m.test_model = &s
+}
+
+// TestModel returns the value of the "test_model" field in the mutation.
+func (m *Sub2APIProviderProbeTargetMutation) TestModel() (r string, exists bool) {
+	v := m.test_model
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTestModel returns the old "test_model" field's value of the Sub2APIProviderProbeTarget entity.
+// If the Sub2APIProviderProbeTarget object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetMutation) OldTestModel(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTestModel is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTestModel requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTestModel: %w", err)
+	}
+	return oldValue.TestModel, nil
+}
+
+// ClearTestModel clears the value of the "test_model" field.
+func (m *Sub2APIProviderProbeTargetMutation) ClearTestModel() {
+	m.test_model = nil
+	m.clearedFields[sub2apiproviderprobetarget.FieldTestModel] = struct{}{}
+}
+
+// TestModelCleared returns if the "test_model" field was cleared in this mutation.
+func (m *Sub2APIProviderProbeTargetMutation) TestModelCleared() bool {
+	_, ok := m.clearedFields[sub2apiproviderprobetarget.FieldTestModel]
+	return ok
+}
+
+// ResetTestModel resets all changes to the "test_model" field.
+func (m *Sub2APIProviderProbeTargetMutation) ResetTestModel() {
+	m.test_model = nil
+	delete(m.clearedFields, sub2apiproviderprobetarget.FieldTestModel)
+}
+
+// SetAllowMediaProbe sets the "allow_media_probe" field.
+func (m *Sub2APIProviderProbeTargetMutation) SetAllowMediaProbe(b bool) {
+	m.allow_media_probe = &b
+}
+
+// AllowMediaProbe returns the value of the "allow_media_probe" field in the mutation.
+func (m *Sub2APIProviderProbeTargetMutation) AllowMediaProbe() (r bool, exists bool) {
+	v := m.allow_media_probe
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAllowMediaProbe returns the old "allow_media_probe" field's value of the Sub2APIProviderProbeTarget entity.
+// If the Sub2APIProviderProbeTarget object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetMutation) OldAllowMediaProbe(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAllowMediaProbe is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAllowMediaProbe requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAllowMediaProbe: %w", err)
+	}
+	return oldValue.AllowMediaProbe, nil
+}
+
+// ResetAllowMediaProbe resets all changes to the "allow_media_probe" field.
+func (m *Sub2APIProviderProbeTargetMutation) ResetAllowMediaProbe() {
+	m.allow_media_probe = nil
+}
+
+// SetTimeoutSeconds sets the "timeout_seconds" field.
+func (m *Sub2APIProviderProbeTargetMutation) SetTimeoutSeconds(i int) {
+	m.timeout_seconds = &i
+	m.addtimeout_seconds = nil
+}
+
+// TimeoutSeconds returns the value of the "timeout_seconds" field in the mutation.
+func (m *Sub2APIProviderProbeTargetMutation) TimeoutSeconds() (r int, exists bool) {
+	v := m.timeout_seconds
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTimeoutSeconds returns the old "timeout_seconds" field's value of the Sub2APIProviderProbeTarget entity.
+// If the Sub2APIProviderProbeTarget object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetMutation) OldTimeoutSeconds(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTimeoutSeconds is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTimeoutSeconds requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTimeoutSeconds: %w", err)
+	}
+	return oldValue.TimeoutSeconds, nil
+}
+
+// AddTimeoutSeconds adds i to the "timeout_seconds" field.
+func (m *Sub2APIProviderProbeTargetMutation) AddTimeoutSeconds(i int) {
+	if m.addtimeout_seconds != nil {
+		*m.addtimeout_seconds += i
+	} else {
+		m.addtimeout_seconds = &i
+	}
+}
+
+// AddedTimeoutSeconds returns the value that was added to the "timeout_seconds" field in this mutation.
+func (m *Sub2APIProviderProbeTargetMutation) AddedTimeoutSeconds() (r int, exists bool) {
+	v := m.addtimeout_seconds
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetTimeoutSeconds resets all changes to the "timeout_seconds" field.
+func (m *Sub2APIProviderProbeTargetMutation) ResetTimeoutSeconds() {
+	m.timeout_seconds = nil
+	m.addtimeout_seconds = nil
+}
+
+// SetDegradedLatencyMs sets the "degraded_latency_ms" field.
+func (m *Sub2APIProviderProbeTargetMutation) SetDegradedLatencyMs(i int) {
+	m.degraded_latency_ms = &i
+	m.adddegraded_latency_ms = nil
+}
+
+// DegradedLatencyMs returns the value of the "degraded_latency_ms" field in the mutation.
+func (m *Sub2APIProviderProbeTargetMutation) DegradedLatencyMs() (r int, exists bool) {
+	v := m.degraded_latency_ms
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDegradedLatencyMs returns the old "degraded_latency_ms" field's value of the Sub2APIProviderProbeTarget entity.
+// If the Sub2APIProviderProbeTarget object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetMutation) OldDegradedLatencyMs(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDegradedLatencyMs is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDegradedLatencyMs requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDegradedLatencyMs: %w", err)
+	}
+	return oldValue.DegradedLatencyMs, nil
+}
+
+// AddDegradedLatencyMs adds i to the "degraded_latency_ms" field.
+func (m *Sub2APIProviderProbeTargetMutation) AddDegradedLatencyMs(i int) {
+	if m.adddegraded_latency_ms != nil {
+		*m.adddegraded_latency_ms += i
+	} else {
+		m.adddegraded_latency_ms = &i
+	}
+}
+
+// AddedDegradedLatencyMs returns the value that was added to the "degraded_latency_ms" field in this mutation.
+func (m *Sub2APIProviderProbeTargetMutation) AddedDegradedLatencyMs() (r int, exists bool) {
+	v := m.adddegraded_latency_ms
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDegradedLatencyMs resets all changes to the "degraded_latency_ms" field.
+func (m *Sub2APIProviderProbeTargetMutation) ResetDegradedLatencyMs() {
+	m.degraded_latency_ms = nil
+	m.adddegraded_latency_ms = nil
+}
+
+// SetFailureThreshold sets the "failure_threshold" field.
+func (m *Sub2APIProviderProbeTargetMutation) SetFailureThreshold(i int) {
+	m.failure_threshold = &i
+	m.addfailure_threshold = nil
+}
+
+// FailureThreshold returns the value of the "failure_threshold" field in the mutation.
+func (m *Sub2APIProviderProbeTargetMutation) FailureThreshold() (r int, exists bool) {
+	v := m.failure_threshold
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFailureThreshold returns the old "failure_threshold" field's value of the Sub2APIProviderProbeTarget entity.
+// If the Sub2APIProviderProbeTarget object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetMutation) OldFailureThreshold(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFailureThreshold is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFailureThreshold requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFailureThreshold: %w", err)
+	}
+	return oldValue.FailureThreshold, nil
+}
+
+// AddFailureThreshold adds i to the "failure_threshold" field.
+func (m *Sub2APIProviderProbeTargetMutation) AddFailureThreshold(i int) {
+	if m.addfailure_threshold != nil {
+		*m.addfailure_threshold += i
+	} else {
+		m.addfailure_threshold = &i
+	}
+}
+
+// AddedFailureThreshold returns the value that was added to the "failure_threshold" field in this mutation.
+func (m *Sub2APIProviderProbeTargetMutation) AddedFailureThreshold() (r int, exists bool) {
+	v := m.addfailure_threshold
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetFailureThreshold resets all changes to the "failure_threshold" field.
+func (m *Sub2APIProviderProbeTargetMutation) ResetFailureThreshold() {
+	m.failure_threshold = nil
+	m.addfailure_threshold = nil
+}
+
+// SetRecoveryThreshold sets the "recovery_threshold" field.
+func (m *Sub2APIProviderProbeTargetMutation) SetRecoveryThreshold(i int) {
+	m.recovery_threshold = &i
+	m.addrecovery_threshold = nil
+}
+
+// RecoveryThreshold returns the value of the "recovery_threshold" field in the mutation.
+func (m *Sub2APIProviderProbeTargetMutation) RecoveryThreshold() (r int, exists bool) {
+	v := m.recovery_threshold
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRecoveryThreshold returns the old "recovery_threshold" field's value of the Sub2APIProviderProbeTarget entity.
+// If the Sub2APIProviderProbeTarget object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetMutation) OldRecoveryThreshold(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRecoveryThreshold is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRecoveryThreshold requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRecoveryThreshold: %w", err)
+	}
+	return oldValue.RecoveryThreshold, nil
+}
+
+// AddRecoveryThreshold adds i to the "recovery_threshold" field.
+func (m *Sub2APIProviderProbeTargetMutation) AddRecoveryThreshold(i int) {
+	if m.addrecovery_threshold != nil {
+		*m.addrecovery_threshold += i
+	} else {
+		m.addrecovery_threshold = &i
+	}
+}
+
+// AddedRecoveryThreshold returns the value that was added to the "recovery_threshold" field in this mutation.
+func (m *Sub2APIProviderProbeTargetMutation) AddedRecoveryThreshold() (r int, exists bool) {
+	v := m.addrecovery_threshold
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetRecoveryThreshold resets all changes to the "recovery_threshold" field.
+func (m *Sub2APIProviderProbeTargetMutation) ResetRecoveryThreshold() {
+	m.recovery_threshold = nil
+	m.addrecovery_threshold = nil
+}
+
+// SetLastRunAt sets the "last_run_at" field.
+func (m *Sub2APIProviderProbeTargetMutation) SetLastRunAt(t time.Time) {
+	m.last_run_at = &t
+}
+
+// LastRunAt returns the value of the "last_run_at" field in the mutation.
+func (m *Sub2APIProviderProbeTargetMutation) LastRunAt() (r time.Time, exists bool) {
+	v := m.last_run_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastRunAt returns the old "last_run_at" field's value of the Sub2APIProviderProbeTarget entity.
+// If the Sub2APIProviderProbeTarget object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetMutation) OldLastRunAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastRunAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastRunAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastRunAt: %w", err)
+	}
+	return oldValue.LastRunAt, nil
+}
+
+// ClearLastRunAt clears the value of the "last_run_at" field.
+func (m *Sub2APIProviderProbeTargetMutation) ClearLastRunAt() {
+	m.last_run_at = nil
+	m.clearedFields[sub2apiproviderprobetarget.FieldLastRunAt] = struct{}{}
+}
+
+// LastRunAtCleared returns if the "last_run_at" field was cleared in this mutation.
+func (m *Sub2APIProviderProbeTargetMutation) LastRunAtCleared() bool {
+	_, ok := m.clearedFields[sub2apiproviderprobetarget.FieldLastRunAt]
+	return ok
+}
+
+// ResetLastRunAt resets all changes to the "last_run_at" field.
+func (m *Sub2APIProviderProbeTargetMutation) ResetLastRunAt() {
+	m.last_run_at = nil
+	delete(m.clearedFields, sub2apiproviderprobetarget.FieldLastRunAt)
+}
+
+// SetRouteChangedAt sets the "route_changed_at" field.
+func (m *Sub2APIProviderProbeTargetMutation) SetRouteChangedAt(t time.Time) {
+	m.route_changed_at = &t
+}
+
+// RouteChangedAt returns the value of the "route_changed_at" field in the mutation.
+func (m *Sub2APIProviderProbeTargetMutation) RouteChangedAt() (r time.Time, exists bool) {
+	v := m.route_changed_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRouteChangedAt returns the old "route_changed_at" field's value of the Sub2APIProviderProbeTarget entity.
+// If the Sub2APIProviderProbeTarget object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetMutation) OldRouteChangedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRouteChangedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRouteChangedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRouteChangedAt: %w", err)
+	}
+	return oldValue.RouteChangedAt, nil
+}
+
+// ClearRouteChangedAt clears the value of the "route_changed_at" field.
+func (m *Sub2APIProviderProbeTargetMutation) ClearRouteChangedAt() {
+	m.route_changed_at = nil
+	m.clearedFields[sub2apiproviderprobetarget.FieldRouteChangedAt] = struct{}{}
+}
+
+// RouteChangedAtCleared returns if the "route_changed_at" field was cleared in this mutation.
+func (m *Sub2APIProviderProbeTargetMutation) RouteChangedAtCleared() bool {
+	_, ok := m.clearedFields[sub2apiproviderprobetarget.FieldRouteChangedAt]
+	return ok
+}
+
+// ResetRouteChangedAt resets all changes to the "route_changed_at" field.
+func (m *Sub2APIProviderProbeTargetMutation) ResetRouteChangedAt() {
+	m.route_changed_at = nil
+	delete(m.clearedFields, sub2apiproviderprobetarget.FieldRouteChangedAt)
+}
+
+// ClearProvider clears the "provider" edge to the Sub2APIProvider entity.
+func (m *Sub2APIProviderProbeTargetMutation) ClearProvider() {
+	m.clearedprovider = true
+	m.clearedFields[sub2apiproviderprobetarget.FieldProviderID] = struct{}{}
+}
+
+// ProviderCleared reports if the "provider" edge to the Sub2APIProvider entity was cleared.
+func (m *Sub2APIProviderProbeTargetMutation) ProviderCleared() bool {
+	return m.clearedprovider
+}
+
+// ProviderIDs returns the "provider" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ProviderID instead. It exists only for internal usage by the builders.
+func (m *Sub2APIProviderProbeTargetMutation) ProviderIDs() (ids []int64) {
+	if id := m.provider; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetProvider resets all changes to the "provider" edge.
+func (m *Sub2APIProviderProbeTargetMutation) ResetProvider() {
+	m.provider = nil
+	m.clearedprovider = false
+}
+
+// ClearAccount clears the "account" edge to the Account entity.
+func (m *Sub2APIProviderProbeTargetMutation) ClearAccount() {
+	m.clearedaccount = true
+	m.clearedFields[sub2apiproviderprobetarget.FieldAccountID] = struct{}{}
+}
+
+// AccountCleared reports if the "account" edge to the Account entity was cleared.
+func (m *Sub2APIProviderProbeTargetMutation) AccountCleared() bool {
+	return m.clearedaccount
+}
+
+// AccountIDs returns the "account" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// AccountID instead. It exists only for internal usage by the builders.
+func (m *Sub2APIProviderProbeTargetMutation) AccountIDs() (ids []int64) {
+	if id := m.account; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetAccount resets all changes to the "account" edge.
+func (m *Sub2APIProviderProbeTargetMutation) ResetAccount() {
+	m.account = nil
+	m.clearedaccount = false
+}
+
+// AddRunIDs adds the "runs" edge to the Sub2APIProviderProbeTargetRun entity by ids.
+func (m *Sub2APIProviderProbeTargetMutation) AddRunIDs(ids ...int64) {
+	if m.runs == nil {
+		m.runs = make(map[int64]struct{})
+	}
+	for i := range ids {
+		m.runs[ids[i]] = struct{}{}
+	}
+}
+
+// ClearRuns clears the "runs" edge to the Sub2APIProviderProbeTargetRun entity.
+func (m *Sub2APIProviderProbeTargetMutation) ClearRuns() {
+	m.clearedruns = true
+}
+
+// RunsCleared reports if the "runs" edge to the Sub2APIProviderProbeTargetRun entity was cleared.
+func (m *Sub2APIProviderProbeTargetMutation) RunsCleared() bool {
+	return m.clearedruns
+}
+
+// RemoveRunIDs removes the "runs" edge to the Sub2APIProviderProbeTargetRun entity by IDs.
+func (m *Sub2APIProviderProbeTargetMutation) RemoveRunIDs(ids ...int64) {
+	if m.removedruns == nil {
+		m.removedruns = make(map[int64]struct{})
+	}
+	for i := range ids {
+		delete(m.runs, ids[i])
+		m.removedruns[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedRuns returns the removed IDs of the "runs" edge to the Sub2APIProviderProbeTargetRun entity.
+func (m *Sub2APIProviderProbeTargetMutation) RemovedRunsIDs() (ids []int64) {
+	for id := range m.removedruns {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// RunsIDs returns the "runs" edge IDs in the mutation.
+func (m *Sub2APIProviderProbeTargetMutation) RunsIDs() (ids []int64) {
+	for id := range m.runs {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetRuns resets all changes to the "runs" edge.
+func (m *Sub2APIProviderProbeTargetMutation) ResetRuns() {
+	m.runs = nil
+	m.clearedruns = false
+	m.removedruns = nil
+}
+
+// Where appends a list predicates to the Sub2APIProviderProbeTargetMutation builder.
+func (m *Sub2APIProviderProbeTargetMutation) Where(ps ...predicate.Sub2APIProviderProbeTarget) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the Sub2APIProviderProbeTargetMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *Sub2APIProviderProbeTargetMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Sub2APIProviderProbeTarget, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *Sub2APIProviderProbeTargetMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *Sub2APIProviderProbeTargetMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (Sub2APIProviderProbeTarget).
+func (m *Sub2APIProviderProbeTargetMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *Sub2APIProviderProbeTargetMutation) Fields() []string {
+	fields := make([]string, 0, 18)
+	if m.created_at != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldUpdatedAt)
+	}
+	if m.provider != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldProviderID)
+	}
+	if m.account != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldAccountID)
+	}
+	if m.provider_api_key_id != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldProviderAPIKeyID)
+	}
+	if m.remote_group_id != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldRemoteGroupID)
+	}
+	if m.remote_group_name != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldRemoteGroupName)
+	}
+	if m.platform != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldPlatform)
+	}
+	if m.enabled != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldEnabled)
+	}
+	if m.interval_seconds != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldIntervalSeconds)
+	}
+	if m.test_model != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldTestModel)
+	}
+	if m.allow_media_probe != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldAllowMediaProbe)
+	}
+	if m.timeout_seconds != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldTimeoutSeconds)
+	}
+	if m.degraded_latency_ms != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldDegradedLatencyMs)
+	}
+	if m.failure_threshold != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldFailureThreshold)
+	}
+	if m.recovery_threshold != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldRecoveryThreshold)
+	}
+	if m.last_run_at != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldLastRunAt)
+	}
+	if m.route_changed_at != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldRouteChangedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *Sub2APIProviderProbeTargetMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case sub2apiproviderprobetarget.FieldCreatedAt:
+		return m.CreatedAt()
+	case sub2apiproviderprobetarget.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case sub2apiproviderprobetarget.FieldProviderID:
+		return m.ProviderID()
+	case sub2apiproviderprobetarget.FieldAccountID:
+		return m.AccountID()
+	case sub2apiproviderprobetarget.FieldProviderAPIKeyID:
+		return m.ProviderAPIKeyID()
+	case sub2apiproviderprobetarget.FieldRemoteGroupID:
+		return m.RemoteGroupID()
+	case sub2apiproviderprobetarget.FieldRemoteGroupName:
+		return m.RemoteGroupName()
+	case sub2apiproviderprobetarget.FieldPlatform:
+		return m.Platform()
+	case sub2apiproviderprobetarget.FieldEnabled:
+		return m.Enabled()
+	case sub2apiproviderprobetarget.FieldIntervalSeconds:
+		return m.IntervalSeconds()
+	case sub2apiproviderprobetarget.FieldTestModel:
+		return m.TestModel()
+	case sub2apiproviderprobetarget.FieldAllowMediaProbe:
+		return m.AllowMediaProbe()
+	case sub2apiproviderprobetarget.FieldTimeoutSeconds:
+		return m.TimeoutSeconds()
+	case sub2apiproviderprobetarget.FieldDegradedLatencyMs:
+		return m.DegradedLatencyMs()
+	case sub2apiproviderprobetarget.FieldFailureThreshold:
+		return m.FailureThreshold()
+	case sub2apiproviderprobetarget.FieldRecoveryThreshold:
+		return m.RecoveryThreshold()
+	case sub2apiproviderprobetarget.FieldLastRunAt:
+		return m.LastRunAt()
+	case sub2apiproviderprobetarget.FieldRouteChangedAt:
+		return m.RouteChangedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *Sub2APIProviderProbeTargetMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case sub2apiproviderprobetarget.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case sub2apiproviderprobetarget.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case sub2apiproviderprobetarget.FieldProviderID:
+		return m.OldProviderID(ctx)
+	case sub2apiproviderprobetarget.FieldAccountID:
+		return m.OldAccountID(ctx)
+	case sub2apiproviderprobetarget.FieldProviderAPIKeyID:
+		return m.OldProviderAPIKeyID(ctx)
+	case sub2apiproviderprobetarget.FieldRemoteGroupID:
+		return m.OldRemoteGroupID(ctx)
+	case sub2apiproviderprobetarget.FieldRemoteGroupName:
+		return m.OldRemoteGroupName(ctx)
+	case sub2apiproviderprobetarget.FieldPlatform:
+		return m.OldPlatform(ctx)
+	case sub2apiproviderprobetarget.FieldEnabled:
+		return m.OldEnabled(ctx)
+	case sub2apiproviderprobetarget.FieldIntervalSeconds:
+		return m.OldIntervalSeconds(ctx)
+	case sub2apiproviderprobetarget.FieldTestModel:
+		return m.OldTestModel(ctx)
+	case sub2apiproviderprobetarget.FieldAllowMediaProbe:
+		return m.OldAllowMediaProbe(ctx)
+	case sub2apiproviderprobetarget.FieldTimeoutSeconds:
+		return m.OldTimeoutSeconds(ctx)
+	case sub2apiproviderprobetarget.FieldDegradedLatencyMs:
+		return m.OldDegradedLatencyMs(ctx)
+	case sub2apiproviderprobetarget.FieldFailureThreshold:
+		return m.OldFailureThreshold(ctx)
+	case sub2apiproviderprobetarget.FieldRecoveryThreshold:
+		return m.OldRecoveryThreshold(ctx)
+	case sub2apiproviderprobetarget.FieldLastRunAt:
+		return m.OldLastRunAt(ctx)
+	case sub2apiproviderprobetarget.FieldRouteChangedAt:
+		return m.OldRouteChangedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown Sub2APIProviderProbeTarget field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *Sub2APIProviderProbeTargetMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case sub2apiproviderprobetarget.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldProviderID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProviderID(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldAccountID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccountID(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldProviderAPIKeyID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProviderAPIKeyID(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldRemoteGroupID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRemoteGroupID(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldRemoteGroupName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRemoteGroupName(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldPlatform:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPlatform(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEnabled(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldIntervalSeconds:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIntervalSeconds(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldTestModel:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTestModel(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldAllowMediaProbe:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAllowMediaProbe(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldTimeoutSeconds:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTimeoutSeconds(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldDegradedLatencyMs:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDegradedLatencyMs(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldFailureThreshold:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFailureThreshold(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldRecoveryThreshold:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRecoveryThreshold(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldLastRunAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastRunAt(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldRouteChangedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRouteChangedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Sub2APIProviderProbeTarget field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *Sub2APIProviderProbeTargetMutation) AddedFields() []string {
+	var fields []string
+	if m.addprovider_api_key_id != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldProviderAPIKeyID)
+	}
+	if m.addremote_group_id != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldRemoteGroupID)
+	}
+	if m.addinterval_seconds != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldIntervalSeconds)
+	}
+	if m.addtimeout_seconds != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldTimeoutSeconds)
+	}
+	if m.adddegraded_latency_ms != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldDegradedLatencyMs)
+	}
+	if m.addfailure_threshold != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldFailureThreshold)
+	}
+	if m.addrecovery_threshold != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldRecoveryThreshold)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *Sub2APIProviderProbeTargetMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case sub2apiproviderprobetarget.FieldProviderAPIKeyID:
+		return m.AddedProviderAPIKeyID()
+	case sub2apiproviderprobetarget.FieldRemoteGroupID:
+		return m.AddedRemoteGroupID()
+	case sub2apiproviderprobetarget.FieldIntervalSeconds:
+		return m.AddedIntervalSeconds()
+	case sub2apiproviderprobetarget.FieldTimeoutSeconds:
+		return m.AddedTimeoutSeconds()
+	case sub2apiproviderprobetarget.FieldDegradedLatencyMs:
+		return m.AddedDegradedLatencyMs()
+	case sub2apiproviderprobetarget.FieldFailureThreshold:
+		return m.AddedFailureThreshold()
+	case sub2apiproviderprobetarget.FieldRecoveryThreshold:
+		return m.AddedRecoveryThreshold()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *Sub2APIProviderProbeTargetMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case sub2apiproviderprobetarget.FieldProviderAPIKeyID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddProviderAPIKeyID(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldRemoteGroupID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRemoteGroupID(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldIntervalSeconds:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddIntervalSeconds(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldTimeoutSeconds:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTimeoutSeconds(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldDegradedLatencyMs:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDegradedLatencyMs(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldFailureThreshold:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddFailureThreshold(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldRecoveryThreshold:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRecoveryThreshold(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Sub2APIProviderProbeTarget numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *Sub2APIProviderProbeTargetMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(sub2apiproviderprobetarget.FieldProviderAPIKeyID) {
+		fields = append(fields, sub2apiproviderprobetarget.FieldProviderAPIKeyID)
+	}
+	if m.FieldCleared(sub2apiproviderprobetarget.FieldRemoteGroupID) {
+		fields = append(fields, sub2apiproviderprobetarget.FieldRemoteGroupID)
+	}
+	if m.FieldCleared(sub2apiproviderprobetarget.FieldRemoteGroupName) {
+		fields = append(fields, sub2apiproviderprobetarget.FieldRemoteGroupName)
+	}
+	if m.FieldCleared(sub2apiproviderprobetarget.FieldTestModel) {
+		fields = append(fields, sub2apiproviderprobetarget.FieldTestModel)
+	}
+	if m.FieldCleared(sub2apiproviderprobetarget.FieldLastRunAt) {
+		fields = append(fields, sub2apiproviderprobetarget.FieldLastRunAt)
+	}
+	if m.FieldCleared(sub2apiproviderprobetarget.FieldRouteChangedAt) {
+		fields = append(fields, sub2apiproviderprobetarget.FieldRouteChangedAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *Sub2APIProviderProbeTargetMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *Sub2APIProviderProbeTargetMutation) ClearField(name string) error {
+	switch name {
+	case sub2apiproviderprobetarget.FieldProviderAPIKeyID:
+		m.ClearProviderAPIKeyID()
+		return nil
+	case sub2apiproviderprobetarget.FieldRemoteGroupID:
+		m.ClearRemoteGroupID()
+		return nil
+	case sub2apiproviderprobetarget.FieldRemoteGroupName:
+		m.ClearRemoteGroupName()
+		return nil
+	case sub2apiproviderprobetarget.FieldTestModel:
+		m.ClearTestModel()
+		return nil
+	case sub2apiproviderprobetarget.FieldLastRunAt:
+		m.ClearLastRunAt()
+		return nil
+	case sub2apiproviderprobetarget.FieldRouteChangedAt:
+		m.ClearRouteChangedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown Sub2APIProviderProbeTarget nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *Sub2APIProviderProbeTargetMutation) ResetField(name string) error {
+	switch name {
+	case sub2apiproviderprobetarget.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case sub2apiproviderprobetarget.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case sub2apiproviderprobetarget.FieldProviderID:
+		m.ResetProviderID()
+		return nil
+	case sub2apiproviderprobetarget.FieldAccountID:
+		m.ResetAccountID()
+		return nil
+	case sub2apiproviderprobetarget.FieldProviderAPIKeyID:
+		m.ResetProviderAPIKeyID()
+		return nil
+	case sub2apiproviderprobetarget.FieldRemoteGroupID:
+		m.ResetRemoteGroupID()
+		return nil
+	case sub2apiproviderprobetarget.FieldRemoteGroupName:
+		m.ResetRemoteGroupName()
+		return nil
+	case sub2apiproviderprobetarget.FieldPlatform:
+		m.ResetPlatform()
+		return nil
+	case sub2apiproviderprobetarget.FieldEnabled:
+		m.ResetEnabled()
+		return nil
+	case sub2apiproviderprobetarget.FieldIntervalSeconds:
+		m.ResetIntervalSeconds()
+		return nil
+	case sub2apiproviderprobetarget.FieldTestModel:
+		m.ResetTestModel()
+		return nil
+	case sub2apiproviderprobetarget.FieldAllowMediaProbe:
+		m.ResetAllowMediaProbe()
+		return nil
+	case sub2apiproviderprobetarget.FieldTimeoutSeconds:
+		m.ResetTimeoutSeconds()
+		return nil
+	case sub2apiproviderprobetarget.FieldDegradedLatencyMs:
+		m.ResetDegradedLatencyMs()
+		return nil
+	case sub2apiproviderprobetarget.FieldFailureThreshold:
+		m.ResetFailureThreshold()
+		return nil
+	case sub2apiproviderprobetarget.FieldRecoveryThreshold:
+		m.ResetRecoveryThreshold()
+		return nil
+	case sub2apiproviderprobetarget.FieldLastRunAt:
+		m.ResetLastRunAt()
+		return nil
+	case sub2apiproviderprobetarget.FieldRouteChangedAt:
+		m.ResetRouteChangedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown Sub2APIProviderProbeTarget field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *Sub2APIProviderProbeTargetMutation) AddedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.provider != nil {
+		edges = append(edges, sub2apiproviderprobetarget.EdgeProvider)
+	}
+	if m.account != nil {
+		edges = append(edges, sub2apiproviderprobetarget.EdgeAccount)
+	}
+	if m.runs != nil {
+		edges = append(edges, sub2apiproviderprobetarget.EdgeRuns)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *Sub2APIProviderProbeTargetMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case sub2apiproviderprobetarget.EdgeProvider:
+		if id := m.provider; id != nil {
+			return []ent.Value{*id}
+		}
+	case sub2apiproviderprobetarget.EdgeAccount:
+		if id := m.account; id != nil {
+			return []ent.Value{*id}
+		}
+	case sub2apiproviderprobetarget.EdgeRuns:
+		ids := make([]ent.Value, 0, len(m.runs))
+		for id := range m.runs {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *Sub2APIProviderProbeTargetMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.removedruns != nil {
+		edges = append(edges, sub2apiproviderprobetarget.EdgeRuns)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *Sub2APIProviderProbeTargetMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case sub2apiproviderprobetarget.EdgeRuns:
+		ids := make([]ent.Value, 0, len(m.removedruns))
+		for id := range m.removedruns {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *Sub2APIProviderProbeTargetMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 3)
+	if m.clearedprovider {
+		edges = append(edges, sub2apiproviderprobetarget.EdgeProvider)
+	}
+	if m.clearedaccount {
+		edges = append(edges, sub2apiproviderprobetarget.EdgeAccount)
+	}
+	if m.clearedruns {
+		edges = append(edges, sub2apiproviderprobetarget.EdgeRuns)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *Sub2APIProviderProbeTargetMutation) EdgeCleared(name string) bool {
+	switch name {
+	case sub2apiproviderprobetarget.EdgeProvider:
+		return m.clearedprovider
+	case sub2apiproviderprobetarget.EdgeAccount:
+		return m.clearedaccount
+	case sub2apiproviderprobetarget.EdgeRuns:
+		return m.clearedruns
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *Sub2APIProviderProbeTargetMutation) ClearEdge(name string) error {
+	switch name {
+	case sub2apiproviderprobetarget.EdgeProvider:
+		m.ClearProvider()
+		return nil
+	case sub2apiproviderprobetarget.EdgeAccount:
+		m.ClearAccount()
+		return nil
+	}
+	return fmt.Errorf("unknown Sub2APIProviderProbeTarget unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *Sub2APIProviderProbeTargetMutation) ResetEdge(name string) error {
+	switch name {
+	case sub2apiproviderprobetarget.EdgeProvider:
+		m.ResetProvider()
+		return nil
+	case sub2apiproviderprobetarget.EdgeAccount:
+		m.ResetAccount()
+		return nil
+	case sub2apiproviderprobetarget.EdgeRuns:
+		m.ResetRuns()
+		return nil
+	}
+	return fmt.Errorf("unknown Sub2APIProviderProbeTarget edge %s", name)
+}
+
+// Sub2APIProviderProbeTargetRunMutation represents an operation that mutates the Sub2APIProviderProbeTargetRun nodes in the graph.
+type Sub2APIProviderProbeTargetRunMutation struct {
+	config
+	op                        Op
+	typ                       string
+	id                        *int64
+	provider_id               *int64
+	addprovider_id            *int64
+	account_id                *int64
+	addaccount_id             *int64
+	provider_api_key_id       *int64
+	addprovider_api_key_id    *int64
+	remote_group_id           *int64
+	addremote_group_id        *int64
+	remote_group_name         *string
+	platform                  *string
+	model_id                  *string
+	status                    *sub2apiproviderprobetargetrun.Status
+	latency_ms                *int
+	addlatency_ms             *int
+	traffic_request_count     *int
+	addtraffic_request_count  *int
+	traffic_success_rate      *float64
+	addtraffic_success_rate   *float64
+	traffic_p95_latency_ms    *int
+	addtraffic_p95_latency_ms *int
+	error_category            *string
+	error_message             *string
+	started_at                *time.Time
+	finished_at               *time.Time
+	created_at                *time.Time
+	clearedFields             map[string]struct{}
+	target                    *int64
+	clearedtarget             bool
+	done                      bool
+	oldValue                  func(context.Context) (*Sub2APIProviderProbeTargetRun, error)
+	predicates                []predicate.Sub2APIProviderProbeTargetRun
+}
+
+var _ ent.Mutation = (*Sub2APIProviderProbeTargetRunMutation)(nil)
+
+// sub2apiproviderprobetargetrunOption allows management of the mutation configuration using functional options.
+type sub2apiproviderprobetargetrunOption func(*Sub2APIProviderProbeTargetRunMutation)
+
+// newSub2APIProviderProbeTargetRunMutation creates new mutation for the Sub2APIProviderProbeTargetRun entity.
+func newSub2APIProviderProbeTargetRunMutation(c config, op Op, opts ...sub2apiproviderprobetargetrunOption) *Sub2APIProviderProbeTargetRunMutation {
+	m := &Sub2APIProviderProbeTargetRunMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeSub2APIProviderProbeTargetRun,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withSub2APIProviderProbeTargetRunID sets the ID field of the mutation.
+func withSub2APIProviderProbeTargetRunID(id int64) sub2apiproviderprobetargetrunOption {
+	return func(m *Sub2APIProviderProbeTargetRunMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Sub2APIProviderProbeTargetRun
+		)
+		m.oldValue = func(ctx context.Context) (*Sub2APIProviderProbeTargetRun, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Sub2APIProviderProbeTargetRun.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withSub2APIProviderProbeTargetRun sets the old Sub2APIProviderProbeTargetRun of the mutation.
+func withSub2APIProviderProbeTargetRun(node *Sub2APIProviderProbeTargetRun) sub2apiproviderprobetargetrunOption {
+	return func(m *Sub2APIProviderProbeTargetRunMutation) {
+		m.oldValue = func(context.Context) (*Sub2APIProviderProbeTargetRun, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m Sub2APIProviderProbeTargetRunMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m Sub2APIProviderProbeTargetRunMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *Sub2APIProviderProbeTargetRunMutation) ID() (id int64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) IDs(ctx context.Context) ([]int64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Sub2APIProviderProbeTargetRun.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetTargetID sets the "target_id" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) SetTargetID(i int64) {
+	m.target = &i
+}
+
+// TargetID returns the value of the "target_id" field in the mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) TargetID() (r int64, exists bool) {
+	v := m.target
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTargetID returns the old "target_id" field's value of the Sub2APIProviderProbeTargetRun entity.
+// If the Sub2APIProviderProbeTargetRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetRunMutation) OldTargetID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTargetID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTargetID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTargetID: %w", err)
+	}
+	return oldValue.TargetID, nil
+}
+
+// ResetTargetID resets all changes to the "target_id" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) ResetTargetID() {
+	m.target = nil
+}
+
+// SetProviderID sets the "provider_id" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) SetProviderID(i int64) {
+	m.provider_id = &i
+	m.addprovider_id = nil
+}
+
+// ProviderID returns the value of the "provider_id" field in the mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) ProviderID() (r int64, exists bool) {
+	v := m.provider_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProviderID returns the old "provider_id" field's value of the Sub2APIProviderProbeTargetRun entity.
+// If the Sub2APIProviderProbeTargetRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetRunMutation) OldProviderID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProviderID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProviderID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProviderID: %w", err)
+	}
+	return oldValue.ProviderID, nil
+}
+
+// AddProviderID adds i to the "provider_id" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) AddProviderID(i int64) {
+	if m.addprovider_id != nil {
+		*m.addprovider_id += i
+	} else {
+		m.addprovider_id = &i
+	}
+}
+
+// AddedProviderID returns the value that was added to the "provider_id" field in this mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) AddedProviderID() (r int64, exists bool) {
+	v := m.addprovider_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetProviderID resets all changes to the "provider_id" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) ResetProviderID() {
+	m.provider_id = nil
+	m.addprovider_id = nil
+}
+
+// SetAccountID sets the "account_id" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) SetAccountID(i int64) {
+	m.account_id = &i
+	m.addaccount_id = nil
+}
+
+// AccountID returns the value of the "account_id" field in the mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) AccountID() (r int64, exists bool) {
+	v := m.account_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAccountID returns the old "account_id" field's value of the Sub2APIProviderProbeTargetRun entity.
+// If the Sub2APIProviderProbeTargetRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetRunMutation) OldAccountID(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAccountID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAccountID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAccountID: %w", err)
+	}
+	return oldValue.AccountID, nil
+}
+
+// AddAccountID adds i to the "account_id" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) AddAccountID(i int64) {
+	if m.addaccount_id != nil {
+		*m.addaccount_id += i
+	} else {
+		m.addaccount_id = &i
+	}
+}
+
+// AddedAccountID returns the value that was added to the "account_id" field in this mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) AddedAccountID() (r int64, exists bool) {
+	v := m.addaccount_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAccountID resets all changes to the "account_id" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) ResetAccountID() {
+	m.account_id = nil
+	m.addaccount_id = nil
+}
+
+// SetProviderAPIKeyID sets the "provider_api_key_id" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) SetProviderAPIKeyID(i int64) {
+	m.provider_api_key_id = &i
+	m.addprovider_api_key_id = nil
+}
+
+// ProviderAPIKeyID returns the value of the "provider_api_key_id" field in the mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) ProviderAPIKeyID() (r int64, exists bool) {
+	v := m.provider_api_key_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProviderAPIKeyID returns the old "provider_api_key_id" field's value of the Sub2APIProviderProbeTargetRun entity.
+// If the Sub2APIProviderProbeTargetRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetRunMutation) OldProviderAPIKeyID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProviderAPIKeyID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProviderAPIKeyID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProviderAPIKeyID: %w", err)
+	}
+	return oldValue.ProviderAPIKeyID, nil
+}
+
+// AddProviderAPIKeyID adds i to the "provider_api_key_id" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) AddProviderAPIKeyID(i int64) {
+	if m.addprovider_api_key_id != nil {
+		*m.addprovider_api_key_id += i
+	} else {
+		m.addprovider_api_key_id = &i
+	}
+}
+
+// AddedProviderAPIKeyID returns the value that was added to the "provider_api_key_id" field in this mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) AddedProviderAPIKeyID() (r int64, exists bool) {
+	v := m.addprovider_api_key_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearProviderAPIKeyID clears the value of the "provider_api_key_id" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) ClearProviderAPIKeyID() {
+	m.provider_api_key_id = nil
+	m.addprovider_api_key_id = nil
+	m.clearedFields[sub2apiproviderprobetargetrun.FieldProviderAPIKeyID] = struct{}{}
+}
+
+// ProviderAPIKeyIDCleared returns if the "provider_api_key_id" field was cleared in this mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) ProviderAPIKeyIDCleared() bool {
+	_, ok := m.clearedFields[sub2apiproviderprobetargetrun.FieldProviderAPIKeyID]
+	return ok
+}
+
+// ResetProviderAPIKeyID resets all changes to the "provider_api_key_id" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) ResetProviderAPIKeyID() {
+	m.provider_api_key_id = nil
+	m.addprovider_api_key_id = nil
+	delete(m.clearedFields, sub2apiproviderprobetargetrun.FieldProviderAPIKeyID)
+}
+
+// SetRemoteGroupID sets the "remote_group_id" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) SetRemoteGroupID(i int64) {
+	m.remote_group_id = &i
+	m.addremote_group_id = nil
+}
+
+// RemoteGroupID returns the value of the "remote_group_id" field in the mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) RemoteGroupID() (r int64, exists bool) {
+	v := m.remote_group_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRemoteGroupID returns the old "remote_group_id" field's value of the Sub2APIProviderProbeTargetRun entity.
+// If the Sub2APIProviderProbeTargetRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetRunMutation) OldRemoteGroupID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRemoteGroupID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRemoteGroupID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRemoteGroupID: %w", err)
+	}
+	return oldValue.RemoteGroupID, nil
+}
+
+// AddRemoteGroupID adds i to the "remote_group_id" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) AddRemoteGroupID(i int64) {
+	if m.addremote_group_id != nil {
+		*m.addremote_group_id += i
+	} else {
+		m.addremote_group_id = &i
+	}
+}
+
+// AddedRemoteGroupID returns the value that was added to the "remote_group_id" field in this mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) AddedRemoteGroupID() (r int64, exists bool) {
+	v := m.addremote_group_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearRemoteGroupID clears the value of the "remote_group_id" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) ClearRemoteGroupID() {
+	m.remote_group_id = nil
+	m.addremote_group_id = nil
+	m.clearedFields[sub2apiproviderprobetargetrun.FieldRemoteGroupID] = struct{}{}
+}
+
+// RemoteGroupIDCleared returns if the "remote_group_id" field was cleared in this mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) RemoteGroupIDCleared() bool {
+	_, ok := m.clearedFields[sub2apiproviderprobetargetrun.FieldRemoteGroupID]
+	return ok
+}
+
+// ResetRemoteGroupID resets all changes to the "remote_group_id" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) ResetRemoteGroupID() {
+	m.remote_group_id = nil
+	m.addremote_group_id = nil
+	delete(m.clearedFields, sub2apiproviderprobetargetrun.FieldRemoteGroupID)
+}
+
+// SetRemoteGroupName sets the "remote_group_name" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) SetRemoteGroupName(s string) {
+	m.remote_group_name = &s
+}
+
+// RemoteGroupName returns the value of the "remote_group_name" field in the mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) RemoteGroupName() (r string, exists bool) {
+	v := m.remote_group_name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRemoteGroupName returns the old "remote_group_name" field's value of the Sub2APIProviderProbeTargetRun entity.
+// If the Sub2APIProviderProbeTargetRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetRunMutation) OldRemoteGroupName(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRemoteGroupName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRemoteGroupName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRemoteGroupName: %w", err)
+	}
+	return oldValue.RemoteGroupName, nil
+}
+
+// ClearRemoteGroupName clears the value of the "remote_group_name" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) ClearRemoteGroupName() {
+	m.remote_group_name = nil
+	m.clearedFields[sub2apiproviderprobetargetrun.FieldRemoteGroupName] = struct{}{}
+}
+
+// RemoteGroupNameCleared returns if the "remote_group_name" field was cleared in this mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) RemoteGroupNameCleared() bool {
+	_, ok := m.clearedFields[sub2apiproviderprobetargetrun.FieldRemoteGroupName]
+	return ok
+}
+
+// ResetRemoteGroupName resets all changes to the "remote_group_name" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) ResetRemoteGroupName() {
+	m.remote_group_name = nil
+	delete(m.clearedFields, sub2apiproviderprobetargetrun.FieldRemoteGroupName)
+}
+
+// SetPlatform sets the "platform" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) SetPlatform(s string) {
+	m.platform = &s
+}
+
+// Platform returns the value of the "platform" field in the mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) Platform() (r string, exists bool) {
+	v := m.platform
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPlatform returns the old "platform" field's value of the Sub2APIProviderProbeTargetRun entity.
+// If the Sub2APIProviderProbeTargetRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetRunMutation) OldPlatform(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPlatform is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPlatform requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPlatform: %w", err)
+	}
+	return oldValue.Platform, nil
+}
+
+// ResetPlatform resets all changes to the "platform" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) ResetPlatform() {
+	m.platform = nil
+}
+
+// SetModelID sets the "model_id" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) SetModelID(s string) {
+	m.model_id = &s
+}
+
+// ModelID returns the value of the "model_id" field in the mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) ModelID() (r string, exists bool) {
+	v := m.model_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldModelID returns the old "model_id" field's value of the Sub2APIProviderProbeTargetRun entity.
+// If the Sub2APIProviderProbeTargetRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetRunMutation) OldModelID(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldModelID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldModelID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldModelID: %w", err)
+	}
+	return oldValue.ModelID, nil
+}
+
+// ClearModelID clears the value of the "model_id" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) ClearModelID() {
+	m.model_id = nil
+	m.clearedFields[sub2apiproviderprobetargetrun.FieldModelID] = struct{}{}
+}
+
+// ModelIDCleared returns if the "model_id" field was cleared in this mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) ModelIDCleared() bool {
+	_, ok := m.clearedFields[sub2apiproviderprobetargetrun.FieldModelID]
+	return ok
+}
+
+// ResetModelID resets all changes to the "model_id" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) ResetModelID() {
+	m.model_id = nil
+	delete(m.clearedFields, sub2apiproviderprobetargetrun.FieldModelID)
+}
+
+// SetStatus sets the "status" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) SetStatus(s sub2apiproviderprobetargetrun.Status) {
+	m.status = &s
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) Status() (r sub2apiproviderprobetargetrun.Status, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the Sub2APIProviderProbeTargetRun entity.
+// If the Sub2APIProviderProbeTargetRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetRunMutation) OldStatus(ctx context.Context) (v sub2apiproviderprobetargetrun.Status, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetLatencyMs sets the "latency_ms" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) SetLatencyMs(i int) {
+	m.latency_ms = &i
+	m.addlatency_ms = nil
+}
+
+// LatencyMs returns the value of the "latency_ms" field in the mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) LatencyMs() (r int, exists bool) {
+	v := m.latency_ms
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLatencyMs returns the old "latency_ms" field's value of the Sub2APIProviderProbeTargetRun entity.
+// If the Sub2APIProviderProbeTargetRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetRunMutation) OldLatencyMs(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLatencyMs is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLatencyMs requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLatencyMs: %w", err)
+	}
+	return oldValue.LatencyMs, nil
+}
+
+// AddLatencyMs adds i to the "latency_ms" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) AddLatencyMs(i int) {
+	if m.addlatency_ms != nil {
+		*m.addlatency_ms += i
+	} else {
+		m.addlatency_ms = &i
+	}
+}
+
+// AddedLatencyMs returns the value that was added to the "latency_ms" field in this mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) AddedLatencyMs() (r int, exists bool) {
+	v := m.addlatency_ms
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearLatencyMs clears the value of the "latency_ms" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) ClearLatencyMs() {
+	m.latency_ms = nil
+	m.addlatency_ms = nil
+	m.clearedFields[sub2apiproviderprobetargetrun.FieldLatencyMs] = struct{}{}
+}
+
+// LatencyMsCleared returns if the "latency_ms" field was cleared in this mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) LatencyMsCleared() bool {
+	_, ok := m.clearedFields[sub2apiproviderprobetargetrun.FieldLatencyMs]
+	return ok
+}
+
+// ResetLatencyMs resets all changes to the "latency_ms" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) ResetLatencyMs() {
+	m.latency_ms = nil
+	m.addlatency_ms = nil
+	delete(m.clearedFields, sub2apiproviderprobetargetrun.FieldLatencyMs)
+}
+
+// SetTrafficRequestCount sets the "traffic_request_count" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) SetTrafficRequestCount(i int) {
+	m.traffic_request_count = &i
+	m.addtraffic_request_count = nil
+}
+
+// TrafficRequestCount returns the value of the "traffic_request_count" field in the mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) TrafficRequestCount() (r int, exists bool) {
+	v := m.traffic_request_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTrafficRequestCount returns the old "traffic_request_count" field's value of the Sub2APIProviderProbeTargetRun entity.
+// If the Sub2APIProviderProbeTargetRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetRunMutation) OldTrafficRequestCount(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTrafficRequestCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTrafficRequestCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTrafficRequestCount: %w", err)
+	}
+	return oldValue.TrafficRequestCount, nil
+}
+
+// AddTrafficRequestCount adds i to the "traffic_request_count" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) AddTrafficRequestCount(i int) {
+	if m.addtraffic_request_count != nil {
+		*m.addtraffic_request_count += i
+	} else {
+		m.addtraffic_request_count = &i
+	}
+}
+
+// AddedTrafficRequestCount returns the value that was added to the "traffic_request_count" field in this mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) AddedTrafficRequestCount() (r int, exists bool) {
+	v := m.addtraffic_request_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetTrafficRequestCount resets all changes to the "traffic_request_count" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) ResetTrafficRequestCount() {
+	m.traffic_request_count = nil
+	m.addtraffic_request_count = nil
+}
+
+// SetTrafficSuccessRate sets the "traffic_success_rate" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) SetTrafficSuccessRate(f float64) {
+	m.traffic_success_rate = &f
+	m.addtraffic_success_rate = nil
+}
+
+// TrafficSuccessRate returns the value of the "traffic_success_rate" field in the mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) TrafficSuccessRate() (r float64, exists bool) {
+	v := m.traffic_success_rate
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTrafficSuccessRate returns the old "traffic_success_rate" field's value of the Sub2APIProviderProbeTargetRun entity.
+// If the Sub2APIProviderProbeTargetRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetRunMutation) OldTrafficSuccessRate(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTrafficSuccessRate is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTrafficSuccessRate requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTrafficSuccessRate: %w", err)
+	}
+	return oldValue.TrafficSuccessRate, nil
+}
+
+// AddTrafficSuccessRate adds f to the "traffic_success_rate" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) AddTrafficSuccessRate(f float64) {
+	if m.addtraffic_success_rate != nil {
+		*m.addtraffic_success_rate += f
+	} else {
+		m.addtraffic_success_rate = &f
+	}
+}
+
+// AddedTrafficSuccessRate returns the value that was added to the "traffic_success_rate" field in this mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) AddedTrafficSuccessRate() (r float64, exists bool) {
+	v := m.addtraffic_success_rate
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearTrafficSuccessRate clears the value of the "traffic_success_rate" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) ClearTrafficSuccessRate() {
+	m.traffic_success_rate = nil
+	m.addtraffic_success_rate = nil
+	m.clearedFields[sub2apiproviderprobetargetrun.FieldTrafficSuccessRate] = struct{}{}
+}
+
+// TrafficSuccessRateCleared returns if the "traffic_success_rate" field was cleared in this mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) TrafficSuccessRateCleared() bool {
+	_, ok := m.clearedFields[sub2apiproviderprobetargetrun.FieldTrafficSuccessRate]
+	return ok
+}
+
+// ResetTrafficSuccessRate resets all changes to the "traffic_success_rate" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) ResetTrafficSuccessRate() {
+	m.traffic_success_rate = nil
+	m.addtraffic_success_rate = nil
+	delete(m.clearedFields, sub2apiproviderprobetargetrun.FieldTrafficSuccessRate)
+}
+
+// SetTrafficP95LatencyMs sets the "traffic_p95_latency_ms" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) SetTrafficP95LatencyMs(i int) {
+	m.traffic_p95_latency_ms = &i
+	m.addtraffic_p95_latency_ms = nil
+}
+
+// TrafficP95LatencyMs returns the value of the "traffic_p95_latency_ms" field in the mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) TrafficP95LatencyMs() (r int, exists bool) {
+	v := m.traffic_p95_latency_ms
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTrafficP95LatencyMs returns the old "traffic_p95_latency_ms" field's value of the Sub2APIProviderProbeTargetRun entity.
+// If the Sub2APIProviderProbeTargetRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetRunMutation) OldTrafficP95LatencyMs(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTrafficP95LatencyMs is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTrafficP95LatencyMs requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTrafficP95LatencyMs: %w", err)
+	}
+	return oldValue.TrafficP95LatencyMs, nil
+}
+
+// AddTrafficP95LatencyMs adds i to the "traffic_p95_latency_ms" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) AddTrafficP95LatencyMs(i int) {
+	if m.addtraffic_p95_latency_ms != nil {
+		*m.addtraffic_p95_latency_ms += i
+	} else {
+		m.addtraffic_p95_latency_ms = &i
+	}
+}
+
+// AddedTrafficP95LatencyMs returns the value that was added to the "traffic_p95_latency_ms" field in this mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) AddedTrafficP95LatencyMs() (r int, exists bool) {
+	v := m.addtraffic_p95_latency_ms
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearTrafficP95LatencyMs clears the value of the "traffic_p95_latency_ms" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) ClearTrafficP95LatencyMs() {
+	m.traffic_p95_latency_ms = nil
+	m.addtraffic_p95_latency_ms = nil
+	m.clearedFields[sub2apiproviderprobetargetrun.FieldTrafficP95LatencyMs] = struct{}{}
+}
+
+// TrafficP95LatencyMsCleared returns if the "traffic_p95_latency_ms" field was cleared in this mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) TrafficP95LatencyMsCleared() bool {
+	_, ok := m.clearedFields[sub2apiproviderprobetargetrun.FieldTrafficP95LatencyMs]
+	return ok
+}
+
+// ResetTrafficP95LatencyMs resets all changes to the "traffic_p95_latency_ms" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) ResetTrafficP95LatencyMs() {
+	m.traffic_p95_latency_ms = nil
+	m.addtraffic_p95_latency_ms = nil
+	delete(m.clearedFields, sub2apiproviderprobetargetrun.FieldTrafficP95LatencyMs)
+}
+
+// SetErrorCategory sets the "error_category" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) SetErrorCategory(s string) {
+	m.error_category = &s
+}
+
+// ErrorCategory returns the value of the "error_category" field in the mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) ErrorCategory() (r string, exists bool) {
+	v := m.error_category
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldErrorCategory returns the old "error_category" field's value of the Sub2APIProviderProbeTargetRun entity.
+// If the Sub2APIProviderProbeTargetRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetRunMutation) OldErrorCategory(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldErrorCategory is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldErrorCategory requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldErrorCategory: %w", err)
+	}
+	return oldValue.ErrorCategory, nil
+}
+
+// ClearErrorCategory clears the value of the "error_category" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) ClearErrorCategory() {
+	m.error_category = nil
+	m.clearedFields[sub2apiproviderprobetargetrun.FieldErrorCategory] = struct{}{}
+}
+
+// ErrorCategoryCleared returns if the "error_category" field was cleared in this mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) ErrorCategoryCleared() bool {
+	_, ok := m.clearedFields[sub2apiproviderprobetargetrun.FieldErrorCategory]
+	return ok
+}
+
+// ResetErrorCategory resets all changes to the "error_category" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) ResetErrorCategory() {
+	m.error_category = nil
+	delete(m.clearedFields, sub2apiproviderprobetargetrun.FieldErrorCategory)
+}
+
+// SetErrorMessage sets the "error_message" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) SetErrorMessage(s string) {
+	m.error_message = &s
+}
+
+// ErrorMessage returns the value of the "error_message" field in the mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) ErrorMessage() (r string, exists bool) {
+	v := m.error_message
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldErrorMessage returns the old "error_message" field's value of the Sub2APIProviderProbeTargetRun entity.
+// If the Sub2APIProviderProbeTargetRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetRunMutation) OldErrorMessage(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldErrorMessage is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldErrorMessage requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldErrorMessage: %w", err)
+	}
+	return oldValue.ErrorMessage, nil
+}
+
+// ClearErrorMessage clears the value of the "error_message" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) ClearErrorMessage() {
+	m.error_message = nil
+	m.clearedFields[sub2apiproviderprobetargetrun.FieldErrorMessage] = struct{}{}
+}
+
+// ErrorMessageCleared returns if the "error_message" field was cleared in this mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) ErrorMessageCleared() bool {
+	_, ok := m.clearedFields[sub2apiproviderprobetargetrun.FieldErrorMessage]
+	return ok
+}
+
+// ResetErrorMessage resets all changes to the "error_message" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) ResetErrorMessage() {
+	m.error_message = nil
+	delete(m.clearedFields, sub2apiproviderprobetargetrun.FieldErrorMessage)
+}
+
+// SetStartedAt sets the "started_at" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) SetStartedAt(t time.Time) {
+	m.started_at = &t
+}
+
+// StartedAt returns the value of the "started_at" field in the mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) StartedAt() (r time.Time, exists bool) {
+	v := m.started_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStartedAt returns the old "started_at" field's value of the Sub2APIProviderProbeTargetRun entity.
+// If the Sub2APIProviderProbeTargetRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetRunMutation) OldStartedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStartedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStartedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStartedAt: %w", err)
+	}
+	return oldValue.StartedAt, nil
+}
+
+// ResetStartedAt resets all changes to the "started_at" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) ResetStartedAt() {
+	m.started_at = nil
+}
+
+// SetFinishedAt sets the "finished_at" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) SetFinishedAt(t time.Time) {
+	m.finished_at = &t
+}
+
+// FinishedAt returns the value of the "finished_at" field in the mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) FinishedAt() (r time.Time, exists bool) {
+	v := m.finished_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFinishedAt returns the old "finished_at" field's value of the Sub2APIProviderProbeTargetRun entity.
+// If the Sub2APIProviderProbeTargetRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetRunMutation) OldFinishedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFinishedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFinishedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFinishedAt: %w", err)
+	}
+	return oldValue.FinishedAt, nil
+}
+
+// ResetFinishedAt resets all changes to the "finished_at" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) ResetFinishedAt() {
+	m.finished_at = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the Sub2APIProviderProbeTargetRun entity.
+// If the Sub2APIProviderProbeTargetRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetRunMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// ClearTarget clears the "target" edge to the Sub2APIProviderProbeTarget entity.
+func (m *Sub2APIProviderProbeTargetRunMutation) ClearTarget() {
+	m.clearedtarget = true
+	m.clearedFields[sub2apiproviderprobetargetrun.FieldTargetID] = struct{}{}
+}
+
+// TargetCleared reports if the "target" edge to the Sub2APIProviderProbeTarget entity was cleared.
+func (m *Sub2APIProviderProbeTargetRunMutation) TargetCleared() bool {
+	return m.clearedtarget
+}
+
+// TargetIDs returns the "target" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// TargetID instead. It exists only for internal usage by the builders.
+func (m *Sub2APIProviderProbeTargetRunMutation) TargetIDs() (ids []int64) {
+	if id := m.target; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetTarget resets all changes to the "target" edge.
+func (m *Sub2APIProviderProbeTargetRunMutation) ResetTarget() {
+	m.target = nil
+	m.clearedtarget = false
+}
+
+// Where appends a list predicates to the Sub2APIProviderProbeTargetRunMutation builder.
+func (m *Sub2APIProviderProbeTargetRunMutation) Where(ps ...predicate.Sub2APIProviderProbeTargetRun) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the Sub2APIProviderProbeTargetRunMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *Sub2APIProviderProbeTargetRunMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Sub2APIProviderProbeTargetRun, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *Sub2APIProviderProbeTargetRunMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *Sub2APIProviderProbeTargetRunMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (Sub2APIProviderProbeTargetRun).
+func (m *Sub2APIProviderProbeTargetRunMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *Sub2APIProviderProbeTargetRunMutation) Fields() []string {
+	fields := make([]string, 0, 18)
+	if m.target != nil {
+		fields = append(fields, sub2apiproviderprobetargetrun.FieldTargetID)
+	}
+	if m.provider_id != nil {
+		fields = append(fields, sub2apiproviderprobetargetrun.FieldProviderID)
+	}
+	if m.account_id != nil {
+		fields = append(fields, sub2apiproviderprobetargetrun.FieldAccountID)
+	}
+	if m.provider_api_key_id != nil {
+		fields = append(fields, sub2apiproviderprobetargetrun.FieldProviderAPIKeyID)
+	}
+	if m.remote_group_id != nil {
+		fields = append(fields, sub2apiproviderprobetargetrun.FieldRemoteGroupID)
+	}
+	if m.remote_group_name != nil {
+		fields = append(fields, sub2apiproviderprobetargetrun.FieldRemoteGroupName)
+	}
+	if m.platform != nil {
+		fields = append(fields, sub2apiproviderprobetargetrun.FieldPlatform)
+	}
+	if m.model_id != nil {
+		fields = append(fields, sub2apiproviderprobetargetrun.FieldModelID)
+	}
+	if m.status != nil {
+		fields = append(fields, sub2apiproviderprobetargetrun.FieldStatus)
+	}
+	if m.latency_ms != nil {
+		fields = append(fields, sub2apiproviderprobetargetrun.FieldLatencyMs)
+	}
+	if m.traffic_request_count != nil {
+		fields = append(fields, sub2apiproviderprobetargetrun.FieldTrafficRequestCount)
+	}
+	if m.traffic_success_rate != nil {
+		fields = append(fields, sub2apiproviderprobetargetrun.FieldTrafficSuccessRate)
+	}
+	if m.traffic_p95_latency_ms != nil {
+		fields = append(fields, sub2apiproviderprobetargetrun.FieldTrafficP95LatencyMs)
+	}
+	if m.error_category != nil {
+		fields = append(fields, sub2apiproviderprobetargetrun.FieldErrorCategory)
+	}
+	if m.error_message != nil {
+		fields = append(fields, sub2apiproviderprobetargetrun.FieldErrorMessage)
+	}
+	if m.started_at != nil {
+		fields = append(fields, sub2apiproviderprobetargetrun.FieldStartedAt)
+	}
+	if m.finished_at != nil {
+		fields = append(fields, sub2apiproviderprobetargetrun.FieldFinishedAt)
+	}
+	if m.created_at != nil {
+		fields = append(fields, sub2apiproviderprobetargetrun.FieldCreatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *Sub2APIProviderProbeTargetRunMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case sub2apiproviderprobetargetrun.FieldTargetID:
+		return m.TargetID()
+	case sub2apiproviderprobetargetrun.FieldProviderID:
+		return m.ProviderID()
+	case sub2apiproviderprobetargetrun.FieldAccountID:
+		return m.AccountID()
+	case sub2apiproviderprobetargetrun.FieldProviderAPIKeyID:
+		return m.ProviderAPIKeyID()
+	case sub2apiproviderprobetargetrun.FieldRemoteGroupID:
+		return m.RemoteGroupID()
+	case sub2apiproviderprobetargetrun.FieldRemoteGroupName:
+		return m.RemoteGroupName()
+	case sub2apiproviderprobetargetrun.FieldPlatform:
+		return m.Platform()
+	case sub2apiproviderprobetargetrun.FieldModelID:
+		return m.ModelID()
+	case sub2apiproviderprobetargetrun.FieldStatus:
+		return m.Status()
+	case sub2apiproviderprobetargetrun.FieldLatencyMs:
+		return m.LatencyMs()
+	case sub2apiproviderprobetargetrun.FieldTrafficRequestCount:
+		return m.TrafficRequestCount()
+	case sub2apiproviderprobetargetrun.FieldTrafficSuccessRate:
+		return m.TrafficSuccessRate()
+	case sub2apiproviderprobetargetrun.FieldTrafficP95LatencyMs:
+		return m.TrafficP95LatencyMs()
+	case sub2apiproviderprobetargetrun.FieldErrorCategory:
+		return m.ErrorCategory()
+	case sub2apiproviderprobetargetrun.FieldErrorMessage:
+		return m.ErrorMessage()
+	case sub2apiproviderprobetargetrun.FieldStartedAt:
+		return m.StartedAt()
+	case sub2apiproviderprobetargetrun.FieldFinishedAt:
+		return m.FinishedAt()
+	case sub2apiproviderprobetargetrun.FieldCreatedAt:
+		return m.CreatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *Sub2APIProviderProbeTargetRunMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case sub2apiproviderprobetargetrun.FieldTargetID:
+		return m.OldTargetID(ctx)
+	case sub2apiproviderprobetargetrun.FieldProviderID:
+		return m.OldProviderID(ctx)
+	case sub2apiproviderprobetargetrun.FieldAccountID:
+		return m.OldAccountID(ctx)
+	case sub2apiproviderprobetargetrun.FieldProviderAPIKeyID:
+		return m.OldProviderAPIKeyID(ctx)
+	case sub2apiproviderprobetargetrun.FieldRemoteGroupID:
+		return m.OldRemoteGroupID(ctx)
+	case sub2apiproviderprobetargetrun.FieldRemoteGroupName:
+		return m.OldRemoteGroupName(ctx)
+	case sub2apiproviderprobetargetrun.FieldPlatform:
+		return m.OldPlatform(ctx)
+	case sub2apiproviderprobetargetrun.FieldModelID:
+		return m.OldModelID(ctx)
+	case sub2apiproviderprobetargetrun.FieldStatus:
+		return m.OldStatus(ctx)
+	case sub2apiproviderprobetargetrun.FieldLatencyMs:
+		return m.OldLatencyMs(ctx)
+	case sub2apiproviderprobetargetrun.FieldTrafficRequestCount:
+		return m.OldTrafficRequestCount(ctx)
+	case sub2apiproviderprobetargetrun.FieldTrafficSuccessRate:
+		return m.OldTrafficSuccessRate(ctx)
+	case sub2apiproviderprobetargetrun.FieldTrafficP95LatencyMs:
+		return m.OldTrafficP95LatencyMs(ctx)
+	case sub2apiproviderprobetargetrun.FieldErrorCategory:
+		return m.OldErrorCategory(ctx)
+	case sub2apiproviderprobetargetrun.FieldErrorMessage:
+		return m.OldErrorMessage(ctx)
+	case sub2apiproviderprobetargetrun.FieldStartedAt:
+		return m.OldStartedAt(ctx)
+	case sub2apiproviderprobetargetrun.FieldFinishedAt:
+		return m.OldFinishedAt(ctx)
+	case sub2apiproviderprobetargetrun.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown Sub2APIProviderProbeTargetRun field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *Sub2APIProviderProbeTargetRunMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case sub2apiproviderprobetargetrun.FieldTargetID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTargetID(v)
+		return nil
+	case sub2apiproviderprobetargetrun.FieldProviderID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProviderID(v)
+		return nil
+	case sub2apiproviderprobetargetrun.FieldAccountID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccountID(v)
+		return nil
+	case sub2apiproviderprobetargetrun.FieldProviderAPIKeyID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProviderAPIKeyID(v)
+		return nil
+	case sub2apiproviderprobetargetrun.FieldRemoteGroupID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRemoteGroupID(v)
+		return nil
+	case sub2apiproviderprobetargetrun.FieldRemoteGroupName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRemoteGroupName(v)
+		return nil
+	case sub2apiproviderprobetargetrun.FieldPlatform:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPlatform(v)
+		return nil
+	case sub2apiproviderprobetargetrun.FieldModelID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetModelID(v)
+		return nil
+	case sub2apiproviderprobetargetrun.FieldStatus:
+		v, ok := value.(sub2apiproviderprobetargetrun.Status)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case sub2apiproviderprobetargetrun.FieldLatencyMs:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLatencyMs(v)
+		return nil
+	case sub2apiproviderprobetargetrun.FieldTrafficRequestCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTrafficRequestCount(v)
+		return nil
+	case sub2apiproviderprobetargetrun.FieldTrafficSuccessRate:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTrafficSuccessRate(v)
+		return nil
+	case sub2apiproviderprobetargetrun.FieldTrafficP95LatencyMs:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTrafficP95LatencyMs(v)
+		return nil
+	case sub2apiproviderprobetargetrun.FieldErrorCategory:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetErrorCategory(v)
+		return nil
+	case sub2apiproviderprobetargetrun.FieldErrorMessage:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetErrorMessage(v)
+		return nil
+	case sub2apiproviderprobetargetrun.FieldStartedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStartedAt(v)
+		return nil
+	case sub2apiproviderprobetargetrun.FieldFinishedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFinishedAt(v)
+		return nil
+	case sub2apiproviderprobetargetrun.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Sub2APIProviderProbeTargetRun field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) AddedFields() []string {
+	var fields []string
+	if m.addprovider_id != nil {
+		fields = append(fields, sub2apiproviderprobetargetrun.FieldProviderID)
+	}
+	if m.addaccount_id != nil {
+		fields = append(fields, sub2apiproviderprobetargetrun.FieldAccountID)
+	}
+	if m.addprovider_api_key_id != nil {
+		fields = append(fields, sub2apiproviderprobetargetrun.FieldProviderAPIKeyID)
+	}
+	if m.addremote_group_id != nil {
+		fields = append(fields, sub2apiproviderprobetargetrun.FieldRemoteGroupID)
+	}
+	if m.addlatency_ms != nil {
+		fields = append(fields, sub2apiproviderprobetargetrun.FieldLatencyMs)
+	}
+	if m.addtraffic_request_count != nil {
+		fields = append(fields, sub2apiproviderprobetargetrun.FieldTrafficRequestCount)
+	}
+	if m.addtraffic_success_rate != nil {
+		fields = append(fields, sub2apiproviderprobetargetrun.FieldTrafficSuccessRate)
+	}
+	if m.addtraffic_p95_latency_ms != nil {
+		fields = append(fields, sub2apiproviderprobetargetrun.FieldTrafficP95LatencyMs)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *Sub2APIProviderProbeTargetRunMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case sub2apiproviderprobetargetrun.FieldProviderID:
+		return m.AddedProviderID()
+	case sub2apiproviderprobetargetrun.FieldAccountID:
+		return m.AddedAccountID()
+	case sub2apiproviderprobetargetrun.FieldProviderAPIKeyID:
+		return m.AddedProviderAPIKeyID()
+	case sub2apiproviderprobetargetrun.FieldRemoteGroupID:
+		return m.AddedRemoteGroupID()
+	case sub2apiproviderprobetargetrun.FieldLatencyMs:
+		return m.AddedLatencyMs()
+	case sub2apiproviderprobetargetrun.FieldTrafficRequestCount:
+		return m.AddedTrafficRequestCount()
+	case sub2apiproviderprobetargetrun.FieldTrafficSuccessRate:
+		return m.AddedTrafficSuccessRate()
+	case sub2apiproviderprobetargetrun.FieldTrafficP95LatencyMs:
+		return m.AddedTrafficP95LatencyMs()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *Sub2APIProviderProbeTargetRunMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case sub2apiproviderprobetargetrun.FieldProviderID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddProviderID(v)
+		return nil
+	case sub2apiproviderprobetargetrun.FieldAccountID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAccountID(v)
+		return nil
+	case sub2apiproviderprobetargetrun.FieldProviderAPIKeyID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddProviderAPIKeyID(v)
+		return nil
+	case sub2apiproviderprobetargetrun.FieldRemoteGroupID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRemoteGroupID(v)
+		return nil
+	case sub2apiproviderprobetargetrun.FieldLatencyMs:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddLatencyMs(v)
+		return nil
+	case sub2apiproviderprobetargetrun.FieldTrafficRequestCount:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTrafficRequestCount(v)
+		return nil
+	case sub2apiproviderprobetargetrun.FieldTrafficSuccessRate:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTrafficSuccessRate(v)
+		return nil
+	case sub2apiproviderprobetargetrun.FieldTrafficP95LatencyMs:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddTrafficP95LatencyMs(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Sub2APIProviderProbeTargetRun numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(sub2apiproviderprobetargetrun.FieldProviderAPIKeyID) {
+		fields = append(fields, sub2apiproviderprobetargetrun.FieldProviderAPIKeyID)
+	}
+	if m.FieldCleared(sub2apiproviderprobetargetrun.FieldRemoteGroupID) {
+		fields = append(fields, sub2apiproviderprobetargetrun.FieldRemoteGroupID)
+	}
+	if m.FieldCleared(sub2apiproviderprobetargetrun.FieldRemoteGroupName) {
+		fields = append(fields, sub2apiproviderprobetargetrun.FieldRemoteGroupName)
+	}
+	if m.FieldCleared(sub2apiproviderprobetargetrun.FieldModelID) {
+		fields = append(fields, sub2apiproviderprobetargetrun.FieldModelID)
+	}
+	if m.FieldCleared(sub2apiproviderprobetargetrun.FieldLatencyMs) {
+		fields = append(fields, sub2apiproviderprobetargetrun.FieldLatencyMs)
+	}
+	if m.FieldCleared(sub2apiproviderprobetargetrun.FieldTrafficSuccessRate) {
+		fields = append(fields, sub2apiproviderprobetargetrun.FieldTrafficSuccessRate)
+	}
+	if m.FieldCleared(sub2apiproviderprobetargetrun.FieldTrafficP95LatencyMs) {
+		fields = append(fields, sub2apiproviderprobetargetrun.FieldTrafficP95LatencyMs)
+	}
+	if m.FieldCleared(sub2apiproviderprobetargetrun.FieldErrorCategory) {
+		fields = append(fields, sub2apiproviderprobetargetrun.FieldErrorCategory)
+	}
+	if m.FieldCleared(sub2apiproviderprobetargetrun.FieldErrorMessage) {
+		fields = append(fields, sub2apiproviderprobetargetrun.FieldErrorMessage)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *Sub2APIProviderProbeTargetRunMutation) ClearField(name string) error {
+	switch name {
+	case sub2apiproviderprobetargetrun.FieldProviderAPIKeyID:
+		m.ClearProviderAPIKeyID()
+		return nil
+	case sub2apiproviderprobetargetrun.FieldRemoteGroupID:
+		m.ClearRemoteGroupID()
+		return nil
+	case sub2apiproviderprobetargetrun.FieldRemoteGroupName:
+		m.ClearRemoteGroupName()
+		return nil
+	case sub2apiproviderprobetargetrun.FieldModelID:
+		m.ClearModelID()
+		return nil
+	case sub2apiproviderprobetargetrun.FieldLatencyMs:
+		m.ClearLatencyMs()
+		return nil
+	case sub2apiproviderprobetargetrun.FieldTrafficSuccessRate:
+		m.ClearTrafficSuccessRate()
+		return nil
+	case sub2apiproviderprobetargetrun.FieldTrafficP95LatencyMs:
+		m.ClearTrafficP95LatencyMs()
+		return nil
+	case sub2apiproviderprobetargetrun.FieldErrorCategory:
+		m.ClearErrorCategory()
+		return nil
+	case sub2apiproviderprobetargetrun.FieldErrorMessage:
+		m.ClearErrorMessage()
+		return nil
+	}
+	return fmt.Errorf("unknown Sub2APIProviderProbeTargetRun nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *Sub2APIProviderProbeTargetRunMutation) ResetField(name string) error {
+	switch name {
+	case sub2apiproviderprobetargetrun.FieldTargetID:
+		m.ResetTargetID()
+		return nil
+	case sub2apiproviderprobetargetrun.FieldProviderID:
+		m.ResetProviderID()
+		return nil
+	case sub2apiproviderprobetargetrun.FieldAccountID:
+		m.ResetAccountID()
+		return nil
+	case sub2apiproviderprobetargetrun.FieldProviderAPIKeyID:
+		m.ResetProviderAPIKeyID()
+		return nil
+	case sub2apiproviderprobetargetrun.FieldRemoteGroupID:
+		m.ResetRemoteGroupID()
+		return nil
+	case sub2apiproviderprobetargetrun.FieldRemoteGroupName:
+		m.ResetRemoteGroupName()
+		return nil
+	case sub2apiproviderprobetargetrun.FieldPlatform:
+		m.ResetPlatform()
+		return nil
+	case sub2apiproviderprobetargetrun.FieldModelID:
+		m.ResetModelID()
+		return nil
+	case sub2apiproviderprobetargetrun.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case sub2apiproviderprobetargetrun.FieldLatencyMs:
+		m.ResetLatencyMs()
+		return nil
+	case sub2apiproviderprobetargetrun.FieldTrafficRequestCount:
+		m.ResetTrafficRequestCount()
+		return nil
+	case sub2apiproviderprobetargetrun.FieldTrafficSuccessRate:
+		m.ResetTrafficSuccessRate()
+		return nil
+	case sub2apiproviderprobetargetrun.FieldTrafficP95LatencyMs:
+		m.ResetTrafficP95LatencyMs()
+		return nil
+	case sub2apiproviderprobetargetrun.FieldErrorCategory:
+		m.ResetErrorCategory()
+		return nil
+	case sub2apiproviderprobetargetrun.FieldErrorMessage:
+		m.ResetErrorMessage()
+		return nil
+	case sub2apiproviderprobetargetrun.FieldStartedAt:
+		m.ResetStartedAt()
+		return nil
+	case sub2apiproviderprobetargetrun.FieldFinishedAt:
+		m.ResetFinishedAt()
+		return nil
+	case sub2apiproviderprobetargetrun.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown Sub2APIProviderProbeTargetRun field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.target != nil {
+		edges = append(edges, sub2apiproviderprobetargetrun.EdgeTarget)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case sub2apiproviderprobetargetrun.EdgeTarget:
+		if id := m.target; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedtarget {
+		edges = append(edges, sub2apiproviderprobetargetrun.EdgeTarget)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) EdgeCleared(name string) bool {
+	switch name {
+	case sub2apiproviderprobetargetrun.EdgeTarget:
+		return m.clearedtarget
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *Sub2APIProviderProbeTargetRunMutation) ClearEdge(name string) error {
+	switch name {
+	case sub2apiproviderprobetargetrun.EdgeTarget:
+		m.ClearTarget()
+		return nil
+	}
+	return fmt.Errorf("unknown Sub2APIProviderProbeTargetRun unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *Sub2APIProviderProbeTargetRunMutation) ResetEdge(name string) error {
+	switch name {
+	case sub2apiproviderprobetargetrun.EdgeTarget:
+		m.ResetTarget()
+		return nil
+	}
+	return fmt.Errorf("unknown Sub2APIProviderProbeTargetRun edge %s", name)
 }
 
 // SubscriptionPlanMutation represents an operation that mutates the SubscriptionPlan nodes in the graph.

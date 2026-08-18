@@ -38,6 +38,10 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/sub2apioptimizelog"
 	"github.com/Wei-Shaw/sub2api/ent/sub2apioptimizeschedule"
 	"github.com/Wei-Shaw/sub2api/ent/sub2apiprovider"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiproviderprobeconfig"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiproviderproberun"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiproviderprobetarget"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiproviderprobetargetrun"
 	"github.com/Wei-Shaw/sub2api/ent/subscriptionplan"
 	"github.com/Wei-Shaw/sub2api/ent/tlsfingerprintprofile"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
@@ -260,15 +264,15 @@ func init() {
 	// account.SessionWindowStatusValidator is a validator for the "session_window_status" field. It is called by the builders before save.
 	account.SessionWindowStatusValidator = accountDescSessionWindowStatus.Validators[0].(func(string) error)
 	// accountDescRemoteGroupName is the schema descriptor for remote_group_name field.
-	accountDescRemoteGroupName := accountFields[28].Descriptor()
+	accountDescRemoteGroupName := accountFields[29].Descriptor()
 	// account.RemoteGroupNameValidator is a validator for the "remote_group_name" field. It is called by the builders before save.
 	account.RemoteGroupNameValidator = accountDescRemoteGroupName.Validators[0].(func(string) error)
 	// accountDescSub2apiOptimizeEnabled is the schema descriptor for sub2api_optimize_enabled field.
-	accountDescSub2apiOptimizeEnabled := accountFields[31].Descriptor()
+	accountDescSub2apiOptimizeEnabled := accountFields[32].Descriptor()
 	// account.DefaultSub2apiOptimizeEnabled holds the default value on creation for the sub2api_optimize_enabled field.
 	account.DefaultSub2apiOptimizeEnabled = accountDescSub2apiOptimizeEnabled.Default.(bool)
 	// accountDescSub2apiTestModel is the schema descriptor for sub2api_test_model field.
-	accountDescSub2apiTestModel := accountFields[34].Descriptor()
+	accountDescSub2apiTestModel := accountFields[35].Descriptor()
 	// account.Sub2apiTestModelValidator is a validator for the "sub2api_test_model" field. It is called by the builders before save.
 	account.Sub2apiTestModelValidator = accountDescSub2apiTestModel.Validators[0].(func(string) error)
 	accountgroupFields := schema.AccountGroup{}.Fields()
@@ -1844,26 +1848,32 @@ func init() {
 	sub2apioptimizelog.DefaultUpdatedAt = sub2apioptimizelogDescUpdatedAt.Default.(func() time.Time)
 	// sub2apioptimizelog.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	sub2apioptimizelog.UpdateDefaultUpdatedAt = sub2apioptimizelogDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// sub2apioptimizelogDescTrigger is the schema descriptor for trigger field.
+	sub2apioptimizelogDescTrigger := sub2apioptimizelogFields[2].Descriptor()
+	// sub2apioptimizelog.DefaultTrigger holds the default value on creation for the trigger field.
+	sub2apioptimizelog.DefaultTrigger = sub2apioptimizelogDescTrigger.Default.(string)
+	// sub2apioptimizelog.TriggerValidator is a validator for the "trigger" field. It is called by the builders before save.
+	sub2apioptimizelog.TriggerValidator = sub2apioptimizelogDescTrigger.Validators[0].(func(string) error)
 	// sub2apioptimizelogDescStatus is the schema descriptor for status field.
-	sub2apioptimizelogDescStatus := sub2apioptimizelogFields[1].Descriptor()
+	sub2apioptimizelogDescStatus := sub2apioptimizelogFields[3].Descriptor()
 	// sub2apioptimizelog.DefaultStatus holds the default value on creation for the status field.
 	sub2apioptimizelog.DefaultStatus = sub2apioptimizelogDescStatus.Default.(string)
 	// sub2apioptimizelog.StatusValidator is a validator for the "status" field. It is called by the builders before save.
 	sub2apioptimizelog.StatusValidator = sub2apioptimizelogDescStatus.Validators[0].(func(string) error)
 	// sub2apioptimizelogDescTotal is the schema descriptor for total field.
-	sub2apioptimizelogDescTotal := sub2apioptimizelogFields[2].Descriptor()
+	sub2apioptimizelogDescTotal := sub2apioptimizelogFields[4].Descriptor()
 	// sub2apioptimizelog.DefaultTotal holds the default value on creation for the total field.
 	sub2apioptimizelog.DefaultTotal = sub2apioptimizelogDescTotal.Default.(int)
 	// sub2apioptimizelogDescOptimized is the schema descriptor for optimized field.
-	sub2apioptimizelogDescOptimized := sub2apioptimizelogFields[3].Descriptor()
+	sub2apioptimizelogDescOptimized := sub2apioptimizelogFields[5].Descriptor()
 	// sub2apioptimizelog.DefaultOptimized holds the default value on creation for the optimized field.
 	sub2apioptimizelog.DefaultOptimized = sub2apioptimizelogDescOptimized.Default.(int)
 	// sub2apioptimizelogDescSkipped is the schema descriptor for skipped field.
-	sub2apioptimizelogDescSkipped := sub2apioptimizelogFields[4].Descriptor()
+	sub2apioptimizelogDescSkipped := sub2apioptimizelogFields[6].Descriptor()
 	// sub2apioptimizelog.DefaultSkipped holds the default value on creation for the skipped field.
 	sub2apioptimizelog.DefaultSkipped = sub2apioptimizelogDescSkipped.Default.(int)
 	// sub2apioptimizelogDescFailed is the schema descriptor for failed field.
-	sub2apioptimizelogDescFailed := sub2apioptimizelogFields[5].Descriptor()
+	sub2apioptimizelogDescFailed := sub2apioptimizelogFields[7].Descriptor()
 	// sub2apioptimizelog.DefaultFailed holds the default value on creation for the failed field.
 	sub2apioptimizelog.DefaultFailed = sub2apioptimizelogDescFailed.Default.(int)
 	sub2apioptimizescheduleMixin := schema.Sub2APIOptimizeSchedule{}.Mixin()
@@ -1971,7 +1981,7 @@ func init() {
 	// sub2apiprovider.StatusValidator is a validator for the "status" field. It is called by the builders before save.
 	sub2apiprovider.StatusValidator = sub2apiproviderDescStatus.Validators[0].(func(string) error)
 	// sub2apiproviderDescEmail is the schema descriptor for email field.
-	sub2apiproviderDescEmail := sub2apiproviderFields[5].Descriptor()
+	sub2apiproviderDescEmail := sub2apiproviderFields[6].Descriptor()
 	// sub2apiprovider.EmailValidator is a validator for the "email" field. It is called by the builders before save.
 	sub2apiprovider.EmailValidator = func() func(string) error {
 		validators := sub2apiproviderDescEmail.Validators
@@ -1989,21 +1999,235 @@ func init() {
 		}
 	}()
 	// sub2apiproviderDescPasswordEncrypted is the schema descriptor for password_encrypted field.
-	sub2apiproviderDescPasswordEncrypted := sub2apiproviderFields[6].Descriptor()
-	// sub2apiprovider.PasswordEncryptedValidator is a validator for the "password_encrypted" field. It is called by the builders before save.
-	sub2apiprovider.PasswordEncryptedValidator = sub2apiproviderDescPasswordEncrypted.Validators[0].(func(string) error)
+	sub2apiproviderDescPasswordEncrypted := sub2apiproviderFields[7].Descriptor()
+	// sub2apiprovider.DefaultPasswordEncrypted holds the default value on creation for the password_encrypted field.
+	sub2apiprovider.DefaultPasswordEncrypted = sub2apiproviderDescPasswordEncrypted.Default.(string)
+	// sub2apiproviderDescAuthMode is the schema descriptor for auth_mode field.
+	sub2apiproviderDescAuthMode := sub2apiproviderFields[8].Descriptor()
+	// sub2apiprovider.DefaultAuthMode holds the default value on creation for the auth_mode field.
+	sub2apiprovider.DefaultAuthMode = sub2apiproviderDescAuthMode.Default.(string)
+	// sub2apiprovider.AuthModeValidator is a validator for the "auth_mode" field. It is called by the builders before save.
+	sub2apiprovider.AuthModeValidator = sub2apiproviderDescAuthMode.Validators[0].(func(string) error)
 	// sub2apiproviderDescAPIPathKeys is the schema descriptor for api_path_keys field.
-	sub2apiproviderDescAPIPathKeys := sub2apiproviderFields[7].Descriptor()
+	sub2apiproviderDescAPIPathKeys := sub2apiproviderFields[14].Descriptor()
 	// sub2apiprovider.APIPathKeysValidator is a validator for the "api_path_keys" field. It is called by the builders before save.
 	sub2apiprovider.APIPathKeysValidator = sub2apiproviderDescAPIPathKeys.Validators[0].(func(string) error)
 	// sub2apiproviderDescAPIPathGroups is the schema descriptor for api_path_groups field.
-	sub2apiproviderDescAPIPathGroups := sub2apiproviderFields[8].Descriptor()
+	sub2apiproviderDescAPIPathGroups := sub2apiproviderFields[15].Descriptor()
 	// sub2apiprovider.APIPathGroupsValidator is a validator for the "api_path_groups" field. It is called by the builders before save.
 	sub2apiprovider.APIPathGroupsValidator = sub2apiproviderDescAPIPathGroups.Validators[0].(func(string) error)
 	// sub2apiproviderDescLastSyncStatus is the schema descriptor for last_sync_status field.
-	sub2apiproviderDescLastSyncStatus := sub2apiproviderFields[10].Descriptor()
+	sub2apiproviderDescLastSyncStatus := sub2apiproviderFields[17].Descriptor()
 	// sub2apiprovider.LastSyncStatusValidator is a validator for the "last_sync_status" field. It is called by the builders before save.
 	sub2apiprovider.LastSyncStatusValidator = sub2apiproviderDescLastSyncStatus.Validators[0].(func(string) error)
+	sub2apiproviderprobeconfigMixin := schema.Sub2APIProviderProbeConfig{}.Mixin()
+	sub2apiproviderprobeconfigMixinFields0 := sub2apiproviderprobeconfigMixin[0].Fields()
+	_ = sub2apiproviderprobeconfigMixinFields0
+	sub2apiproviderprobeconfigFields := schema.Sub2APIProviderProbeConfig{}.Fields()
+	_ = sub2apiproviderprobeconfigFields
+	// sub2apiproviderprobeconfigDescCreatedAt is the schema descriptor for created_at field.
+	sub2apiproviderprobeconfigDescCreatedAt := sub2apiproviderprobeconfigMixinFields0[0].Descriptor()
+	// sub2apiproviderprobeconfig.DefaultCreatedAt holds the default value on creation for the created_at field.
+	sub2apiproviderprobeconfig.DefaultCreatedAt = sub2apiproviderprobeconfigDescCreatedAt.Default.(func() time.Time)
+	// sub2apiproviderprobeconfigDescUpdatedAt is the schema descriptor for updated_at field.
+	sub2apiproviderprobeconfigDescUpdatedAt := sub2apiproviderprobeconfigMixinFields0[1].Descriptor()
+	// sub2apiproviderprobeconfig.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	sub2apiproviderprobeconfig.DefaultUpdatedAt = sub2apiproviderprobeconfigDescUpdatedAt.Default.(func() time.Time)
+	// sub2apiproviderprobeconfig.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	sub2apiproviderprobeconfig.UpdateDefaultUpdatedAt = sub2apiproviderprobeconfigDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// sub2apiproviderprobeconfigDescControlEnabled is the schema descriptor for control_enabled field.
+	sub2apiproviderprobeconfigDescControlEnabled := sub2apiproviderprobeconfigFields[1].Descriptor()
+	// sub2apiproviderprobeconfig.DefaultControlEnabled holds the default value on creation for the control_enabled field.
+	sub2apiproviderprobeconfig.DefaultControlEnabled = sub2apiproviderprobeconfigDescControlEnabled.Default.(bool)
+	// sub2apiproviderprobeconfigDescControlIntervalSeconds is the schema descriptor for control_interval_seconds field.
+	sub2apiproviderprobeconfigDescControlIntervalSeconds := sub2apiproviderprobeconfigFields[2].Descriptor()
+	// sub2apiproviderprobeconfig.DefaultControlIntervalSeconds holds the default value on creation for the control_interval_seconds field.
+	sub2apiproviderprobeconfig.DefaultControlIntervalSeconds = sub2apiproviderprobeconfigDescControlIntervalSeconds.Default.(int)
+	// sub2apiproviderprobeconfig.ControlIntervalSecondsValidator is a validator for the "control_interval_seconds" field. It is called by the builders before save.
+	sub2apiproviderprobeconfig.ControlIntervalSecondsValidator = sub2apiproviderprobeconfigDescControlIntervalSeconds.Validators[0].(func(int) error)
+	// sub2apiproviderprobeconfigDescDataEnabled is the schema descriptor for data_enabled field.
+	sub2apiproviderprobeconfigDescDataEnabled := sub2apiproviderprobeconfigFields[3].Descriptor()
+	// sub2apiproviderprobeconfig.DefaultDataEnabled holds the default value on creation for the data_enabled field.
+	sub2apiproviderprobeconfig.DefaultDataEnabled = sub2apiproviderprobeconfigDescDataEnabled.Default.(bool)
+	// sub2apiproviderprobeconfigDescDataIntervalSeconds is the schema descriptor for data_interval_seconds field.
+	sub2apiproviderprobeconfigDescDataIntervalSeconds := sub2apiproviderprobeconfigFields[4].Descriptor()
+	// sub2apiproviderprobeconfig.DefaultDataIntervalSeconds holds the default value on creation for the data_interval_seconds field.
+	sub2apiproviderprobeconfig.DefaultDataIntervalSeconds = sub2apiproviderprobeconfigDescDataIntervalSeconds.Default.(int)
+	// sub2apiproviderprobeconfig.DataIntervalSecondsValidator is a validator for the "data_interval_seconds" field. It is called by the builders before save.
+	sub2apiproviderprobeconfig.DataIntervalSecondsValidator = sub2apiproviderprobeconfigDescDataIntervalSeconds.Validators[0].(func(int) error)
+	// sub2apiproviderprobeconfigDescSelectedAccountIds is the schema descriptor for selected_account_ids field.
+	sub2apiproviderprobeconfigDescSelectedAccountIds := sub2apiproviderprobeconfigFields[5].Descriptor()
+	// sub2apiproviderprobeconfig.DefaultSelectedAccountIds holds the default value on creation for the selected_account_ids field.
+	sub2apiproviderprobeconfig.DefaultSelectedAccountIds = sub2apiproviderprobeconfigDescSelectedAccountIds.Default.([]int64)
+	// sub2apiproviderprobeconfigDescAllowMediaProbe is the schema descriptor for allow_media_probe field.
+	sub2apiproviderprobeconfigDescAllowMediaProbe := sub2apiproviderprobeconfigFields[6].Descriptor()
+	// sub2apiproviderprobeconfig.DefaultAllowMediaProbe holds the default value on creation for the allow_media_probe field.
+	sub2apiproviderprobeconfig.DefaultAllowMediaProbe = sub2apiproviderprobeconfigDescAllowMediaProbe.Default.(bool)
+	// sub2apiproviderprobeconfigDescTimeoutSeconds is the schema descriptor for timeout_seconds field.
+	sub2apiproviderprobeconfigDescTimeoutSeconds := sub2apiproviderprobeconfigFields[7].Descriptor()
+	// sub2apiproviderprobeconfig.DefaultTimeoutSeconds holds the default value on creation for the timeout_seconds field.
+	sub2apiproviderprobeconfig.DefaultTimeoutSeconds = sub2apiproviderprobeconfigDescTimeoutSeconds.Default.(int)
+	// sub2apiproviderprobeconfig.TimeoutSecondsValidator is a validator for the "timeout_seconds" field. It is called by the builders before save.
+	sub2apiproviderprobeconfig.TimeoutSecondsValidator = sub2apiproviderprobeconfigDescTimeoutSeconds.Validators[0].(func(int) error)
+	// sub2apiproviderprobeconfigDescDegradedLatencyMs is the schema descriptor for degraded_latency_ms field.
+	sub2apiproviderprobeconfigDescDegradedLatencyMs := sub2apiproviderprobeconfigFields[8].Descriptor()
+	// sub2apiproviderprobeconfig.DefaultDegradedLatencyMs holds the default value on creation for the degraded_latency_ms field.
+	sub2apiproviderprobeconfig.DefaultDegradedLatencyMs = sub2apiproviderprobeconfigDescDegradedLatencyMs.Default.(int)
+	// sub2apiproviderprobeconfig.DegradedLatencyMsValidator is a validator for the "degraded_latency_ms" field. It is called by the builders before save.
+	sub2apiproviderprobeconfig.DegradedLatencyMsValidator = sub2apiproviderprobeconfigDescDegradedLatencyMs.Validators[0].(func(int) error)
+	// sub2apiproviderprobeconfigDescFailureThreshold is the schema descriptor for failure_threshold field.
+	sub2apiproviderprobeconfigDescFailureThreshold := sub2apiproviderprobeconfigFields[9].Descriptor()
+	// sub2apiproviderprobeconfig.DefaultFailureThreshold holds the default value on creation for the failure_threshold field.
+	sub2apiproviderprobeconfig.DefaultFailureThreshold = sub2apiproviderprobeconfigDescFailureThreshold.Default.(int)
+	// sub2apiproviderprobeconfig.FailureThresholdValidator is a validator for the "failure_threshold" field. It is called by the builders before save.
+	sub2apiproviderprobeconfig.FailureThresholdValidator = sub2apiproviderprobeconfigDescFailureThreshold.Validators[0].(func(int) error)
+	// sub2apiproviderprobeconfigDescRecoveryThreshold is the schema descriptor for recovery_threshold field.
+	sub2apiproviderprobeconfigDescRecoveryThreshold := sub2apiproviderprobeconfigFields[10].Descriptor()
+	// sub2apiproviderprobeconfig.DefaultRecoveryThreshold holds the default value on creation for the recovery_threshold field.
+	sub2apiproviderprobeconfig.DefaultRecoveryThreshold = sub2apiproviderprobeconfigDescRecoveryThreshold.Default.(int)
+	// sub2apiproviderprobeconfig.RecoveryThresholdValidator is a validator for the "recovery_threshold" field. It is called by the builders before save.
+	sub2apiproviderprobeconfig.RecoveryThresholdValidator = sub2apiproviderprobeconfigDescRecoveryThreshold.Validators[0].(func(int) error)
+	sub2apiproviderproberunFields := schema.Sub2APIProviderProbeRun{}.Fields()
+	_ = sub2apiproviderproberunFields
+	// sub2apiproviderproberunDescDataProbeCount is the schema descriptor for data_probe_count field.
+	sub2apiproviderproberunDescDataProbeCount := sub2apiproviderproberunFields[9].Descriptor()
+	// sub2apiproviderproberun.DefaultDataProbeCount holds the default value on creation for the data_probe_count field.
+	sub2apiproviderproberun.DefaultDataProbeCount = sub2apiproviderproberunDescDataProbeCount.Default.(int)
+	// sub2apiproviderproberunDescDataProbeSuccess is the schema descriptor for data_probe_success field.
+	sub2apiproviderproberunDescDataProbeSuccess := sub2apiproviderproberunFields[10].Descriptor()
+	// sub2apiproviderproberun.DefaultDataProbeSuccess holds the default value on creation for the data_probe_success field.
+	sub2apiproviderproberun.DefaultDataProbeSuccess = sub2apiproviderproberunDescDataProbeSuccess.Default.(int)
+	// sub2apiproviderproberunDescDataProbeFailed is the schema descriptor for data_probe_failed field.
+	sub2apiproviderproberunDescDataProbeFailed := sub2apiproviderproberunFields[11].Descriptor()
+	// sub2apiproviderproberun.DefaultDataProbeFailed holds the default value on creation for the data_probe_failed field.
+	sub2apiproviderproberun.DefaultDataProbeFailed = sub2apiproviderproberunDescDataProbeFailed.Default.(int)
+	// sub2apiproviderproberunDescTrafficRequestCount is the schema descriptor for traffic_request_count field.
+	sub2apiproviderproberunDescTrafficRequestCount := sub2apiproviderproberunFields[12].Descriptor()
+	// sub2apiproviderproberun.DefaultTrafficRequestCount holds the default value on creation for the traffic_request_count field.
+	sub2apiproviderproberun.DefaultTrafficRequestCount = sub2apiproviderproberunDescTrafficRequestCount.Default.(int)
+	// sub2apiproviderproberunDescErrorCategory is the schema descriptor for error_category field.
+	sub2apiproviderproberunDescErrorCategory := sub2apiproviderproberunFields[15].Descriptor()
+	// sub2apiproviderproberun.ErrorCategoryValidator is a validator for the "error_category" field. It is called by the builders before save.
+	sub2apiproviderproberun.ErrorCategoryValidator = sub2apiproviderproberunDescErrorCategory.Validators[0].(func(string) error)
+	// sub2apiproviderproberunDescDetails is the schema descriptor for details field.
+	sub2apiproviderproberunDescDetails := sub2apiproviderproberunFields[17].Descriptor()
+	// sub2apiproviderproberun.DefaultDetails holds the default value on creation for the details field.
+	sub2apiproviderproberun.DefaultDetails = sub2apiproviderproberunDescDetails.Default.(map[string]interface{})
+	// sub2apiproviderproberunDescStartedAt is the schema descriptor for started_at field.
+	sub2apiproviderproberunDescStartedAt := sub2apiproviderproberunFields[18].Descriptor()
+	// sub2apiproviderproberun.DefaultStartedAt holds the default value on creation for the started_at field.
+	sub2apiproviderproberun.DefaultStartedAt = sub2apiproviderproberunDescStartedAt.Default.(func() time.Time)
+	// sub2apiproviderproberunDescFinishedAt is the schema descriptor for finished_at field.
+	sub2apiproviderproberunDescFinishedAt := sub2apiproviderproberunFields[19].Descriptor()
+	// sub2apiproviderproberun.DefaultFinishedAt holds the default value on creation for the finished_at field.
+	sub2apiproviderproberun.DefaultFinishedAt = sub2apiproviderproberunDescFinishedAt.Default.(func() time.Time)
+	// sub2apiproviderproberunDescCreatedAt is the schema descriptor for created_at field.
+	sub2apiproviderproberunDescCreatedAt := sub2apiproviderproberunFields[20].Descriptor()
+	// sub2apiproviderproberun.DefaultCreatedAt holds the default value on creation for the created_at field.
+	sub2apiproviderproberun.DefaultCreatedAt = sub2apiproviderproberunDescCreatedAt.Default.(func() time.Time)
+	sub2apiproviderprobetargetMixin := schema.Sub2APIProviderProbeTarget{}.Mixin()
+	sub2apiproviderprobetargetMixinFields0 := sub2apiproviderprobetargetMixin[0].Fields()
+	_ = sub2apiproviderprobetargetMixinFields0
+	sub2apiproviderprobetargetFields := schema.Sub2APIProviderProbeTarget{}.Fields()
+	_ = sub2apiproviderprobetargetFields
+	// sub2apiproviderprobetargetDescCreatedAt is the schema descriptor for created_at field.
+	sub2apiproviderprobetargetDescCreatedAt := sub2apiproviderprobetargetMixinFields0[0].Descriptor()
+	// sub2apiproviderprobetarget.DefaultCreatedAt holds the default value on creation for the created_at field.
+	sub2apiproviderprobetarget.DefaultCreatedAt = sub2apiproviderprobetargetDescCreatedAt.Default.(func() time.Time)
+	// sub2apiproviderprobetargetDescUpdatedAt is the schema descriptor for updated_at field.
+	sub2apiproviderprobetargetDescUpdatedAt := sub2apiproviderprobetargetMixinFields0[1].Descriptor()
+	// sub2apiproviderprobetarget.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	sub2apiproviderprobetarget.DefaultUpdatedAt = sub2apiproviderprobetargetDescUpdatedAt.Default.(func() time.Time)
+	// sub2apiproviderprobetarget.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	sub2apiproviderprobetarget.UpdateDefaultUpdatedAt = sub2apiproviderprobetargetDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// sub2apiproviderprobetargetDescRemoteGroupName is the schema descriptor for remote_group_name field.
+	sub2apiproviderprobetargetDescRemoteGroupName := sub2apiproviderprobetargetFields[4].Descriptor()
+	// sub2apiproviderprobetarget.RemoteGroupNameValidator is a validator for the "remote_group_name" field. It is called by the builders before save.
+	sub2apiproviderprobetarget.RemoteGroupNameValidator = sub2apiproviderprobetargetDescRemoteGroupName.Validators[0].(func(string) error)
+	// sub2apiproviderprobetargetDescPlatform is the schema descriptor for platform field.
+	sub2apiproviderprobetargetDescPlatform := sub2apiproviderprobetargetFields[5].Descriptor()
+	// sub2apiproviderprobetarget.DefaultPlatform holds the default value on creation for the platform field.
+	sub2apiproviderprobetarget.DefaultPlatform = sub2apiproviderprobetargetDescPlatform.Default.(string)
+	// sub2apiproviderprobetarget.PlatformValidator is a validator for the "platform" field. It is called by the builders before save.
+	sub2apiproviderprobetarget.PlatformValidator = sub2apiproviderprobetargetDescPlatform.Validators[0].(func(string) error)
+	// sub2apiproviderprobetargetDescEnabled is the schema descriptor for enabled field.
+	sub2apiproviderprobetargetDescEnabled := sub2apiproviderprobetargetFields[6].Descriptor()
+	// sub2apiproviderprobetarget.DefaultEnabled holds the default value on creation for the enabled field.
+	sub2apiproviderprobetarget.DefaultEnabled = sub2apiproviderprobetargetDescEnabled.Default.(bool)
+	// sub2apiproviderprobetargetDescIntervalSeconds is the schema descriptor for interval_seconds field.
+	sub2apiproviderprobetargetDescIntervalSeconds := sub2apiproviderprobetargetFields[7].Descriptor()
+	// sub2apiproviderprobetarget.DefaultIntervalSeconds holds the default value on creation for the interval_seconds field.
+	sub2apiproviderprobetarget.DefaultIntervalSeconds = sub2apiproviderprobetargetDescIntervalSeconds.Default.(int)
+	// sub2apiproviderprobetarget.IntervalSecondsValidator is a validator for the "interval_seconds" field. It is called by the builders before save.
+	sub2apiproviderprobetarget.IntervalSecondsValidator = sub2apiproviderprobetargetDescIntervalSeconds.Validators[0].(func(int) error)
+	// sub2apiproviderprobetargetDescTestModel is the schema descriptor for test_model field.
+	sub2apiproviderprobetargetDescTestModel := sub2apiproviderprobetargetFields[8].Descriptor()
+	// sub2apiproviderprobetarget.TestModelValidator is a validator for the "test_model" field. It is called by the builders before save.
+	sub2apiproviderprobetarget.TestModelValidator = sub2apiproviderprobetargetDescTestModel.Validators[0].(func(string) error)
+	// sub2apiproviderprobetargetDescAllowMediaProbe is the schema descriptor for allow_media_probe field.
+	sub2apiproviderprobetargetDescAllowMediaProbe := sub2apiproviderprobetargetFields[9].Descriptor()
+	// sub2apiproviderprobetarget.DefaultAllowMediaProbe holds the default value on creation for the allow_media_probe field.
+	sub2apiproviderprobetarget.DefaultAllowMediaProbe = sub2apiproviderprobetargetDescAllowMediaProbe.Default.(bool)
+	// sub2apiproviderprobetargetDescTimeoutSeconds is the schema descriptor for timeout_seconds field.
+	sub2apiproviderprobetargetDescTimeoutSeconds := sub2apiproviderprobetargetFields[10].Descriptor()
+	// sub2apiproviderprobetarget.DefaultTimeoutSeconds holds the default value on creation for the timeout_seconds field.
+	sub2apiproviderprobetarget.DefaultTimeoutSeconds = sub2apiproviderprobetargetDescTimeoutSeconds.Default.(int)
+	// sub2apiproviderprobetarget.TimeoutSecondsValidator is a validator for the "timeout_seconds" field. It is called by the builders before save.
+	sub2apiproviderprobetarget.TimeoutSecondsValidator = sub2apiproviderprobetargetDescTimeoutSeconds.Validators[0].(func(int) error)
+	// sub2apiproviderprobetargetDescDegradedLatencyMs is the schema descriptor for degraded_latency_ms field.
+	sub2apiproviderprobetargetDescDegradedLatencyMs := sub2apiproviderprobetargetFields[11].Descriptor()
+	// sub2apiproviderprobetarget.DefaultDegradedLatencyMs holds the default value on creation for the degraded_latency_ms field.
+	sub2apiproviderprobetarget.DefaultDegradedLatencyMs = sub2apiproviderprobetargetDescDegradedLatencyMs.Default.(int)
+	// sub2apiproviderprobetarget.DegradedLatencyMsValidator is a validator for the "degraded_latency_ms" field. It is called by the builders before save.
+	sub2apiproviderprobetarget.DegradedLatencyMsValidator = sub2apiproviderprobetargetDescDegradedLatencyMs.Validators[0].(func(int) error)
+	// sub2apiproviderprobetargetDescFailureThreshold is the schema descriptor for failure_threshold field.
+	sub2apiproviderprobetargetDescFailureThreshold := sub2apiproviderprobetargetFields[12].Descriptor()
+	// sub2apiproviderprobetarget.DefaultFailureThreshold holds the default value on creation for the failure_threshold field.
+	sub2apiproviderprobetarget.DefaultFailureThreshold = sub2apiproviderprobetargetDescFailureThreshold.Default.(int)
+	// sub2apiproviderprobetarget.FailureThresholdValidator is a validator for the "failure_threshold" field. It is called by the builders before save.
+	sub2apiproviderprobetarget.FailureThresholdValidator = sub2apiproviderprobetargetDescFailureThreshold.Validators[0].(func(int) error)
+	// sub2apiproviderprobetargetDescRecoveryThreshold is the schema descriptor for recovery_threshold field.
+	sub2apiproviderprobetargetDescRecoveryThreshold := sub2apiproviderprobetargetFields[13].Descriptor()
+	// sub2apiproviderprobetarget.DefaultRecoveryThreshold holds the default value on creation for the recovery_threshold field.
+	sub2apiproviderprobetarget.DefaultRecoveryThreshold = sub2apiproviderprobetargetDescRecoveryThreshold.Default.(int)
+	// sub2apiproviderprobetarget.RecoveryThresholdValidator is a validator for the "recovery_threshold" field. It is called by the builders before save.
+	sub2apiproviderprobetarget.RecoveryThresholdValidator = sub2apiproviderprobetargetDescRecoveryThreshold.Validators[0].(func(int) error)
+	sub2apiproviderprobetargetrunFields := schema.Sub2APIProviderProbeTargetRun{}.Fields()
+	_ = sub2apiproviderprobetargetrunFields
+	// sub2apiproviderprobetargetrunDescRemoteGroupName is the schema descriptor for remote_group_name field.
+	sub2apiproviderprobetargetrunDescRemoteGroupName := sub2apiproviderprobetargetrunFields[5].Descriptor()
+	// sub2apiproviderprobetargetrun.RemoteGroupNameValidator is a validator for the "remote_group_name" field. It is called by the builders before save.
+	sub2apiproviderprobetargetrun.RemoteGroupNameValidator = sub2apiproviderprobetargetrunDescRemoteGroupName.Validators[0].(func(string) error)
+	// sub2apiproviderprobetargetrunDescPlatform is the schema descriptor for platform field.
+	sub2apiproviderprobetargetrunDescPlatform := sub2apiproviderprobetargetrunFields[6].Descriptor()
+	// sub2apiproviderprobetargetrun.DefaultPlatform holds the default value on creation for the platform field.
+	sub2apiproviderprobetargetrun.DefaultPlatform = sub2apiproviderprobetargetrunDescPlatform.Default.(string)
+	// sub2apiproviderprobetargetrun.PlatformValidator is a validator for the "platform" field. It is called by the builders before save.
+	sub2apiproviderprobetargetrun.PlatformValidator = sub2apiproviderprobetargetrunDescPlatform.Validators[0].(func(string) error)
+	// sub2apiproviderprobetargetrunDescModelID is the schema descriptor for model_id field.
+	sub2apiproviderprobetargetrunDescModelID := sub2apiproviderprobetargetrunFields[7].Descriptor()
+	// sub2apiproviderprobetargetrun.ModelIDValidator is a validator for the "model_id" field. It is called by the builders before save.
+	sub2apiproviderprobetargetrun.ModelIDValidator = sub2apiproviderprobetargetrunDescModelID.Validators[0].(func(string) error)
+	// sub2apiproviderprobetargetrunDescTrafficRequestCount is the schema descriptor for traffic_request_count field.
+	sub2apiproviderprobetargetrunDescTrafficRequestCount := sub2apiproviderprobetargetrunFields[10].Descriptor()
+	// sub2apiproviderprobetargetrun.DefaultTrafficRequestCount holds the default value on creation for the traffic_request_count field.
+	sub2apiproviderprobetargetrun.DefaultTrafficRequestCount = sub2apiproviderprobetargetrunDescTrafficRequestCount.Default.(int)
+	// sub2apiproviderprobetargetrunDescErrorCategory is the schema descriptor for error_category field.
+	sub2apiproviderprobetargetrunDescErrorCategory := sub2apiproviderprobetargetrunFields[13].Descriptor()
+	// sub2apiproviderprobetargetrun.ErrorCategoryValidator is a validator for the "error_category" field. It is called by the builders before save.
+	sub2apiproviderprobetargetrun.ErrorCategoryValidator = sub2apiproviderprobetargetrunDescErrorCategory.Validators[0].(func(string) error)
+	// sub2apiproviderprobetargetrunDescStartedAt is the schema descriptor for started_at field.
+	sub2apiproviderprobetargetrunDescStartedAt := sub2apiproviderprobetargetrunFields[15].Descriptor()
+	// sub2apiproviderprobetargetrun.DefaultStartedAt holds the default value on creation for the started_at field.
+	sub2apiproviderprobetargetrun.DefaultStartedAt = sub2apiproviderprobetargetrunDescStartedAt.Default.(func() time.Time)
+	// sub2apiproviderprobetargetrunDescFinishedAt is the schema descriptor for finished_at field.
+	sub2apiproviderprobetargetrunDescFinishedAt := sub2apiproviderprobetargetrunFields[16].Descriptor()
+	// sub2apiproviderprobetargetrun.DefaultFinishedAt holds the default value on creation for the finished_at field.
+	sub2apiproviderprobetargetrun.DefaultFinishedAt = sub2apiproviderprobetargetrunDescFinishedAt.Default.(func() time.Time)
+	// sub2apiproviderprobetargetrunDescCreatedAt is the schema descriptor for created_at field.
+	sub2apiproviderprobetargetrunDescCreatedAt := sub2apiproviderprobetargetrunFields[17].Descriptor()
+	// sub2apiproviderprobetargetrun.DefaultCreatedAt holds the default value on creation for the created_at field.
+	sub2apiproviderprobetargetrun.DefaultCreatedAt = sub2apiproviderprobetargetrunDescCreatedAt.Default.(func() time.Time)
 	subscriptionplanFields := schema.SubscriptionPlan{}.Fields()
 	_ = subscriptionplanFields
 	// subscriptionplanDescName is the schema descriptor for name field.

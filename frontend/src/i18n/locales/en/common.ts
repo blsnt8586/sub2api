@@ -176,6 +176,7 @@ export default {
     modelPlaza: 'Model Plaza',
     subscriptions: 'Subscriptions',
     accounts: 'Accounts',
+    sub2apiProviders: 'Upstream Providers',
     proxies: 'Proxies',
     redeemCodes: 'Redeem Codes',
     ops: 'Ops',
@@ -205,6 +206,7 @@ export default {
     contentModeration: 'Content Moderation',
     promptAudit: 'Prompt Audit',
     auditLogs: 'Audit Logs',
+    codexRadar: 'Codex Radar',
   },
 
   // Auth
@@ -448,4 +450,28 @@ export default {
   },
 
   // Dashboard
+  codexRadar: {
+    title: 'Codex Radar',
+    subtitle: 'Owner recommendations and comprehensive intelligence',
+    recommendations: 'Owner recommendations',
+    intelligence: 'Comprehensive intelligence',
+    source: 'Source: codexradar.com',
+    sourceLink: 'View source',
+    refresh: 'Refresh data',
+    hourly: 'Synced every hour',
+    updatedAt: 'Updated {time}',
+    fetchedAt: 'Cached at',
+    unavailable: 'No radar data available',
+    loadError: 'Unable to load radar data. Please try again later.',
+    imageAlt: 'Legacy Codex Radar summary image',
+    model: 'Model', effort: 'Effort', iq: 'IQ', passed: 'Pass rate',
+    duration: 'Avg. duration', cost: 'Avg. cost', samples24h: '24h samples',
+    samples: 'Samples', noData: 'No data',
+    disclaimer: {
+      title: 'Third-party data',
+      body: 'Data comes from the public Codex Radar site. This platform only caches and displays it and does not guarantee accuracy.',
+      viewSource: 'View source',
+      attributionFallback: 'Data from Codex Radar codexradar.com',
+    },
+  },
 }

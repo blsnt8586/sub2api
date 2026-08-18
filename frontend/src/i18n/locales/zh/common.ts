@@ -176,6 +176,7 @@ export default {
     modelPlaza: '模型广场',
     subscriptions: '订阅管理',
     accounts: '账号管理',
+    sub2apiProviders: '上游管理',
     proxies: 'IP管理',
     redeemCodes: '兑换码',
     ops: '运维监控',
@@ -205,6 +206,7 @@ export default {
     contentModeration: '内容审核',
     promptAudit: '提示词审计',
     auditLogs: '操作日志',
+    codexRadar: 'Codex 雷达',
   },
 
   // Auth
@@ -447,4 +449,28 @@ export default {
   },
 
   // Dashboard
+  codexRadar: {
+    title: 'Codex 雷达',
+    subtitle: '站长推荐与综合智能',
+    recommendations: '站长推荐',
+    intelligence: '综合智能',
+    source: '数据来源 codexradar.com',
+    sourceLink: '查看原站',
+    refresh: '刷新数据',
+    hourly: '每小时自动同步',
+    updatedAt: '更新于 {time}',
+    fetchedAt: '缓存时间',
+    unavailable: '暂无雷达数据',
+    loadError: '雷达数据加载失败，请稍后重试',
+    imageAlt: 'Codex 雷达旧版摘要图',
+    model: '模型', effort: '推理强度', iq: 'IQ', passed: '通过率',
+    duration: '平均耗时', cost: '平均费用', samples24h: '24 小时样本',
+    samples: '样本', noData: '暂无数据',
+    disclaimer: {
+      title: '第三方数据说明',
+      body: '数据来自公开的 Codex 雷达站点，本平台仅做代理缓存和展示，不保证数据准确性。',
+      viewSource: '查看原站',
+      attributionFallback: '数据来自 Codex 雷达 codexradar.com',
+    },
+  },
 }

@@ -5,30 +5,58 @@
 
 import { i18n, getLocale } from '@/i18n'
 
+type RelativeTimeUnit = 'second' | 'minute' | 'hour' | 'day'
+
+function translateRelativeTime(
+  key: string,
+  params: Record<string, number>,
+  value: number,
+  unit: RelativeTimeUnit,
+): string {
+  if (!i18n.global.te(key, getLocale())) {
+    return new Intl.RelativeTimeFormat(getLocale(), {
+      numeric: 'auto',
+      style: 'short',
+    }).format(-value, unit)
+  }
+
+  const translated = i18n.global.t(key, params)
+  return translated === key
+    ? new Intl.RelativeTimeFormat(getLocale(), { numeric: 'auto', style: 'short' }).format(-value, unit)
+    : translated
+}
+
+function translateNever(): string {
+  const key = 'common.time.never'
+  if (!i18n.global.te(key, getLocale())) return '—'
+  const translated = i18n.global.t(key)
+  return translated === key ? '—' : translated
+}
+
 /**
  * 格式化相对时间
  * @param date 日期字符串或 Date 对象
  * @returns 相对时间字符串，如 "5m ago", "2h ago", "3d ago"
  */
 export function formatRelativeTime(date: string | Date | null | undefined): string {
-  if (!date) return i18n.global.t('common.time.never')
+  if (!date) return translateNever()
 
   const now = new Date()
   const past = new Date(date)
   const diffMs = now.getTime() - past.getTime()
 
   // 处理未来时间或无效日期
-  if (diffMs < 0 || isNaN(diffMs)) return i18n.global.t('common.time.never')
+  if (diffMs < 0 || isNaN(diffMs)) return translateNever()
 
   const diffSecs = Math.floor(diffMs / 1000)
   const diffMins = Math.floor(diffSecs / 60)
   const diffHours = Math.floor(diffMins / 60)
   const diffDays = Math.floor(diffHours / 24)
 
-  if (diffDays > 0) return i18n.global.t('common.time.daysAgo', { n: diffDays })
-  if (diffHours > 0) return i18n.global.t('common.time.hoursAgo', { n: diffHours })
-  if (diffMins > 0) return i18n.global.t('common.time.minutesAgo', { n: diffMins })
-  return i18n.global.t('common.time.justNow')
+  if (diffDays > 0) return translateRelativeTime('common.time.daysAgo', { n: diffDays }, diffDays, 'day')
+  if (diffHours > 0) return translateRelativeTime('common.time.hoursAgo', { n: diffHours }, diffHours, 'hour')
+  if (diffMins > 0) return translateRelativeTime('common.time.minutesAgo', { n: diffMins }, diffMins, 'minute')
+  return translateRelativeTime('common.time.justNow', {}, 0, 'second')
 }
 
 /**

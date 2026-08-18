@@ -41,6 +41,10 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/sub2apioptimizelog"
 	"github.com/Wei-Shaw/sub2api/ent/sub2apioptimizeschedule"
 	"github.com/Wei-Shaw/sub2api/ent/sub2apiprovider"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiproviderprobeconfig"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiproviderproberun"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiproviderprobetarget"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiproviderprobetargetrun"
 	"github.com/Wei-Shaw/sub2api/ent/subscriptionplan"
 	"github.com/Wei-Shaw/sub2api/ent/tlsfingerprintprofile"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
@@ -973,6 +977,114 @@ func (f TraverseSub2APIProvider) Traverse(ctx context.Context, q ent.Query) erro
 	return fmt.Errorf("unexpected query type %T. expect *ent.Sub2APIProviderQuery", q)
 }
 
+// The Sub2APIProviderProbeConfigFunc type is an adapter to allow the use of ordinary function as a Querier.
+type Sub2APIProviderProbeConfigFunc func(context.Context, *ent.Sub2APIProviderProbeConfigQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f Sub2APIProviderProbeConfigFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.Sub2APIProviderProbeConfigQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.Sub2APIProviderProbeConfigQuery", q)
+}
+
+// The TraverseSub2APIProviderProbeConfig type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseSub2APIProviderProbeConfig func(context.Context, *ent.Sub2APIProviderProbeConfigQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseSub2APIProviderProbeConfig) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseSub2APIProviderProbeConfig) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.Sub2APIProviderProbeConfigQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.Sub2APIProviderProbeConfigQuery", q)
+}
+
+// The Sub2APIProviderProbeRunFunc type is an adapter to allow the use of ordinary function as a Querier.
+type Sub2APIProviderProbeRunFunc func(context.Context, *ent.Sub2APIProviderProbeRunQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f Sub2APIProviderProbeRunFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.Sub2APIProviderProbeRunQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.Sub2APIProviderProbeRunQuery", q)
+}
+
+// The TraverseSub2APIProviderProbeRun type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseSub2APIProviderProbeRun func(context.Context, *ent.Sub2APIProviderProbeRunQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseSub2APIProviderProbeRun) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseSub2APIProviderProbeRun) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.Sub2APIProviderProbeRunQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.Sub2APIProviderProbeRunQuery", q)
+}
+
+// The Sub2APIProviderProbeTargetFunc type is an adapter to allow the use of ordinary function as a Querier.
+type Sub2APIProviderProbeTargetFunc func(context.Context, *ent.Sub2APIProviderProbeTargetQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f Sub2APIProviderProbeTargetFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.Sub2APIProviderProbeTargetQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.Sub2APIProviderProbeTargetQuery", q)
+}
+
+// The TraverseSub2APIProviderProbeTarget type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseSub2APIProviderProbeTarget func(context.Context, *ent.Sub2APIProviderProbeTargetQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseSub2APIProviderProbeTarget) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseSub2APIProviderProbeTarget) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.Sub2APIProviderProbeTargetQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.Sub2APIProviderProbeTargetQuery", q)
+}
+
+// The Sub2APIProviderProbeTargetRunFunc type is an adapter to allow the use of ordinary function as a Querier.
+type Sub2APIProviderProbeTargetRunFunc func(context.Context, *ent.Sub2APIProviderProbeTargetRunQuery) (ent.Value, error)
+
+// Query calls f(ctx, q).
+func (f Sub2APIProviderProbeTargetRunFunc) Query(ctx context.Context, q ent.Query) (ent.Value, error) {
+	if q, ok := q.(*ent.Sub2APIProviderProbeTargetRunQuery); ok {
+		return f(ctx, q)
+	}
+	return nil, fmt.Errorf("unexpected query type %T. expect *ent.Sub2APIProviderProbeTargetRunQuery", q)
+}
+
+// The TraverseSub2APIProviderProbeTargetRun type is an adapter to allow the use of ordinary function as Traverser.
+type TraverseSub2APIProviderProbeTargetRun func(context.Context, *ent.Sub2APIProviderProbeTargetRunQuery) error
+
+// Intercept is a dummy implementation of Intercept that returns the next Querier in the pipeline.
+func (f TraverseSub2APIProviderProbeTargetRun) Intercept(next ent.Querier) ent.Querier {
+	return next
+}
+
+// Traverse calls f(ctx, q).
+func (f TraverseSub2APIProviderProbeTargetRun) Traverse(ctx context.Context, q ent.Query) error {
+	if q, ok := q.(*ent.Sub2APIProviderProbeTargetRunQuery); ok {
+		return f(ctx, q)
+	}
+	return fmt.Errorf("unexpected query type %T. expect *ent.Sub2APIProviderProbeTargetRunQuery", q)
+}
+
 // The SubscriptionPlanFunc type is an adapter to allow the use of ordinary function as a Querier.
 type SubscriptionPlanFunc func(context.Context, *ent.SubscriptionPlanQuery) (ent.Value, error)
 
@@ -1310,6 +1422,14 @@ func NewQuery(q ent.Query) (Query, error) {
 		return &query[*ent.Sub2APIOptimizeScheduleQuery, predicate.Sub2APIOptimizeSchedule, sub2apioptimizeschedule.OrderOption]{typ: ent.TypeSub2APIOptimizeSchedule, tq: q}, nil
 	case *ent.Sub2APIProviderQuery:
 		return &query[*ent.Sub2APIProviderQuery, predicate.Sub2APIProvider, sub2apiprovider.OrderOption]{typ: ent.TypeSub2APIProvider, tq: q}, nil
+	case *ent.Sub2APIProviderProbeConfigQuery:
+		return &query[*ent.Sub2APIProviderProbeConfigQuery, predicate.Sub2APIProviderProbeConfig, sub2apiproviderprobeconfig.OrderOption]{typ: ent.TypeSub2APIProviderProbeConfig, tq: q}, nil
+	case *ent.Sub2APIProviderProbeRunQuery:
+		return &query[*ent.Sub2APIProviderProbeRunQuery, predicate.Sub2APIProviderProbeRun, sub2apiproviderproberun.OrderOption]{typ: ent.TypeSub2APIProviderProbeRun, tq: q}, nil
+	case *ent.Sub2APIProviderProbeTargetQuery:
+		return &query[*ent.Sub2APIProviderProbeTargetQuery, predicate.Sub2APIProviderProbeTarget, sub2apiproviderprobetarget.OrderOption]{typ: ent.TypeSub2APIProviderProbeTarget, tq: q}, nil
+	case *ent.Sub2APIProviderProbeTargetRunQuery:
+		return &query[*ent.Sub2APIProviderProbeTargetRunQuery, predicate.Sub2APIProviderProbeTargetRun, sub2apiproviderprobetargetrun.OrderOption]{typ: ent.TypeSub2APIProviderProbeTargetRun, tq: q}, nil
 	case *ent.SubscriptionPlanQuery:
 		return &query[*ent.SubscriptionPlanQuery, predicate.SubscriptionPlan, subscriptionplan.OrderOption]{typ: ent.TypeSubscriptionPlan, tq: q}, nil
 	case *ent.TLSFingerprintProfileQuery:

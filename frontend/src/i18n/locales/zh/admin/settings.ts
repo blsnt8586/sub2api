@@ -49,6 +49,13 @@ export default {
           priceDescription: '价格说明（Markdown）',
           priceDescriptionHint: '展示在模型广场页面顶部，可用于说明计费规则、汇率、优惠活动等。',
         },
+        codexRadar: {
+          title: 'Codex 雷达',
+          description: '通过服务端缓存展示 Codex 雷达的站长推荐与综合智能数据。',
+          enabled: '启用 Codex 雷达',
+          enabledHint: '开启后用户侧边栏显示入口，数据每小时从 codexradar.com 同步一次。',
+          sourceLink: '打开原站 codexradar.com',
+        },
         riskControl: {
           title: '风控中心',
           description: '启用内容审计菜单和全端点请求审核入口。默认关闭。',

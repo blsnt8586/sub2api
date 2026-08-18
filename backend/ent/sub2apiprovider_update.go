@@ -13,8 +13,13 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/Wei-Shaw/sub2api/ent/account"
 	"github.com/Wei-Shaw/sub2api/ent/predicate"
+	"github.com/Wei-Shaw/sub2api/ent/proxy"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apioptimizelog"
 	"github.com/Wei-Shaw/sub2api/ent/sub2apioptimizeschedule"
 	"github.com/Wei-Shaw/sub2api/ent/sub2apiprovider"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiproviderprobeconfig"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiproviderproberun"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiproviderprobetarget"
 )
 
 // Sub2APIProviderUpdate is the builder for updating Sub2APIProvider entities.
@@ -132,6 +137,26 @@ func (_u *Sub2APIProviderUpdate) ClearNotes() *Sub2APIProviderUpdate {
 	return _u
 }
 
+// SetProxyID sets the "proxy_id" field.
+func (_u *Sub2APIProviderUpdate) SetProxyID(v int64) *Sub2APIProviderUpdate {
+	_u.mutation.SetProxyID(v)
+	return _u
+}
+
+// SetNillableProxyID sets the "proxy_id" field if the given value is not nil.
+func (_u *Sub2APIProviderUpdate) SetNillableProxyID(v *int64) *Sub2APIProviderUpdate {
+	if v != nil {
+		_u.SetProxyID(*v)
+	}
+	return _u
+}
+
+// ClearProxyID clears the value of the "proxy_id" field.
+func (_u *Sub2APIProviderUpdate) ClearProxyID() *Sub2APIProviderUpdate {
+	_u.mutation.ClearProxyID()
+	return _u
+}
+
 // SetEmail sets the "email" field.
 func (_u *Sub2APIProviderUpdate) SetEmail(v string) *Sub2APIProviderUpdate {
 	_u.mutation.SetEmail(v)
@@ -157,6 +182,120 @@ func (_u *Sub2APIProviderUpdate) SetNillablePasswordEncrypted(v *string) *Sub2AP
 	if v != nil {
 		_u.SetPasswordEncrypted(*v)
 	}
+	return _u
+}
+
+// SetAuthMode sets the "auth_mode" field.
+func (_u *Sub2APIProviderUpdate) SetAuthMode(v string) *Sub2APIProviderUpdate {
+	_u.mutation.SetAuthMode(v)
+	return _u
+}
+
+// SetNillableAuthMode sets the "auth_mode" field if the given value is not nil.
+func (_u *Sub2APIProviderUpdate) SetNillableAuthMode(v *string) *Sub2APIProviderUpdate {
+	if v != nil {
+		_u.SetAuthMode(*v)
+	}
+	return _u
+}
+
+// SetAccessTokenEncrypted sets the "access_token_encrypted" field.
+func (_u *Sub2APIProviderUpdate) SetAccessTokenEncrypted(v string) *Sub2APIProviderUpdate {
+	_u.mutation.SetAccessTokenEncrypted(v)
+	return _u
+}
+
+// SetNillableAccessTokenEncrypted sets the "access_token_encrypted" field if the given value is not nil.
+func (_u *Sub2APIProviderUpdate) SetNillableAccessTokenEncrypted(v *string) *Sub2APIProviderUpdate {
+	if v != nil {
+		_u.SetAccessTokenEncrypted(*v)
+	}
+	return _u
+}
+
+// ClearAccessTokenEncrypted clears the value of the "access_token_encrypted" field.
+func (_u *Sub2APIProviderUpdate) ClearAccessTokenEncrypted() *Sub2APIProviderUpdate {
+	_u.mutation.ClearAccessTokenEncrypted()
+	return _u
+}
+
+// SetRefreshTokenEncrypted sets the "refresh_token_encrypted" field.
+func (_u *Sub2APIProviderUpdate) SetRefreshTokenEncrypted(v string) *Sub2APIProviderUpdate {
+	_u.mutation.SetRefreshTokenEncrypted(v)
+	return _u
+}
+
+// SetNillableRefreshTokenEncrypted sets the "refresh_token_encrypted" field if the given value is not nil.
+func (_u *Sub2APIProviderUpdate) SetNillableRefreshTokenEncrypted(v *string) *Sub2APIProviderUpdate {
+	if v != nil {
+		_u.SetRefreshTokenEncrypted(*v)
+	}
+	return _u
+}
+
+// ClearRefreshTokenEncrypted clears the value of the "refresh_token_encrypted" field.
+func (_u *Sub2APIProviderUpdate) ClearRefreshTokenEncrypted() *Sub2APIProviderUpdate {
+	_u.mutation.ClearRefreshTokenEncrypted()
+	return _u
+}
+
+// SetAccessTokenExpiresAt sets the "access_token_expires_at" field.
+func (_u *Sub2APIProviderUpdate) SetAccessTokenExpiresAt(v time.Time) *Sub2APIProviderUpdate {
+	_u.mutation.SetAccessTokenExpiresAt(v)
+	return _u
+}
+
+// SetNillableAccessTokenExpiresAt sets the "access_token_expires_at" field if the given value is not nil.
+func (_u *Sub2APIProviderUpdate) SetNillableAccessTokenExpiresAt(v *time.Time) *Sub2APIProviderUpdate {
+	if v != nil {
+		_u.SetAccessTokenExpiresAt(*v)
+	}
+	return _u
+}
+
+// ClearAccessTokenExpiresAt clears the value of the "access_token_expires_at" field.
+func (_u *Sub2APIProviderUpdate) ClearAccessTokenExpiresAt() *Sub2APIProviderUpdate {
+	_u.mutation.ClearAccessTokenExpiresAt()
+	return _u
+}
+
+// SetLastTokenRefreshAt sets the "last_token_refresh_at" field.
+func (_u *Sub2APIProviderUpdate) SetLastTokenRefreshAt(v time.Time) *Sub2APIProviderUpdate {
+	_u.mutation.SetLastTokenRefreshAt(v)
+	return _u
+}
+
+// SetNillableLastTokenRefreshAt sets the "last_token_refresh_at" field if the given value is not nil.
+func (_u *Sub2APIProviderUpdate) SetNillableLastTokenRefreshAt(v *time.Time) *Sub2APIProviderUpdate {
+	if v != nil {
+		_u.SetLastTokenRefreshAt(*v)
+	}
+	return _u
+}
+
+// ClearLastTokenRefreshAt clears the value of the "last_token_refresh_at" field.
+func (_u *Sub2APIProviderUpdate) ClearLastTokenRefreshAt() *Sub2APIProviderUpdate {
+	_u.mutation.ClearLastTokenRefreshAt()
+	return _u
+}
+
+// SetLastAuthError sets the "last_auth_error" field.
+func (_u *Sub2APIProviderUpdate) SetLastAuthError(v string) *Sub2APIProviderUpdate {
+	_u.mutation.SetLastAuthError(v)
+	return _u
+}
+
+// SetNillableLastAuthError sets the "last_auth_error" field if the given value is not nil.
+func (_u *Sub2APIProviderUpdate) SetNillableLastAuthError(v *string) *Sub2APIProviderUpdate {
+	if v != nil {
+		_u.SetLastAuthError(*v)
+	}
+	return _u
+}
+
+// ClearLastAuthError clears the value of the "last_auth_error" field.
+func (_u *Sub2APIProviderUpdate) ClearLastAuthError() *Sub2APIProviderUpdate {
+	_u.mutation.ClearLastAuthError()
 	return _u
 }
 
@@ -260,6 +399,11 @@ func (_u *Sub2APIProviderUpdate) ClearLastSyncError() *Sub2APIProviderUpdate {
 	return _u
 }
 
+// SetProxy sets the "proxy" edge to the Proxy entity.
+func (_u *Sub2APIProviderUpdate) SetProxy(v *Proxy) *Sub2APIProviderUpdate {
+	return _u.SetProxyID(v.ID)
+}
+
 // AddAccountIDs adds the "accounts" edge to the Account entity by IDs.
 func (_u *Sub2APIProviderUpdate) AddAccountIDs(ids ...int64) *Sub2APIProviderUpdate {
 	_u.mutation.AddAccountIDs(ids...)
@@ -294,9 +438,79 @@ func (_u *Sub2APIProviderUpdate) SetOptimizeSchedule(v *Sub2APIOptimizeSchedule)
 	return _u.SetOptimizeScheduleID(v.ID)
 }
 
+// AddOptimizeLogIDs adds the "optimize_logs" edge to the Sub2APIOptimizeLog entity by IDs.
+func (_u *Sub2APIProviderUpdate) AddOptimizeLogIDs(ids ...int64) *Sub2APIProviderUpdate {
+	_u.mutation.AddOptimizeLogIDs(ids...)
+	return _u
+}
+
+// AddOptimizeLogs adds the "optimize_logs" edges to the Sub2APIOptimizeLog entity.
+func (_u *Sub2APIProviderUpdate) AddOptimizeLogs(v ...*Sub2APIOptimizeLog) *Sub2APIProviderUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddOptimizeLogIDs(ids...)
+}
+
+// SetProbeConfigID sets the "probe_config" edge to the Sub2APIProviderProbeConfig entity by ID.
+func (_u *Sub2APIProviderUpdate) SetProbeConfigID(id int64) *Sub2APIProviderUpdate {
+	_u.mutation.SetProbeConfigID(id)
+	return _u
+}
+
+// SetNillableProbeConfigID sets the "probe_config" edge to the Sub2APIProviderProbeConfig entity by ID if the given value is not nil.
+func (_u *Sub2APIProviderUpdate) SetNillableProbeConfigID(id *int64) *Sub2APIProviderUpdate {
+	if id != nil {
+		_u = _u.SetProbeConfigID(*id)
+	}
+	return _u
+}
+
+// SetProbeConfig sets the "probe_config" edge to the Sub2APIProviderProbeConfig entity.
+func (_u *Sub2APIProviderUpdate) SetProbeConfig(v *Sub2APIProviderProbeConfig) *Sub2APIProviderUpdate {
+	return _u.SetProbeConfigID(v.ID)
+}
+
+// AddProbeRunIDs adds the "probe_runs" edge to the Sub2APIProviderProbeRun entity by IDs.
+func (_u *Sub2APIProviderUpdate) AddProbeRunIDs(ids ...int64) *Sub2APIProviderUpdate {
+	_u.mutation.AddProbeRunIDs(ids...)
+	return _u
+}
+
+// AddProbeRuns adds the "probe_runs" edges to the Sub2APIProviderProbeRun entity.
+func (_u *Sub2APIProviderUpdate) AddProbeRuns(v ...*Sub2APIProviderProbeRun) *Sub2APIProviderUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddProbeRunIDs(ids...)
+}
+
+// AddProbeTargetIDs adds the "probe_targets" edge to the Sub2APIProviderProbeTarget entity by IDs.
+func (_u *Sub2APIProviderUpdate) AddProbeTargetIDs(ids ...int64) *Sub2APIProviderUpdate {
+	_u.mutation.AddProbeTargetIDs(ids...)
+	return _u
+}
+
+// AddProbeTargets adds the "probe_targets" edges to the Sub2APIProviderProbeTarget entity.
+func (_u *Sub2APIProviderUpdate) AddProbeTargets(v ...*Sub2APIProviderProbeTarget) *Sub2APIProviderUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddProbeTargetIDs(ids...)
+}
+
 // Mutation returns the Sub2APIProviderMutation object of the builder.
 func (_u *Sub2APIProviderUpdate) Mutation() *Sub2APIProviderMutation {
 	return _u.mutation
+}
+
+// ClearProxy clears the "proxy" edge to the Proxy entity.
+func (_u *Sub2APIProviderUpdate) ClearProxy() *Sub2APIProviderUpdate {
+	_u.mutation.ClearProxy()
+	return _u
 }
 
 // ClearAccounts clears all "accounts" edges to the Account entity.
@@ -324,6 +538,75 @@ func (_u *Sub2APIProviderUpdate) RemoveAccounts(v ...*Account) *Sub2APIProviderU
 func (_u *Sub2APIProviderUpdate) ClearOptimizeSchedule() *Sub2APIProviderUpdate {
 	_u.mutation.ClearOptimizeSchedule()
 	return _u
+}
+
+// ClearOptimizeLogs clears all "optimize_logs" edges to the Sub2APIOptimizeLog entity.
+func (_u *Sub2APIProviderUpdate) ClearOptimizeLogs() *Sub2APIProviderUpdate {
+	_u.mutation.ClearOptimizeLogs()
+	return _u
+}
+
+// RemoveOptimizeLogIDs removes the "optimize_logs" edge to Sub2APIOptimizeLog entities by IDs.
+func (_u *Sub2APIProviderUpdate) RemoveOptimizeLogIDs(ids ...int64) *Sub2APIProviderUpdate {
+	_u.mutation.RemoveOptimizeLogIDs(ids...)
+	return _u
+}
+
+// RemoveOptimizeLogs removes "optimize_logs" edges to Sub2APIOptimizeLog entities.
+func (_u *Sub2APIProviderUpdate) RemoveOptimizeLogs(v ...*Sub2APIOptimizeLog) *Sub2APIProviderUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveOptimizeLogIDs(ids...)
+}
+
+// ClearProbeConfig clears the "probe_config" edge to the Sub2APIProviderProbeConfig entity.
+func (_u *Sub2APIProviderUpdate) ClearProbeConfig() *Sub2APIProviderUpdate {
+	_u.mutation.ClearProbeConfig()
+	return _u
+}
+
+// ClearProbeRuns clears all "probe_runs" edges to the Sub2APIProviderProbeRun entity.
+func (_u *Sub2APIProviderUpdate) ClearProbeRuns() *Sub2APIProviderUpdate {
+	_u.mutation.ClearProbeRuns()
+	return _u
+}
+
+// RemoveProbeRunIDs removes the "probe_runs" edge to Sub2APIProviderProbeRun entities by IDs.
+func (_u *Sub2APIProviderUpdate) RemoveProbeRunIDs(ids ...int64) *Sub2APIProviderUpdate {
+	_u.mutation.RemoveProbeRunIDs(ids...)
+	return _u
+}
+
+// RemoveProbeRuns removes "probe_runs" edges to Sub2APIProviderProbeRun entities.
+func (_u *Sub2APIProviderUpdate) RemoveProbeRuns(v ...*Sub2APIProviderProbeRun) *Sub2APIProviderUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveProbeRunIDs(ids...)
+}
+
+// ClearProbeTargets clears all "probe_targets" edges to the Sub2APIProviderProbeTarget entity.
+func (_u *Sub2APIProviderUpdate) ClearProbeTargets() *Sub2APIProviderUpdate {
+	_u.mutation.ClearProbeTargets()
+	return _u
+}
+
+// RemoveProbeTargetIDs removes the "probe_targets" edge to Sub2APIProviderProbeTarget entities by IDs.
+func (_u *Sub2APIProviderUpdate) RemoveProbeTargetIDs(ids ...int64) *Sub2APIProviderUpdate {
+	_u.mutation.RemoveProbeTargetIDs(ids...)
+	return _u
+}
+
+// RemoveProbeTargets removes "probe_targets" edges to Sub2APIProviderProbeTarget entities.
+func (_u *Sub2APIProviderUpdate) RemoveProbeTargets(v ...*Sub2APIProviderProbeTarget) *Sub2APIProviderUpdate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveProbeTargetIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -395,9 +678,9 @@ func (_u *Sub2APIProviderUpdate) check() error {
 			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "Sub2APIProvider.email": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.PasswordEncrypted(); ok {
-		if err := sub2apiprovider.PasswordEncryptedValidator(v); err != nil {
-			return &ValidationError{Name: "password_encrypted", err: fmt.Errorf(`ent: validator failed for field "Sub2APIProvider.password_encrypted": %w`, err)}
+	if v, ok := _u.mutation.AuthMode(); ok {
+		if err := sub2apiprovider.AuthModeValidator(v); err != nil {
+			return &ValidationError{Name: "auth_mode", err: fmt.Errorf(`ent: validator failed for field "Sub2APIProvider.auth_mode": %w`, err)}
 		}
 	}
 	if v, ok := _u.mutation.APIPathKeys(); ok {
@@ -463,6 +746,39 @@ func (_u *Sub2APIProviderUpdate) sqlSave(ctx context.Context) (_node int, err er
 	if value, ok := _u.mutation.PasswordEncrypted(); ok {
 		_spec.SetField(sub2apiprovider.FieldPasswordEncrypted, field.TypeString, value)
 	}
+	if value, ok := _u.mutation.AuthMode(); ok {
+		_spec.SetField(sub2apiprovider.FieldAuthMode, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.AccessTokenEncrypted(); ok {
+		_spec.SetField(sub2apiprovider.FieldAccessTokenEncrypted, field.TypeString, value)
+	}
+	if _u.mutation.AccessTokenEncryptedCleared() {
+		_spec.ClearField(sub2apiprovider.FieldAccessTokenEncrypted, field.TypeString)
+	}
+	if value, ok := _u.mutation.RefreshTokenEncrypted(); ok {
+		_spec.SetField(sub2apiprovider.FieldRefreshTokenEncrypted, field.TypeString, value)
+	}
+	if _u.mutation.RefreshTokenEncryptedCleared() {
+		_spec.ClearField(sub2apiprovider.FieldRefreshTokenEncrypted, field.TypeString)
+	}
+	if value, ok := _u.mutation.AccessTokenExpiresAt(); ok {
+		_spec.SetField(sub2apiprovider.FieldAccessTokenExpiresAt, field.TypeTime, value)
+	}
+	if _u.mutation.AccessTokenExpiresAtCleared() {
+		_spec.ClearField(sub2apiprovider.FieldAccessTokenExpiresAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.LastTokenRefreshAt(); ok {
+		_spec.SetField(sub2apiprovider.FieldLastTokenRefreshAt, field.TypeTime, value)
+	}
+	if _u.mutation.LastTokenRefreshAtCleared() {
+		_spec.ClearField(sub2apiprovider.FieldLastTokenRefreshAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.LastAuthError(); ok {
+		_spec.SetField(sub2apiprovider.FieldLastAuthError, field.TypeString, value)
+	}
+	if _u.mutation.LastAuthErrorCleared() {
+		_spec.ClearField(sub2apiprovider.FieldLastAuthError, field.TypeString)
+	}
 	if value, ok := _u.mutation.APIPathKeys(); ok {
 		_spec.SetField(sub2apiprovider.FieldAPIPathKeys, field.TypeString, value)
 	}
@@ -492,6 +808,35 @@ func (_u *Sub2APIProviderUpdate) sqlSave(ctx context.Context) (_node int, err er
 	}
 	if _u.mutation.LastSyncErrorCleared() {
 		_spec.ClearField(sub2apiprovider.FieldLastSyncError, field.TypeString)
+	}
+	if _u.mutation.ProxyCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   sub2apiprovider.ProxyTable,
+			Columns: []string{sub2apiprovider.ProxyColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(proxy.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ProxyIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   sub2apiprovider.ProxyTable,
+			Columns: []string{sub2apiprovider.ProxyColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(proxy.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if _u.mutation.AccountsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -560,6 +905,170 @@ func (_u *Sub2APIProviderUpdate) sqlSave(ctx context.Context) (_node int, err er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(sub2apioptimizeschedule.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.OptimizeLogsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   sub2apiprovider.OptimizeLogsTable,
+			Columns: []string{sub2apiprovider.OptimizeLogsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apioptimizelog.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedOptimizeLogsIDs(); len(nodes) > 0 && !_u.mutation.OptimizeLogsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   sub2apiprovider.OptimizeLogsTable,
+			Columns: []string{sub2apiprovider.OptimizeLogsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apioptimizelog.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.OptimizeLogsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   sub2apiprovider.OptimizeLogsTable,
+			Columns: []string{sub2apiprovider.OptimizeLogsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apioptimizelog.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ProbeConfigCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   sub2apiprovider.ProbeConfigTable,
+			Columns: []string{sub2apiprovider.ProbeConfigColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiproviderprobeconfig.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ProbeConfigIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   sub2apiprovider.ProbeConfigTable,
+			Columns: []string{sub2apiprovider.ProbeConfigColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiproviderprobeconfig.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ProbeRunsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   sub2apiprovider.ProbeRunsTable,
+			Columns: []string{sub2apiprovider.ProbeRunsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiproviderproberun.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedProbeRunsIDs(); len(nodes) > 0 && !_u.mutation.ProbeRunsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   sub2apiprovider.ProbeRunsTable,
+			Columns: []string{sub2apiprovider.ProbeRunsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiproviderproberun.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ProbeRunsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   sub2apiprovider.ProbeRunsTable,
+			Columns: []string{sub2apiprovider.ProbeRunsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiproviderproberun.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ProbeTargetsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   sub2apiprovider.ProbeTargetsTable,
+			Columns: []string{sub2apiprovider.ProbeTargetsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiproviderprobetarget.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedProbeTargetsIDs(); len(nodes) > 0 && !_u.mutation.ProbeTargetsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   sub2apiprovider.ProbeTargetsTable,
+			Columns: []string{sub2apiprovider.ProbeTargetsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiproviderprobetarget.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ProbeTargetsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   sub2apiprovider.ProbeTargetsTable,
+			Columns: []string{sub2apiprovider.ProbeTargetsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiproviderprobetarget.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -689,6 +1198,26 @@ func (_u *Sub2APIProviderUpdateOne) ClearNotes() *Sub2APIProviderUpdateOne {
 	return _u
 }
 
+// SetProxyID sets the "proxy_id" field.
+func (_u *Sub2APIProviderUpdateOne) SetProxyID(v int64) *Sub2APIProviderUpdateOne {
+	_u.mutation.SetProxyID(v)
+	return _u
+}
+
+// SetNillableProxyID sets the "proxy_id" field if the given value is not nil.
+func (_u *Sub2APIProviderUpdateOne) SetNillableProxyID(v *int64) *Sub2APIProviderUpdateOne {
+	if v != nil {
+		_u.SetProxyID(*v)
+	}
+	return _u
+}
+
+// ClearProxyID clears the value of the "proxy_id" field.
+func (_u *Sub2APIProviderUpdateOne) ClearProxyID() *Sub2APIProviderUpdateOne {
+	_u.mutation.ClearProxyID()
+	return _u
+}
+
 // SetEmail sets the "email" field.
 func (_u *Sub2APIProviderUpdateOne) SetEmail(v string) *Sub2APIProviderUpdateOne {
 	_u.mutation.SetEmail(v)
@@ -714,6 +1243,120 @@ func (_u *Sub2APIProviderUpdateOne) SetNillablePasswordEncrypted(v *string) *Sub
 	if v != nil {
 		_u.SetPasswordEncrypted(*v)
 	}
+	return _u
+}
+
+// SetAuthMode sets the "auth_mode" field.
+func (_u *Sub2APIProviderUpdateOne) SetAuthMode(v string) *Sub2APIProviderUpdateOne {
+	_u.mutation.SetAuthMode(v)
+	return _u
+}
+
+// SetNillableAuthMode sets the "auth_mode" field if the given value is not nil.
+func (_u *Sub2APIProviderUpdateOne) SetNillableAuthMode(v *string) *Sub2APIProviderUpdateOne {
+	if v != nil {
+		_u.SetAuthMode(*v)
+	}
+	return _u
+}
+
+// SetAccessTokenEncrypted sets the "access_token_encrypted" field.
+func (_u *Sub2APIProviderUpdateOne) SetAccessTokenEncrypted(v string) *Sub2APIProviderUpdateOne {
+	_u.mutation.SetAccessTokenEncrypted(v)
+	return _u
+}
+
+// SetNillableAccessTokenEncrypted sets the "access_token_encrypted" field if the given value is not nil.
+func (_u *Sub2APIProviderUpdateOne) SetNillableAccessTokenEncrypted(v *string) *Sub2APIProviderUpdateOne {
+	if v != nil {
+		_u.SetAccessTokenEncrypted(*v)
+	}
+	return _u
+}
+
+// ClearAccessTokenEncrypted clears the value of the "access_token_encrypted" field.
+func (_u *Sub2APIProviderUpdateOne) ClearAccessTokenEncrypted() *Sub2APIProviderUpdateOne {
+	_u.mutation.ClearAccessTokenEncrypted()
+	return _u
+}
+
+// SetRefreshTokenEncrypted sets the "refresh_token_encrypted" field.
+func (_u *Sub2APIProviderUpdateOne) SetRefreshTokenEncrypted(v string) *Sub2APIProviderUpdateOne {
+	_u.mutation.SetRefreshTokenEncrypted(v)
+	return _u
+}
+
+// SetNillableRefreshTokenEncrypted sets the "refresh_token_encrypted" field if the given value is not nil.
+func (_u *Sub2APIProviderUpdateOne) SetNillableRefreshTokenEncrypted(v *string) *Sub2APIProviderUpdateOne {
+	if v != nil {
+		_u.SetRefreshTokenEncrypted(*v)
+	}
+	return _u
+}
+
+// ClearRefreshTokenEncrypted clears the value of the "refresh_token_encrypted" field.
+func (_u *Sub2APIProviderUpdateOne) ClearRefreshTokenEncrypted() *Sub2APIProviderUpdateOne {
+	_u.mutation.ClearRefreshTokenEncrypted()
+	return _u
+}
+
+// SetAccessTokenExpiresAt sets the "access_token_expires_at" field.
+func (_u *Sub2APIProviderUpdateOne) SetAccessTokenExpiresAt(v time.Time) *Sub2APIProviderUpdateOne {
+	_u.mutation.SetAccessTokenExpiresAt(v)
+	return _u
+}
+
+// SetNillableAccessTokenExpiresAt sets the "access_token_expires_at" field if the given value is not nil.
+func (_u *Sub2APIProviderUpdateOne) SetNillableAccessTokenExpiresAt(v *time.Time) *Sub2APIProviderUpdateOne {
+	if v != nil {
+		_u.SetAccessTokenExpiresAt(*v)
+	}
+	return _u
+}
+
+// ClearAccessTokenExpiresAt clears the value of the "access_token_expires_at" field.
+func (_u *Sub2APIProviderUpdateOne) ClearAccessTokenExpiresAt() *Sub2APIProviderUpdateOne {
+	_u.mutation.ClearAccessTokenExpiresAt()
+	return _u
+}
+
+// SetLastTokenRefreshAt sets the "last_token_refresh_at" field.
+func (_u *Sub2APIProviderUpdateOne) SetLastTokenRefreshAt(v time.Time) *Sub2APIProviderUpdateOne {
+	_u.mutation.SetLastTokenRefreshAt(v)
+	return _u
+}
+
+// SetNillableLastTokenRefreshAt sets the "last_token_refresh_at" field if the given value is not nil.
+func (_u *Sub2APIProviderUpdateOne) SetNillableLastTokenRefreshAt(v *time.Time) *Sub2APIProviderUpdateOne {
+	if v != nil {
+		_u.SetLastTokenRefreshAt(*v)
+	}
+	return _u
+}
+
+// ClearLastTokenRefreshAt clears the value of the "last_token_refresh_at" field.
+func (_u *Sub2APIProviderUpdateOne) ClearLastTokenRefreshAt() *Sub2APIProviderUpdateOne {
+	_u.mutation.ClearLastTokenRefreshAt()
+	return _u
+}
+
+// SetLastAuthError sets the "last_auth_error" field.
+func (_u *Sub2APIProviderUpdateOne) SetLastAuthError(v string) *Sub2APIProviderUpdateOne {
+	_u.mutation.SetLastAuthError(v)
+	return _u
+}
+
+// SetNillableLastAuthError sets the "last_auth_error" field if the given value is not nil.
+func (_u *Sub2APIProviderUpdateOne) SetNillableLastAuthError(v *string) *Sub2APIProviderUpdateOne {
+	if v != nil {
+		_u.SetLastAuthError(*v)
+	}
+	return _u
+}
+
+// ClearLastAuthError clears the value of the "last_auth_error" field.
+func (_u *Sub2APIProviderUpdateOne) ClearLastAuthError() *Sub2APIProviderUpdateOne {
+	_u.mutation.ClearLastAuthError()
 	return _u
 }
 
@@ -817,6 +1460,11 @@ func (_u *Sub2APIProviderUpdateOne) ClearLastSyncError() *Sub2APIProviderUpdateO
 	return _u
 }
 
+// SetProxy sets the "proxy" edge to the Proxy entity.
+func (_u *Sub2APIProviderUpdateOne) SetProxy(v *Proxy) *Sub2APIProviderUpdateOne {
+	return _u.SetProxyID(v.ID)
+}
+
 // AddAccountIDs adds the "accounts" edge to the Account entity by IDs.
 func (_u *Sub2APIProviderUpdateOne) AddAccountIDs(ids ...int64) *Sub2APIProviderUpdateOne {
 	_u.mutation.AddAccountIDs(ids...)
@@ -851,9 +1499,79 @@ func (_u *Sub2APIProviderUpdateOne) SetOptimizeSchedule(v *Sub2APIOptimizeSchedu
 	return _u.SetOptimizeScheduleID(v.ID)
 }
 
+// AddOptimizeLogIDs adds the "optimize_logs" edge to the Sub2APIOptimizeLog entity by IDs.
+func (_u *Sub2APIProviderUpdateOne) AddOptimizeLogIDs(ids ...int64) *Sub2APIProviderUpdateOne {
+	_u.mutation.AddOptimizeLogIDs(ids...)
+	return _u
+}
+
+// AddOptimizeLogs adds the "optimize_logs" edges to the Sub2APIOptimizeLog entity.
+func (_u *Sub2APIProviderUpdateOne) AddOptimizeLogs(v ...*Sub2APIOptimizeLog) *Sub2APIProviderUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddOptimizeLogIDs(ids...)
+}
+
+// SetProbeConfigID sets the "probe_config" edge to the Sub2APIProviderProbeConfig entity by ID.
+func (_u *Sub2APIProviderUpdateOne) SetProbeConfigID(id int64) *Sub2APIProviderUpdateOne {
+	_u.mutation.SetProbeConfigID(id)
+	return _u
+}
+
+// SetNillableProbeConfigID sets the "probe_config" edge to the Sub2APIProviderProbeConfig entity by ID if the given value is not nil.
+func (_u *Sub2APIProviderUpdateOne) SetNillableProbeConfigID(id *int64) *Sub2APIProviderUpdateOne {
+	if id != nil {
+		_u = _u.SetProbeConfigID(*id)
+	}
+	return _u
+}
+
+// SetProbeConfig sets the "probe_config" edge to the Sub2APIProviderProbeConfig entity.
+func (_u *Sub2APIProviderUpdateOne) SetProbeConfig(v *Sub2APIProviderProbeConfig) *Sub2APIProviderUpdateOne {
+	return _u.SetProbeConfigID(v.ID)
+}
+
+// AddProbeRunIDs adds the "probe_runs" edge to the Sub2APIProviderProbeRun entity by IDs.
+func (_u *Sub2APIProviderUpdateOne) AddProbeRunIDs(ids ...int64) *Sub2APIProviderUpdateOne {
+	_u.mutation.AddProbeRunIDs(ids...)
+	return _u
+}
+
+// AddProbeRuns adds the "probe_runs" edges to the Sub2APIProviderProbeRun entity.
+func (_u *Sub2APIProviderUpdateOne) AddProbeRuns(v ...*Sub2APIProviderProbeRun) *Sub2APIProviderUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddProbeRunIDs(ids...)
+}
+
+// AddProbeTargetIDs adds the "probe_targets" edge to the Sub2APIProviderProbeTarget entity by IDs.
+func (_u *Sub2APIProviderUpdateOne) AddProbeTargetIDs(ids ...int64) *Sub2APIProviderUpdateOne {
+	_u.mutation.AddProbeTargetIDs(ids...)
+	return _u
+}
+
+// AddProbeTargets adds the "probe_targets" edges to the Sub2APIProviderProbeTarget entity.
+func (_u *Sub2APIProviderUpdateOne) AddProbeTargets(v ...*Sub2APIProviderProbeTarget) *Sub2APIProviderUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddProbeTargetIDs(ids...)
+}
+
 // Mutation returns the Sub2APIProviderMutation object of the builder.
 func (_u *Sub2APIProviderUpdateOne) Mutation() *Sub2APIProviderMutation {
 	return _u.mutation
+}
+
+// ClearProxy clears the "proxy" edge to the Proxy entity.
+func (_u *Sub2APIProviderUpdateOne) ClearProxy() *Sub2APIProviderUpdateOne {
+	_u.mutation.ClearProxy()
+	return _u
 }
 
 // ClearAccounts clears all "accounts" edges to the Account entity.
@@ -881,6 +1599,75 @@ func (_u *Sub2APIProviderUpdateOne) RemoveAccounts(v ...*Account) *Sub2APIProvid
 func (_u *Sub2APIProviderUpdateOne) ClearOptimizeSchedule() *Sub2APIProviderUpdateOne {
 	_u.mutation.ClearOptimizeSchedule()
 	return _u
+}
+
+// ClearOptimizeLogs clears all "optimize_logs" edges to the Sub2APIOptimizeLog entity.
+func (_u *Sub2APIProviderUpdateOne) ClearOptimizeLogs() *Sub2APIProviderUpdateOne {
+	_u.mutation.ClearOptimizeLogs()
+	return _u
+}
+
+// RemoveOptimizeLogIDs removes the "optimize_logs" edge to Sub2APIOptimizeLog entities by IDs.
+func (_u *Sub2APIProviderUpdateOne) RemoveOptimizeLogIDs(ids ...int64) *Sub2APIProviderUpdateOne {
+	_u.mutation.RemoveOptimizeLogIDs(ids...)
+	return _u
+}
+
+// RemoveOptimizeLogs removes "optimize_logs" edges to Sub2APIOptimizeLog entities.
+func (_u *Sub2APIProviderUpdateOne) RemoveOptimizeLogs(v ...*Sub2APIOptimizeLog) *Sub2APIProviderUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveOptimizeLogIDs(ids...)
+}
+
+// ClearProbeConfig clears the "probe_config" edge to the Sub2APIProviderProbeConfig entity.
+func (_u *Sub2APIProviderUpdateOne) ClearProbeConfig() *Sub2APIProviderUpdateOne {
+	_u.mutation.ClearProbeConfig()
+	return _u
+}
+
+// ClearProbeRuns clears all "probe_runs" edges to the Sub2APIProviderProbeRun entity.
+func (_u *Sub2APIProviderUpdateOne) ClearProbeRuns() *Sub2APIProviderUpdateOne {
+	_u.mutation.ClearProbeRuns()
+	return _u
+}
+
+// RemoveProbeRunIDs removes the "probe_runs" edge to Sub2APIProviderProbeRun entities by IDs.
+func (_u *Sub2APIProviderUpdateOne) RemoveProbeRunIDs(ids ...int64) *Sub2APIProviderUpdateOne {
+	_u.mutation.RemoveProbeRunIDs(ids...)
+	return _u
+}
+
+// RemoveProbeRuns removes "probe_runs" edges to Sub2APIProviderProbeRun entities.
+func (_u *Sub2APIProviderUpdateOne) RemoveProbeRuns(v ...*Sub2APIProviderProbeRun) *Sub2APIProviderUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveProbeRunIDs(ids...)
+}
+
+// ClearProbeTargets clears all "probe_targets" edges to the Sub2APIProviderProbeTarget entity.
+func (_u *Sub2APIProviderUpdateOne) ClearProbeTargets() *Sub2APIProviderUpdateOne {
+	_u.mutation.ClearProbeTargets()
+	return _u
+}
+
+// RemoveProbeTargetIDs removes the "probe_targets" edge to Sub2APIProviderProbeTarget entities by IDs.
+func (_u *Sub2APIProviderUpdateOne) RemoveProbeTargetIDs(ids ...int64) *Sub2APIProviderUpdateOne {
+	_u.mutation.RemoveProbeTargetIDs(ids...)
+	return _u
+}
+
+// RemoveProbeTargets removes "probe_targets" edges to Sub2APIProviderProbeTarget entities.
+func (_u *Sub2APIProviderUpdateOne) RemoveProbeTargets(v ...*Sub2APIProviderProbeTarget) *Sub2APIProviderUpdateOne {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveProbeTargetIDs(ids...)
 }
 
 // Where appends a list predicates to the Sub2APIProviderUpdate builder.
@@ -965,9 +1752,9 @@ func (_u *Sub2APIProviderUpdateOne) check() error {
 			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "Sub2APIProvider.email": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.PasswordEncrypted(); ok {
-		if err := sub2apiprovider.PasswordEncryptedValidator(v); err != nil {
-			return &ValidationError{Name: "password_encrypted", err: fmt.Errorf(`ent: validator failed for field "Sub2APIProvider.password_encrypted": %w`, err)}
+	if v, ok := _u.mutation.AuthMode(); ok {
+		if err := sub2apiprovider.AuthModeValidator(v); err != nil {
+			return &ValidationError{Name: "auth_mode", err: fmt.Errorf(`ent: validator failed for field "Sub2APIProvider.auth_mode": %w`, err)}
 		}
 	}
 	if v, ok := _u.mutation.APIPathKeys(); ok {
@@ -1050,6 +1837,39 @@ func (_u *Sub2APIProviderUpdateOne) sqlSave(ctx context.Context) (_node *Sub2API
 	if value, ok := _u.mutation.PasswordEncrypted(); ok {
 		_spec.SetField(sub2apiprovider.FieldPasswordEncrypted, field.TypeString, value)
 	}
+	if value, ok := _u.mutation.AuthMode(); ok {
+		_spec.SetField(sub2apiprovider.FieldAuthMode, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.AccessTokenEncrypted(); ok {
+		_spec.SetField(sub2apiprovider.FieldAccessTokenEncrypted, field.TypeString, value)
+	}
+	if _u.mutation.AccessTokenEncryptedCleared() {
+		_spec.ClearField(sub2apiprovider.FieldAccessTokenEncrypted, field.TypeString)
+	}
+	if value, ok := _u.mutation.RefreshTokenEncrypted(); ok {
+		_spec.SetField(sub2apiprovider.FieldRefreshTokenEncrypted, field.TypeString, value)
+	}
+	if _u.mutation.RefreshTokenEncryptedCleared() {
+		_spec.ClearField(sub2apiprovider.FieldRefreshTokenEncrypted, field.TypeString)
+	}
+	if value, ok := _u.mutation.AccessTokenExpiresAt(); ok {
+		_spec.SetField(sub2apiprovider.FieldAccessTokenExpiresAt, field.TypeTime, value)
+	}
+	if _u.mutation.AccessTokenExpiresAtCleared() {
+		_spec.ClearField(sub2apiprovider.FieldAccessTokenExpiresAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.LastTokenRefreshAt(); ok {
+		_spec.SetField(sub2apiprovider.FieldLastTokenRefreshAt, field.TypeTime, value)
+	}
+	if _u.mutation.LastTokenRefreshAtCleared() {
+		_spec.ClearField(sub2apiprovider.FieldLastTokenRefreshAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.LastAuthError(); ok {
+		_spec.SetField(sub2apiprovider.FieldLastAuthError, field.TypeString, value)
+	}
+	if _u.mutation.LastAuthErrorCleared() {
+		_spec.ClearField(sub2apiprovider.FieldLastAuthError, field.TypeString)
+	}
 	if value, ok := _u.mutation.APIPathKeys(); ok {
 		_spec.SetField(sub2apiprovider.FieldAPIPathKeys, field.TypeString, value)
 	}
@@ -1079,6 +1899,35 @@ func (_u *Sub2APIProviderUpdateOne) sqlSave(ctx context.Context) (_node *Sub2API
 	}
 	if _u.mutation.LastSyncErrorCleared() {
 		_spec.ClearField(sub2apiprovider.FieldLastSyncError, field.TypeString)
+	}
+	if _u.mutation.ProxyCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   sub2apiprovider.ProxyTable,
+			Columns: []string{sub2apiprovider.ProxyColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(proxy.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ProxyIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   sub2apiprovider.ProxyTable,
+			Columns: []string{sub2apiprovider.ProxyColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(proxy.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if _u.mutation.AccountsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1147,6 +1996,170 @@ func (_u *Sub2APIProviderUpdateOne) sqlSave(ctx context.Context) (_node *Sub2API
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(sub2apioptimizeschedule.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.OptimizeLogsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   sub2apiprovider.OptimizeLogsTable,
+			Columns: []string{sub2apiprovider.OptimizeLogsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apioptimizelog.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedOptimizeLogsIDs(); len(nodes) > 0 && !_u.mutation.OptimizeLogsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   sub2apiprovider.OptimizeLogsTable,
+			Columns: []string{sub2apiprovider.OptimizeLogsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apioptimizelog.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.OptimizeLogsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   sub2apiprovider.OptimizeLogsTable,
+			Columns: []string{sub2apiprovider.OptimizeLogsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apioptimizelog.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ProbeConfigCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   sub2apiprovider.ProbeConfigTable,
+			Columns: []string{sub2apiprovider.ProbeConfigColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiproviderprobeconfig.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ProbeConfigIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   sub2apiprovider.ProbeConfigTable,
+			Columns: []string{sub2apiprovider.ProbeConfigColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiproviderprobeconfig.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ProbeRunsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   sub2apiprovider.ProbeRunsTable,
+			Columns: []string{sub2apiprovider.ProbeRunsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiproviderproberun.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedProbeRunsIDs(); len(nodes) > 0 && !_u.mutation.ProbeRunsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   sub2apiprovider.ProbeRunsTable,
+			Columns: []string{sub2apiprovider.ProbeRunsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiproviderproberun.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ProbeRunsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   sub2apiprovider.ProbeRunsTable,
+			Columns: []string{sub2apiprovider.ProbeRunsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiproviderproberun.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.ProbeTargetsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   sub2apiprovider.ProbeTargetsTable,
+			Columns: []string{sub2apiprovider.ProbeTargetsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiproviderprobetarget.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedProbeTargetsIDs(); len(nodes) > 0 && !_u.mutation.ProbeTargetsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   sub2apiprovider.ProbeTargetsTable,
+			Columns: []string{sub2apiprovider.ProbeTargetsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiproviderprobetarget.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ProbeTargetsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   sub2apiprovider.ProbeTargetsTable,
+			Columns: []string{sub2apiprovider.ProbeTargetsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiproviderprobetarget.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

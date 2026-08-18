@@ -211,6 +211,13 @@ func (Account) Fields() []ent.Field {
 			Nillable().
 			Comment("远程 Sub2API 实例上的 APIKey ID"),
 
+		// remote_group_id is the stable remote routing identity. Group names can
+		// be renamed, but monitoring and historical attribution cannot rely on it.
+		field.Int64("remote_group_id").
+			Optional().
+			Nillable().
+			Comment("远程 Sub2API APIKey 当前绑定的分组 ID（缓存）"),
+
 		// remote_group_name: 远程分组名称（缓存）
 		field.String("remote_group_name").
 			MaxLen(100).
@@ -297,6 +304,9 @@ func (Account) Edges() []ent.Edge {
 			Ref("accounts").
 			Field("provider_id").
 			Unique(),
+		// One current route probe configuration per linked account. Its immutable
+		// observations are stored by Sub2APIProviderProbeTargetRun.
+		edge.To("sub2api_probe_targets", Sub2APIProviderProbeTarget.Type),
 	}
 }
 

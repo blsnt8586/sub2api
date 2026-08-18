@@ -78,6 +78,8 @@ const (
 	FieldProviderID = "provider_id"
 	// FieldProviderAPIKeyID holds the string denoting the provider_api_key_id field in the database.
 	FieldProviderAPIKeyID = "provider_api_key_id"
+	// FieldRemoteGroupID holds the string denoting the remote_group_id field in the database.
+	FieldRemoteGroupID = "remote_group_id"
 	// FieldRemoteGroupName holds the string denoting the remote_group_name field in the database.
 	FieldRemoteGroupName = "remote_group_name"
 	// FieldRemoteGroupMultiplier holds the string denoting the remote_group_multiplier field in the database.
@@ -108,6 +110,8 @@ const (
 	EdgeUsageLogs = "usage_logs"
 	// EdgeProvider holds the string denoting the provider edge name in mutations.
 	EdgeProvider = "provider"
+	// EdgeSub2apiProbeTargets holds the string denoting the sub2api_probe_targets edge name in mutations.
+	EdgeSub2apiProbeTargets = "sub2api_probe_targets"
 	// EdgeAccountGroups holds the string denoting the account_groups edge name in mutations.
 	EdgeAccountGroups = "account_groups"
 	// Table holds the table name of the account in the database.
@@ -146,6 +150,13 @@ const (
 	ProviderInverseTable = "sub2api_providers"
 	// ProviderColumn is the table column denoting the provider relation/edge.
 	ProviderColumn = "provider_id"
+	// Sub2apiProbeTargetsTable is the table that holds the sub2api_probe_targets relation/edge.
+	Sub2apiProbeTargetsTable = "sub2api_provider_probe_targets"
+	// Sub2apiProbeTargetsInverseTable is the table name for the Sub2APIProviderProbeTarget entity.
+	// It exists in this package in order to avoid circular dependency with the "sub2apiproviderprobetarget" package.
+	Sub2apiProbeTargetsInverseTable = "sub2api_provider_probe_targets"
+	// Sub2apiProbeTargetsColumn is the table column denoting the sub2api_probe_targets relation/edge.
+	Sub2apiProbeTargetsColumn = "account_id"
 	// AccountGroupsTable is the table that holds the account_groups relation/edge.
 	AccountGroupsTable = "account_groups"
 	// AccountGroupsInverseTable is the table name for the AccountGroup entity.
@@ -189,6 +200,7 @@ var Columns = []string{
 	FieldSessionWindowStatus,
 	FieldProviderID,
 	FieldProviderAPIKeyID,
+	FieldRemoteGroupID,
 	FieldRemoteGroupName,
 	FieldRemoteGroupMultiplier,
 	FieldRemoteGroupSyncedAt,
@@ -443,6 +455,11 @@ func ByProviderAPIKeyID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldProviderAPIKeyID, opts...).ToFunc()
 }
 
+// ByRemoteGroupID orders the results by the remote_group_id field.
+func ByRemoteGroupID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRemoteGroupID, opts...).ToFunc()
+}
+
 // ByRemoteGroupName orders the results by the remote_group_name field.
 func ByRemoteGroupName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRemoteGroupName, opts...).ToFunc()
@@ -551,6 +568,20 @@ func ByProviderField(field string, opts ...sql.OrderTermOption) OrderOption {
 	}
 }
 
+// BySub2apiProbeTargetsCount orders the results by sub2api_probe_targets count.
+func BySub2apiProbeTargetsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newSub2apiProbeTargetsStep(), opts...)
+	}
+}
+
+// BySub2apiProbeTargets orders the results by sub2api_probe_targets terms.
+func BySub2apiProbeTargets(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSub2apiProbeTargetsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByAccountGroupsCount orders the results by account_groups count.
 func ByAccountGroupsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -604,6 +635,13 @@ func newProviderStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ProviderInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, ProviderTable, ProviderColumn),
+	)
+}
+func newSub2apiProbeTargetsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(Sub2apiProbeTargetsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, Sub2apiProbeTargetsTable, Sub2apiProbeTargetsColumn),
 	)
 }
 func newAccountGroupsStep() *sqlgraph.Step {

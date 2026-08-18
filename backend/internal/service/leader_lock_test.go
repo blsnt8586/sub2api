@@ -14,10 +14,11 @@ import (
 type fakeLeaderLockCache struct {
 	mu         sync.Mutex
 	owners     map[string]string
+	ttls       map[string]time.Duration
 	acquireErr error
 }
 
-func (f *fakeLeaderLockCache) TryAcquireLeaderLock(_ context.Context, key, owner string, _ time.Duration) (bool, error) {
+func (f *fakeLeaderLockCache) TryAcquireLeaderLock(_ context.Context, key, owner string, ttl time.Duration) (bool, error) {
 	if f.acquireErr != nil {
 		return false, f.acquireErr
 	}
@@ -25,11 +26,13 @@ func (f *fakeLeaderLockCache) TryAcquireLeaderLock(_ context.Context, key, owner
 	defer f.mu.Unlock()
 	if f.owners == nil {
 		f.owners = map[string]string{}
+		f.ttls = map[string]time.Duration{}
 	}
 	if _, held := f.owners[key]; held {
 		return false, nil
 	}
 	f.owners[key] = owner
+	f.ttls[key] = ttl
 	return true, nil
 }
 
@@ -38,8 +41,19 @@ func (f *fakeLeaderLockCache) ReleaseLeaderLock(_ context.Context, key, owner st
 	defer f.mu.Unlock()
 	if f.owners[key] == owner {
 		delete(f.owners, key)
+		delete(f.ttls, key)
 	}
 	return nil
+}
+
+func (f *fakeLeaderLockCache) ExtendLeaderLock(_ context.Context, key, owner string, ttl time.Duration) (bool, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.owners[key] != owner {
+		return false, nil
+	}
+	f.ttls[key] = ttl
+	return true, nil
 }
 
 func (f *fakeLeaderLockCache) heldBy(key string) string {

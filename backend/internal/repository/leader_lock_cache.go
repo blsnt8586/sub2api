@@ -22,6 +22,16 @@ end
 return 0
 `)
 
+// leaderLockExtendScript changes a lock TTL only while the caller still owns
+// the key. Keeping the owner token unchanged makes cooldown promotion atomic:
+// another instance never sees an unlocked gap between the short and long TTLs.
+var leaderLockExtendScript = redis.NewScript(`
+if redis.call("GET", KEYS[1]) == ARGV[1] then
+  return redis.call("PEXPIRE", KEYS[1], ARGV[2])
+end
+return 0
+`)
+
 type leaderLockCache struct {
 	rdb *redis.Client
 }
@@ -39,4 +49,18 @@ func (c *leaderLockCache) TryAcquireLeaderLock(ctx context.Context, key, owner s
 
 func (c *leaderLockCache) ReleaseLeaderLock(ctx context.Context, key, owner string) error {
 	return leaderLockReleaseScript.Run(ctx, c.rdb, []string{leaderLockKeyPrefix + key}, owner).Err()
+}
+
+// ExtendLeaderLock atomically updates the TTL iff owner still owns the lock.
+// It is an optional capability consumed by cooldown users; LeaderLockCache's
+// base interface stays unchanged for existing implementations.
+func (c *leaderLockCache) ExtendLeaderLock(ctx context.Context, key, owner string, ttl time.Duration) (bool, error) {
+	result, err := leaderLockExtendScript.Run(
+		ctx,
+		c.rdb,
+		[]string{leaderLockKeyPrefix + key},
+		owner,
+		ttl.Milliseconds(),
+	).Int64()
+	return result == 1, err
 }

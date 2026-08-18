@@ -95,6 +95,11 @@ func Notes(v string) predicate.Sub2APIProvider {
 	return predicate.Sub2APIProvider(sql.FieldEQ(FieldNotes, v))
 }
 
+// ProxyID applies equality check predicate on the "proxy_id" field. It's identical to ProxyIDEQ.
+func ProxyID(v int64) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldEQ(FieldProxyID, v))
+}
+
 // Email applies equality check predicate on the "email" field. It's identical to EmailEQ.
 func Email(v string) predicate.Sub2APIProvider {
 	return predicate.Sub2APIProvider(sql.FieldEQ(FieldEmail, v))
@@ -103,6 +108,36 @@ func Email(v string) predicate.Sub2APIProvider {
 // PasswordEncrypted applies equality check predicate on the "password_encrypted" field. It's identical to PasswordEncryptedEQ.
 func PasswordEncrypted(v string) predicate.Sub2APIProvider {
 	return predicate.Sub2APIProvider(sql.FieldEQ(FieldPasswordEncrypted, v))
+}
+
+// AuthMode applies equality check predicate on the "auth_mode" field. It's identical to AuthModeEQ.
+func AuthMode(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldEQ(FieldAuthMode, v))
+}
+
+// AccessTokenEncrypted applies equality check predicate on the "access_token_encrypted" field. It's identical to AccessTokenEncryptedEQ.
+func AccessTokenEncrypted(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldEQ(FieldAccessTokenEncrypted, v))
+}
+
+// RefreshTokenEncrypted applies equality check predicate on the "refresh_token_encrypted" field. It's identical to RefreshTokenEncryptedEQ.
+func RefreshTokenEncrypted(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldEQ(FieldRefreshTokenEncrypted, v))
+}
+
+// AccessTokenExpiresAt applies equality check predicate on the "access_token_expires_at" field. It's identical to AccessTokenExpiresAtEQ.
+func AccessTokenExpiresAt(v time.Time) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldEQ(FieldAccessTokenExpiresAt, v))
+}
+
+// LastTokenRefreshAt applies equality check predicate on the "last_token_refresh_at" field. It's identical to LastTokenRefreshAtEQ.
+func LastTokenRefreshAt(v time.Time) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldEQ(FieldLastTokenRefreshAt, v))
+}
+
+// LastAuthError applies equality check predicate on the "last_auth_error" field. It's identical to LastAuthErrorEQ.
+func LastAuthError(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldEQ(FieldLastAuthError, v))
 }
 
 // APIPathKeys applies equality check predicate on the "api_path_keys" field. It's identical to APIPathKeysEQ.
@@ -595,6 +630,36 @@ func NotesContainsFold(v string) predicate.Sub2APIProvider {
 	return predicate.Sub2APIProvider(sql.FieldContainsFold(FieldNotes, v))
 }
 
+// ProxyIDEQ applies the EQ predicate on the "proxy_id" field.
+func ProxyIDEQ(v int64) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldEQ(FieldProxyID, v))
+}
+
+// ProxyIDNEQ applies the NEQ predicate on the "proxy_id" field.
+func ProxyIDNEQ(v int64) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldNEQ(FieldProxyID, v))
+}
+
+// ProxyIDIn applies the In predicate on the "proxy_id" field.
+func ProxyIDIn(vs ...int64) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldIn(FieldProxyID, vs...))
+}
+
+// ProxyIDNotIn applies the NotIn predicate on the "proxy_id" field.
+func ProxyIDNotIn(vs ...int64) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldNotIn(FieldProxyID, vs...))
+}
+
+// ProxyIDIsNil applies the IsNil predicate on the "proxy_id" field.
+func ProxyIDIsNil() predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldIsNull(FieldProxyID))
+}
+
+// ProxyIDNotNil applies the NotNil predicate on the "proxy_id" field.
+func ProxyIDNotNil() predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldNotNull(FieldProxyID))
+}
+
 // EmailEQ applies the EQ predicate on the "email" field.
 func EmailEQ(v string) predicate.Sub2APIProvider {
 	return predicate.Sub2APIProvider(sql.FieldEQ(FieldEmail, v))
@@ -723,6 +788,396 @@ func PasswordEncryptedEqualFold(v string) predicate.Sub2APIProvider {
 // PasswordEncryptedContainsFold applies the ContainsFold predicate on the "password_encrypted" field.
 func PasswordEncryptedContainsFold(v string) predicate.Sub2APIProvider {
 	return predicate.Sub2APIProvider(sql.FieldContainsFold(FieldPasswordEncrypted, v))
+}
+
+// AuthModeEQ applies the EQ predicate on the "auth_mode" field.
+func AuthModeEQ(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldEQ(FieldAuthMode, v))
+}
+
+// AuthModeNEQ applies the NEQ predicate on the "auth_mode" field.
+func AuthModeNEQ(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldNEQ(FieldAuthMode, v))
+}
+
+// AuthModeIn applies the In predicate on the "auth_mode" field.
+func AuthModeIn(vs ...string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldIn(FieldAuthMode, vs...))
+}
+
+// AuthModeNotIn applies the NotIn predicate on the "auth_mode" field.
+func AuthModeNotIn(vs ...string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldNotIn(FieldAuthMode, vs...))
+}
+
+// AuthModeGT applies the GT predicate on the "auth_mode" field.
+func AuthModeGT(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldGT(FieldAuthMode, v))
+}
+
+// AuthModeGTE applies the GTE predicate on the "auth_mode" field.
+func AuthModeGTE(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldGTE(FieldAuthMode, v))
+}
+
+// AuthModeLT applies the LT predicate on the "auth_mode" field.
+func AuthModeLT(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldLT(FieldAuthMode, v))
+}
+
+// AuthModeLTE applies the LTE predicate on the "auth_mode" field.
+func AuthModeLTE(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldLTE(FieldAuthMode, v))
+}
+
+// AuthModeContains applies the Contains predicate on the "auth_mode" field.
+func AuthModeContains(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldContains(FieldAuthMode, v))
+}
+
+// AuthModeHasPrefix applies the HasPrefix predicate on the "auth_mode" field.
+func AuthModeHasPrefix(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldHasPrefix(FieldAuthMode, v))
+}
+
+// AuthModeHasSuffix applies the HasSuffix predicate on the "auth_mode" field.
+func AuthModeHasSuffix(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldHasSuffix(FieldAuthMode, v))
+}
+
+// AuthModeEqualFold applies the EqualFold predicate on the "auth_mode" field.
+func AuthModeEqualFold(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldEqualFold(FieldAuthMode, v))
+}
+
+// AuthModeContainsFold applies the ContainsFold predicate on the "auth_mode" field.
+func AuthModeContainsFold(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldContainsFold(FieldAuthMode, v))
+}
+
+// AccessTokenEncryptedEQ applies the EQ predicate on the "access_token_encrypted" field.
+func AccessTokenEncryptedEQ(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldEQ(FieldAccessTokenEncrypted, v))
+}
+
+// AccessTokenEncryptedNEQ applies the NEQ predicate on the "access_token_encrypted" field.
+func AccessTokenEncryptedNEQ(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldNEQ(FieldAccessTokenEncrypted, v))
+}
+
+// AccessTokenEncryptedIn applies the In predicate on the "access_token_encrypted" field.
+func AccessTokenEncryptedIn(vs ...string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldIn(FieldAccessTokenEncrypted, vs...))
+}
+
+// AccessTokenEncryptedNotIn applies the NotIn predicate on the "access_token_encrypted" field.
+func AccessTokenEncryptedNotIn(vs ...string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldNotIn(FieldAccessTokenEncrypted, vs...))
+}
+
+// AccessTokenEncryptedGT applies the GT predicate on the "access_token_encrypted" field.
+func AccessTokenEncryptedGT(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldGT(FieldAccessTokenEncrypted, v))
+}
+
+// AccessTokenEncryptedGTE applies the GTE predicate on the "access_token_encrypted" field.
+func AccessTokenEncryptedGTE(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldGTE(FieldAccessTokenEncrypted, v))
+}
+
+// AccessTokenEncryptedLT applies the LT predicate on the "access_token_encrypted" field.
+func AccessTokenEncryptedLT(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldLT(FieldAccessTokenEncrypted, v))
+}
+
+// AccessTokenEncryptedLTE applies the LTE predicate on the "access_token_encrypted" field.
+func AccessTokenEncryptedLTE(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldLTE(FieldAccessTokenEncrypted, v))
+}
+
+// AccessTokenEncryptedContains applies the Contains predicate on the "access_token_encrypted" field.
+func AccessTokenEncryptedContains(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldContains(FieldAccessTokenEncrypted, v))
+}
+
+// AccessTokenEncryptedHasPrefix applies the HasPrefix predicate on the "access_token_encrypted" field.
+func AccessTokenEncryptedHasPrefix(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldHasPrefix(FieldAccessTokenEncrypted, v))
+}
+
+// AccessTokenEncryptedHasSuffix applies the HasSuffix predicate on the "access_token_encrypted" field.
+func AccessTokenEncryptedHasSuffix(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldHasSuffix(FieldAccessTokenEncrypted, v))
+}
+
+// AccessTokenEncryptedIsNil applies the IsNil predicate on the "access_token_encrypted" field.
+func AccessTokenEncryptedIsNil() predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldIsNull(FieldAccessTokenEncrypted))
+}
+
+// AccessTokenEncryptedNotNil applies the NotNil predicate on the "access_token_encrypted" field.
+func AccessTokenEncryptedNotNil() predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldNotNull(FieldAccessTokenEncrypted))
+}
+
+// AccessTokenEncryptedEqualFold applies the EqualFold predicate on the "access_token_encrypted" field.
+func AccessTokenEncryptedEqualFold(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldEqualFold(FieldAccessTokenEncrypted, v))
+}
+
+// AccessTokenEncryptedContainsFold applies the ContainsFold predicate on the "access_token_encrypted" field.
+func AccessTokenEncryptedContainsFold(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldContainsFold(FieldAccessTokenEncrypted, v))
+}
+
+// RefreshTokenEncryptedEQ applies the EQ predicate on the "refresh_token_encrypted" field.
+func RefreshTokenEncryptedEQ(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldEQ(FieldRefreshTokenEncrypted, v))
+}
+
+// RefreshTokenEncryptedNEQ applies the NEQ predicate on the "refresh_token_encrypted" field.
+func RefreshTokenEncryptedNEQ(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldNEQ(FieldRefreshTokenEncrypted, v))
+}
+
+// RefreshTokenEncryptedIn applies the In predicate on the "refresh_token_encrypted" field.
+func RefreshTokenEncryptedIn(vs ...string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldIn(FieldRefreshTokenEncrypted, vs...))
+}
+
+// RefreshTokenEncryptedNotIn applies the NotIn predicate on the "refresh_token_encrypted" field.
+func RefreshTokenEncryptedNotIn(vs ...string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldNotIn(FieldRefreshTokenEncrypted, vs...))
+}
+
+// RefreshTokenEncryptedGT applies the GT predicate on the "refresh_token_encrypted" field.
+func RefreshTokenEncryptedGT(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldGT(FieldRefreshTokenEncrypted, v))
+}
+
+// RefreshTokenEncryptedGTE applies the GTE predicate on the "refresh_token_encrypted" field.
+func RefreshTokenEncryptedGTE(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldGTE(FieldRefreshTokenEncrypted, v))
+}
+
+// RefreshTokenEncryptedLT applies the LT predicate on the "refresh_token_encrypted" field.
+func RefreshTokenEncryptedLT(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldLT(FieldRefreshTokenEncrypted, v))
+}
+
+// RefreshTokenEncryptedLTE applies the LTE predicate on the "refresh_token_encrypted" field.
+func RefreshTokenEncryptedLTE(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldLTE(FieldRefreshTokenEncrypted, v))
+}
+
+// RefreshTokenEncryptedContains applies the Contains predicate on the "refresh_token_encrypted" field.
+func RefreshTokenEncryptedContains(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldContains(FieldRefreshTokenEncrypted, v))
+}
+
+// RefreshTokenEncryptedHasPrefix applies the HasPrefix predicate on the "refresh_token_encrypted" field.
+func RefreshTokenEncryptedHasPrefix(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldHasPrefix(FieldRefreshTokenEncrypted, v))
+}
+
+// RefreshTokenEncryptedHasSuffix applies the HasSuffix predicate on the "refresh_token_encrypted" field.
+func RefreshTokenEncryptedHasSuffix(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldHasSuffix(FieldRefreshTokenEncrypted, v))
+}
+
+// RefreshTokenEncryptedIsNil applies the IsNil predicate on the "refresh_token_encrypted" field.
+func RefreshTokenEncryptedIsNil() predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldIsNull(FieldRefreshTokenEncrypted))
+}
+
+// RefreshTokenEncryptedNotNil applies the NotNil predicate on the "refresh_token_encrypted" field.
+func RefreshTokenEncryptedNotNil() predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldNotNull(FieldRefreshTokenEncrypted))
+}
+
+// RefreshTokenEncryptedEqualFold applies the EqualFold predicate on the "refresh_token_encrypted" field.
+func RefreshTokenEncryptedEqualFold(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldEqualFold(FieldRefreshTokenEncrypted, v))
+}
+
+// RefreshTokenEncryptedContainsFold applies the ContainsFold predicate on the "refresh_token_encrypted" field.
+func RefreshTokenEncryptedContainsFold(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldContainsFold(FieldRefreshTokenEncrypted, v))
+}
+
+// AccessTokenExpiresAtEQ applies the EQ predicate on the "access_token_expires_at" field.
+func AccessTokenExpiresAtEQ(v time.Time) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldEQ(FieldAccessTokenExpiresAt, v))
+}
+
+// AccessTokenExpiresAtNEQ applies the NEQ predicate on the "access_token_expires_at" field.
+func AccessTokenExpiresAtNEQ(v time.Time) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldNEQ(FieldAccessTokenExpiresAt, v))
+}
+
+// AccessTokenExpiresAtIn applies the In predicate on the "access_token_expires_at" field.
+func AccessTokenExpiresAtIn(vs ...time.Time) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldIn(FieldAccessTokenExpiresAt, vs...))
+}
+
+// AccessTokenExpiresAtNotIn applies the NotIn predicate on the "access_token_expires_at" field.
+func AccessTokenExpiresAtNotIn(vs ...time.Time) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldNotIn(FieldAccessTokenExpiresAt, vs...))
+}
+
+// AccessTokenExpiresAtGT applies the GT predicate on the "access_token_expires_at" field.
+func AccessTokenExpiresAtGT(v time.Time) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldGT(FieldAccessTokenExpiresAt, v))
+}
+
+// AccessTokenExpiresAtGTE applies the GTE predicate on the "access_token_expires_at" field.
+func AccessTokenExpiresAtGTE(v time.Time) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldGTE(FieldAccessTokenExpiresAt, v))
+}
+
+// AccessTokenExpiresAtLT applies the LT predicate on the "access_token_expires_at" field.
+func AccessTokenExpiresAtLT(v time.Time) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldLT(FieldAccessTokenExpiresAt, v))
+}
+
+// AccessTokenExpiresAtLTE applies the LTE predicate on the "access_token_expires_at" field.
+func AccessTokenExpiresAtLTE(v time.Time) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldLTE(FieldAccessTokenExpiresAt, v))
+}
+
+// AccessTokenExpiresAtIsNil applies the IsNil predicate on the "access_token_expires_at" field.
+func AccessTokenExpiresAtIsNil() predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldIsNull(FieldAccessTokenExpiresAt))
+}
+
+// AccessTokenExpiresAtNotNil applies the NotNil predicate on the "access_token_expires_at" field.
+func AccessTokenExpiresAtNotNil() predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldNotNull(FieldAccessTokenExpiresAt))
+}
+
+// LastTokenRefreshAtEQ applies the EQ predicate on the "last_token_refresh_at" field.
+func LastTokenRefreshAtEQ(v time.Time) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldEQ(FieldLastTokenRefreshAt, v))
+}
+
+// LastTokenRefreshAtNEQ applies the NEQ predicate on the "last_token_refresh_at" field.
+func LastTokenRefreshAtNEQ(v time.Time) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldNEQ(FieldLastTokenRefreshAt, v))
+}
+
+// LastTokenRefreshAtIn applies the In predicate on the "last_token_refresh_at" field.
+func LastTokenRefreshAtIn(vs ...time.Time) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldIn(FieldLastTokenRefreshAt, vs...))
+}
+
+// LastTokenRefreshAtNotIn applies the NotIn predicate on the "last_token_refresh_at" field.
+func LastTokenRefreshAtNotIn(vs ...time.Time) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldNotIn(FieldLastTokenRefreshAt, vs...))
+}
+
+// LastTokenRefreshAtGT applies the GT predicate on the "last_token_refresh_at" field.
+func LastTokenRefreshAtGT(v time.Time) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldGT(FieldLastTokenRefreshAt, v))
+}
+
+// LastTokenRefreshAtGTE applies the GTE predicate on the "last_token_refresh_at" field.
+func LastTokenRefreshAtGTE(v time.Time) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldGTE(FieldLastTokenRefreshAt, v))
+}
+
+// LastTokenRefreshAtLT applies the LT predicate on the "last_token_refresh_at" field.
+func LastTokenRefreshAtLT(v time.Time) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldLT(FieldLastTokenRefreshAt, v))
+}
+
+// LastTokenRefreshAtLTE applies the LTE predicate on the "last_token_refresh_at" field.
+func LastTokenRefreshAtLTE(v time.Time) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldLTE(FieldLastTokenRefreshAt, v))
+}
+
+// LastTokenRefreshAtIsNil applies the IsNil predicate on the "last_token_refresh_at" field.
+func LastTokenRefreshAtIsNil() predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldIsNull(FieldLastTokenRefreshAt))
+}
+
+// LastTokenRefreshAtNotNil applies the NotNil predicate on the "last_token_refresh_at" field.
+func LastTokenRefreshAtNotNil() predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldNotNull(FieldLastTokenRefreshAt))
+}
+
+// LastAuthErrorEQ applies the EQ predicate on the "last_auth_error" field.
+func LastAuthErrorEQ(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldEQ(FieldLastAuthError, v))
+}
+
+// LastAuthErrorNEQ applies the NEQ predicate on the "last_auth_error" field.
+func LastAuthErrorNEQ(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldNEQ(FieldLastAuthError, v))
+}
+
+// LastAuthErrorIn applies the In predicate on the "last_auth_error" field.
+func LastAuthErrorIn(vs ...string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldIn(FieldLastAuthError, vs...))
+}
+
+// LastAuthErrorNotIn applies the NotIn predicate on the "last_auth_error" field.
+func LastAuthErrorNotIn(vs ...string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldNotIn(FieldLastAuthError, vs...))
+}
+
+// LastAuthErrorGT applies the GT predicate on the "last_auth_error" field.
+func LastAuthErrorGT(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldGT(FieldLastAuthError, v))
+}
+
+// LastAuthErrorGTE applies the GTE predicate on the "last_auth_error" field.
+func LastAuthErrorGTE(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldGTE(FieldLastAuthError, v))
+}
+
+// LastAuthErrorLT applies the LT predicate on the "last_auth_error" field.
+func LastAuthErrorLT(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldLT(FieldLastAuthError, v))
+}
+
+// LastAuthErrorLTE applies the LTE predicate on the "last_auth_error" field.
+func LastAuthErrorLTE(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldLTE(FieldLastAuthError, v))
+}
+
+// LastAuthErrorContains applies the Contains predicate on the "last_auth_error" field.
+func LastAuthErrorContains(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldContains(FieldLastAuthError, v))
+}
+
+// LastAuthErrorHasPrefix applies the HasPrefix predicate on the "last_auth_error" field.
+func LastAuthErrorHasPrefix(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldHasPrefix(FieldLastAuthError, v))
+}
+
+// LastAuthErrorHasSuffix applies the HasSuffix predicate on the "last_auth_error" field.
+func LastAuthErrorHasSuffix(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldHasSuffix(FieldLastAuthError, v))
+}
+
+// LastAuthErrorIsNil applies the IsNil predicate on the "last_auth_error" field.
+func LastAuthErrorIsNil() predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldIsNull(FieldLastAuthError))
+}
+
+// LastAuthErrorNotNil applies the NotNil predicate on the "last_auth_error" field.
+func LastAuthErrorNotNil() predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldNotNull(FieldLastAuthError))
+}
+
+// LastAuthErrorEqualFold applies the EqualFold predicate on the "last_auth_error" field.
+func LastAuthErrorEqualFold(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldEqualFold(FieldLastAuthError, v))
+}
+
+// LastAuthErrorContainsFold applies the ContainsFold predicate on the "last_auth_error" field.
+func LastAuthErrorContainsFold(v string) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldContainsFold(FieldLastAuthError, v))
 }
 
 // APIPathKeysEQ applies the EQ predicate on the "api_path_keys" field.
@@ -1075,6 +1530,29 @@ func LastSyncErrorContainsFold(v string) predicate.Sub2APIProvider {
 	return predicate.Sub2APIProvider(sql.FieldContainsFold(FieldLastSyncError, v))
 }
 
+// HasProxy applies the HasEdge predicate on the "proxy" edge.
+func HasProxy() predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, ProxyTable, ProxyColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasProxyWith applies the HasEdge predicate on the "proxy" edge with a given conditions (other predicates).
+func HasProxyWith(preds ...predicate.Proxy) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(func(s *sql.Selector) {
+		step := newProxyStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasAccounts applies the HasEdge predicate on the "accounts" edge.
 func HasAccounts() predicate.Sub2APIProvider {
 	return predicate.Sub2APIProvider(func(s *sql.Selector) {
@@ -1113,6 +1591,98 @@ func HasOptimizeSchedule() predicate.Sub2APIProvider {
 func HasOptimizeScheduleWith(preds ...predicate.Sub2APIOptimizeSchedule) predicate.Sub2APIProvider {
 	return predicate.Sub2APIProvider(func(s *sql.Selector) {
 		step := newOptimizeScheduleStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasOptimizeLogs applies the HasEdge predicate on the "optimize_logs" edge.
+func HasOptimizeLogs() predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, OptimizeLogsTable, OptimizeLogsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasOptimizeLogsWith applies the HasEdge predicate on the "optimize_logs" edge with a given conditions (other predicates).
+func HasOptimizeLogsWith(preds ...predicate.Sub2APIOptimizeLog) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(func(s *sql.Selector) {
+		step := newOptimizeLogsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasProbeConfig applies the HasEdge predicate on the "probe_config" edge.
+func HasProbeConfig() predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, ProbeConfigTable, ProbeConfigColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasProbeConfigWith applies the HasEdge predicate on the "probe_config" edge with a given conditions (other predicates).
+func HasProbeConfigWith(preds ...predicate.Sub2APIProviderProbeConfig) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(func(s *sql.Selector) {
+		step := newProbeConfigStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasProbeRuns applies the HasEdge predicate on the "probe_runs" edge.
+func HasProbeRuns() predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ProbeRunsTable, ProbeRunsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasProbeRunsWith applies the HasEdge predicate on the "probe_runs" edge with a given conditions (other predicates).
+func HasProbeRunsWith(preds ...predicate.Sub2APIProviderProbeRun) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(func(s *sql.Selector) {
+		step := newProbeRunsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasProbeTargets applies the HasEdge predicate on the "probe_targets" edge.
+func HasProbeTargets() predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ProbeTargetsTable, ProbeTargetsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasProbeTargetsWith applies the HasEdge predicate on the "probe_targets" edge with a given conditions (other predicates).
+func HasProbeTargetsWith(preds ...predicate.Sub2APIProviderProbeTarget) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(func(s *sql.Selector) {
+		step := newProbeTargetsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

@@ -82,6 +82,8 @@ type Account struct {
 	ProviderID *int64 `json:"provider_id,omitempty"`
 	// 远程 Sub2API 实例上的 APIKey ID
 	ProviderAPIKeyID *int64 `json:"provider_api_key_id,omitempty"`
+	// 远程 Sub2API APIKey 当前绑定的分组 ID（缓存）
+	RemoteGroupID *int64 `json:"remote_group_id,omitempty"`
 	// 远程分组名称（缓存）
 	RemoteGroupName *string `json:"remote_group_name,omitempty"`
 	// 远程分组倍率（缓存）
@@ -120,11 +122,13 @@ type AccountEdges struct {
 	UsageLogs []*UsageLog `json:"usage_logs,omitempty"`
 	// Provider holds the value of the provider edge.
 	Provider *Sub2APIProvider `json:"provider,omitempty"`
+	// Sub2apiProbeTargets holds the value of the sub2api_probe_targets edge.
+	Sub2apiProbeTargets []*Sub2APIProviderProbeTarget `json:"sub2api_probe_targets,omitempty"`
 	// AccountGroups holds the value of the account_groups edge.
 	AccountGroups []*AccountGroup `json:"account_groups,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [7]bool
+	loadedTypes [8]bool
 }
 
 // GroupsOrErr returns the Groups value or an error if the edge
@@ -187,10 +191,19 @@ func (e AccountEdges) ProviderOrErr() (*Sub2APIProvider, error) {
 	return nil, &NotLoadedError{edge: "provider"}
 }
 
+// Sub2apiProbeTargetsOrErr returns the Sub2apiProbeTargets value or an error if the edge
+// was not loaded in eager-loading.
+func (e AccountEdges) Sub2apiProbeTargetsOrErr() ([]*Sub2APIProviderProbeTarget, error) {
+	if e.loadedTypes[6] {
+		return e.Sub2apiProbeTargets, nil
+	}
+	return nil, &NotLoadedError{edge: "sub2api_probe_targets"}
+}
+
 // AccountGroupsOrErr returns the AccountGroups value or an error if the edge
 // was not loaded in eager-loading.
 func (e AccountEdges) AccountGroupsOrErr() ([]*AccountGroup, error) {
-	if e.loadedTypes[6] {
+	if e.loadedTypes[7] {
 		return e.AccountGroups, nil
 	}
 	return nil, &NotLoadedError{edge: "account_groups"}
@@ -207,7 +220,7 @@ func (*Account) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case account.FieldRateMultiplier, account.FieldRemoteGroupMultiplier, account.FieldSub2apiMaxMultiplier, account.FieldSub2apiMinMultiplier:
 			values[i] = new(sql.NullFloat64)
-		case account.FieldID, account.FieldProxyID, account.FieldProxyFallbackOriginID, account.FieldConcurrency, account.FieldLoadFactor, account.FieldPriority, account.FieldProviderID, account.FieldProviderAPIKeyID, account.FieldParentAccountID:
+		case account.FieldID, account.FieldProxyID, account.FieldProxyFallbackOriginID, account.FieldConcurrency, account.FieldLoadFactor, account.FieldPriority, account.FieldProviderID, account.FieldProviderAPIKeyID, account.FieldRemoteGroupID, account.FieldParentAccountID:
 			values[i] = new(sql.NullInt64)
 		case account.FieldName, account.FieldNotes, account.FieldPlatform, account.FieldType, account.FieldStatus, account.FieldErrorMessage, account.FieldTempUnschedulableReason, account.FieldSessionWindowStatus, account.FieldRemoteGroupName, account.FieldSub2apiTestModel, account.FieldQuotaDimension:
 			values[i] = new(sql.NullString)
@@ -442,6 +455,13 @@ func (_m *Account) assignValues(columns []string, values []any) error {
 				_m.ProviderAPIKeyID = new(int64)
 				*_m.ProviderAPIKeyID = value.Int64
 			}
+		case account.FieldRemoteGroupID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field remote_group_id", values[i])
+			} else if value.Valid {
+				_m.RemoteGroupID = new(int64)
+				*_m.RemoteGroupID = value.Int64
+			}
 		case account.FieldRemoteGroupName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field remote_group_name", values[i])
@@ -544,6 +564,11 @@ func (_m *Account) QueryUsageLogs() *UsageLogQuery {
 // QueryProvider queries the "provider" edge of the Account entity.
 func (_m *Account) QueryProvider() *Sub2APIProviderQuery {
 	return NewAccountClient(_m.config).QueryProvider(_m)
+}
+
+// QuerySub2apiProbeTargets queries the "sub2api_probe_targets" edge of the Account entity.
+func (_m *Account) QuerySub2apiProbeTargets() *Sub2APIProviderProbeTargetQuery {
+	return NewAccountClient(_m.config).QuerySub2apiProbeTargets(_m)
 }
 
 // QueryAccountGroups queries the "account_groups" edge of the Account entity.
@@ -700,6 +725,11 @@ func (_m *Account) String() string {
 	builder.WriteString(", ")
 	if v := _m.ProviderAPIKeyID; v != nil {
 		builder.WriteString("provider_api_key_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
+	if v := _m.RemoteGroupID; v != nil {
+		builder.WriteString("remote_group_id=")
 		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")

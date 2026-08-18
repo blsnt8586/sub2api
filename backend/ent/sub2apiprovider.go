@@ -9,8 +9,10 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/Wei-Shaw/sub2api/ent/proxy"
 	"github.com/Wei-Shaw/sub2api/ent/sub2apioptimizeschedule"
 	"github.com/Wei-Shaw/sub2api/ent/sub2apiprovider"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiproviderprobeconfig"
 )
 
 // Sub2APIProvider is the model entity for the Sub2APIProvider schema.
@@ -34,10 +36,24 @@ type Sub2APIProvider struct {
 	Status string `json:"status,omitempty"`
 	// 备注信息
 	Notes *string `json:"notes,omitempty"`
+	// Provider 及其关联账号使用的统一出站代理；NULL 表示直连
+	ProxyID *int64 `json:"proxy_id,omitempty"`
 	// 登录邮箱
 	Email string `json:"email,omitempty"`
 	// 登录密码（阶段1明文，阶段7加密）
 	PasswordEncrypted string `json:"-"`
+	// 认证方式：password, token_pair
+	AuthMode string `json:"auth_mode,omitempty"`
+	// AES-GCM 加密的上游 Access Token
+	AccessTokenEncrypted *string `json:"-"`
+	// AES-GCM 加密的上游 Refresh Token
+	RefreshTokenEncrypted *string `json:"-"`
+	// 上游 Access Token 的保守失效时间
+	AccessTokenExpiresAt *time.Time `json:"access_token_expires_at,omitempty"`
+	// 最近一次持久化 Token 对的时间
+	LastTokenRefreshAt *time.Time `json:"last_token_refresh_at,omitempty"`
+	// 最近一次认证错误（不含凭据正文）
+	LastAuthError *string `json:"last_auth_error,omitempty"`
 	// APIKey 列表路径，如 /api/v1/keys
 	APIPathKeys *string `json:"api_path_keys,omitempty"`
 	// 分组列表路径，如 /api/v1/groups/available
@@ -56,19 +72,40 @@ type Sub2APIProvider struct {
 
 // Sub2APIProviderEdges holds the relations/edges for other nodes in the graph.
 type Sub2APIProviderEdges struct {
+	// Proxy holds the value of the proxy edge.
+	Proxy *Proxy `json:"proxy,omitempty"`
 	// Accounts holds the value of the accounts edge.
 	Accounts []*Account `json:"accounts,omitempty"`
 	// OptimizeSchedule holds the value of the optimize_schedule edge.
 	OptimizeSchedule *Sub2APIOptimizeSchedule `json:"optimize_schedule,omitempty"`
+	// OptimizeLogs holds the value of the optimize_logs edge.
+	OptimizeLogs []*Sub2APIOptimizeLog `json:"optimize_logs,omitempty"`
+	// ProbeConfig holds the value of the probe_config edge.
+	ProbeConfig *Sub2APIProviderProbeConfig `json:"probe_config,omitempty"`
+	// ProbeRuns holds the value of the probe_runs edge.
+	ProbeRuns []*Sub2APIProviderProbeRun `json:"probe_runs,omitempty"`
+	// ProbeTargets holds the value of the probe_targets edge.
+	ProbeTargets []*Sub2APIProviderProbeTarget `json:"probe_targets,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [7]bool
+}
+
+// ProxyOrErr returns the Proxy value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e Sub2APIProviderEdges) ProxyOrErr() (*Proxy, error) {
+	if e.Proxy != nil {
+		return e.Proxy, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: proxy.Label}
+	}
+	return nil, &NotLoadedError{edge: "proxy"}
 }
 
 // AccountsOrErr returns the Accounts value or an error if the edge
 // was not loaded in eager-loading.
 func (e Sub2APIProviderEdges) AccountsOrErr() ([]*Account, error) {
-	if e.loadedTypes[0] {
+	if e.loadedTypes[1] {
 		return e.Accounts, nil
 	}
 	return nil, &NotLoadedError{edge: "accounts"}
@@ -79,10 +116,48 @@ func (e Sub2APIProviderEdges) AccountsOrErr() ([]*Account, error) {
 func (e Sub2APIProviderEdges) OptimizeScheduleOrErr() (*Sub2APIOptimizeSchedule, error) {
 	if e.OptimizeSchedule != nil {
 		return e.OptimizeSchedule, nil
-	} else if e.loadedTypes[1] {
+	} else if e.loadedTypes[2] {
 		return nil, &NotFoundError{label: sub2apioptimizeschedule.Label}
 	}
 	return nil, &NotLoadedError{edge: "optimize_schedule"}
+}
+
+// OptimizeLogsOrErr returns the OptimizeLogs value or an error if the edge
+// was not loaded in eager-loading.
+func (e Sub2APIProviderEdges) OptimizeLogsOrErr() ([]*Sub2APIOptimizeLog, error) {
+	if e.loadedTypes[3] {
+		return e.OptimizeLogs, nil
+	}
+	return nil, &NotLoadedError{edge: "optimize_logs"}
+}
+
+// ProbeConfigOrErr returns the ProbeConfig value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e Sub2APIProviderEdges) ProbeConfigOrErr() (*Sub2APIProviderProbeConfig, error) {
+	if e.ProbeConfig != nil {
+		return e.ProbeConfig, nil
+	} else if e.loadedTypes[4] {
+		return nil, &NotFoundError{label: sub2apiproviderprobeconfig.Label}
+	}
+	return nil, &NotLoadedError{edge: "probe_config"}
+}
+
+// ProbeRunsOrErr returns the ProbeRuns value or an error if the edge
+// was not loaded in eager-loading.
+func (e Sub2APIProviderEdges) ProbeRunsOrErr() ([]*Sub2APIProviderProbeRun, error) {
+	if e.loadedTypes[5] {
+		return e.ProbeRuns, nil
+	}
+	return nil, &NotLoadedError{edge: "probe_runs"}
+}
+
+// ProbeTargetsOrErr returns the ProbeTargets value or an error if the edge
+// was not loaded in eager-loading.
+func (e Sub2APIProviderEdges) ProbeTargetsOrErr() ([]*Sub2APIProviderProbeTarget, error) {
+	if e.loadedTypes[6] {
+		return e.ProbeTargets, nil
+	}
+	return nil, &NotLoadedError{edge: "probe_targets"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -90,11 +165,11 @@ func (*Sub2APIProvider) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case sub2apiprovider.FieldID:
+		case sub2apiprovider.FieldID, sub2apiprovider.FieldProxyID:
 			values[i] = new(sql.NullInt64)
-		case sub2apiprovider.FieldName, sub2apiprovider.FieldBaseURL, sub2apiprovider.FieldProviderType, sub2apiprovider.FieldStatus, sub2apiprovider.FieldNotes, sub2apiprovider.FieldEmail, sub2apiprovider.FieldPasswordEncrypted, sub2apiprovider.FieldAPIPathKeys, sub2apiprovider.FieldAPIPathGroups, sub2apiprovider.FieldLastSyncStatus, sub2apiprovider.FieldLastSyncError:
+		case sub2apiprovider.FieldName, sub2apiprovider.FieldBaseURL, sub2apiprovider.FieldProviderType, sub2apiprovider.FieldStatus, sub2apiprovider.FieldNotes, sub2apiprovider.FieldEmail, sub2apiprovider.FieldPasswordEncrypted, sub2apiprovider.FieldAuthMode, sub2apiprovider.FieldAccessTokenEncrypted, sub2apiprovider.FieldRefreshTokenEncrypted, sub2apiprovider.FieldLastAuthError, sub2apiprovider.FieldAPIPathKeys, sub2apiprovider.FieldAPIPathGroups, sub2apiprovider.FieldLastSyncStatus, sub2apiprovider.FieldLastSyncError:
 			values[i] = new(sql.NullString)
-		case sub2apiprovider.FieldCreatedAt, sub2apiprovider.FieldUpdatedAt, sub2apiprovider.FieldDeletedAt, sub2apiprovider.FieldLastSyncAt:
+		case sub2apiprovider.FieldCreatedAt, sub2apiprovider.FieldUpdatedAt, sub2apiprovider.FieldDeletedAt, sub2apiprovider.FieldAccessTokenExpiresAt, sub2apiprovider.FieldLastTokenRefreshAt, sub2apiprovider.FieldLastSyncAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -167,6 +242,13 @@ func (_m *Sub2APIProvider) assignValues(columns []string, values []any) error {
 				_m.Notes = new(string)
 				*_m.Notes = value.String
 			}
+		case sub2apiprovider.FieldProxyID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field proxy_id", values[i])
+			} else if value.Valid {
+				_m.ProxyID = new(int64)
+				*_m.ProxyID = value.Int64
+			}
 		case sub2apiprovider.FieldEmail:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field email", values[i])
@@ -178,6 +260,47 @@ func (_m *Sub2APIProvider) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field password_encrypted", values[i])
 			} else if value.Valid {
 				_m.PasswordEncrypted = value.String
+			}
+		case sub2apiprovider.FieldAuthMode:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field auth_mode", values[i])
+			} else if value.Valid {
+				_m.AuthMode = value.String
+			}
+		case sub2apiprovider.FieldAccessTokenEncrypted:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field access_token_encrypted", values[i])
+			} else if value.Valid {
+				_m.AccessTokenEncrypted = new(string)
+				*_m.AccessTokenEncrypted = value.String
+			}
+		case sub2apiprovider.FieldRefreshTokenEncrypted:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field refresh_token_encrypted", values[i])
+			} else if value.Valid {
+				_m.RefreshTokenEncrypted = new(string)
+				*_m.RefreshTokenEncrypted = value.String
+			}
+		case sub2apiprovider.FieldAccessTokenExpiresAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field access_token_expires_at", values[i])
+			} else if value.Valid {
+				_m.AccessTokenExpiresAt = new(time.Time)
+				*_m.AccessTokenExpiresAt = value.Time
+			}
+		case sub2apiprovider.FieldLastTokenRefreshAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field last_token_refresh_at", values[i])
+			} else if value.Valid {
+				_m.LastTokenRefreshAt = new(time.Time)
+				*_m.LastTokenRefreshAt = value.Time
+			}
+		case sub2apiprovider.FieldLastAuthError:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field last_auth_error", values[i])
+			} else if value.Valid {
+				_m.LastAuthError = new(string)
+				*_m.LastAuthError = value.String
 			}
 		case sub2apiprovider.FieldAPIPathKeys:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -227,6 +350,11 @@ func (_m *Sub2APIProvider) Value(name string) (ent.Value, error) {
 	return _m.selectValues.Get(name)
 }
 
+// QueryProxy queries the "proxy" edge of the Sub2APIProvider entity.
+func (_m *Sub2APIProvider) QueryProxy() *ProxyQuery {
+	return NewSub2APIProviderClient(_m.config).QueryProxy(_m)
+}
+
 // QueryAccounts queries the "accounts" edge of the Sub2APIProvider entity.
 func (_m *Sub2APIProvider) QueryAccounts() *AccountQuery {
 	return NewSub2APIProviderClient(_m.config).QueryAccounts(_m)
@@ -235,6 +363,26 @@ func (_m *Sub2APIProvider) QueryAccounts() *AccountQuery {
 // QueryOptimizeSchedule queries the "optimize_schedule" edge of the Sub2APIProvider entity.
 func (_m *Sub2APIProvider) QueryOptimizeSchedule() *Sub2APIOptimizeScheduleQuery {
 	return NewSub2APIProviderClient(_m.config).QueryOptimizeSchedule(_m)
+}
+
+// QueryOptimizeLogs queries the "optimize_logs" edge of the Sub2APIProvider entity.
+func (_m *Sub2APIProvider) QueryOptimizeLogs() *Sub2APIOptimizeLogQuery {
+	return NewSub2APIProviderClient(_m.config).QueryOptimizeLogs(_m)
+}
+
+// QueryProbeConfig queries the "probe_config" edge of the Sub2APIProvider entity.
+func (_m *Sub2APIProvider) QueryProbeConfig() *Sub2APIProviderProbeConfigQuery {
+	return NewSub2APIProviderClient(_m.config).QueryProbeConfig(_m)
+}
+
+// QueryProbeRuns queries the "probe_runs" edge of the Sub2APIProvider entity.
+func (_m *Sub2APIProvider) QueryProbeRuns() *Sub2APIProviderProbeRunQuery {
+	return NewSub2APIProviderClient(_m.config).QueryProbeRuns(_m)
+}
+
+// QueryProbeTargets queries the "probe_targets" edge of the Sub2APIProvider entity.
+func (_m *Sub2APIProvider) QueryProbeTargets() *Sub2APIProviderProbeTargetQuery {
+	return NewSub2APIProviderClient(_m.config).QueryProbeTargets(_m)
 }
 
 // Update returns a builder for updating this Sub2APIProvider.
@@ -288,10 +436,37 @@ func (_m *Sub2APIProvider) String() string {
 		builder.WriteString(*v)
 	}
 	builder.WriteString(", ")
+	if v := _m.ProxyID; v != nil {
+		builder.WriteString("proxy_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	builder.WriteString(", ")
 	builder.WriteString("email=")
 	builder.WriteString(_m.Email)
 	builder.WriteString(", ")
 	builder.WriteString("password_encrypted=<sensitive>")
+	builder.WriteString(", ")
+	builder.WriteString("auth_mode=")
+	builder.WriteString(_m.AuthMode)
+	builder.WriteString(", ")
+	builder.WriteString("access_token_encrypted=<sensitive>")
+	builder.WriteString(", ")
+	builder.WriteString("refresh_token_encrypted=<sensitive>")
+	builder.WriteString(", ")
+	if v := _m.AccessTokenExpiresAt; v != nil {
+		builder.WriteString("access_token_expires_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.LastTokenRefreshAt; v != nil {
+		builder.WriteString("last_token_refresh_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.LastAuthError; v != nil {
+		builder.WriteString("last_auth_error=")
+		builder.WriteString(*v)
+	}
 	builder.WriteString(", ")
 	if v := _m.APIPathKeys; v != nil {
 		builder.WriteString("api_path_keys=")

@@ -72,6 +72,13 @@ func RegisterUserRoutes(
 			}
 		}
 
+		// Codex 雷达（管理员开关开启后用户可读，handler 内再次校验开关）
+		codexRadar := authenticated.Group("/codexradar")
+		{
+			codexRadar.GET("/summary", h.CodexRadar.Summary)
+			codexRadar.GET("/image", h.CodexRadar.Image)
+		}
+
 		// API Key管理
 		keys := authenticated.Group("/keys")
 		{

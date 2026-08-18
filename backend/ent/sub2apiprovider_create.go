@@ -12,8 +12,13 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/Wei-Shaw/sub2api/ent/account"
+	"github.com/Wei-Shaw/sub2api/ent/proxy"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apioptimizelog"
 	"github.com/Wei-Shaw/sub2api/ent/sub2apioptimizeschedule"
 	"github.com/Wei-Shaw/sub2api/ent/sub2apiprovider"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiproviderprobeconfig"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiproviderproberun"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiproviderprobetarget"
 )
 
 // Sub2APIProviderCreate is the builder for creating a Sub2APIProvider entity.
@@ -120,6 +125,20 @@ func (_c *Sub2APIProviderCreate) SetNillableNotes(v *string) *Sub2APIProviderCre
 	return _c
 }
 
+// SetProxyID sets the "proxy_id" field.
+func (_c *Sub2APIProviderCreate) SetProxyID(v int64) *Sub2APIProviderCreate {
+	_c.mutation.SetProxyID(v)
+	return _c
+}
+
+// SetNillableProxyID sets the "proxy_id" field if the given value is not nil.
+func (_c *Sub2APIProviderCreate) SetNillableProxyID(v *int64) *Sub2APIProviderCreate {
+	if v != nil {
+		_c.SetProxyID(*v)
+	}
+	return _c
+}
+
 // SetEmail sets the "email" field.
 func (_c *Sub2APIProviderCreate) SetEmail(v string) *Sub2APIProviderCreate {
 	_c.mutation.SetEmail(v)
@@ -129,6 +148,98 @@ func (_c *Sub2APIProviderCreate) SetEmail(v string) *Sub2APIProviderCreate {
 // SetPasswordEncrypted sets the "password_encrypted" field.
 func (_c *Sub2APIProviderCreate) SetPasswordEncrypted(v string) *Sub2APIProviderCreate {
 	_c.mutation.SetPasswordEncrypted(v)
+	return _c
+}
+
+// SetNillablePasswordEncrypted sets the "password_encrypted" field if the given value is not nil.
+func (_c *Sub2APIProviderCreate) SetNillablePasswordEncrypted(v *string) *Sub2APIProviderCreate {
+	if v != nil {
+		_c.SetPasswordEncrypted(*v)
+	}
+	return _c
+}
+
+// SetAuthMode sets the "auth_mode" field.
+func (_c *Sub2APIProviderCreate) SetAuthMode(v string) *Sub2APIProviderCreate {
+	_c.mutation.SetAuthMode(v)
+	return _c
+}
+
+// SetNillableAuthMode sets the "auth_mode" field if the given value is not nil.
+func (_c *Sub2APIProviderCreate) SetNillableAuthMode(v *string) *Sub2APIProviderCreate {
+	if v != nil {
+		_c.SetAuthMode(*v)
+	}
+	return _c
+}
+
+// SetAccessTokenEncrypted sets the "access_token_encrypted" field.
+func (_c *Sub2APIProviderCreate) SetAccessTokenEncrypted(v string) *Sub2APIProviderCreate {
+	_c.mutation.SetAccessTokenEncrypted(v)
+	return _c
+}
+
+// SetNillableAccessTokenEncrypted sets the "access_token_encrypted" field if the given value is not nil.
+func (_c *Sub2APIProviderCreate) SetNillableAccessTokenEncrypted(v *string) *Sub2APIProviderCreate {
+	if v != nil {
+		_c.SetAccessTokenEncrypted(*v)
+	}
+	return _c
+}
+
+// SetRefreshTokenEncrypted sets the "refresh_token_encrypted" field.
+func (_c *Sub2APIProviderCreate) SetRefreshTokenEncrypted(v string) *Sub2APIProviderCreate {
+	_c.mutation.SetRefreshTokenEncrypted(v)
+	return _c
+}
+
+// SetNillableRefreshTokenEncrypted sets the "refresh_token_encrypted" field if the given value is not nil.
+func (_c *Sub2APIProviderCreate) SetNillableRefreshTokenEncrypted(v *string) *Sub2APIProviderCreate {
+	if v != nil {
+		_c.SetRefreshTokenEncrypted(*v)
+	}
+	return _c
+}
+
+// SetAccessTokenExpiresAt sets the "access_token_expires_at" field.
+func (_c *Sub2APIProviderCreate) SetAccessTokenExpiresAt(v time.Time) *Sub2APIProviderCreate {
+	_c.mutation.SetAccessTokenExpiresAt(v)
+	return _c
+}
+
+// SetNillableAccessTokenExpiresAt sets the "access_token_expires_at" field if the given value is not nil.
+func (_c *Sub2APIProviderCreate) SetNillableAccessTokenExpiresAt(v *time.Time) *Sub2APIProviderCreate {
+	if v != nil {
+		_c.SetAccessTokenExpiresAt(*v)
+	}
+	return _c
+}
+
+// SetLastTokenRefreshAt sets the "last_token_refresh_at" field.
+func (_c *Sub2APIProviderCreate) SetLastTokenRefreshAt(v time.Time) *Sub2APIProviderCreate {
+	_c.mutation.SetLastTokenRefreshAt(v)
+	return _c
+}
+
+// SetNillableLastTokenRefreshAt sets the "last_token_refresh_at" field if the given value is not nil.
+func (_c *Sub2APIProviderCreate) SetNillableLastTokenRefreshAt(v *time.Time) *Sub2APIProviderCreate {
+	if v != nil {
+		_c.SetLastTokenRefreshAt(*v)
+	}
+	return _c
+}
+
+// SetLastAuthError sets the "last_auth_error" field.
+func (_c *Sub2APIProviderCreate) SetLastAuthError(v string) *Sub2APIProviderCreate {
+	_c.mutation.SetLastAuthError(v)
+	return _c
+}
+
+// SetNillableLastAuthError sets the "last_auth_error" field if the given value is not nil.
+func (_c *Sub2APIProviderCreate) SetNillableLastAuthError(v *string) *Sub2APIProviderCreate {
+	if v != nil {
+		_c.SetLastAuthError(*v)
+	}
 	return _c
 }
 
@@ -202,6 +313,11 @@ func (_c *Sub2APIProviderCreate) SetNillableLastSyncError(v *string) *Sub2APIPro
 	return _c
 }
 
+// SetProxy sets the "proxy" edge to the Proxy entity.
+func (_c *Sub2APIProviderCreate) SetProxy(v *Proxy) *Sub2APIProviderCreate {
+	return _c.SetProxyID(v.ID)
+}
+
 // AddAccountIDs adds the "accounts" edge to the Account entity by IDs.
 func (_c *Sub2APIProviderCreate) AddAccountIDs(ids ...int64) *Sub2APIProviderCreate {
 	_c.mutation.AddAccountIDs(ids...)
@@ -234,6 +350,70 @@ func (_c *Sub2APIProviderCreate) SetNillableOptimizeScheduleID(id *int64) *Sub2A
 // SetOptimizeSchedule sets the "optimize_schedule" edge to the Sub2APIOptimizeSchedule entity.
 func (_c *Sub2APIProviderCreate) SetOptimizeSchedule(v *Sub2APIOptimizeSchedule) *Sub2APIProviderCreate {
 	return _c.SetOptimizeScheduleID(v.ID)
+}
+
+// AddOptimizeLogIDs adds the "optimize_logs" edge to the Sub2APIOptimizeLog entity by IDs.
+func (_c *Sub2APIProviderCreate) AddOptimizeLogIDs(ids ...int64) *Sub2APIProviderCreate {
+	_c.mutation.AddOptimizeLogIDs(ids...)
+	return _c
+}
+
+// AddOptimizeLogs adds the "optimize_logs" edges to the Sub2APIOptimizeLog entity.
+func (_c *Sub2APIProviderCreate) AddOptimizeLogs(v ...*Sub2APIOptimizeLog) *Sub2APIProviderCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddOptimizeLogIDs(ids...)
+}
+
+// SetProbeConfigID sets the "probe_config" edge to the Sub2APIProviderProbeConfig entity by ID.
+func (_c *Sub2APIProviderCreate) SetProbeConfigID(id int64) *Sub2APIProviderCreate {
+	_c.mutation.SetProbeConfigID(id)
+	return _c
+}
+
+// SetNillableProbeConfigID sets the "probe_config" edge to the Sub2APIProviderProbeConfig entity by ID if the given value is not nil.
+func (_c *Sub2APIProviderCreate) SetNillableProbeConfigID(id *int64) *Sub2APIProviderCreate {
+	if id != nil {
+		_c = _c.SetProbeConfigID(*id)
+	}
+	return _c
+}
+
+// SetProbeConfig sets the "probe_config" edge to the Sub2APIProviderProbeConfig entity.
+func (_c *Sub2APIProviderCreate) SetProbeConfig(v *Sub2APIProviderProbeConfig) *Sub2APIProviderCreate {
+	return _c.SetProbeConfigID(v.ID)
+}
+
+// AddProbeRunIDs adds the "probe_runs" edge to the Sub2APIProviderProbeRun entity by IDs.
+func (_c *Sub2APIProviderCreate) AddProbeRunIDs(ids ...int64) *Sub2APIProviderCreate {
+	_c.mutation.AddProbeRunIDs(ids...)
+	return _c
+}
+
+// AddProbeRuns adds the "probe_runs" edges to the Sub2APIProviderProbeRun entity.
+func (_c *Sub2APIProviderCreate) AddProbeRuns(v ...*Sub2APIProviderProbeRun) *Sub2APIProviderCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddProbeRunIDs(ids...)
+}
+
+// AddProbeTargetIDs adds the "probe_targets" edge to the Sub2APIProviderProbeTarget entity by IDs.
+func (_c *Sub2APIProviderCreate) AddProbeTargetIDs(ids ...int64) *Sub2APIProviderCreate {
+	_c.mutation.AddProbeTargetIDs(ids...)
+	return _c
+}
+
+// AddProbeTargets adds the "probe_targets" edges to the Sub2APIProviderProbeTarget entity.
+func (_c *Sub2APIProviderCreate) AddProbeTargets(v ...*Sub2APIProviderProbeTarget) *Sub2APIProviderCreate {
+	ids := make([]int64, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddProbeTargetIDs(ids...)
 }
 
 // Mutation returns the Sub2APIProviderMutation object of the builder.
@@ -295,6 +475,14 @@ func (_c *Sub2APIProviderCreate) defaults() error {
 		v := sub2apiprovider.DefaultStatus
 		_c.mutation.SetStatus(v)
 	}
+	if _, ok := _c.mutation.PasswordEncrypted(); !ok {
+		v := sub2apiprovider.DefaultPasswordEncrypted
+		_c.mutation.SetPasswordEncrypted(v)
+	}
+	if _, ok := _c.mutation.AuthMode(); !ok {
+		v := sub2apiprovider.DefaultAuthMode
+		_c.mutation.SetAuthMode(v)
+	}
 	return nil
 }
 
@@ -349,9 +537,12 @@ func (_c *Sub2APIProviderCreate) check() error {
 	if _, ok := _c.mutation.PasswordEncrypted(); !ok {
 		return &ValidationError{Name: "password_encrypted", err: errors.New(`ent: missing required field "Sub2APIProvider.password_encrypted"`)}
 	}
-	if v, ok := _c.mutation.PasswordEncrypted(); ok {
-		if err := sub2apiprovider.PasswordEncryptedValidator(v); err != nil {
-			return &ValidationError{Name: "password_encrypted", err: fmt.Errorf(`ent: validator failed for field "Sub2APIProvider.password_encrypted": %w`, err)}
+	if _, ok := _c.mutation.AuthMode(); !ok {
+		return &ValidationError{Name: "auth_mode", err: errors.New(`ent: missing required field "Sub2APIProvider.auth_mode"`)}
+	}
+	if v, ok := _c.mutation.AuthMode(); ok {
+		if err := sub2apiprovider.AuthModeValidator(v); err != nil {
+			return &ValidationError{Name: "auth_mode", err: fmt.Errorf(`ent: validator failed for field "Sub2APIProvider.auth_mode": %w`, err)}
 		}
 	}
 	if v, ok := _c.mutation.APIPathKeys(); ok {
@@ -436,6 +627,30 @@ func (_c *Sub2APIProviderCreate) createSpec() (*Sub2APIProvider, *sqlgraph.Creat
 		_spec.SetField(sub2apiprovider.FieldPasswordEncrypted, field.TypeString, value)
 		_node.PasswordEncrypted = value
 	}
+	if value, ok := _c.mutation.AuthMode(); ok {
+		_spec.SetField(sub2apiprovider.FieldAuthMode, field.TypeString, value)
+		_node.AuthMode = value
+	}
+	if value, ok := _c.mutation.AccessTokenEncrypted(); ok {
+		_spec.SetField(sub2apiprovider.FieldAccessTokenEncrypted, field.TypeString, value)
+		_node.AccessTokenEncrypted = &value
+	}
+	if value, ok := _c.mutation.RefreshTokenEncrypted(); ok {
+		_spec.SetField(sub2apiprovider.FieldRefreshTokenEncrypted, field.TypeString, value)
+		_node.RefreshTokenEncrypted = &value
+	}
+	if value, ok := _c.mutation.AccessTokenExpiresAt(); ok {
+		_spec.SetField(sub2apiprovider.FieldAccessTokenExpiresAt, field.TypeTime, value)
+		_node.AccessTokenExpiresAt = &value
+	}
+	if value, ok := _c.mutation.LastTokenRefreshAt(); ok {
+		_spec.SetField(sub2apiprovider.FieldLastTokenRefreshAt, field.TypeTime, value)
+		_node.LastTokenRefreshAt = &value
+	}
+	if value, ok := _c.mutation.LastAuthError(); ok {
+		_spec.SetField(sub2apiprovider.FieldLastAuthError, field.TypeString, value)
+		_node.LastAuthError = &value
+	}
 	if value, ok := _c.mutation.APIPathKeys(); ok {
 		_spec.SetField(sub2apiprovider.FieldAPIPathKeys, field.TypeString, value)
 		_node.APIPathKeys = &value
@@ -455,6 +670,23 @@ func (_c *Sub2APIProviderCreate) createSpec() (*Sub2APIProvider, *sqlgraph.Creat
 	if value, ok := _c.mutation.LastSyncError(); ok {
 		_spec.SetField(sub2apiprovider.FieldLastSyncError, field.TypeString, value)
 		_node.LastSyncError = &value
+	}
+	if nodes := _c.mutation.ProxyIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   sub2apiprovider.ProxyTable,
+			Columns: []string{sub2apiprovider.ProxyColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(proxy.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.ProxyID = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := _c.mutation.AccountsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -481,6 +713,70 @@ func (_c *Sub2APIProviderCreate) createSpec() (*Sub2APIProvider, *sqlgraph.Creat
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(sub2apioptimizeschedule.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.OptimizeLogsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   sub2apiprovider.OptimizeLogsTable,
+			Columns: []string{sub2apiprovider.OptimizeLogsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apioptimizelog.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ProbeConfigIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   sub2apiprovider.ProbeConfigTable,
+			Columns: []string{sub2apiprovider.ProbeConfigColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiproviderprobeconfig.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ProbeRunsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   sub2apiprovider.ProbeRunsTable,
+			Columns: []string{sub2apiprovider.ProbeRunsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiproviderproberun.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ProbeTargetsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   sub2apiprovider.ProbeTargetsTable,
+			Columns: []string{sub2apiprovider.ProbeTargetsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiproviderprobetarget.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -636,6 +932,24 @@ func (u *Sub2APIProviderUpsert) ClearNotes() *Sub2APIProviderUpsert {
 	return u
 }
 
+// SetProxyID sets the "proxy_id" field.
+func (u *Sub2APIProviderUpsert) SetProxyID(v int64) *Sub2APIProviderUpsert {
+	u.Set(sub2apiprovider.FieldProxyID, v)
+	return u
+}
+
+// UpdateProxyID sets the "proxy_id" field to the value that was provided on create.
+func (u *Sub2APIProviderUpsert) UpdateProxyID() *Sub2APIProviderUpsert {
+	u.SetExcluded(sub2apiprovider.FieldProxyID)
+	return u
+}
+
+// ClearProxyID clears the value of the "proxy_id" field.
+func (u *Sub2APIProviderUpsert) ClearProxyID() *Sub2APIProviderUpsert {
+	u.SetNull(sub2apiprovider.FieldProxyID)
+	return u
+}
+
 // SetEmail sets the "email" field.
 func (u *Sub2APIProviderUpsert) SetEmail(v string) *Sub2APIProviderUpsert {
 	u.Set(sub2apiprovider.FieldEmail, v)
@@ -657,6 +971,108 @@ func (u *Sub2APIProviderUpsert) SetPasswordEncrypted(v string) *Sub2APIProviderU
 // UpdatePasswordEncrypted sets the "password_encrypted" field to the value that was provided on create.
 func (u *Sub2APIProviderUpsert) UpdatePasswordEncrypted() *Sub2APIProviderUpsert {
 	u.SetExcluded(sub2apiprovider.FieldPasswordEncrypted)
+	return u
+}
+
+// SetAuthMode sets the "auth_mode" field.
+func (u *Sub2APIProviderUpsert) SetAuthMode(v string) *Sub2APIProviderUpsert {
+	u.Set(sub2apiprovider.FieldAuthMode, v)
+	return u
+}
+
+// UpdateAuthMode sets the "auth_mode" field to the value that was provided on create.
+func (u *Sub2APIProviderUpsert) UpdateAuthMode() *Sub2APIProviderUpsert {
+	u.SetExcluded(sub2apiprovider.FieldAuthMode)
+	return u
+}
+
+// SetAccessTokenEncrypted sets the "access_token_encrypted" field.
+func (u *Sub2APIProviderUpsert) SetAccessTokenEncrypted(v string) *Sub2APIProviderUpsert {
+	u.Set(sub2apiprovider.FieldAccessTokenEncrypted, v)
+	return u
+}
+
+// UpdateAccessTokenEncrypted sets the "access_token_encrypted" field to the value that was provided on create.
+func (u *Sub2APIProviderUpsert) UpdateAccessTokenEncrypted() *Sub2APIProviderUpsert {
+	u.SetExcluded(sub2apiprovider.FieldAccessTokenEncrypted)
+	return u
+}
+
+// ClearAccessTokenEncrypted clears the value of the "access_token_encrypted" field.
+func (u *Sub2APIProviderUpsert) ClearAccessTokenEncrypted() *Sub2APIProviderUpsert {
+	u.SetNull(sub2apiprovider.FieldAccessTokenEncrypted)
+	return u
+}
+
+// SetRefreshTokenEncrypted sets the "refresh_token_encrypted" field.
+func (u *Sub2APIProviderUpsert) SetRefreshTokenEncrypted(v string) *Sub2APIProviderUpsert {
+	u.Set(sub2apiprovider.FieldRefreshTokenEncrypted, v)
+	return u
+}
+
+// UpdateRefreshTokenEncrypted sets the "refresh_token_encrypted" field to the value that was provided on create.
+func (u *Sub2APIProviderUpsert) UpdateRefreshTokenEncrypted() *Sub2APIProviderUpsert {
+	u.SetExcluded(sub2apiprovider.FieldRefreshTokenEncrypted)
+	return u
+}
+
+// ClearRefreshTokenEncrypted clears the value of the "refresh_token_encrypted" field.
+func (u *Sub2APIProviderUpsert) ClearRefreshTokenEncrypted() *Sub2APIProviderUpsert {
+	u.SetNull(sub2apiprovider.FieldRefreshTokenEncrypted)
+	return u
+}
+
+// SetAccessTokenExpiresAt sets the "access_token_expires_at" field.
+func (u *Sub2APIProviderUpsert) SetAccessTokenExpiresAt(v time.Time) *Sub2APIProviderUpsert {
+	u.Set(sub2apiprovider.FieldAccessTokenExpiresAt, v)
+	return u
+}
+
+// UpdateAccessTokenExpiresAt sets the "access_token_expires_at" field to the value that was provided on create.
+func (u *Sub2APIProviderUpsert) UpdateAccessTokenExpiresAt() *Sub2APIProviderUpsert {
+	u.SetExcluded(sub2apiprovider.FieldAccessTokenExpiresAt)
+	return u
+}
+
+// ClearAccessTokenExpiresAt clears the value of the "access_token_expires_at" field.
+func (u *Sub2APIProviderUpsert) ClearAccessTokenExpiresAt() *Sub2APIProviderUpsert {
+	u.SetNull(sub2apiprovider.FieldAccessTokenExpiresAt)
+	return u
+}
+
+// SetLastTokenRefreshAt sets the "last_token_refresh_at" field.
+func (u *Sub2APIProviderUpsert) SetLastTokenRefreshAt(v time.Time) *Sub2APIProviderUpsert {
+	u.Set(sub2apiprovider.FieldLastTokenRefreshAt, v)
+	return u
+}
+
+// UpdateLastTokenRefreshAt sets the "last_token_refresh_at" field to the value that was provided on create.
+func (u *Sub2APIProviderUpsert) UpdateLastTokenRefreshAt() *Sub2APIProviderUpsert {
+	u.SetExcluded(sub2apiprovider.FieldLastTokenRefreshAt)
+	return u
+}
+
+// ClearLastTokenRefreshAt clears the value of the "last_token_refresh_at" field.
+func (u *Sub2APIProviderUpsert) ClearLastTokenRefreshAt() *Sub2APIProviderUpsert {
+	u.SetNull(sub2apiprovider.FieldLastTokenRefreshAt)
+	return u
+}
+
+// SetLastAuthError sets the "last_auth_error" field.
+func (u *Sub2APIProviderUpsert) SetLastAuthError(v string) *Sub2APIProviderUpsert {
+	u.Set(sub2apiprovider.FieldLastAuthError, v)
+	return u
+}
+
+// UpdateLastAuthError sets the "last_auth_error" field to the value that was provided on create.
+func (u *Sub2APIProviderUpsert) UpdateLastAuthError() *Sub2APIProviderUpsert {
+	u.SetExcluded(sub2apiprovider.FieldLastAuthError)
+	return u
+}
+
+// ClearLastAuthError clears the value of the "last_auth_error" field.
+func (u *Sub2APIProviderUpsert) ClearLastAuthError() *Sub2APIProviderUpsert {
+	u.SetNull(sub2apiprovider.FieldLastAuthError)
 	return u
 }
 
@@ -907,6 +1323,27 @@ func (u *Sub2APIProviderUpsertOne) ClearNotes() *Sub2APIProviderUpsertOne {
 	})
 }
 
+// SetProxyID sets the "proxy_id" field.
+func (u *Sub2APIProviderUpsertOne) SetProxyID(v int64) *Sub2APIProviderUpsertOne {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.SetProxyID(v)
+	})
+}
+
+// UpdateProxyID sets the "proxy_id" field to the value that was provided on create.
+func (u *Sub2APIProviderUpsertOne) UpdateProxyID() *Sub2APIProviderUpsertOne {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.UpdateProxyID()
+	})
+}
+
+// ClearProxyID clears the value of the "proxy_id" field.
+func (u *Sub2APIProviderUpsertOne) ClearProxyID() *Sub2APIProviderUpsertOne {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.ClearProxyID()
+	})
+}
+
 // SetEmail sets the "email" field.
 func (u *Sub2APIProviderUpsertOne) SetEmail(v string) *Sub2APIProviderUpsertOne {
 	return u.Update(func(s *Sub2APIProviderUpsert) {
@@ -932,6 +1369,125 @@ func (u *Sub2APIProviderUpsertOne) SetPasswordEncrypted(v string) *Sub2APIProvid
 func (u *Sub2APIProviderUpsertOne) UpdatePasswordEncrypted() *Sub2APIProviderUpsertOne {
 	return u.Update(func(s *Sub2APIProviderUpsert) {
 		s.UpdatePasswordEncrypted()
+	})
+}
+
+// SetAuthMode sets the "auth_mode" field.
+func (u *Sub2APIProviderUpsertOne) SetAuthMode(v string) *Sub2APIProviderUpsertOne {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.SetAuthMode(v)
+	})
+}
+
+// UpdateAuthMode sets the "auth_mode" field to the value that was provided on create.
+func (u *Sub2APIProviderUpsertOne) UpdateAuthMode() *Sub2APIProviderUpsertOne {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.UpdateAuthMode()
+	})
+}
+
+// SetAccessTokenEncrypted sets the "access_token_encrypted" field.
+func (u *Sub2APIProviderUpsertOne) SetAccessTokenEncrypted(v string) *Sub2APIProviderUpsertOne {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.SetAccessTokenEncrypted(v)
+	})
+}
+
+// UpdateAccessTokenEncrypted sets the "access_token_encrypted" field to the value that was provided on create.
+func (u *Sub2APIProviderUpsertOne) UpdateAccessTokenEncrypted() *Sub2APIProviderUpsertOne {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.UpdateAccessTokenEncrypted()
+	})
+}
+
+// ClearAccessTokenEncrypted clears the value of the "access_token_encrypted" field.
+func (u *Sub2APIProviderUpsertOne) ClearAccessTokenEncrypted() *Sub2APIProviderUpsertOne {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.ClearAccessTokenEncrypted()
+	})
+}
+
+// SetRefreshTokenEncrypted sets the "refresh_token_encrypted" field.
+func (u *Sub2APIProviderUpsertOne) SetRefreshTokenEncrypted(v string) *Sub2APIProviderUpsertOne {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.SetRefreshTokenEncrypted(v)
+	})
+}
+
+// UpdateRefreshTokenEncrypted sets the "refresh_token_encrypted" field to the value that was provided on create.
+func (u *Sub2APIProviderUpsertOne) UpdateRefreshTokenEncrypted() *Sub2APIProviderUpsertOne {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.UpdateRefreshTokenEncrypted()
+	})
+}
+
+// ClearRefreshTokenEncrypted clears the value of the "refresh_token_encrypted" field.
+func (u *Sub2APIProviderUpsertOne) ClearRefreshTokenEncrypted() *Sub2APIProviderUpsertOne {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.ClearRefreshTokenEncrypted()
+	})
+}
+
+// SetAccessTokenExpiresAt sets the "access_token_expires_at" field.
+func (u *Sub2APIProviderUpsertOne) SetAccessTokenExpiresAt(v time.Time) *Sub2APIProviderUpsertOne {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.SetAccessTokenExpiresAt(v)
+	})
+}
+
+// UpdateAccessTokenExpiresAt sets the "access_token_expires_at" field to the value that was provided on create.
+func (u *Sub2APIProviderUpsertOne) UpdateAccessTokenExpiresAt() *Sub2APIProviderUpsertOne {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.UpdateAccessTokenExpiresAt()
+	})
+}
+
+// ClearAccessTokenExpiresAt clears the value of the "access_token_expires_at" field.
+func (u *Sub2APIProviderUpsertOne) ClearAccessTokenExpiresAt() *Sub2APIProviderUpsertOne {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.ClearAccessTokenExpiresAt()
+	})
+}
+
+// SetLastTokenRefreshAt sets the "last_token_refresh_at" field.
+func (u *Sub2APIProviderUpsertOne) SetLastTokenRefreshAt(v time.Time) *Sub2APIProviderUpsertOne {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.SetLastTokenRefreshAt(v)
+	})
+}
+
+// UpdateLastTokenRefreshAt sets the "last_token_refresh_at" field to the value that was provided on create.
+func (u *Sub2APIProviderUpsertOne) UpdateLastTokenRefreshAt() *Sub2APIProviderUpsertOne {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.UpdateLastTokenRefreshAt()
+	})
+}
+
+// ClearLastTokenRefreshAt clears the value of the "last_token_refresh_at" field.
+func (u *Sub2APIProviderUpsertOne) ClearLastTokenRefreshAt() *Sub2APIProviderUpsertOne {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.ClearLastTokenRefreshAt()
+	})
+}
+
+// SetLastAuthError sets the "last_auth_error" field.
+func (u *Sub2APIProviderUpsertOne) SetLastAuthError(v string) *Sub2APIProviderUpsertOne {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.SetLastAuthError(v)
+	})
+}
+
+// UpdateLastAuthError sets the "last_auth_error" field to the value that was provided on create.
+func (u *Sub2APIProviderUpsertOne) UpdateLastAuthError() *Sub2APIProviderUpsertOne {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.UpdateLastAuthError()
+	})
+}
+
+// ClearLastAuthError clears the value of the "last_auth_error" field.
+func (u *Sub2APIProviderUpsertOne) ClearLastAuthError() *Sub2APIProviderUpsertOne {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.ClearLastAuthError()
 	})
 }
 
@@ -1363,6 +1919,27 @@ func (u *Sub2APIProviderUpsertBulk) ClearNotes() *Sub2APIProviderUpsertBulk {
 	})
 }
 
+// SetProxyID sets the "proxy_id" field.
+func (u *Sub2APIProviderUpsertBulk) SetProxyID(v int64) *Sub2APIProviderUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.SetProxyID(v)
+	})
+}
+
+// UpdateProxyID sets the "proxy_id" field to the value that was provided on create.
+func (u *Sub2APIProviderUpsertBulk) UpdateProxyID() *Sub2APIProviderUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.UpdateProxyID()
+	})
+}
+
+// ClearProxyID clears the value of the "proxy_id" field.
+func (u *Sub2APIProviderUpsertBulk) ClearProxyID() *Sub2APIProviderUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.ClearProxyID()
+	})
+}
+
 // SetEmail sets the "email" field.
 func (u *Sub2APIProviderUpsertBulk) SetEmail(v string) *Sub2APIProviderUpsertBulk {
 	return u.Update(func(s *Sub2APIProviderUpsert) {
@@ -1388,6 +1965,125 @@ func (u *Sub2APIProviderUpsertBulk) SetPasswordEncrypted(v string) *Sub2APIProvi
 func (u *Sub2APIProviderUpsertBulk) UpdatePasswordEncrypted() *Sub2APIProviderUpsertBulk {
 	return u.Update(func(s *Sub2APIProviderUpsert) {
 		s.UpdatePasswordEncrypted()
+	})
+}
+
+// SetAuthMode sets the "auth_mode" field.
+func (u *Sub2APIProviderUpsertBulk) SetAuthMode(v string) *Sub2APIProviderUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.SetAuthMode(v)
+	})
+}
+
+// UpdateAuthMode sets the "auth_mode" field to the value that was provided on create.
+func (u *Sub2APIProviderUpsertBulk) UpdateAuthMode() *Sub2APIProviderUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.UpdateAuthMode()
+	})
+}
+
+// SetAccessTokenEncrypted sets the "access_token_encrypted" field.
+func (u *Sub2APIProviderUpsertBulk) SetAccessTokenEncrypted(v string) *Sub2APIProviderUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.SetAccessTokenEncrypted(v)
+	})
+}
+
+// UpdateAccessTokenEncrypted sets the "access_token_encrypted" field to the value that was provided on create.
+func (u *Sub2APIProviderUpsertBulk) UpdateAccessTokenEncrypted() *Sub2APIProviderUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.UpdateAccessTokenEncrypted()
+	})
+}
+
+// ClearAccessTokenEncrypted clears the value of the "access_token_encrypted" field.
+func (u *Sub2APIProviderUpsertBulk) ClearAccessTokenEncrypted() *Sub2APIProviderUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.ClearAccessTokenEncrypted()
+	})
+}
+
+// SetRefreshTokenEncrypted sets the "refresh_token_encrypted" field.
+func (u *Sub2APIProviderUpsertBulk) SetRefreshTokenEncrypted(v string) *Sub2APIProviderUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.SetRefreshTokenEncrypted(v)
+	})
+}
+
+// UpdateRefreshTokenEncrypted sets the "refresh_token_encrypted" field to the value that was provided on create.
+func (u *Sub2APIProviderUpsertBulk) UpdateRefreshTokenEncrypted() *Sub2APIProviderUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.UpdateRefreshTokenEncrypted()
+	})
+}
+
+// ClearRefreshTokenEncrypted clears the value of the "refresh_token_encrypted" field.
+func (u *Sub2APIProviderUpsertBulk) ClearRefreshTokenEncrypted() *Sub2APIProviderUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.ClearRefreshTokenEncrypted()
+	})
+}
+
+// SetAccessTokenExpiresAt sets the "access_token_expires_at" field.
+func (u *Sub2APIProviderUpsertBulk) SetAccessTokenExpiresAt(v time.Time) *Sub2APIProviderUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.SetAccessTokenExpiresAt(v)
+	})
+}
+
+// UpdateAccessTokenExpiresAt sets the "access_token_expires_at" field to the value that was provided on create.
+func (u *Sub2APIProviderUpsertBulk) UpdateAccessTokenExpiresAt() *Sub2APIProviderUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.UpdateAccessTokenExpiresAt()
+	})
+}
+
+// ClearAccessTokenExpiresAt clears the value of the "access_token_expires_at" field.
+func (u *Sub2APIProviderUpsertBulk) ClearAccessTokenExpiresAt() *Sub2APIProviderUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.ClearAccessTokenExpiresAt()
+	})
+}
+
+// SetLastTokenRefreshAt sets the "last_token_refresh_at" field.
+func (u *Sub2APIProviderUpsertBulk) SetLastTokenRefreshAt(v time.Time) *Sub2APIProviderUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.SetLastTokenRefreshAt(v)
+	})
+}
+
+// UpdateLastTokenRefreshAt sets the "last_token_refresh_at" field to the value that was provided on create.
+func (u *Sub2APIProviderUpsertBulk) UpdateLastTokenRefreshAt() *Sub2APIProviderUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.UpdateLastTokenRefreshAt()
+	})
+}
+
+// ClearLastTokenRefreshAt clears the value of the "last_token_refresh_at" field.
+func (u *Sub2APIProviderUpsertBulk) ClearLastTokenRefreshAt() *Sub2APIProviderUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.ClearLastTokenRefreshAt()
+	})
+}
+
+// SetLastAuthError sets the "last_auth_error" field.
+func (u *Sub2APIProviderUpsertBulk) SetLastAuthError(v string) *Sub2APIProviderUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.SetLastAuthError(v)
+	})
+}
+
+// UpdateLastAuthError sets the "last_auth_error" field to the value that was provided on create.
+func (u *Sub2APIProviderUpsertBulk) UpdateLastAuthError() *Sub2APIProviderUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.UpdateLastAuthError()
+	})
+}
+
+// ClearLastAuthError clears the value of the "last_auth_error" field.
+func (u *Sub2APIProviderUpsertBulk) ClearLastAuthError() *Sub2APIProviderUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.ClearLastAuthError()
 	})
 }
 

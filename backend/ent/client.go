@@ -47,6 +47,10 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/sub2apioptimizelog"
 	"github.com/Wei-Shaw/sub2api/ent/sub2apioptimizeschedule"
 	"github.com/Wei-Shaw/sub2api/ent/sub2apiprovider"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiproviderprobeconfig"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiproviderproberun"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiproviderprobetarget"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiproviderprobetargetrun"
 	"github.com/Wei-Shaw/sub2api/ent/subscriptionplan"
 	"github.com/Wei-Shaw/sub2api/ent/tlsfingerprintprofile"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
@@ -130,6 +134,14 @@ type Client struct {
 	Sub2APIOptimizeSchedule *Sub2APIOptimizeScheduleClient
 	// Sub2APIProvider is the client for interacting with the Sub2APIProvider builders.
 	Sub2APIProvider *Sub2APIProviderClient
+	// Sub2APIProviderProbeConfig is the client for interacting with the Sub2APIProviderProbeConfig builders.
+	Sub2APIProviderProbeConfig *Sub2APIProviderProbeConfigClient
+	// Sub2APIProviderProbeRun is the client for interacting with the Sub2APIProviderProbeRun builders.
+	Sub2APIProviderProbeRun *Sub2APIProviderProbeRunClient
+	// Sub2APIProviderProbeTarget is the client for interacting with the Sub2APIProviderProbeTarget builders.
+	Sub2APIProviderProbeTarget *Sub2APIProviderProbeTargetClient
+	// Sub2APIProviderProbeTargetRun is the client for interacting with the Sub2APIProviderProbeTargetRun builders.
+	Sub2APIProviderProbeTargetRun *Sub2APIProviderProbeTargetRunClient
 	// SubscriptionPlan is the client for interacting with the SubscriptionPlan builders.
 	SubscriptionPlan *SubscriptionPlanClient
 	// TLSFingerprintProfile is the client for interacting with the TLSFingerprintProfile builders.
@@ -193,6 +205,10 @@ func (c *Client) init() {
 	c.Sub2APIOptimizeLog = NewSub2APIOptimizeLogClient(c.config)
 	c.Sub2APIOptimizeSchedule = NewSub2APIOptimizeScheduleClient(c.config)
 	c.Sub2APIProvider = NewSub2APIProviderClient(c.config)
+	c.Sub2APIProviderProbeConfig = NewSub2APIProviderProbeConfigClient(c.config)
+	c.Sub2APIProviderProbeRun = NewSub2APIProviderProbeRunClient(c.config)
+	c.Sub2APIProviderProbeTarget = NewSub2APIProviderProbeTargetClient(c.config)
+	c.Sub2APIProviderProbeTargetRun = NewSub2APIProviderProbeTargetRunClient(c.config)
 	c.SubscriptionPlan = NewSubscriptionPlanClient(c.config)
 	c.TLSFingerprintProfile = NewTLSFingerprintProfileClient(c.config)
 	c.UsageCleanupTask = NewUsageCleanupTaskClient(c.config)
@@ -327,6 +343,10 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Sub2APIOptimizeLog:            NewSub2APIOptimizeLogClient(cfg),
 		Sub2APIOptimizeSchedule:       NewSub2APIOptimizeScheduleClient(cfg),
 		Sub2APIProvider:               NewSub2APIProviderClient(cfg),
+		Sub2APIProviderProbeConfig:    NewSub2APIProviderProbeConfigClient(cfg),
+		Sub2APIProviderProbeRun:       NewSub2APIProviderProbeRunClient(cfg),
+		Sub2APIProviderProbeTarget:    NewSub2APIProviderProbeTargetClient(cfg),
+		Sub2APIProviderProbeTargetRun: NewSub2APIProviderProbeTargetRunClient(cfg),
 		SubscriptionPlan:              NewSubscriptionPlanClient(cfg),
 		TLSFingerprintProfile:         NewTLSFingerprintProfileClient(cfg),
 		UsageCleanupTask:              NewUsageCleanupTaskClient(cfg),
@@ -388,6 +408,10 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Sub2APIOptimizeLog:            NewSub2APIOptimizeLogClient(cfg),
 		Sub2APIOptimizeSchedule:       NewSub2APIOptimizeScheduleClient(cfg),
 		Sub2APIProvider:               NewSub2APIProviderClient(cfg),
+		Sub2APIProviderProbeConfig:    NewSub2APIProviderProbeConfigClient(cfg),
+		Sub2APIProviderProbeRun:       NewSub2APIProviderProbeRunClient(cfg),
+		Sub2APIProviderProbeTarget:    NewSub2APIProviderProbeTargetClient(cfg),
+		Sub2APIProviderProbeTargetRun: NewSub2APIProviderProbeTargetRunClient(cfg),
 		SubscriptionPlan:              NewSubscriptionPlanClient(cfg),
 		TLSFingerprintProfile:         NewTLSFingerprintProfileClient(cfg),
 		UsageCleanupTask:              NewUsageCleanupTaskClient(cfg),
@@ -435,10 +459,12 @@ func (c *Client) Use(hooks ...Hook) {
 		c.IdentityAdoptionDecision, c.PaymentAuditLog, c.PaymentOrder,
 		c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode, c.PromoCodeUsage,
 		c.Proxy, c.RedeemCode, c.SecuritySecret, c.Setting, c.Sub2APIOptimizeLog,
-		c.Sub2APIOptimizeSchedule, c.Sub2APIProvider, c.SubscriptionPlan,
-		c.TLSFingerprintProfile, c.UsageCleanupTask, c.UsageLog, c.User,
-		c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
-		c.UserPlatformQuota, c.UserSubscription,
+		c.Sub2APIOptimizeSchedule, c.Sub2APIProvider, c.Sub2APIProviderProbeConfig,
+		c.Sub2APIProviderProbeRun, c.Sub2APIProviderProbeTarget,
+		c.Sub2APIProviderProbeTargetRun, c.SubscriptionPlan, c.TLSFingerprintProfile,
+		c.UsageCleanupTask, c.UsageLog, c.User, c.UserAllowedGroup,
+		c.UserAttributeDefinition, c.UserAttributeValue, c.UserPlatformQuota,
+		c.UserSubscription,
 	} {
 		n.Use(hooks...)
 	}
@@ -456,10 +482,12 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.IdentityAdoptionDecision, c.PaymentAuditLog, c.PaymentOrder,
 		c.PaymentProviderInstance, c.PendingAuthSession, c.PromoCode, c.PromoCodeUsage,
 		c.Proxy, c.RedeemCode, c.SecuritySecret, c.Setting, c.Sub2APIOptimizeLog,
-		c.Sub2APIOptimizeSchedule, c.Sub2APIProvider, c.SubscriptionPlan,
-		c.TLSFingerprintProfile, c.UsageCleanupTask, c.UsageLog, c.User,
-		c.UserAllowedGroup, c.UserAttributeDefinition, c.UserAttributeValue,
-		c.UserPlatformQuota, c.UserSubscription,
+		c.Sub2APIOptimizeSchedule, c.Sub2APIProvider, c.Sub2APIProviderProbeConfig,
+		c.Sub2APIProviderProbeRun, c.Sub2APIProviderProbeTarget,
+		c.Sub2APIProviderProbeTargetRun, c.SubscriptionPlan, c.TLSFingerprintProfile,
+		c.UsageCleanupTask, c.UsageLog, c.User, c.UserAllowedGroup,
+		c.UserAttributeDefinition, c.UserAttributeValue, c.UserPlatformQuota,
+		c.UserSubscription,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -532,6 +560,14 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Sub2APIOptimizeSchedule.mutate(ctx, m)
 	case *Sub2APIProviderMutation:
 		return c.Sub2APIProvider.mutate(ctx, m)
+	case *Sub2APIProviderProbeConfigMutation:
+		return c.Sub2APIProviderProbeConfig.mutate(ctx, m)
+	case *Sub2APIProviderProbeRunMutation:
+		return c.Sub2APIProviderProbeRun.mutate(ctx, m)
+	case *Sub2APIProviderProbeTargetMutation:
+		return c.Sub2APIProviderProbeTarget.mutate(ctx, m)
+	case *Sub2APIProviderProbeTargetRunMutation:
+		return c.Sub2APIProviderProbeTargetRun.mutate(ctx, m)
 	case *SubscriptionPlanMutation:
 		return c.SubscriptionPlan.mutate(ctx, m)
 	case *TLSFingerprintProfileMutation:
@@ -937,6 +973,22 @@ func (c *AccountClient) QueryProvider(_m *Account) *Sub2APIProviderQuery {
 			sqlgraph.From(account.Table, account.FieldID, id),
 			sqlgraph.To(sub2apiprovider.Table, sub2apiprovider.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, account.ProviderTable, account.ProviderColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QuerySub2apiProbeTargets queries the sub2api_probe_targets edge of a Account.
+func (c *AccountClient) QuerySub2apiProbeTargets(_m *Account) *Sub2APIProviderProbeTargetQuery {
+	query := (&Sub2APIProviderProbeTargetClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(account.Table, account.FieldID, id),
+			sqlgraph.To(sub2apiproviderprobetarget.Table, sub2apiproviderprobetarget.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, account.Sub2apiProbeTargetsTable, account.Sub2apiProbeTargetsColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -4637,6 +4689,22 @@ func (c *ProxyClient) QueryAccounts(_m *Proxy) *AccountQuery {
 	return query
 }
 
+// QuerySub2apiProviders queries the sub2api_providers edge of a Proxy.
+func (c *ProxyClient) QuerySub2apiProviders(_m *Proxy) *Sub2APIProviderQuery {
+	query := (&Sub2APIProviderClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(proxy.Table, proxy.FieldID, id),
+			sqlgraph.To(sub2apiprovider.Table, sub2apiprovider.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, true, proxy.Sub2apiProvidersTable, proxy.Sub2apiProvidersColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryBackupProxy queries the backup_proxy edge of a Proxy.
 func (c *ProxyClient) QueryBackupProxy(_m *Proxy) *ProxyQuery {
 	query := (&ProxyClient{config: c.config}).Query()
@@ -5219,6 +5287,22 @@ func (c *Sub2APIOptimizeLogClient) GetX(ctx context.Context, id int64) *Sub2APIO
 	return obj
 }
 
+// QueryProvider queries the provider edge of a Sub2APIOptimizeLog.
+func (c *Sub2APIOptimizeLogClient) QueryProvider(_m *Sub2APIOptimizeLog) *Sub2APIProviderQuery {
+	query := (&Sub2APIProviderClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sub2apioptimizelog.Table, sub2apioptimizelog.FieldID, id),
+			sqlgraph.To(sub2apiprovider.Table, sub2apiprovider.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, sub2apioptimizelog.ProviderTable, sub2apioptimizelog.ProviderColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QuerySchedule queries the schedule edge of a Sub2APIOptimizeLog.
 func (c *Sub2APIOptimizeLogClient) QuerySchedule(_m *Sub2APIOptimizeLog) *Sub2APIOptimizeScheduleQuery {
 	query := (&Sub2APIOptimizeScheduleClient{config: c.config}).Query()
@@ -5533,6 +5617,22 @@ func (c *Sub2APIProviderClient) GetX(ctx context.Context, id int64) *Sub2APIProv
 	return obj
 }
 
+// QueryProxy queries the proxy edge of a Sub2APIProvider.
+func (c *Sub2APIProviderClient) QueryProxy(_m *Sub2APIProvider) *ProxyQuery {
+	query := (&ProxyClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sub2apiprovider.Table, sub2apiprovider.FieldID, id),
+			sqlgraph.To(proxy.Table, proxy.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, sub2apiprovider.ProxyTable, sub2apiprovider.ProxyColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryAccounts queries the accounts edge of a Sub2APIProvider.
 func (c *Sub2APIProviderClient) QueryAccounts(_m *Sub2APIProvider) *AccountQuery {
 	query := (&AccountClient{config: c.config}).Query()
@@ -5565,6 +5665,70 @@ func (c *Sub2APIProviderClient) QueryOptimizeSchedule(_m *Sub2APIProvider) *Sub2
 	return query
 }
 
+// QueryOptimizeLogs queries the optimize_logs edge of a Sub2APIProvider.
+func (c *Sub2APIProviderClient) QueryOptimizeLogs(_m *Sub2APIProvider) *Sub2APIOptimizeLogQuery {
+	query := (&Sub2APIOptimizeLogClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sub2apiprovider.Table, sub2apiprovider.FieldID, id),
+			sqlgraph.To(sub2apioptimizelog.Table, sub2apioptimizelog.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, sub2apiprovider.OptimizeLogsTable, sub2apiprovider.OptimizeLogsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryProbeConfig queries the probe_config edge of a Sub2APIProvider.
+func (c *Sub2APIProviderClient) QueryProbeConfig(_m *Sub2APIProvider) *Sub2APIProviderProbeConfigQuery {
+	query := (&Sub2APIProviderProbeConfigClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sub2apiprovider.Table, sub2apiprovider.FieldID, id),
+			sqlgraph.To(sub2apiproviderprobeconfig.Table, sub2apiproviderprobeconfig.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, sub2apiprovider.ProbeConfigTable, sub2apiprovider.ProbeConfigColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryProbeRuns queries the probe_runs edge of a Sub2APIProvider.
+func (c *Sub2APIProviderClient) QueryProbeRuns(_m *Sub2APIProvider) *Sub2APIProviderProbeRunQuery {
+	query := (&Sub2APIProviderProbeRunClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sub2apiprovider.Table, sub2apiprovider.FieldID, id),
+			sqlgraph.To(sub2apiproviderproberun.Table, sub2apiproviderproberun.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, sub2apiprovider.ProbeRunsTable, sub2apiprovider.ProbeRunsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryProbeTargets queries the probe_targets edge of a Sub2APIProvider.
+func (c *Sub2APIProviderClient) QueryProbeTargets(_m *Sub2APIProvider) *Sub2APIProviderProbeTargetQuery {
+	query := (&Sub2APIProviderProbeTargetClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sub2apiprovider.Table, sub2apiprovider.FieldID, id),
+			sqlgraph.To(sub2apiproviderprobetarget.Table, sub2apiproviderprobetarget.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, sub2apiprovider.ProbeTargetsTable, sub2apiprovider.ProbeTargetsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *Sub2APIProviderClient) Hooks() []Hook {
 	hooks := c.hooks.Sub2APIProvider
@@ -5589,6 +5753,634 @@ func (c *Sub2APIProviderClient) mutate(ctx context.Context, m *Sub2APIProviderMu
 		return (&Sub2APIProviderDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Sub2APIProvider mutation op: %q", m.Op())
+	}
+}
+
+// Sub2APIProviderProbeConfigClient is a client for the Sub2APIProviderProbeConfig schema.
+type Sub2APIProviderProbeConfigClient struct {
+	config
+}
+
+// NewSub2APIProviderProbeConfigClient returns a client for the Sub2APIProviderProbeConfig from the given config.
+func NewSub2APIProviderProbeConfigClient(c config) *Sub2APIProviderProbeConfigClient {
+	return &Sub2APIProviderProbeConfigClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `sub2apiproviderprobeconfig.Hooks(f(g(h())))`.
+func (c *Sub2APIProviderProbeConfigClient) Use(hooks ...Hook) {
+	c.hooks.Sub2APIProviderProbeConfig = append(c.hooks.Sub2APIProviderProbeConfig, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `sub2apiproviderprobeconfig.Intercept(f(g(h())))`.
+func (c *Sub2APIProviderProbeConfigClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Sub2APIProviderProbeConfig = append(c.inters.Sub2APIProviderProbeConfig, interceptors...)
+}
+
+// Create returns a builder for creating a Sub2APIProviderProbeConfig entity.
+func (c *Sub2APIProviderProbeConfigClient) Create() *Sub2APIProviderProbeConfigCreate {
+	mutation := newSub2APIProviderProbeConfigMutation(c.config, OpCreate)
+	return &Sub2APIProviderProbeConfigCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Sub2APIProviderProbeConfig entities.
+func (c *Sub2APIProviderProbeConfigClient) CreateBulk(builders ...*Sub2APIProviderProbeConfigCreate) *Sub2APIProviderProbeConfigCreateBulk {
+	return &Sub2APIProviderProbeConfigCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *Sub2APIProviderProbeConfigClient) MapCreateBulk(slice any, setFunc func(*Sub2APIProviderProbeConfigCreate, int)) *Sub2APIProviderProbeConfigCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &Sub2APIProviderProbeConfigCreateBulk{err: fmt.Errorf("calling to Sub2APIProviderProbeConfigClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*Sub2APIProviderProbeConfigCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &Sub2APIProviderProbeConfigCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Sub2APIProviderProbeConfig.
+func (c *Sub2APIProviderProbeConfigClient) Update() *Sub2APIProviderProbeConfigUpdate {
+	mutation := newSub2APIProviderProbeConfigMutation(c.config, OpUpdate)
+	return &Sub2APIProviderProbeConfigUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *Sub2APIProviderProbeConfigClient) UpdateOne(_m *Sub2APIProviderProbeConfig) *Sub2APIProviderProbeConfigUpdateOne {
+	mutation := newSub2APIProviderProbeConfigMutation(c.config, OpUpdateOne, withSub2APIProviderProbeConfig(_m))
+	return &Sub2APIProviderProbeConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *Sub2APIProviderProbeConfigClient) UpdateOneID(id int64) *Sub2APIProviderProbeConfigUpdateOne {
+	mutation := newSub2APIProviderProbeConfigMutation(c.config, OpUpdateOne, withSub2APIProviderProbeConfigID(id))
+	return &Sub2APIProviderProbeConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Sub2APIProviderProbeConfig.
+func (c *Sub2APIProviderProbeConfigClient) Delete() *Sub2APIProviderProbeConfigDelete {
+	mutation := newSub2APIProviderProbeConfigMutation(c.config, OpDelete)
+	return &Sub2APIProviderProbeConfigDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *Sub2APIProviderProbeConfigClient) DeleteOne(_m *Sub2APIProviderProbeConfig) *Sub2APIProviderProbeConfigDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *Sub2APIProviderProbeConfigClient) DeleteOneID(id int64) *Sub2APIProviderProbeConfigDeleteOne {
+	builder := c.Delete().Where(sub2apiproviderprobeconfig.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &Sub2APIProviderProbeConfigDeleteOne{builder}
+}
+
+// Query returns a query builder for Sub2APIProviderProbeConfig.
+func (c *Sub2APIProviderProbeConfigClient) Query() *Sub2APIProviderProbeConfigQuery {
+	return &Sub2APIProviderProbeConfigQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSub2APIProviderProbeConfig},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Sub2APIProviderProbeConfig entity by its id.
+func (c *Sub2APIProviderProbeConfigClient) Get(ctx context.Context, id int64) (*Sub2APIProviderProbeConfig, error) {
+	return c.Query().Where(sub2apiproviderprobeconfig.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *Sub2APIProviderProbeConfigClient) GetX(ctx context.Context, id int64) *Sub2APIProviderProbeConfig {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryProvider queries the provider edge of a Sub2APIProviderProbeConfig.
+func (c *Sub2APIProviderProbeConfigClient) QueryProvider(_m *Sub2APIProviderProbeConfig) *Sub2APIProviderQuery {
+	query := (&Sub2APIProviderClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sub2apiproviderprobeconfig.Table, sub2apiproviderprobeconfig.FieldID, id),
+			sqlgraph.To(sub2apiprovider.Table, sub2apiprovider.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, sub2apiproviderprobeconfig.ProviderTable, sub2apiproviderprobeconfig.ProviderColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *Sub2APIProviderProbeConfigClient) Hooks() []Hook {
+	return c.hooks.Sub2APIProviderProbeConfig
+}
+
+// Interceptors returns the client interceptors.
+func (c *Sub2APIProviderProbeConfigClient) Interceptors() []Interceptor {
+	return c.inters.Sub2APIProviderProbeConfig
+}
+
+func (c *Sub2APIProviderProbeConfigClient) mutate(ctx context.Context, m *Sub2APIProviderProbeConfigMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&Sub2APIProviderProbeConfigCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&Sub2APIProviderProbeConfigUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&Sub2APIProviderProbeConfigUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&Sub2APIProviderProbeConfigDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Sub2APIProviderProbeConfig mutation op: %q", m.Op())
+	}
+}
+
+// Sub2APIProviderProbeRunClient is a client for the Sub2APIProviderProbeRun schema.
+type Sub2APIProviderProbeRunClient struct {
+	config
+}
+
+// NewSub2APIProviderProbeRunClient returns a client for the Sub2APIProviderProbeRun from the given config.
+func NewSub2APIProviderProbeRunClient(c config) *Sub2APIProviderProbeRunClient {
+	return &Sub2APIProviderProbeRunClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `sub2apiproviderproberun.Hooks(f(g(h())))`.
+func (c *Sub2APIProviderProbeRunClient) Use(hooks ...Hook) {
+	c.hooks.Sub2APIProviderProbeRun = append(c.hooks.Sub2APIProviderProbeRun, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `sub2apiproviderproberun.Intercept(f(g(h())))`.
+func (c *Sub2APIProviderProbeRunClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Sub2APIProviderProbeRun = append(c.inters.Sub2APIProviderProbeRun, interceptors...)
+}
+
+// Create returns a builder for creating a Sub2APIProviderProbeRun entity.
+func (c *Sub2APIProviderProbeRunClient) Create() *Sub2APIProviderProbeRunCreate {
+	mutation := newSub2APIProviderProbeRunMutation(c.config, OpCreate)
+	return &Sub2APIProviderProbeRunCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Sub2APIProviderProbeRun entities.
+func (c *Sub2APIProviderProbeRunClient) CreateBulk(builders ...*Sub2APIProviderProbeRunCreate) *Sub2APIProviderProbeRunCreateBulk {
+	return &Sub2APIProviderProbeRunCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *Sub2APIProviderProbeRunClient) MapCreateBulk(slice any, setFunc func(*Sub2APIProviderProbeRunCreate, int)) *Sub2APIProviderProbeRunCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &Sub2APIProviderProbeRunCreateBulk{err: fmt.Errorf("calling to Sub2APIProviderProbeRunClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*Sub2APIProviderProbeRunCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &Sub2APIProviderProbeRunCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Sub2APIProviderProbeRun.
+func (c *Sub2APIProviderProbeRunClient) Update() *Sub2APIProviderProbeRunUpdate {
+	mutation := newSub2APIProviderProbeRunMutation(c.config, OpUpdate)
+	return &Sub2APIProviderProbeRunUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *Sub2APIProviderProbeRunClient) UpdateOne(_m *Sub2APIProviderProbeRun) *Sub2APIProviderProbeRunUpdateOne {
+	mutation := newSub2APIProviderProbeRunMutation(c.config, OpUpdateOne, withSub2APIProviderProbeRun(_m))
+	return &Sub2APIProviderProbeRunUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *Sub2APIProviderProbeRunClient) UpdateOneID(id int64) *Sub2APIProviderProbeRunUpdateOne {
+	mutation := newSub2APIProviderProbeRunMutation(c.config, OpUpdateOne, withSub2APIProviderProbeRunID(id))
+	return &Sub2APIProviderProbeRunUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Sub2APIProviderProbeRun.
+func (c *Sub2APIProviderProbeRunClient) Delete() *Sub2APIProviderProbeRunDelete {
+	mutation := newSub2APIProviderProbeRunMutation(c.config, OpDelete)
+	return &Sub2APIProviderProbeRunDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *Sub2APIProviderProbeRunClient) DeleteOne(_m *Sub2APIProviderProbeRun) *Sub2APIProviderProbeRunDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *Sub2APIProviderProbeRunClient) DeleteOneID(id int64) *Sub2APIProviderProbeRunDeleteOne {
+	builder := c.Delete().Where(sub2apiproviderproberun.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &Sub2APIProviderProbeRunDeleteOne{builder}
+}
+
+// Query returns a query builder for Sub2APIProviderProbeRun.
+func (c *Sub2APIProviderProbeRunClient) Query() *Sub2APIProviderProbeRunQuery {
+	return &Sub2APIProviderProbeRunQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSub2APIProviderProbeRun},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Sub2APIProviderProbeRun entity by its id.
+func (c *Sub2APIProviderProbeRunClient) Get(ctx context.Context, id int64) (*Sub2APIProviderProbeRun, error) {
+	return c.Query().Where(sub2apiproviderproberun.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *Sub2APIProviderProbeRunClient) GetX(ctx context.Context, id int64) *Sub2APIProviderProbeRun {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryProvider queries the provider edge of a Sub2APIProviderProbeRun.
+func (c *Sub2APIProviderProbeRunClient) QueryProvider(_m *Sub2APIProviderProbeRun) *Sub2APIProviderQuery {
+	query := (&Sub2APIProviderClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sub2apiproviderproberun.Table, sub2apiproviderproberun.FieldID, id),
+			sqlgraph.To(sub2apiprovider.Table, sub2apiprovider.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, sub2apiproviderproberun.ProviderTable, sub2apiproviderproberun.ProviderColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *Sub2APIProviderProbeRunClient) Hooks() []Hook {
+	return c.hooks.Sub2APIProviderProbeRun
+}
+
+// Interceptors returns the client interceptors.
+func (c *Sub2APIProviderProbeRunClient) Interceptors() []Interceptor {
+	return c.inters.Sub2APIProviderProbeRun
+}
+
+func (c *Sub2APIProviderProbeRunClient) mutate(ctx context.Context, m *Sub2APIProviderProbeRunMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&Sub2APIProviderProbeRunCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&Sub2APIProviderProbeRunUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&Sub2APIProviderProbeRunUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&Sub2APIProviderProbeRunDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Sub2APIProviderProbeRun mutation op: %q", m.Op())
+	}
+}
+
+// Sub2APIProviderProbeTargetClient is a client for the Sub2APIProviderProbeTarget schema.
+type Sub2APIProviderProbeTargetClient struct {
+	config
+}
+
+// NewSub2APIProviderProbeTargetClient returns a client for the Sub2APIProviderProbeTarget from the given config.
+func NewSub2APIProviderProbeTargetClient(c config) *Sub2APIProviderProbeTargetClient {
+	return &Sub2APIProviderProbeTargetClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `sub2apiproviderprobetarget.Hooks(f(g(h())))`.
+func (c *Sub2APIProviderProbeTargetClient) Use(hooks ...Hook) {
+	c.hooks.Sub2APIProviderProbeTarget = append(c.hooks.Sub2APIProviderProbeTarget, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `sub2apiproviderprobetarget.Intercept(f(g(h())))`.
+func (c *Sub2APIProviderProbeTargetClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Sub2APIProviderProbeTarget = append(c.inters.Sub2APIProviderProbeTarget, interceptors...)
+}
+
+// Create returns a builder for creating a Sub2APIProviderProbeTarget entity.
+func (c *Sub2APIProviderProbeTargetClient) Create() *Sub2APIProviderProbeTargetCreate {
+	mutation := newSub2APIProviderProbeTargetMutation(c.config, OpCreate)
+	return &Sub2APIProviderProbeTargetCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Sub2APIProviderProbeTarget entities.
+func (c *Sub2APIProviderProbeTargetClient) CreateBulk(builders ...*Sub2APIProviderProbeTargetCreate) *Sub2APIProviderProbeTargetCreateBulk {
+	return &Sub2APIProviderProbeTargetCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *Sub2APIProviderProbeTargetClient) MapCreateBulk(slice any, setFunc func(*Sub2APIProviderProbeTargetCreate, int)) *Sub2APIProviderProbeTargetCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &Sub2APIProviderProbeTargetCreateBulk{err: fmt.Errorf("calling to Sub2APIProviderProbeTargetClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*Sub2APIProviderProbeTargetCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &Sub2APIProviderProbeTargetCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Sub2APIProviderProbeTarget.
+func (c *Sub2APIProviderProbeTargetClient) Update() *Sub2APIProviderProbeTargetUpdate {
+	mutation := newSub2APIProviderProbeTargetMutation(c.config, OpUpdate)
+	return &Sub2APIProviderProbeTargetUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *Sub2APIProviderProbeTargetClient) UpdateOne(_m *Sub2APIProviderProbeTarget) *Sub2APIProviderProbeTargetUpdateOne {
+	mutation := newSub2APIProviderProbeTargetMutation(c.config, OpUpdateOne, withSub2APIProviderProbeTarget(_m))
+	return &Sub2APIProviderProbeTargetUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *Sub2APIProviderProbeTargetClient) UpdateOneID(id int64) *Sub2APIProviderProbeTargetUpdateOne {
+	mutation := newSub2APIProviderProbeTargetMutation(c.config, OpUpdateOne, withSub2APIProviderProbeTargetID(id))
+	return &Sub2APIProviderProbeTargetUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Sub2APIProviderProbeTarget.
+func (c *Sub2APIProviderProbeTargetClient) Delete() *Sub2APIProviderProbeTargetDelete {
+	mutation := newSub2APIProviderProbeTargetMutation(c.config, OpDelete)
+	return &Sub2APIProviderProbeTargetDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *Sub2APIProviderProbeTargetClient) DeleteOne(_m *Sub2APIProviderProbeTarget) *Sub2APIProviderProbeTargetDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *Sub2APIProviderProbeTargetClient) DeleteOneID(id int64) *Sub2APIProviderProbeTargetDeleteOne {
+	builder := c.Delete().Where(sub2apiproviderprobetarget.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &Sub2APIProviderProbeTargetDeleteOne{builder}
+}
+
+// Query returns a query builder for Sub2APIProviderProbeTarget.
+func (c *Sub2APIProviderProbeTargetClient) Query() *Sub2APIProviderProbeTargetQuery {
+	return &Sub2APIProviderProbeTargetQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSub2APIProviderProbeTarget},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Sub2APIProviderProbeTarget entity by its id.
+func (c *Sub2APIProviderProbeTargetClient) Get(ctx context.Context, id int64) (*Sub2APIProviderProbeTarget, error) {
+	return c.Query().Where(sub2apiproviderprobetarget.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *Sub2APIProviderProbeTargetClient) GetX(ctx context.Context, id int64) *Sub2APIProviderProbeTarget {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryProvider queries the provider edge of a Sub2APIProviderProbeTarget.
+func (c *Sub2APIProviderProbeTargetClient) QueryProvider(_m *Sub2APIProviderProbeTarget) *Sub2APIProviderQuery {
+	query := (&Sub2APIProviderClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sub2apiproviderprobetarget.Table, sub2apiproviderprobetarget.FieldID, id),
+			sqlgraph.To(sub2apiprovider.Table, sub2apiprovider.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, sub2apiproviderprobetarget.ProviderTable, sub2apiproviderprobetarget.ProviderColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAccount queries the account edge of a Sub2APIProviderProbeTarget.
+func (c *Sub2APIProviderProbeTargetClient) QueryAccount(_m *Sub2APIProviderProbeTarget) *AccountQuery {
+	query := (&AccountClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sub2apiproviderprobetarget.Table, sub2apiproviderprobetarget.FieldID, id),
+			sqlgraph.To(account.Table, account.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, sub2apiproviderprobetarget.AccountTable, sub2apiproviderprobetarget.AccountColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryRuns queries the runs edge of a Sub2APIProviderProbeTarget.
+func (c *Sub2APIProviderProbeTargetClient) QueryRuns(_m *Sub2APIProviderProbeTarget) *Sub2APIProviderProbeTargetRunQuery {
+	query := (&Sub2APIProviderProbeTargetRunClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sub2apiproviderprobetarget.Table, sub2apiproviderprobetarget.FieldID, id),
+			sqlgraph.To(sub2apiproviderprobetargetrun.Table, sub2apiproviderprobetargetrun.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, sub2apiproviderprobetarget.RunsTable, sub2apiproviderprobetarget.RunsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *Sub2APIProviderProbeTargetClient) Hooks() []Hook {
+	return c.hooks.Sub2APIProviderProbeTarget
+}
+
+// Interceptors returns the client interceptors.
+func (c *Sub2APIProviderProbeTargetClient) Interceptors() []Interceptor {
+	return c.inters.Sub2APIProviderProbeTarget
+}
+
+func (c *Sub2APIProviderProbeTargetClient) mutate(ctx context.Context, m *Sub2APIProviderProbeTargetMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&Sub2APIProviderProbeTargetCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&Sub2APIProviderProbeTargetUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&Sub2APIProviderProbeTargetUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&Sub2APIProviderProbeTargetDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Sub2APIProviderProbeTarget mutation op: %q", m.Op())
+	}
+}
+
+// Sub2APIProviderProbeTargetRunClient is a client for the Sub2APIProviderProbeTargetRun schema.
+type Sub2APIProviderProbeTargetRunClient struct {
+	config
+}
+
+// NewSub2APIProviderProbeTargetRunClient returns a client for the Sub2APIProviderProbeTargetRun from the given config.
+func NewSub2APIProviderProbeTargetRunClient(c config) *Sub2APIProviderProbeTargetRunClient {
+	return &Sub2APIProviderProbeTargetRunClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `sub2apiproviderprobetargetrun.Hooks(f(g(h())))`.
+func (c *Sub2APIProviderProbeTargetRunClient) Use(hooks ...Hook) {
+	c.hooks.Sub2APIProviderProbeTargetRun = append(c.hooks.Sub2APIProviderProbeTargetRun, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `sub2apiproviderprobetargetrun.Intercept(f(g(h())))`.
+func (c *Sub2APIProviderProbeTargetRunClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Sub2APIProviderProbeTargetRun = append(c.inters.Sub2APIProviderProbeTargetRun, interceptors...)
+}
+
+// Create returns a builder for creating a Sub2APIProviderProbeTargetRun entity.
+func (c *Sub2APIProviderProbeTargetRunClient) Create() *Sub2APIProviderProbeTargetRunCreate {
+	mutation := newSub2APIProviderProbeTargetRunMutation(c.config, OpCreate)
+	return &Sub2APIProviderProbeTargetRunCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Sub2APIProviderProbeTargetRun entities.
+func (c *Sub2APIProviderProbeTargetRunClient) CreateBulk(builders ...*Sub2APIProviderProbeTargetRunCreate) *Sub2APIProviderProbeTargetRunCreateBulk {
+	return &Sub2APIProviderProbeTargetRunCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *Sub2APIProviderProbeTargetRunClient) MapCreateBulk(slice any, setFunc func(*Sub2APIProviderProbeTargetRunCreate, int)) *Sub2APIProviderProbeTargetRunCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &Sub2APIProviderProbeTargetRunCreateBulk{err: fmt.Errorf("calling to Sub2APIProviderProbeTargetRunClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*Sub2APIProviderProbeTargetRunCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &Sub2APIProviderProbeTargetRunCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Sub2APIProviderProbeTargetRun.
+func (c *Sub2APIProviderProbeTargetRunClient) Update() *Sub2APIProviderProbeTargetRunUpdate {
+	mutation := newSub2APIProviderProbeTargetRunMutation(c.config, OpUpdate)
+	return &Sub2APIProviderProbeTargetRunUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *Sub2APIProviderProbeTargetRunClient) UpdateOne(_m *Sub2APIProviderProbeTargetRun) *Sub2APIProviderProbeTargetRunUpdateOne {
+	mutation := newSub2APIProviderProbeTargetRunMutation(c.config, OpUpdateOne, withSub2APIProviderProbeTargetRun(_m))
+	return &Sub2APIProviderProbeTargetRunUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *Sub2APIProviderProbeTargetRunClient) UpdateOneID(id int64) *Sub2APIProviderProbeTargetRunUpdateOne {
+	mutation := newSub2APIProviderProbeTargetRunMutation(c.config, OpUpdateOne, withSub2APIProviderProbeTargetRunID(id))
+	return &Sub2APIProviderProbeTargetRunUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Sub2APIProviderProbeTargetRun.
+func (c *Sub2APIProviderProbeTargetRunClient) Delete() *Sub2APIProviderProbeTargetRunDelete {
+	mutation := newSub2APIProviderProbeTargetRunMutation(c.config, OpDelete)
+	return &Sub2APIProviderProbeTargetRunDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *Sub2APIProviderProbeTargetRunClient) DeleteOne(_m *Sub2APIProviderProbeTargetRun) *Sub2APIProviderProbeTargetRunDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *Sub2APIProviderProbeTargetRunClient) DeleteOneID(id int64) *Sub2APIProviderProbeTargetRunDeleteOne {
+	builder := c.Delete().Where(sub2apiproviderprobetargetrun.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &Sub2APIProviderProbeTargetRunDeleteOne{builder}
+}
+
+// Query returns a query builder for Sub2APIProviderProbeTargetRun.
+func (c *Sub2APIProviderProbeTargetRunClient) Query() *Sub2APIProviderProbeTargetRunQuery {
+	return &Sub2APIProviderProbeTargetRunQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSub2APIProviderProbeTargetRun},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Sub2APIProviderProbeTargetRun entity by its id.
+func (c *Sub2APIProviderProbeTargetRunClient) Get(ctx context.Context, id int64) (*Sub2APIProviderProbeTargetRun, error) {
+	return c.Query().Where(sub2apiproviderprobetargetrun.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *Sub2APIProviderProbeTargetRunClient) GetX(ctx context.Context, id int64) *Sub2APIProviderProbeTargetRun {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryTarget queries the target edge of a Sub2APIProviderProbeTargetRun.
+func (c *Sub2APIProviderProbeTargetRunClient) QueryTarget(_m *Sub2APIProviderProbeTargetRun) *Sub2APIProviderProbeTargetQuery {
+	query := (&Sub2APIProviderProbeTargetClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(sub2apiproviderprobetargetrun.Table, sub2apiproviderprobetargetrun.FieldID, id),
+			sqlgraph.To(sub2apiproviderprobetarget.Table, sub2apiproviderprobetarget.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, sub2apiproviderprobetargetrun.TargetTable, sub2apiproviderprobetargetrun.TargetColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *Sub2APIProviderProbeTargetRunClient) Hooks() []Hook {
+	return c.hooks.Sub2APIProviderProbeTargetRun
+}
+
+// Interceptors returns the client interceptors.
+func (c *Sub2APIProviderProbeTargetRunClient) Interceptors() []Interceptor {
+	return c.inters.Sub2APIProviderProbeTargetRun
+}
+
+func (c *Sub2APIProviderProbeTargetRunClient) mutate(ctx context.Context, m *Sub2APIProviderProbeTargetRunMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&Sub2APIProviderProbeTargetRunCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&Sub2APIProviderProbeTargetRunUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&Sub2APIProviderProbeTargetRunUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&Sub2APIProviderProbeTargetRunDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Sub2APIProviderProbeTargetRun mutation op: %q", m.Op())
 	}
 }
 
@@ -7355,10 +8147,11 @@ type (
 		Group, IdempotencyRecord, IdentityAdoptionDecision, PaymentAuditLog,
 		PaymentOrder, PaymentProviderInstance, PendingAuthSession, PromoCode,
 		PromoCodeUsage, Proxy, RedeemCode, SecuritySecret, Setting, Sub2APIOptimizeLog,
-		Sub2APIOptimizeSchedule, Sub2APIProvider, SubscriptionPlan,
-		TLSFingerprintProfile, UsageCleanupTask, UsageLog, User, UserAllowedGroup,
-		UserAttributeDefinition, UserAttributeValue, UserPlatformQuota,
-		UserSubscription []ent.Hook
+		Sub2APIOptimizeSchedule, Sub2APIProvider, Sub2APIProviderProbeConfig,
+		Sub2APIProviderProbeRun, Sub2APIProviderProbeTarget,
+		Sub2APIProviderProbeTargetRun, SubscriptionPlan, TLSFingerprintProfile,
+		UsageCleanupTask, UsageLog, User, UserAllowedGroup, UserAttributeDefinition,
+		UserAttributeValue, UserPlatformQuota, UserSubscription []ent.Hook
 	}
 	inters struct {
 		APIKey, Account, AccountGroup, Announcement, AnnouncementRead, AuthIdentity,
@@ -7368,10 +8161,11 @@ type (
 		Group, IdempotencyRecord, IdentityAdoptionDecision, PaymentAuditLog,
 		PaymentOrder, PaymentProviderInstance, PendingAuthSession, PromoCode,
 		PromoCodeUsage, Proxy, RedeemCode, SecuritySecret, Setting, Sub2APIOptimizeLog,
-		Sub2APIOptimizeSchedule, Sub2APIProvider, SubscriptionPlan,
-		TLSFingerprintProfile, UsageCleanupTask, UsageLog, User, UserAllowedGroup,
-		UserAttributeDefinition, UserAttributeValue, UserPlatformQuota,
-		UserSubscription []ent.Interceptor
+		Sub2APIOptimizeSchedule, Sub2APIProvider, Sub2APIProviderProbeConfig,
+		Sub2APIProviderProbeRun, Sub2APIProviderProbeTarget,
+		Sub2APIProviderProbeTargetRun, SubscriptionPlan, TLSFingerprintProfile,
+		UsageCleanupTask, UsageLog, User, UserAllowedGroup, UserAttributeDefinition,
+		UserAttributeValue, UserPlatformQuota, UserSubscription []ent.Interceptor
 	}
 )
 

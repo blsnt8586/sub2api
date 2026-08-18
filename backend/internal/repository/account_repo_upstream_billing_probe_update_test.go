@@ -479,9 +479,10 @@ func updatedAccountRows(id int64, extra string) *sqlmock.Rows {
 		[]byte(`{"api_key":"sk-test"}`), []byte(extra), nil, nil, 1, nil, 1, 1.0,
 		service.StatusActive, nil, nil, nil, false, true, nil, nil, nil, nil, nil, nil,
 		nil, nil,
-		// fork 新增的 Sub2API provider 列（provider_id … sub2api_test_model）：
-		// 顺序必须与 dbaccount.Columns 一致；sub2api_optimize_enabled 非 nillable 故给 false。
-		nil, nil, nil, nil, nil, false, nil, nil, nil,
+		// Fork-added Sub2API provider columns (provider_id through
+		// sub2api_test_model). The order must match dbaccount.Columns;
+		// sub2api_optimize_enabled is non-nullable, so use false.
+		nil, nil, nil, nil, nil, nil, false, nil, nil, nil,
 		nil, service.QuotaDimensionGlobal,
 	)
 }

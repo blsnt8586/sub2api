@@ -15,6 +15,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/predicate"
 	"github.com/Wei-Shaw/sub2api/ent/sub2apioptimizelog"
 	"github.com/Wei-Shaw/sub2api/ent/sub2apioptimizeschedule"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiprovider"
 )
 
 // Sub2APIOptimizeLogUpdate is the builder for updating Sub2APIOptimizeLog entities.
@@ -36,6 +37,20 @@ func (_u *Sub2APIOptimizeLogUpdate) SetUpdatedAt(v time.Time) *Sub2APIOptimizeLo
 	return _u
 }
 
+// SetProviderID sets the "provider_id" field.
+func (_u *Sub2APIOptimizeLogUpdate) SetProviderID(v int64) *Sub2APIOptimizeLogUpdate {
+	_u.mutation.SetProviderID(v)
+	return _u
+}
+
+// SetNillableProviderID sets the "provider_id" field if the given value is not nil.
+func (_u *Sub2APIOptimizeLogUpdate) SetNillableProviderID(v *int64) *Sub2APIOptimizeLogUpdate {
+	if v != nil {
+		_u.SetProviderID(*v)
+	}
+	return _u
+}
+
 // SetScheduleID sets the "schedule_id" field.
 func (_u *Sub2APIOptimizeLogUpdate) SetScheduleID(v int64) *Sub2APIOptimizeLogUpdate {
 	_u.mutation.SetScheduleID(v)
@@ -46,6 +61,26 @@ func (_u *Sub2APIOptimizeLogUpdate) SetScheduleID(v int64) *Sub2APIOptimizeLogUp
 func (_u *Sub2APIOptimizeLogUpdate) SetNillableScheduleID(v *int64) *Sub2APIOptimizeLogUpdate {
 	if v != nil {
 		_u.SetScheduleID(*v)
+	}
+	return _u
+}
+
+// ClearScheduleID clears the value of the "schedule_id" field.
+func (_u *Sub2APIOptimizeLogUpdate) ClearScheduleID() *Sub2APIOptimizeLogUpdate {
+	_u.mutation.ClearScheduleID()
+	return _u
+}
+
+// SetTrigger sets the "trigger" field.
+func (_u *Sub2APIOptimizeLogUpdate) SetTrigger(v string) *Sub2APIOptimizeLogUpdate {
+	_u.mutation.SetTrigger(v)
+	return _u
+}
+
+// SetNillableTrigger sets the "trigger" field if the given value is not nil.
+func (_u *Sub2APIOptimizeLogUpdate) SetNillableTrigger(v *string) *Sub2APIOptimizeLogUpdate {
+	if v != nil {
+		_u.SetTrigger(*v)
 	}
 	return _u
 }
@@ -206,6 +241,11 @@ func (_u *Sub2APIOptimizeLogUpdate) ClearFinishedAt() *Sub2APIOptimizeLogUpdate 
 	return _u
 }
 
+// SetProvider sets the "provider" edge to the Sub2APIProvider entity.
+func (_u *Sub2APIOptimizeLogUpdate) SetProvider(v *Sub2APIProvider) *Sub2APIOptimizeLogUpdate {
+	return _u.SetProviderID(v.ID)
+}
+
 // SetSchedule sets the "schedule" edge to the Sub2APIOptimizeSchedule entity.
 func (_u *Sub2APIOptimizeLogUpdate) SetSchedule(v *Sub2APIOptimizeSchedule) *Sub2APIOptimizeLogUpdate {
 	return _u.SetScheduleID(v.ID)
@@ -214,6 +254,12 @@ func (_u *Sub2APIOptimizeLogUpdate) SetSchedule(v *Sub2APIOptimizeSchedule) *Sub
 // Mutation returns the Sub2APIOptimizeLogMutation object of the builder.
 func (_u *Sub2APIOptimizeLogUpdate) Mutation() *Sub2APIOptimizeLogMutation {
 	return _u.mutation
+}
+
+// ClearProvider clears the "provider" edge to the Sub2APIProvider entity.
+func (_u *Sub2APIOptimizeLogUpdate) ClearProvider() *Sub2APIOptimizeLogUpdate {
+	_u.mutation.ClearProvider()
+	return _u
 }
 
 // ClearSchedule clears the "schedule" edge to the Sub2APIOptimizeSchedule entity.
@@ -260,13 +306,18 @@ func (_u *Sub2APIOptimizeLogUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *Sub2APIOptimizeLogUpdate) check() error {
+	if v, ok := _u.mutation.Trigger(); ok {
+		if err := sub2apioptimizelog.TriggerValidator(v); err != nil {
+			return &ValidationError{Name: "trigger", err: fmt.Errorf(`ent: validator failed for field "Sub2APIOptimizeLog.trigger": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Status(); ok {
 		if err := sub2apioptimizelog.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Sub2APIOptimizeLog.status": %w`, err)}
 		}
 	}
-	if _u.mutation.ScheduleCleared() && len(_u.mutation.ScheduleIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "Sub2APIOptimizeLog.schedule"`)
+	if _u.mutation.ProviderCleared() && len(_u.mutation.ProviderIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "Sub2APIOptimizeLog.provider"`)
 	}
 	return nil
 }
@@ -285,6 +336,9 @@ func (_u *Sub2APIOptimizeLogUpdate) sqlSave(ctx context.Context) (_node int, err
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(sub2apioptimizelog.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.Trigger(); ok {
+		_spec.SetField(sub2apioptimizelog.FieldTrigger, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(sub2apioptimizelog.FieldStatus, field.TypeString, value)
@@ -335,6 +389,35 @@ func (_u *Sub2APIOptimizeLogUpdate) sqlSave(ctx context.Context) (_node int, err
 	}
 	if _u.mutation.FinishedAtCleared() {
 		_spec.ClearField(sub2apioptimizelog.FieldFinishedAt, field.TypeTime)
+	}
+	if _u.mutation.ProviderCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   sub2apioptimizelog.ProviderTable,
+			Columns: []string{sub2apioptimizelog.ProviderColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiprovider.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ProviderIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   sub2apioptimizelog.ProviderTable,
+			Columns: []string{sub2apioptimizelog.ProviderColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiprovider.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if _u.mutation.ScheduleCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -391,6 +474,20 @@ func (_u *Sub2APIOptimizeLogUpdateOne) SetUpdatedAt(v time.Time) *Sub2APIOptimiz
 	return _u
 }
 
+// SetProviderID sets the "provider_id" field.
+func (_u *Sub2APIOptimizeLogUpdateOne) SetProviderID(v int64) *Sub2APIOptimizeLogUpdateOne {
+	_u.mutation.SetProviderID(v)
+	return _u
+}
+
+// SetNillableProviderID sets the "provider_id" field if the given value is not nil.
+func (_u *Sub2APIOptimizeLogUpdateOne) SetNillableProviderID(v *int64) *Sub2APIOptimizeLogUpdateOne {
+	if v != nil {
+		_u.SetProviderID(*v)
+	}
+	return _u
+}
+
 // SetScheduleID sets the "schedule_id" field.
 func (_u *Sub2APIOptimizeLogUpdateOne) SetScheduleID(v int64) *Sub2APIOptimizeLogUpdateOne {
 	_u.mutation.SetScheduleID(v)
@@ -401,6 +498,26 @@ func (_u *Sub2APIOptimizeLogUpdateOne) SetScheduleID(v int64) *Sub2APIOptimizeLo
 func (_u *Sub2APIOptimizeLogUpdateOne) SetNillableScheduleID(v *int64) *Sub2APIOptimizeLogUpdateOne {
 	if v != nil {
 		_u.SetScheduleID(*v)
+	}
+	return _u
+}
+
+// ClearScheduleID clears the value of the "schedule_id" field.
+func (_u *Sub2APIOptimizeLogUpdateOne) ClearScheduleID() *Sub2APIOptimizeLogUpdateOne {
+	_u.mutation.ClearScheduleID()
+	return _u
+}
+
+// SetTrigger sets the "trigger" field.
+func (_u *Sub2APIOptimizeLogUpdateOne) SetTrigger(v string) *Sub2APIOptimizeLogUpdateOne {
+	_u.mutation.SetTrigger(v)
+	return _u
+}
+
+// SetNillableTrigger sets the "trigger" field if the given value is not nil.
+func (_u *Sub2APIOptimizeLogUpdateOne) SetNillableTrigger(v *string) *Sub2APIOptimizeLogUpdateOne {
+	if v != nil {
+		_u.SetTrigger(*v)
 	}
 	return _u
 }
@@ -561,6 +678,11 @@ func (_u *Sub2APIOptimizeLogUpdateOne) ClearFinishedAt() *Sub2APIOptimizeLogUpda
 	return _u
 }
 
+// SetProvider sets the "provider" edge to the Sub2APIProvider entity.
+func (_u *Sub2APIOptimizeLogUpdateOne) SetProvider(v *Sub2APIProvider) *Sub2APIOptimizeLogUpdateOne {
+	return _u.SetProviderID(v.ID)
+}
+
 // SetSchedule sets the "schedule" edge to the Sub2APIOptimizeSchedule entity.
 func (_u *Sub2APIOptimizeLogUpdateOne) SetSchedule(v *Sub2APIOptimizeSchedule) *Sub2APIOptimizeLogUpdateOne {
 	return _u.SetScheduleID(v.ID)
@@ -569,6 +691,12 @@ func (_u *Sub2APIOptimizeLogUpdateOne) SetSchedule(v *Sub2APIOptimizeSchedule) *
 // Mutation returns the Sub2APIOptimizeLogMutation object of the builder.
 func (_u *Sub2APIOptimizeLogUpdateOne) Mutation() *Sub2APIOptimizeLogMutation {
 	return _u.mutation
+}
+
+// ClearProvider clears the "provider" edge to the Sub2APIProvider entity.
+func (_u *Sub2APIOptimizeLogUpdateOne) ClearProvider() *Sub2APIOptimizeLogUpdateOne {
+	_u.mutation.ClearProvider()
+	return _u
 }
 
 // ClearSchedule clears the "schedule" edge to the Sub2APIOptimizeSchedule entity.
@@ -628,13 +756,18 @@ func (_u *Sub2APIOptimizeLogUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *Sub2APIOptimizeLogUpdateOne) check() error {
+	if v, ok := _u.mutation.Trigger(); ok {
+		if err := sub2apioptimizelog.TriggerValidator(v); err != nil {
+			return &ValidationError{Name: "trigger", err: fmt.Errorf(`ent: validator failed for field "Sub2APIOptimizeLog.trigger": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Status(); ok {
 		if err := sub2apioptimizelog.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Sub2APIOptimizeLog.status": %w`, err)}
 		}
 	}
-	if _u.mutation.ScheduleCleared() && len(_u.mutation.ScheduleIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "Sub2APIOptimizeLog.schedule"`)
+	if _u.mutation.ProviderCleared() && len(_u.mutation.ProviderIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "Sub2APIOptimizeLog.provider"`)
 	}
 	return nil
 }
@@ -670,6 +803,9 @@ func (_u *Sub2APIOptimizeLogUpdateOne) sqlSave(ctx context.Context) (_node *Sub2
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(sub2apioptimizelog.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.Trigger(); ok {
+		_spec.SetField(sub2apioptimizelog.FieldTrigger, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(sub2apioptimizelog.FieldStatus, field.TypeString, value)
@@ -720,6 +856,35 @@ func (_u *Sub2APIOptimizeLogUpdateOne) sqlSave(ctx context.Context) (_node *Sub2
 	}
 	if _u.mutation.FinishedAtCleared() {
 		_spec.ClearField(sub2apioptimizelog.FieldFinishedAt, field.TypeTime)
+	}
+	if _u.mutation.ProviderCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   sub2apioptimizelog.ProviderTable,
+			Columns: []string{sub2apioptimizelog.ProviderColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiprovider.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.ProviderIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   sub2apioptimizelog.ProviderTable,
+			Columns: []string{sub2apioptimizelog.ProviderColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiprovider.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if _u.mutation.ScheduleCleared() {
 		edge := &sqlgraph.EdgeSpec{

@@ -18,8 +18,12 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
+	// FieldProviderID holds the string denoting the provider_id field in the database.
+	FieldProviderID = "provider_id"
 	// FieldScheduleID holds the string denoting the schedule_id field in the database.
 	FieldScheduleID = "schedule_id"
+	// FieldTrigger holds the string denoting the trigger field in the database.
+	FieldTrigger = "trigger"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
 	// FieldTotal holds the string denoting the total field in the database.
@@ -36,10 +40,19 @@ const (
 	FieldStartedAt = "started_at"
 	// FieldFinishedAt holds the string denoting the finished_at field in the database.
 	FieldFinishedAt = "finished_at"
+	// EdgeProvider holds the string denoting the provider edge name in mutations.
+	EdgeProvider = "provider"
 	// EdgeSchedule holds the string denoting the schedule edge name in mutations.
 	EdgeSchedule = "schedule"
 	// Table holds the table name of the sub2apioptimizelog in the database.
 	Table = "sub2api_optimize_logs"
+	// ProviderTable is the table that holds the provider relation/edge.
+	ProviderTable = "sub2api_optimize_logs"
+	// ProviderInverseTable is the table name for the Sub2APIProvider entity.
+	// It exists in this package in order to avoid circular dependency with the "sub2apiprovider" package.
+	ProviderInverseTable = "sub2api_providers"
+	// ProviderColumn is the table column denoting the provider relation/edge.
+	ProviderColumn = "provider_id"
 	// ScheduleTable is the table that holds the schedule relation/edge.
 	ScheduleTable = "sub2api_optimize_logs"
 	// ScheduleInverseTable is the table name for the Sub2APIOptimizeSchedule entity.
@@ -54,7 +67,9 @@ var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
 	FieldUpdatedAt,
+	FieldProviderID,
 	FieldScheduleID,
+	FieldTrigger,
 	FieldStatus,
 	FieldTotal,
 	FieldOptimized,
@@ -82,6 +97,10 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultTrigger holds the default value on creation for the "trigger" field.
+	DefaultTrigger string
+	// TriggerValidator is a validator for the "trigger" field. It is called by the builders before save.
+	TriggerValidator func(string) error
 	// DefaultStatus holds the default value on creation for the "status" field.
 	DefaultStatus string
 	// StatusValidator is a validator for the "status" field. It is called by the builders before save.
@@ -114,9 +133,19 @@ func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
 }
 
+// ByProviderID orders the results by the provider_id field.
+func ByProviderID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldProviderID, opts...).ToFunc()
+}
+
 // ByScheduleID orders the results by the schedule_id field.
 func ByScheduleID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldScheduleID, opts...).ToFunc()
+}
+
+// ByTrigger orders the results by the trigger field.
+func ByTrigger(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTrigger, opts...).ToFunc()
 }
 
 // ByStatus orders the results by the status field.
@@ -154,11 +183,25 @@ func ByFinishedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldFinishedAt, opts...).ToFunc()
 }
 
+// ByProviderField orders the results by provider field.
+func ByProviderField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newProviderStep(), sql.OrderByField(field, opts...))
+	}
+}
+
 // ByScheduleField orders the results by schedule field.
 func ByScheduleField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newScheduleStep(), sql.OrderByField(field, opts...))
 	}
+}
+func newProviderStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ProviderInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, ProviderTable, ProviderColumn),
+	)
 }
 func newScheduleStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(

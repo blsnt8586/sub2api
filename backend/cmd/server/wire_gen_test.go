@@ -91,6 +91,7 @@ func TestProvideCleanup_WithMinimalDependencies_NoPanic(t *testing.T) {
 		nil, // channelMonitorV2Aggregator
 		nil, // quotaFlusher
 		nil, // sub2apiOptimizeRunner
+		nil, // sub2apiProviderProbeRunner
 		nil, // upstreamBillingProbe
 		nil, // ollamaCloudUsage
 		nil, // auditLog

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount, RouterLinkStub } from '@vue/test-utils'
 
 import HomeView from '../HomeView.vue'
@@ -46,6 +46,7 @@ function mountHome(settings: Record<string, unknown> = {}) {
         RouterLink: RouterLinkStub,
         LocaleSwitcher: { template: '<div data-testid="locale-switcher" />' },
         Icon: { template: '<span data-testid="icon" />' },
+        SplitGlobe: { template: '<div data-testid="split-globe" />' },
       },
     },
   })
@@ -64,7 +65,20 @@ describe('HomeView compact mode', () => {
     appStore.fetchPublicSettings.mockClear()
     localStorage.clear()
     vi.spyOn(window, 'matchMedia').mockReturnValue({ matches: false } as MediaQueryList)
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      setTransform: vi.fn(),
+      clearRect: vi.fn(),
+      beginPath: vi.fn(),
+      arc: vi.fn(),
+      fill: vi.fn(),
+      fillRect: vi.fn(),
+      fillStyle: '',
+      shadowBlur: 0,
+      shadowColor: '',
+    } as unknown as CanvasRenderingContext2D)
   })
+
+  afterEach(() => vi.restoreAllMocks())
 
   it('renders custom HTML ahead of compact mode', () => {
     const wrapper = mountHome({
@@ -97,7 +111,8 @@ describe('HomeView compact mode', () => {
     const wrapper = mountHome(settings)
 
     expect(wrapper.find('[data-testid="compact-home"]').exists()).toBe(false)
-    expect(wrapper.find('.terminal-container').exists()).toBe(true)
+    expect(wrapper.find('iframe').exists()).toBe(false)
+    expect(wrapper.find('.el-page').exists()).toBe(true)
   })
 
   it('links unauthenticated visitors to login', () => {

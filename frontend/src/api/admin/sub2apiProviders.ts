@@ -16,7 +16,15 @@ export interface Sub2APIProvider {
   provider_type: string
   status: 'active' | 'inactive'
   notes?: string | null
+  proxy_id: number | null
+  proxy_name?: string | null
   email: string
+  auth_mode: 'password' | 'token_pair'
+  has_access_token: boolean
+  has_refresh_token: boolean
+  access_token_expires_at?: string | null
+  last_token_refresh_at?: string | null
+  last_auth_error?: string | null
   api_path_keys?: string | null
   api_path_groups?: string | null
   last_sync_at?: string | null
@@ -38,8 +46,12 @@ export interface CreateProviderRequest {
   /** 上游类型：不传则后端默认 sub2api */
   provider_type?: string
   email: string
-  password: string
+  password?: string
+  auth_mode?: 'password' | 'token_pair'
+  access_token?: string
+  refresh_token?: string
   notes?: string | null
+  proxy_id?: number | null
 }
 
 export interface UpdateProviderRequest {
@@ -47,13 +59,42 @@ export interface UpdateProviderRequest {
   base_url?: string
   email?: string
   password?: string
+  auth_mode?: 'password' | 'token_pair'
+  access_token?: string
+  refresh_token?: string
   status?: 'active' | 'inactive'
   notes?: string | null
+  proxy_id?: number | null
 }
 
 export interface PathDetectionResult {
   keys_path: string
   groups_path: string
+}
+
+export interface Sub2APIProviderRemoteGroupRate {
+  id: number
+  name: string
+  description?: string
+  platform?: string
+  status?: string
+  default_multiplier: number
+  effective_multiplier: number
+  has_custom_rate: boolean
+}
+
+export interface Sub2APIProviderRemoteOverview {
+  provider_id: number
+  available: boolean
+  balance: number
+  groups: Sub2APIProviderRemoteGroupRate[]
+  rate_overrides_available: boolean
+  sampled_at: string
+  source: 'manual' | 'control_probe' | ''
+  last_attempted_at: string
+  last_attempt_source: 'manual' | 'control_probe' | ''
+  last_error?: string | null
+  last_error_at?: string | null
 }
 
 export interface AccountProviderLink {
@@ -66,6 +107,147 @@ export interface AccountProviderLink {
   remote_group_multiplier?: number | null
   remote_group_synced_at?: string | null
 }
+
+export type ProviderHealthStatus = 'healthy' | 'degraded' | 'unhealthy' | 'unknown'
+
+export type ProviderAccountProbeStatus = ProviderHealthStatus | 'disabled'
+
+export interface Sub2APIProviderAccountProbe {
+  account_id: number
+  account_name?: string
+  platform?: string
+  status: ProviderAccountProbeStatus
+  latency_ms?: number | null
+  error_category?: string | null
+  error_message?: string | null
+  checked_at?: string | null
+}
+
+export interface Sub2APIProviderHealth {
+  provider_id: number
+  status: ProviderHealthStatus
+  control_status: ProviderHealthStatus
+  data_status: ProviderHealthStatus
+  traffic_status: ProviderHealthStatus
+  consecutive_failures: number
+  login_latency_ms?: number | null
+  health_latency_ms?: number | null
+  keys_latency_ms?: number | null
+  groups_latency_ms?: number | null
+  data_probe_count: number
+  data_probe_success: number
+  data_probe_failed: number
+  data_probe_enabled: boolean
+  data_probe_interval_seconds: number
+  probe_account_count: number
+  account_probes: Sub2APIProviderAccountProbe[]
+  traffic_request_count: number
+  traffic_success_rate?: number | null
+  traffic_p95_latency_ms?: number | null
+  error_category?: string | null
+  error_message?: string | null
+  details?: Record<string, unknown>
+  last_checked_at?: string | null
+}
+
+export interface Sub2APIProviderHealthBucket {
+  started_at: string
+  ended_at: string
+  status: ProviderHealthStatus
+  sample_count: number
+  healthy_samples: number
+  degraded_samples: number
+  unhealthy_samples: number
+  max_health_latency_ms?: number | null
+  last_error?: string | null
+}
+
+export interface Sub2APIProviderHealthOverview {
+  provider_id: number
+  availability_status: ProviderHealthStatus
+  evidence_status: ProviderHealthStatus
+  latest?: Sub2APIProviderHealth | null
+  latest_control?: Sub2APIProviderHealth | null
+  window_started_at: string
+  window_ended_at: string
+  bucket_seconds: number
+  buckets: Sub2APIProviderHealthBucket[]
+  summary: {
+    healthy: number
+    degraded: number
+    unhealthy: number
+    unknown: number
+  }
+  routes: Sub2APIProviderProbeTargetHealth[]
+}
+
+export interface Sub2APIProviderProbeTargetHealth {
+  id: number
+  provider_id: number
+  account_id: number
+  account_name: string
+  provider_api_key_id?: number | null
+  remote_group_id?: number | null
+  remote_group_name?: string | null
+  remote_group_multiplier?: number | null
+  sub2api_optimize_enabled?: boolean
+  sub2api_min_multiplier?: number | null
+  sub2api_max_multiplier?: number | null
+  platform: string
+  enabled: boolean
+  interval_seconds: number
+  test_model?: string | null
+  allow_media_probe: boolean
+  timeout_seconds: number
+  degraded_latency_ms: number
+  failure_threshold: number
+  recovery_threshold: number
+  status: ProviderAccountProbeStatus
+  latency_ms?: number | null
+  traffic_request_count: number
+  traffic_success_rate?: number | null
+  traffic_p95_latency_ms?: number | null
+  error_category?: string | null
+  error_message?: string | null
+  last_checked_at?: string | null
+  last_run_at?: string | null
+  route_changed_at?: string | null
+  consecutive_failures: number
+  buckets: Sub2APIProviderHealthBucket[]
+}
+
+export type UpdateProviderProbeTargetRequest = Partial<Pick<
+  Sub2APIProviderProbeTargetHealth,
+  | 'enabled'
+  | 'interval_seconds'
+  | 'allow_media_probe'
+  | 'timeout_seconds'
+  | 'degraded_latency_ms'
+  | 'failure_threshold'
+  | 'recovery_threshold'
+>>
+
+export interface Sub2APIProviderProbeConfig {
+  id: number
+  provider_id: number
+  control_enabled: boolean
+  control_interval_seconds: number
+  data_enabled: boolean
+  data_interval_seconds: number
+  selected_account_ids: number[]
+  allow_media_probe: boolean
+  timeout_seconds: number
+  degraded_latency_ms: number
+  failure_threshold: number
+  recovery_threshold: number
+  last_control_run_at?: string | null
+  last_data_run_at?: string | null
+}
+
+export type UpdateProviderProbeConfigRequest = Partial<Omit<
+  Sub2APIProviderProbeConfig,
+  'id' | 'provider_id' | 'last_control_run_at' | 'last_data_run_at'
+>>
 
 /** 用于"查看绑定账号"面板的详细信息（字段与后端 LinkedAccountInfo 对齐） */
 export interface LinkedAccountInfo {
@@ -95,6 +277,7 @@ export interface OptimizeResult {
   old_multiplier?: number
   new_multiplier?: number
   reason?: string
+  switch_events?: OptimizeGroupSwitchEvent[]
 }
 
 export interface OptimizeAllResult {
@@ -187,6 +370,103 @@ export async function detectPaths(id: number): Promise<PathDetectionResult> {
 }
 
 /**
+ * 实时读取上游登录账号的余额和远程分组倍率，并刷新 Redis 最新快照。
+ */
+export async function getRemoteOverview(id: number): Promise<Sub2APIProviderRemoteOverview> {
+  const { data } = await apiClient.get<Sub2APIProviderRemoteOverview>(
+    `/admin/sub2api-providers/${id}/remote-overview`
+  )
+  return data
+}
+
+/**
+ * 批量读取 Redis 中的平台资产快照，不会向任何上游发起请求。
+ */
+export async function getCachedRemoteOverviews(ids: number[]): Promise<Sub2APIProviderRemoteOverview[]> {
+  if (ids.length === 0) return []
+  const { data } = await apiClient.get<Sub2APIProviderRemoteOverview[]>(
+    '/admin/sub2api-providers/remote-overviews',
+    { params: { ids: ids.join(',') } }
+  )
+  return data
+}
+
+export async function getHealth(id: number): Promise<Sub2APIProviderHealth> {
+  const { data } = await apiClient.get<Sub2APIProviderHealth>(`/admin/sub2api-providers/${id}/health`)
+  return data
+}
+
+export async function getHealthOverview(ids: number[]): Promise<Sub2APIProviderHealthOverview[]> {
+  if (ids.length === 0) return []
+  const { data } = await apiClient.get<Sub2APIProviderHealthOverview[]>('/admin/sub2api-providers/health-overview', {
+    params: { ids: ids.join(',') }
+  })
+  return data
+}
+
+export async function runProbe(id: number): Promise<Sub2APIProviderHealth> {
+  const { data } = await apiClient.post<Sub2APIProviderHealth>(`/admin/sub2api-providers/${id}/probe/run`)
+  return data
+}
+
+export async function getProbeConfig(id: number): Promise<Sub2APIProviderProbeConfig> {
+  const { data } = await apiClient.get<Sub2APIProviderProbeConfig>(`/admin/sub2api-providers/${id}/probe-config`)
+  return data
+}
+
+export async function updateProbeConfig(id: number, payload: UpdateProviderProbeConfigRequest): Promise<Sub2APIProviderProbeConfig> {
+  const { data } = await apiClient.put<Sub2APIProviderProbeConfig>(`/admin/sub2api-providers/${id}/probe-config`, payload)
+  return data
+}
+
+export async function getProbeHistory(id: number, limit = 100, sinceSeconds = 3600): Promise<Sub2APIProviderHealth[]> {
+  const { data } = await apiClient.get<Sub2APIProviderHealth[]>(`/admin/sub2api-providers/${id}/probe/history`, {
+    params: { limit, since_seconds: sinceSeconds }
+  })
+  return data
+}
+
+export async function getProbeTargets(id: number, sync = false): Promise<Sub2APIProviderProbeTargetHealth[]> {
+  const { data } = await apiClient.get<Sub2APIProviderProbeTargetHealth[]>(
+    `/admin/sub2api-providers/${id}/probe-targets`,
+    { params: sync ? { sync: 'true' } : undefined }
+  )
+  return data
+}
+
+export async function updateProbeTarget(
+  providerId: number,
+  targetId: number,
+  payload: UpdateProviderProbeTargetRequest
+): Promise<Sub2APIProviderProbeTargetHealth> {
+  const { data } = await apiClient.put<Sub2APIProviderProbeTargetHealth>(
+    `/admin/sub2api-providers/${providerId}/probe-targets/${targetId}`,
+    payload
+  )
+  return data
+}
+
+export async function runProbeTarget(providerId: number, targetId: number): Promise<Sub2APIProviderProbeTargetHealth> {
+  const { data } = await apiClient.post<Sub2APIProviderProbeTargetHealth>(
+    `/admin/sub2api-providers/${providerId}/probe-targets/${targetId}/run`
+  )
+  return data
+}
+
+export async function getProbeTargetHistory(
+  providerId: number,
+  targetId: number,
+  limit = 100,
+  sinceSeconds = 3600
+): Promise<Sub2APIProviderProbeTargetHealth[]> {
+  const { data } = await apiClient.get<Sub2APIProviderProbeTargetHealth[]>(
+    `/admin/sub2api-providers/${providerId}/probe-targets/${targetId}/history`,
+    { params: { limit, since_seconds: sinceSeconds } }
+  )
+  return data
+}
+
+/**
  * 关联 Account 到 Provider（自动匹配远程 APIKey）
  */
 export async function linkAccount(
@@ -272,20 +552,65 @@ export interface OptimizeLogDetail {
   old_multiplier?: number
   new_multiplier?: number
   reason?: string
+  trigger?: OptimizeLogTrigger
+  switch_events?: OptimizeGroupSwitchEvent[]
+  probe_target_id?: number
+  probe_run_id?: number
+  failure_threshold?: number
+  probe_error_category?: string
+  probe_error_message?: string
+  execution_disposition?: 'executed' | 'coalesced' | 'deferred'
+  coalesced_from_log_id?: number
+  coalesced_from_trigger?: OptimizeLogTrigger
+}
+
+export type OptimizeLogTrigger =
+  | 'cron'
+  | 'schedule_now'
+  | 'probe_unhealthy'
+  | 'manual_account'
+  | 'manual_all'
+  | 'legacy'
+
+export interface OptimizeGroupSwitchEvent {
+  action: 'switch' | 'rollback'
+  from_group_id?: number
+  from_group?: string
+  from_multiplier?: number
+  to_group_id?: number
+  to_group?: string
+  to_multiplier?: number
+  status: 'success' | 'failed'
+  test_status?: 'passed' | 'failed'
+  reason?: string
+  occurred_at: string
 }
 
 export interface OptimizeLogInfo {
   id: number
-  schedule_id: number
-  status: 'success' | 'failed' | 'partial'
+  provider_id: number
+  schedule_id?: number | null
+  trigger: OptimizeLogTrigger
+  status: 'success' | 'failed' | 'partial' | 'skipped'
   total: number
   optimized: number
   skipped: number
   failed: number
   detail?: OptimizeLogDetail[] | null
-  started_at: string
+  started_at?: string | null
   finished_at?: string | null
   created_at: string
+}
+
+export interface OptimizeLogFilters {
+  trigger?: OptimizeLogTrigger | ''
+  status?: OptimizeLogInfo['status'] | ''
+  account_id?: number
+  keyword?: string
+  from?: string
+  to?: string
+  page?: number
+  page_size?: number
 }
 
 export interface UpsertOptimizeScheduleRequest {
@@ -346,9 +671,33 @@ export async function deleteOptimizeSchedule(
  */
 export async function runOptimizeNow(
   providerId: number
-): Promise<{ message: string }> {
-  const { data } = await apiClient.post<{ message: string }>(
+): Promise<OptimizeScheduleInfo> {
+  const { data } = await apiClient.post<OptimizeScheduleInfo>(
     `/admin/sub2api-providers/${providerId}/optimize-schedule/run`
+  )
+  return data
+}
+
+/**
+ * 查询 Provider 级优化审计日志。日志不依赖定时计划，删除计划后仍可查询。
+ */
+export async function listOptimizeLogs(
+  providerId: number,
+  filters: OptimizeLogFilters = {}
+): Promise<PaginatedResponse<OptimizeLogInfo>> {
+  const params: Record<string, string | number> = {}
+  if (filters.trigger) params.trigger = filters.trigger
+  if (filters.status) params.status = filters.status
+  if (filters.account_id) params.account_id = filters.account_id
+  if (filters.keyword?.trim()) params.keyword = filters.keyword.trim()
+  if (filters.from) params.from = filters.from
+  if (filters.to) params.to = filters.to
+  params.page = filters.page ?? 1
+  params.page_size = filters.page_size ?? 20
+
+  const { data } = await apiClient.get<PaginatedResponse<OptimizeLogInfo>>(
+    `/admin/sub2api-providers/${providerId}/optimize-logs`,
+    { params }
   )
   return data
 }
@@ -377,6 +726,18 @@ export const sub2apiProvidersAPI = {
   delete: deleteProvider,
   testConnection,
   detectPaths,
+  getRemoteOverview,
+  getCachedRemoteOverviews,
+  getHealth,
+  getHealthOverview,
+  runProbe,
+  getProbeConfig,
+  updateProbeConfig,
+  getProbeHistory,
+  getProbeTargets,
+  updateProbeTarget,
+  runProbeTarget,
+  getProbeTargetHistory,
   getLinkedAccounts,
   linkAccount,
   unlinkAccount,
@@ -386,6 +747,7 @@ export const sub2apiProvidersAPI = {
   upsertOptimizeSchedule,
   deleteOptimizeSchedule,
   runOptimizeNow,
+  listOptimizeLogs,
   updateAccountOptimizeSettings,
 }
 

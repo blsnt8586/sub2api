@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/Wei-Shaw/sub2api/ent/sub2apioptimizelog"
 	"github.com/Wei-Shaw/sub2api/ent/sub2apioptimizeschedule"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiprovider"
 )
 
 // Sub2APIOptimizeLogCreate is the builder for creating a Sub2APIOptimizeLog entity.
@@ -51,9 +52,37 @@ func (_c *Sub2APIOptimizeLogCreate) SetNillableUpdatedAt(v *time.Time) *Sub2APIO
 	return _c
 }
 
+// SetProviderID sets the "provider_id" field.
+func (_c *Sub2APIOptimizeLogCreate) SetProviderID(v int64) *Sub2APIOptimizeLogCreate {
+	_c.mutation.SetProviderID(v)
+	return _c
+}
+
 // SetScheduleID sets the "schedule_id" field.
 func (_c *Sub2APIOptimizeLogCreate) SetScheduleID(v int64) *Sub2APIOptimizeLogCreate {
 	_c.mutation.SetScheduleID(v)
+	return _c
+}
+
+// SetNillableScheduleID sets the "schedule_id" field if the given value is not nil.
+func (_c *Sub2APIOptimizeLogCreate) SetNillableScheduleID(v *int64) *Sub2APIOptimizeLogCreate {
+	if v != nil {
+		_c.SetScheduleID(*v)
+	}
+	return _c
+}
+
+// SetTrigger sets the "trigger" field.
+func (_c *Sub2APIOptimizeLogCreate) SetTrigger(v string) *Sub2APIOptimizeLogCreate {
+	_c.mutation.SetTrigger(v)
+	return _c
+}
+
+// SetNillableTrigger sets the "trigger" field if the given value is not nil.
+func (_c *Sub2APIOptimizeLogCreate) SetNillableTrigger(v *string) *Sub2APIOptimizeLogCreate {
+	if v != nil {
+		_c.SetTrigger(*v)
+	}
 	return _c
 }
 
@@ -161,6 +190,11 @@ func (_c *Sub2APIOptimizeLogCreate) SetNillableFinishedAt(v *time.Time) *Sub2API
 	return _c
 }
 
+// SetProvider sets the "provider" edge to the Sub2APIProvider entity.
+func (_c *Sub2APIOptimizeLogCreate) SetProvider(v *Sub2APIProvider) *Sub2APIOptimizeLogCreate {
+	return _c.SetProviderID(v.ID)
+}
+
 // SetSchedule sets the "schedule" edge to the Sub2APIOptimizeSchedule entity.
 func (_c *Sub2APIOptimizeLogCreate) SetSchedule(v *Sub2APIOptimizeSchedule) *Sub2APIOptimizeLogCreate {
 	return _c.SetScheduleID(v.ID)
@@ -209,6 +243,10 @@ func (_c *Sub2APIOptimizeLogCreate) defaults() {
 		v := sub2apioptimizelog.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.Trigger(); !ok {
+		v := sub2apioptimizelog.DefaultTrigger
+		_c.mutation.SetTrigger(v)
+	}
 	if _, ok := _c.mutation.Status(); !ok {
 		v := sub2apioptimizelog.DefaultStatus
 		_c.mutation.SetStatus(v)
@@ -239,8 +277,16 @@ func (_c *Sub2APIOptimizeLogCreate) check() error {
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "Sub2APIOptimizeLog.updated_at"`)}
 	}
-	if _, ok := _c.mutation.ScheduleID(); !ok {
-		return &ValidationError{Name: "schedule_id", err: errors.New(`ent: missing required field "Sub2APIOptimizeLog.schedule_id"`)}
+	if _, ok := _c.mutation.ProviderID(); !ok {
+		return &ValidationError{Name: "provider_id", err: errors.New(`ent: missing required field "Sub2APIOptimizeLog.provider_id"`)}
+	}
+	if _, ok := _c.mutation.Trigger(); !ok {
+		return &ValidationError{Name: "trigger", err: errors.New(`ent: missing required field "Sub2APIOptimizeLog.trigger"`)}
+	}
+	if v, ok := _c.mutation.Trigger(); ok {
+		if err := sub2apioptimizelog.TriggerValidator(v); err != nil {
+			return &ValidationError{Name: "trigger", err: fmt.Errorf(`ent: validator failed for field "Sub2APIOptimizeLog.trigger": %w`, err)}
+		}
 	}
 	if _, ok := _c.mutation.Status(); !ok {
 		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "Sub2APIOptimizeLog.status"`)}
@@ -262,8 +308,8 @@ func (_c *Sub2APIOptimizeLogCreate) check() error {
 	if _, ok := _c.mutation.Failed(); !ok {
 		return &ValidationError{Name: "failed", err: errors.New(`ent: missing required field "Sub2APIOptimizeLog.failed"`)}
 	}
-	if len(_c.mutation.ScheduleIDs()) == 0 {
-		return &ValidationError{Name: "schedule", err: errors.New(`ent: missing required edge "Sub2APIOptimizeLog.schedule"`)}
+	if len(_c.mutation.ProviderIDs()) == 0 {
+		return &ValidationError{Name: "provider", err: errors.New(`ent: missing required edge "Sub2APIOptimizeLog.provider"`)}
 	}
 	return nil
 }
@@ -300,6 +346,10 @@ func (_c *Sub2APIOptimizeLogCreate) createSpec() (*Sub2APIOptimizeLog, *sqlgraph
 		_spec.SetField(sub2apioptimizelog.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
+	if value, ok := _c.mutation.Trigger(); ok {
+		_spec.SetField(sub2apioptimizelog.FieldTrigger, field.TypeString, value)
+		_node.Trigger = value
+	}
 	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(sub2apioptimizelog.FieldStatus, field.TypeString, value)
 		_node.Status = value
@@ -332,6 +382,23 @@ func (_c *Sub2APIOptimizeLogCreate) createSpec() (*Sub2APIOptimizeLog, *sqlgraph
 		_spec.SetField(sub2apioptimizelog.FieldFinishedAt, field.TypeTime, value)
 		_node.FinishedAt = &value
 	}
+	if nodes := _c.mutation.ProviderIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   sub2apioptimizelog.ProviderTable,
+			Columns: []string{sub2apioptimizelog.ProviderColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(sub2apiprovider.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.ProviderID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	if nodes := _c.mutation.ScheduleIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
@@ -346,7 +413,7 @@ func (_c *Sub2APIOptimizeLogCreate) createSpec() (*Sub2APIOptimizeLog, *sqlgraph
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.ScheduleID = nodes[0]
+		_node.ScheduleID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
@@ -413,6 +480,18 @@ func (u *Sub2APIOptimizeLogUpsert) UpdateUpdatedAt() *Sub2APIOptimizeLogUpsert {
 	return u
 }
 
+// SetProviderID sets the "provider_id" field.
+func (u *Sub2APIOptimizeLogUpsert) SetProviderID(v int64) *Sub2APIOptimizeLogUpsert {
+	u.Set(sub2apioptimizelog.FieldProviderID, v)
+	return u
+}
+
+// UpdateProviderID sets the "provider_id" field to the value that was provided on create.
+func (u *Sub2APIOptimizeLogUpsert) UpdateProviderID() *Sub2APIOptimizeLogUpsert {
+	u.SetExcluded(sub2apioptimizelog.FieldProviderID)
+	return u
+}
+
 // SetScheduleID sets the "schedule_id" field.
 func (u *Sub2APIOptimizeLogUpsert) SetScheduleID(v int64) *Sub2APIOptimizeLogUpsert {
 	u.Set(sub2apioptimizelog.FieldScheduleID, v)
@@ -422,6 +501,24 @@ func (u *Sub2APIOptimizeLogUpsert) SetScheduleID(v int64) *Sub2APIOptimizeLogUps
 // UpdateScheduleID sets the "schedule_id" field to the value that was provided on create.
 func (u *Sub2APIOptimizeLogUpsert) UpdateScheduleID() *Sub2APIOptimizeLogUpsert {
 	u.SetExcluded(sub2apioptimizelog.FieldScheduleID)
+	return u
+}
+
+// ClearScheduleID clears the value of the "schedule_id" field.
+func (u *Sub2APIOptimizeLogUpsert) ClearScheduleID() *Sub2APIOptimizeLogUpsert {
+	u.SetNull(sub2apioptimizelog.FieldScheduleID)
+	return u
+}
+
+// SetTrigger sets the "trigger" field.
+func (u *Sub2APIOptimizeLogUpsert) SetTrigger(v string) *Sub2APIOptimizeLogUpsert {
+	u.Set(sub2apioptimizelog.FieldTrigger, v)
+	return u
+}
+
+// UpdateTrigger sets the "trigger" field to the value that was provided on create.
+func (u *Sub2APIOptimizeLogUpsert) UpdateTrigger() *Sub2APIOptimizeLogUpsert {
+	u.SetExcluded(sub2apioptimizelog.FieldTrigger)
 	return u
 }
 
@@ -622,6 +719,20 @@ func (u *Sub2APIOptimizeLogUpsertOne) UpdateUpdatedAt() *Sub2APIOptimizeLogUpser
 	})
 }
 
+// SetProviderID sets the "provider_id" field.
+func (u *Sub2APIOptimizeLogUpsertOne) SetProviderID(v int64) *Sub2APIOptimizeLogUpsertOne {
+	return u.Update(func(s *Sub2APIOptimizeLogUpsert) {
+		s.SetProviderID(v)
+	})
+}
+
+// UpdateProviderID sets the "provider_id" field to the value that was provided on create.
+func (u *Sub2APIOptimizeLogUpsertOne) UpdateProviderID() *Sub2APIOptimizeLogUpsertOne {
+	return u.Update(func(s *Sub2APIOptimizeLogUpsert) {
+		s.UpdateProviderID()
+	})
+}
+
 // SetScheduleID sets the "schedule_id" field.
 func (u *Sub2APIOptimizeLogUpsertOne) SetScheduleID(v int64) *Sub2APIOptimizeLogUpsertOne {
 	return u.Update(func(s *Sub2APIOptimizeLogUpsert) {
@@ -633,6 +744,27 @@ func (u *Sub2APIOptimizeLogUpsertOne) SetScheduleID(v int64) *Sub2APIOptimizeLog
 func (u *Sub2APIOptimizeLogUpsertOne) UpdateScheduleID() *Sub2APIOptimizeLogUpsertOne {
 	return u.Update(func(s *Sub2APIOptimizeLogUpsert) {
 		s.UpdateScheduleID()
+	})
+}
+
+// ClearScheduleID clears the value of the "schedule_id" field.
+func (u *Sub2APIOptimizeLogUpsertOne) ClearScheduleID() *Sub2APIOptimizeLogUpsertOne {
+	return u.Update(func(s *Sub2APIOptimizeLogUpsert) {
+		s.ClearScheduleID()
+	})
+}
+
+// SetTrigger sets the "trigger" field.
+func (u *Sub2APIOptimizeLogUpsertOne) SetTrigger(v string) *Sub2APIOptimizeLogUpsertOne {
+	return u.Update(func(s *Sub2APIOptimizeLogUpsert) {
+		s.SetTrigger(v)
+	})
+}
+
+// UpdateTrigger sets the "trigger" field to the value that was provided on create.
+func (u *Sub2APIOptimizeLogUpsertOne) UpdateTrigger() *Sub2APIOptimizeLogUpsertOne {
+	return u.Update(func(s *Sub2APIOptimizeLogUpsert) {
+		s.UpdateTrigger()
 	})
 }
 
@@ -1022,6 +1154,20 @@ func (u *Sub2APIOptimizeLogUpsertBulk) UpdateUpdatedAt() *Sub2APIOptimizeLogUpse
 	})
 }
 
+// SetProviderID sets the "provider_id" field.
+func (u *Sub2APIOptimizeLogUpsertBulk) SetProviderID(v int64) *Sub2APIOptimizeLogUpsertBulk {
+	return u.Update(func(s *Sub2APIOptimizeLogUpsert) {
+		s.SetProviderID(v)
+	})
+}
+
+// UpdateProviderID sets the "provider_id" field to the value that was provided on create.
+func (u *Sub2APIOptimizeLogUpsertBulk) UpdateProviderID() *Sub2APIOptimizeLogUpsertBulk {
+	return u.Update(func(s *Sub2APIOptimizeLogUpsert) {
+		s.UpdateProviderID()
+	})
+}
+
 // SetScheduleID sets the "schedule_id" field.
 func (u *Sub2APIOptimizeLogUpsertBulk) SetScheduleID(v int64) *Sub2APIOptimizeLogUpsertBulk {
 	return u.Update(func(s *Sub2APIOptimizeLogUpsert) {
@@ -1033,6 +1179,27 @@ func (u *Sub2APIOptimizeLogUpsertBulk) SetScheduleID(v int64) *Sub2APIOptimizeLo
 func (u *Sub2APIOptimizeLogUpsertBulk) UpdateScheduleID() *Sub2APIOptimizeLogUpsertBulk {
 	return u.Update(func(s *Sub2APIOptimizeLogUpsert) {
 		s.UpdateScheduleID()
+	})
+}
+
+// ClearScheduleID clears the value of the "schedule_id" field.
+func (u *Sub2APIOptimizeLogUpsertBulk) ClearScheduleID() *Sub2APIOptimizeLogUpsertBulk {
+	return u.Update(func(s *Sub2APIOptimizeLogUpsert) {
+		s.ClearScheduleID()
+	})
+}
+
+// SetTrigger sets the "trigger" field.
+func (u *Sub2APIOptimizeLogUpsertBulk) SetTrigger(v string) *Sub2APIOptimizeLogUpsertBulk {
+	return u.Update(func(s *Sub2APIOptimizeLogUpsert) {
+		s.SetTrigger(v)
+	})
+}
+
+// UpdateTrigger sets the "trigger" field to the value that was provided on create.
+func (u *Sub2APIOptimizeLogUpsertBulk) UpdateTrigger() *Sub2APIOptimizeLogUpsertBulk {
+	return u.Update(func(s *Sub2APIOptimizeLogUpsert) {
+		s.UpdateTrigger()
 	})
 }
 

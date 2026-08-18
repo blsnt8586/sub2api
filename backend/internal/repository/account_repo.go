@@ -3361,11 +3361,19 @@ func accountEntityToService(m *dbent.Account) *service.Account {
 		// Provider 关联字段
 		ProviderID:            m.ProviderID,
 		ProviderAPIKeyID:      m.ProviderAPIKeyID,
+		RemoteGroupID:         m.RemoteGroupID,
 		RemoteGroupName:       m.RemoteGroupName,
 		RemoteGroupMultiplier: m.RemoteGroupMultiplier,
 		RemoteGroupSyncedAt:   m.RemoteGroupSyncedAt,
-		ParentAccountID:       m.ParentAccountID,
-		QuotaDimension:        string(m.QuotaDimension),
+		// Sub2API optimization settings are also consumed by account probes.
+		// Keep the shared Ent -> service conversion complete so GetByID and
+		// GetByIDs behave the same as ListByProviderID.
+		Sub2APIOptimizeEnabled: m.Sub2apiOptimizeEnabled,
+		Sub2APIMinMultiplier:   m.Sub2apiMinMultiplier,
+		Sub2APIMaxMultiplier:   m.Sub2apiMaxMultiplier,
+		Sub2APITestModel:       m.Sub2apiTestModel,
+		ParentAccountID:        m.ParentAccountID,
+		QuotaDimension:         string(m.QuotaDimension),
 	}
 }
 

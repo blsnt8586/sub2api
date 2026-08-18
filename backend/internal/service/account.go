@@ -69,6 +69,7 @@ type Account struct {
 	// Sub2API Provider 关联字段
 	ProviderID            *int64
 	ProviderAPIKeyID      *int64
+	RemoteGroupID         *int64
 	RemoteGroupName       *string
 	RemoteGroupMultiplier *float64
 	RemoteGroupSyncedAt   *time.Time
