@@ -112,7 +112,7 @@ type Sub2APIProviderService struct {
 }
 
 // NewSub2APIProviderService 创建 Service 实例
-func NewSub2APIProviderService(repo Sub2APIProviderRepository, accountRepo Sub2APIAccountRepository, proxyRepo ProxyRepository, tokenCache *sub2api.TokenCache, encryptor ProviderTokenEncryptor, remoteOverviewCache Sub2APIProviderRemoteOverviewCache, operationGate *Sub2APIProviderOperationGate, cfg *config.Config) *Sub2APIProviderService {
+func NewSub2APIProviderService(repo Sub2APIProviderRepository, accountRepo Sub2APIAccountRepository, proxyRepo Sub2APIProviderProxyRepository, tokenCache *sub2api.TokenCache, encryptor ProviderTokenEncryptor, remoteOverviewCache Sub2APIProviderRemoteOverviewCache, operationGate *Sub2APIProviderOperationGate, cfg *config.Config) *Sub2APIProviderService {
 	return &Sub2APIProviderService{
 		repo: repo, accountRepo: accountRepo, proxyRepo: proxyRepo, tokenCache: tokenCache, encryptor: encryptor, remoteOverviewCache: remoteOverviewCache, operationGate: operationGate,
 		providerTokenKeyConfigured: encryptor != nil && cfg != nil && strings.TrimSpace(cfg.Security.ProviderTokenKey) != "",

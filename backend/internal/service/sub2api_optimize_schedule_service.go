@@ -140,7 +140,7 @@ type OptimizeLogInfo struct {
 type Sub2APIOptimizeScheduleService struct {
 	scheduleRepo   Sub2APIOptimizeScheduleRepository
 	providerSvc    *Sub2APIProviderService
-	accountTestSvc *AccountTestService
+	accountTestSvc Sub2APIOptimizeTestRunner
 	tokenCache     *sub2api.TokenCache
 
 	// Account probes, binding refreshes and every optimization entry point share
@@ -168,7 +168,7 @@ type Sub2APIAccountConcurrencyReader interface {
 func NewSub2APIOptimizeScheduleService(
 	scheduleRepo Sub2APIOptimizeScheduleRepository,
 	providerSvc *Sub2APIProviderService,
-	accountTestSvc *AccountTestService,
+	accountTestSvc Sub2APIOptimizeTestRunner,
 	operationGate *Sub2APIProviderOperationGate,
 ) *Sub2APIOptimizeScheduleService {
 	return &Sub2APIOptimizeScheduleService{

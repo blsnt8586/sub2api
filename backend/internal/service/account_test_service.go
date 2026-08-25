@@ -73,20 +73,6 @@ type AccountTestOptions struct {
 	AudioDataURL string
 }
 
-type accountTestStatusMutationContextKey struct{}
-
-func suppressAccountTestStatusMutation(ctx context.Context) context.Context {
-	return context.WithValue(ctx, accountTestStatusMutationContextKey{}, true)
-}
-
-func accountTestStatusMutationAllowed(ctx context.Context) bool {
-	if ctx == nil {
-		return true
-	}
-	suppressed, _ := ctx.Value(accountTestStatusMutationContextKey{}).(bool)
-	return !suppressed
-}
-
 func isRecoverableUpstreamError(message string) bool {
 	lower := strings.ToLower(strings.TrimSpace(message))
 	for _, marker := range []string{

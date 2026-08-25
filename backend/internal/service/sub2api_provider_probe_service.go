@@ -254,7 +254,7 @@ type Sub2APIProviderProbeService struct {
 	providerRepo        Sub2APIProviderRepository
 	probeRepo           Sub2APIProviderProbeRepository
 	accountRepo         Sub2APIAccountRepository
-	accountTest         *AccountTestService
+	accountTest         Sub2APIProbeTestRunner
 	rateLimitService    *RateLimitService
 	tokenCache          *sub2api.TokenCache
 	encryptor           ProviderTokenEncryptor
@@ -266,7 +266,7 @@ type Sub2APIProviderProbeService struct {
 	instanceID          string
 }
 
-func NewSub2APIProviderProbeService(providerRepo Sub2APIProviderRepository, probeRepo Sub2APIProviderProbeRepository, accountRepo Sub2APIAccountRepository, accountTest *AccountTestService, rateLimitService *RateLimitService, tokenCache *sub2api.TokenCache, encryptor ProviderTokenEncryptor, operationGate *Sub2APIProviderOperationGate) *Sub2APIProviderProbeService {
+func NewSub2APIProviderProbeService(providerRepo Sub2APIProviderRepository, probeRepo Sub2APIProviderProbeRepository, accountRepo Sub2APIAccountRepository, accountTest Sub2APIProbeTestRunner, rateLimitService *RateLimitService, tokenCache *sub2api.TokenCache, encryptor ProviderTokenEncryptor, operationGate *Sub2APIProviderOperationGate) *Sub2APIProviderProbeService {
 	return &Sub2APIProviderProbeService{providerRepo: providerRepo, probeRepo: probeRepo, accountRepo: accountRepo, accountTest: accountTest, rateLimitService: rateLimitService, tokenCache: tokenCache, encryptor: encryptor, operationGate: operationGate, instanceID: uuid.NewString()}
 }
 
