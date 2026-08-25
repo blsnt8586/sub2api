@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/ent/account"
 	"github.com/Wei-Shaw/sub2api/ent/sub2apiproviderprobeconfig"
 	"github.com/Wei-Shaw/sub2api/ent/sub2apiproviderproberun"
 	"github.com/Wei-Shaw/sub2api/ent/sub2apiproviderprobetarget"
@@ -93,6 +94,9 @@ func (r *sub2APIProviderProbeRepository) CreateDefaultConfig(ctx context.Context
 		SetDegradedLatencyMs(2000).
 		SetFailureThreshold(3).
 		SetRecoveryThreshold(2).
+		SetAccountStatusSyncEnabled(true).
+		SetAccountStatusFailureThreshold(3).
+		SetAccountStatusRecoveryThreshold(2).
 		Save(ctx)
 }
 
@@ -127,6 +131,15 @@ func (r *sub2APIProviderProbeRepository) UpdateConfig(ctx context.Context, provi
 	}
 	if input.RecoveryThreshold != nil {
 		u.SetRecoveryThreshold(*input.RecoveryThreshold)
+	}
+	if input.AccountStatusSyncEnabled != nil {
+		u.SetAccountStatusSyncEnabled(*input.AccountStatusSyncEnabled)
+	}
+	if input.AccountStatusFailureThreshold != nil {
+		u.SetAccountStatusFailureThreshold(*input.AccountStatusFailureThreshold)
+	}
+	if input.AccountStatusRecoveryThreshold != nil {
+		u.SetAccountStatusRecoveryThreshold(*input.AccountStatusRecoveryThreshold)
 	}
 	if _, err := u.Save(ctx); err != nil {
 		return nil, err
@@ -255,6 +268,22 @@ func (r *sub2APIProviderProbeRepository) ListTargets(ctx context.Context, provid
 	).All(ctx)
 }
 
+func (r *sub2APIProviderProbeRepository) DeleteTargetsByIDs(ctx context.Context, providerID int64, targetIDs []int64) (int, error) {
+	if len(targetIDs) == 0 {
+		return 0, nil
+	}
+	return r.client.Sub2APIProviderProbeTarget.Delete().Where(
+		sub2apiproviderprobetarget.ProviderID(providerID),
+		sub2apiproviderprobetarget.IDIn(targetIDs...),
+		// Re-check the account row at delete time. A concurrent unlink/relink
+		// must not delete a target that became valid after the service snapshot.
+		sub2apiproviderprobetarget.Not(sub2apiproviderprobetarget.HasAccountWith(
+			account.ProviderIDEQ(providerID),
+			account.DeletedAtIsNil(),
+		)),
+	).Exec(ctx)
+}
+
 func (r *sub2APIProviderProbeRepository) GetTarget(ctx context.Context, providerID, targetID int64) (*ent.Sub2APIProviderProbeTarget, error) {
 	return r.client.Sub2APIProviderProbeTarget.Query().Where(
 		sub2apiproviderprobetarget.ID(targetID),
@@ -272,6 +301,10 @@ func (r *sub2APIProviderProbeRepository) CreateTarget(ctx context.Context, input
 		SetAllowMediaProbe(input.AllowMediaProbe).
 		SetTimeoutSeconds(input.TimeoutSeconds).
 		SetDegradedLatencyMs(input.DegradedLatencyMS).
+		SetDegradedOptimizeThreshold(input.DegradedOptimizeThreshold).
+		SetCostOptimizeEnabled(input.CostOptimizeEnabled).
+		SetCostOptimizeIntervalSeconds(input.CostOptimizeIntervalSeconds).
+		SetCostOptimizeHealthyThreshold(input.CostOptimizeHealthyThreshold).
 		SetFailureThreshold(input.FailureThreshold).
 		SetRecoveryThreshold(input.RecoveryThreshold)
 	if input.ProviderAPIKeyID != nil {
@@ -305,6 +338,18 @@ func (r *sub2APIProviderProbeRepository) UpdateTarget(ctx context.Context, provi
 	}
 	if input.DegradedLatencyMS != nil {
 		u.SetDegradedLatencyMs(*input.DegradedLatencyMS)
+	}
+	if input.DegradedOptimizeThreshold != nil {
+		u.SetDegradedOptimizeThreshold(*input.DegradedOptimizeThreshold)
+	}
+	if input.CostOptimizeEnabled != nil {
+		u.SetCostOptimizeEnabled(*input.CostOptimizeEnabled)
+	}
+	if input.CostOptimizeIntervalSeconds != nil {
+		u.SetCostOptimizeIntervalSeconds(*input.CostOptimizeIntervalSeconds)
+	}
+	if input.CostOptimizeHealthyThreshold != nil {
+		u.SetCostOptimizeHealthyThreshold(*input.CostOptimizeHealthyThreshold)
 	}
 	if input.FailureThreshold != nil {
 		u.SetFailureThreshold(*input.FailureThreshold)
@@ -347,6 +392,16 @@ func (r *sub2APIProviderProbeRepository) UpdateTargetBinding(ctx context.Context
 
 func (r *sub2APIProviderProbeRepository) MarkTargetRun(ctx context.Context, targetID int64, at time.Time) error {
 	return r.client.Sub2APIProviderProbeTarget.UpdateOneID(targetID).SetLastRunAt(at.UTC()).Exec(ctx)
+}
+
+func (r *sub2APIProviderProbeRepository) MarkTargetsCostOptimize(ctx context.Context, targetIDs []int64, at time.Time) error {
+	if len(targetIDs) == 0 {
+		return nil
+	}
+	_, err := r.client.Sub2APIProviderProbeTarget.Update().Where(
+		sub2apiproviderprobetarget.IDIn(targetIDs...),
+	).SetLastCostOptimizeAt(at.UTC()).Save(ctx)
+	return err
 }
 
 func (r *sub2APIProviderProbeRepository) CreateTargetRun(ctx context.Context, input *service.Sub2APIProviderProbeTargetRunInput) (*ent.Sub2APIProviderProbeTargetRun, error) {

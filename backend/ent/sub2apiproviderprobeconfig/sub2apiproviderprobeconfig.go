@@ -40,6 +40,12 @@ const (
 	FieldFailureThreshold = "failure_threshold"
 	// FieldRecoveryThreshold holds the string denoting the recovery_threshold field in the database.
 	FieldRecoveryThreshold = "recovery_threshold"
+	// FieldAccountStatusSyncEnabled holds the string denoting the account_status_sync_enabled field in the database.
+	FieldAccountStatusSyncEnabled = "account_status_sync_enabled"
+	// FieldAccountStatusFailureThreshold holds the string denoting the account_status_failure_threshold field in the database.
+	FieldAccountStatusFailureThreshold = "account_status_failure_threshold"
+	// FieldAccountStatusRecoveryThreshold holds the string denoting the account_status_recovery_threshold field in the database.
+	FieldAccountStatusRecoveryThreshold = "account_status_recovery_threshold"
 	// FieldLastControlRunAt holds the string denoting the last_control_run_at field in the database.
 	FieldLastControlRunAt = "last_control_run_at"
 	// FieldLastDataRunAt holds the string denoting the last_data_run_at field in the database.
@@ -73,6 +79,9 @@ var Columns = []string{
 	FieldDegradedLatencyMs,
 	FieldFailureThreshold,
 	FieldRecoveryThreshold,
+	FieldAccountStatusSyncEnabled,
+	FieldAccountStatusFailureThreshold,
+	FieldAccountStatusRecoveryThreshold,
 	FieldLastControlRunAt,
 	FieldLastDataRunAt,
 }
@@ -126,6 +135,16 @@ var (
 	DefaultRecoveryThreshold int
 	// RecoveryThresholdValidator is a validator for the "recovery_threshold" field. It is called by the builders before save.
 	RecoveryThresholdValidator func(int) error
+	// DefaultAccountStatusSyncEnabled holds the default value on creation for the "account_status_sync_enabled" field.
+	DefaultAccountStatusSyncEnabled bool
+	// DefaultAccountStatusFailureThreshold holds the default value on creation for the "account_status_failure_threshold" field.
+	DefaultAccountStatusFailureThreshold int
+	// AccountStatusFailureThresholdValidator is a validator for the "account_status_failure_threshold" field. It is called by the builders before save.
+	AccountStatusFailureThresholdValidator func(int) error
+	// DefaultAccountStatusRecoveryThreshold holds the default value on creation for the "account_status_recovery_threshold" field.
+	DefaultAccountStatusRecoveryThreshold int
+	// AccountStatusRecoveryThresholdValidator is a validator for the "account_status_recovery_threshold" field. It is called by the builders before save.
+	AccountStatusRecoveryThresholdValidator func(int) error
 )
 
 // OrderOption defines the ordering options for the Sub2APIProviderProbeConfig queries.
@@ -194,6 +213,21 @@ func ByFailureThreshold(opts ...sql.OrderTermOption) OrderOption {
 // ByRecoveryThreshold orders the results by the recovery_threshold field.
 func ByRecoveryThreshold(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRecoveryThreshold, opts...).ToFunc()
+}
+
+// ByAccountStatusSyncEnabled orders the results by the account_status_sync_enabled field.
+func ByAccountStatusSyncEnabled(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAccountStatusSyncEnabled, opts...).ToFunc()
+}
+
+// ByAccountStatusFailureThreshold orders the results by the account_status_failure_threshold field.
+func ByAccountStatusFailureThreshold(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAccountStatusFailureThreshold, opts...).ToFunc()
+}
+
+// ByAccountStatusRecoveryThreshold orders the results by the account_status_recovery_threshold field.
+func ByAccountStatusRecoveryThreshold(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAccountStatusRecoveryThreshold, opts...).ToFunc()
 }
 
 // ByLastControlRunAt orders the results by the last_control_run_at field.

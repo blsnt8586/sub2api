@@ -120,6 +120,8 @@ func (s *GroupService) Create(ctx context.Context, req CreateGroupRequest) (*Gro
 		Description:          req.Description,
 		Platform:             PlatformAnthropic,
 		RateMultiplier:       req.RateMultiplier,
+		ManualRateMultiplier: req.RateMultiplier,
+		DynamicPricingStatus: "manual",
 		IsExclusive:          req.IsExclusive,
 		Status:               StatusActive,
 		SubscriptionType:     SubscriptionTypeStandard,
@@ -187,7 +189,10 @@ func (s *GroupService) Update(ctx context.Context, id int64, req UpdateGroupRequ
 	}
 
 	if req.RateMultiplier != nil {
-		group.RateMultiplier = *req.RateMultiplier
+		group.ManualRateMultiplier = *req.RateMultiplier
+		if !group.DynamicPricingEnabled {
+			group.RateMultiplier = *req.RateMultiplier
+		}
 	}
 
 	if req.IsExclusive != nil {

@@ -925,6 +925,12 @@ var (
 		{Name: "name", Type: field.TypeString, Size: 100},
 		{Name: "description", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "rate_multiplier", Type: field.TypeFloat64, Default: 1, SchemaType: map[string]string{"postgres": "decimal(10,4)"}},
+		{Name: "dynamic_pricing_enabled", Type: field.TypeBool, Default: false},
+		{Name: "dynamic_pricing_markup", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"postgres": "decimal(10,4)"}},
+		{Name: "manual_rate_multiplier", Type: field.TypeFloat64, Default: 1, SchemaType: map[string]string{"postgres": "decimal(10,4)"}},
+		{Name: "dynamic_source_max_multiplier", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(10,4)"}},
+		{Name: "dynamic_pricing_updated_at", Type: field.TypeTime, Nullable: true},
+		{Name: "dynamic_pricing_status", Type: field.TypeString, Size: 20, Default: "manual"},
 		{Name: "peak_rate_enabled", Type: field.TypeBool, Default: false},
 		{Name: "peak_start", Type: field.TypeString, Size: 5, Default: ""},
 		{Name: "peak_end", Type: field.TypeString, Size: 5, Default: ""},
@@ -996,22 +1002,22 @@ var (
 			{
 				Name:    "group_status",
 				Unique:  false,
-				Columns: []*schema.Column{GroupsColumns[12]},
+				Columns: []*schema.Column{GroupsColumns[18]},
 			},
 			{
 				Name:    "group_platform",
 				Unique:  false,
-				Columns: []*schema.Column{GroupsColumns[14]},
+				Columns: []*schema.Column{GroupsColumns[20]},
 			},
 			{
 				Name:    "group_subscription_type",
 				Unique:  false,
-				Columns: []*schema.Column{GroupsColumns[15]},
+				Columns: []*schema.Column{GroupsColumns[21]},
 			},
 			{
 				Name:    "group_is_exclusive",
 				Unique:  false,
-				Columns: []*schema.Column{GroupsColumns[11]},
+				Columns: []*schema.Column{GroupsColumns[17]},
 			},
 			{
 				Name:    "group_deleted_at",
@@ -1021,12 +1027,12 @@ var (
 			{
 				Name:    "group_sort_order",
 				Unique:  false,
-				Columns: []*schema.Column{GroupsColumns[54]},
+				Columns: []*schema.Column{GroupsColumns[60]},
 			},
 			{
 				Name:    "idx_groups_duplicate_operation_id_active",
 				Unique:  true,
-				Columns: []*schema.Column{GroupsColumns[13]},
+				Columns: []*schema.Column{GroupsColumns[19]},
 				Annotation: &entsql.IndexAnnotation{
 					Where: "duplicate_operation_id IS NOT NULL AND deleted_at IS NULL",
 				},
@@ -1723,6 +1729,9 @@ var (
 		{Name: "degraded_latency_ms", Type: field.TypeInt, Default: 2000},
 		{Name: "failure_threshold", Type: field.TypeInt, Default: 3},
 		{Name: "recovery_threshold", Type: field.TypeInt, Default: 2},
+		{Name: "account_status_sync_enabled", Type: field.TypeBool, Default: true},
+		{Name: "account_status_failure_threshold", Type: field.TypeInt, Default: 3},
+		{Name: "account_status_recovery_threshold", Type: field.TypeInt, Default: 2},
 		{Name: "last_control_run_at", Type: field.TypeTime, Nullable: true},
 		{Name: "last_data_run_at", Type: field.TypeTime, Nullable: true},
 		{Name: "provider_id", Type: field.TypeInt64, Unique: true},
@@ -1735,7 +1744,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "sub2api_provider_probe_configs_sub2api_providers_probe_config",
-				Columns:    []*schema.Column{Sub2apiProviderProbeConfigsColumns[15]},
+				Columns:    []*schema.Column{Sub2apiProviderProbeConfigsColumns[18]},
 				RefColumns: []*schema.Column{Sub2apiProvidersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1744,7 +1753,7 @@ var (
 			{
 				Name:    "sub2apiproviderprobeconfig_provider_id",
 				Unique:  true,
-				Columns: []*schema.Column{Sub2apiProviderProbeConfigsColumns[15]},
+				Columns: []*schema.Column{Sub2apiProviderProbeConfigsColumns[18]},
 			},
 		},
 	}
@@ -1814,6 +1823,11 @@ var (
 		{Name: "allow_media_probe", Type: field.TypeBool, Default: false},
 		{Name: "timeout_seconds", Type: field.TypeInt, Default: 60},
 		{Name: "degraded_latency_ms", Type: field.TypeInt, Default: 5000},
+		{Name: "degraded_optimize_threshold", Type: field.TypeInt, Default: 3},
+		{Name: "cost_optimize_enabled", Type: field.TypeBool, Default: true},
+		{Name: "cost_optimize_interval_seconds", Type: field.TypeInt, Default: 21600},
+		{Name: "cost_optimize_healthy_threshold", Type: field.TypeInt, Default: 6},
+		{Name: "last_cost_optimize_at", Type: field.TypeTime, Nullable: true},
 		{Name: "failure_threshold", Type: field.TypeInt, Default: 3},
 		{Name: "recovery_threshold", Type: field.TypeInt, Default: 2},
 		{Name: "last_run_at", Type: field.TypeTime, Nullable: true},
@@ -1829,13 +1843,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "sub2api_provider_probe_targets_accounts_sub2api_probe_targets",
-				Columns:    []*schema.Column{Sub2apiProviderProbeTargetsColumns[17]},
+				Columns:    []*schema.Column{Sub2apiProviderProbeTargetsColumns[22]},
 				RefColumns: []*schema.Column{AccountsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "sub2api_provider_probe_targets_sub2api_providers_probe_targets",
-				Columns:    []*schema.Column{Sub2apiProviderProbeTargetsColumns[18]},
+				Columns:    []*schema.Column{Sub2apiProviderProbeTargetsColumns[23]},
 				RefColumns: []*schema.Column{Sub2apiProvidersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1844,17 +1858,17 @@ var (
 			{
 				Name:    "sub2apiproviderprobetarget_provider_id_account_id",
 				Unique:  true,
-				Columns: []*schema.Column{Sub2apiProviderProbeTargetsColumns[18], Sub2apiProviderProbeTargetsColumns[17]},
+				Columns: []*schema.Column{Sub2apiProviderProbeTargetsColumns[23], Sub2apiProviderProbeTargetsColumns[22]},
 			},
 			{
 				Name:    "sub2apiproviderprobetarget_provider_id_enabled_last_run_at",
 				Unique:  false,
-				Columns: []*schema.Column{Sub2apiProviderProbeTargetsColumns[18], Sub2apiProviderProbeTargetsColumns[7], Sub2apiProviderProbeTargetsColumns[15]},
+				Columns: []*schema.Column{Sub2apiProviderProbeTargetsColumns[23], Sub2apiProviderProbeTargetsColumns[7], Sub2apiProviderProbeTargetsColumns[20]},
 			},
 			{
 				Name:    "sub2apiproviderprobetarget_account_id",
 				Unique:  false,
-				Columns: []*schema.Column{Sub2apiProviderProbeTargetsColumns[17]},
+				Columns: []*schema.Column{Sub2apiProviderProbeTargetsColumns[22]},
 			},
 		},
 	}

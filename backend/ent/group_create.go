@@ -106,6 +106,90 @@ func (_c *GroupCreate) SetNillableRateMultiplier(v *float64) *GroupCreate {
 	return _c
 }
 
+// SetDynamicPricingEnabled sets the "dynamic_pricing_enabled" field.
+func (_c *GroupCreate) SetDynamicPricingEnabled(v bool) *GroupCreate {
+	_c.mutation.SetDynamicPricingEnabled(v)
+	return _c
+}
+
+// SetNillableDynamicPricingEnabled sets the "dynamic_pricing_enabled" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableDynamicPricingEnabled(v *bool) *GroupCreate {
+	if v != nil {
+		_c.SetDynamicPricingEnabled(*v)
+	}
+	return _c
+}
+
+// SetDynamicPricingMarkup sets the "dynamic_pricing_markup" field.
+func (_c *GroupCreate) SetDynamicPricingMarkup(v float64) *GroupCreate {
+	_c.mutation.SetDynamicPricingMarkup(v)
+	return _c
+}
+
+// SetNillableDynamicPricingMarkup sets the "dynamic_pricing_markup" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableDynamicPricingMarkup(v *float64) *GroupCreate {
+	if v != nil {
+		_c.SetDynamicPricingMarkup(*v)
+	}
+	return _c
+}
+
+// SetManualRateMultiplier sets the "manual_rate_multiplier" field.
+func (_c *GroupCreate) SetManualRateMultiplier(v float64) *GroupCreate {
+	_c.mutation.SetManualRateMultiplier(v)
+	return _c
+}
+
+// SetNillableManualRateMultiplier sets the "manual_rate_multiplier" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableManualRateMultiplier(v *float64) *GroupCreate {
+	if v != nil {
+		_c.SetManualRateMultiplier(*v)
+	}
+	return _c
+}
+
+// SetDynamicSourceMaxMultiplier sets the "dynamic_source_max_multiplier" field.
+func (_c *GroupCreate) SetDynamicSourceMaxMultiplier(v float64) *GroupCreate {
+	_c.mutation.SetDynamicSourceMaxMultiplier(v)
+	return _c
+}
+
+// SetNillableDynamicSourceMaxMultiplier sets the "dynamic_source_max_multiplier" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableDynamicSourceMaxMultiplier(v *float64) *GroupCreate {
+	if v != nil {
+		_c.SetDynamicSourceMaxMultiplier(*v)
+	}
+	return _c
+}
+
+// SetDynamicPricingUpdatedAt sets the "dynamic_pricing_updated_at" field.
+func (_c *GroupCreate) SetDynamicPricingUpdatedAt(v time.Time) *GroupCreate {
+	_c.mutation.SetDynamicPricingUpdatedAt(v)
+	return _c
+}
+
+// SetNillableDynamicPricingUpdatedAt sets the "dynamic_pricing_updated_at" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableDynamicPricingUpdatedAt(v *time.Time) *GroupCreate {
+	if v != nil {
+		_c.SetDynamicPricingUpdatedAt(*v)
+	}
+	return _c
+}
+
+// SetDynamicPricingStatus sets the "dynamic_pricing_status" field.
+func (_c *GroupCreate) SetDynamicPricingStatus(v string) *GroupCreate {
+	_c.mutation.SetDynamicPricingStatus(v)
+	return _c
+}
+
+// SetNillableDynamicPricingStatus sets the "dynamic_pricing_status" field if the given value is not nil.
+func (_c *GroupCreate) SetNillableDynamicPricingStatus(v *string) *GroupCreate {
+	if v != nil {
+		_c.SetDynamicPricingStatus(*v)
+	}
+	return _c
+}
+
 // SetPeakRateEnabled sets the "peak_rate_enabled" field.
 func (_c *GroupCreate) SetPeakRateEnabled(v bool) *GroupCreate {
 	_c.mutation.SetPeakRateEnabled(v)
@@ -1057,6 +1141,22 @@ func (_c *GroupCreate) defaults() error {
 		v := group.DefaultRateMultiplier
 		_c.mutation.SetRateMultiplier(v)
 	}
+	if _, ok := _c.mutation.DynamicPricingEnabled(); !ok {
+		v := group.DefaultDynamicPricingEnabled
+		_c.mutation.SetDynamicPricingEnabled(v)
+	}
+	if _, ok := _c.mutation.DynamicPricingMarkup(); !ok {
+		v := group.DefaultDynamicPricingMarkup
+		_c.mutation.SetDynamicPricingMarkup(v)
+	}
+	if _, ok := _c.mutation.ManualRateMultiplier(); !ok {
+		v := group.DefaultManualRateMultiplier
+		_c.mutation.SetManualRateMultiplier(v)
+	}
+	if _, ok := _c.mutation.DynamicPricingStatus(); !ok {
+		v := group.DefaultDynamicPricingStatus
+		_c.mutation.SetDynamicPricingStatus(v)
+	}
 	if _, ok := _c.mutation.PeakRateEnabled(); !ok {
 		v := group.DefaultPeakRateEnabled
 		_c.mutation.SetPeakRateEnabled(v)
@@ -1222,6 +1322,23 @@ func (_c *GroupCreate) check() error {
 	}
 	if _, ok := _c.mutation.RateMultiplier(); !ok {
 		return &ValidationError{Name: "rate_multiplier", err: errors.New(`ent: missing required field "Group.rate_multiplier"`)}
+	}
+	if _, ok := _c.mutation.DynamicPricingEnabled(); !ok {
+		return &ValidationError{Name: "dynamic_pricing_enabled", err: errors.New(`ent: missing required field "Group.dynamic_pricing_enabled"`)}
+	}
+	if _, ok := _c.mutation.DynamicPricingMarkup(); !ok {
+		return &ValidationError{Name: "dynamic_pricing_markup", err: errors.New(`ent: missing required field "Group.dynamic_pricing_markup"`)}
+	}
+	if _, ok := _c.mutation.ManualRateMultiplier(); !ok {
+		return &ValidationError{Name: "manual_rate_multiplier", err: errors.New(`ent: missing required field "Group.manual_rate_multiplier"`)}
+	}
+	if _, ok := _c.mutation.DynamicPricingStatus(); !ok {
+		return &ValidationError{Name: "dynamic_pricing_status", err: errors.New(`ent: missing required field "Group.dynamic_pricing_status"`)}
+	}
+	if v, ok := _c.mutation.DynamicPricingStatus(); ok {
+		if err := group.DynamicPricingStatusValidator(v); err != nil {
+			return &ValidationError{Name: "dynamic_pricing_status", err: fmt.Errorf(`ent: validator failed for field "Group.dynamic_pricing_status": %w`, err)}
+		}
 	}
 	if _, ok := _c.mutation.PeakRateEnabled(); !ok {
 		return &ValidationError{Name: "peak_rate_enabled", err: errors.New(`ent: missing required field "Group.peak_rate_enabled"`)}
@@ -1441,6 +1558,30 @@ func (_c *GroupCreate) createSpec() (*Group, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.RateMultiplier(); ok {
 		_spec.SetField(group.FieldRateMultiplier, field.TypeFloat64, value)
 		_node.RateMultiplier = value
+	}
+	if value, ok := _c.mutation.DynamicPricingEnabled(); ok {
+		_spec.SetField(group.FieldDynamicPricingEnabled, field.TypeBool, value)
+		_node.DynamicPricingEnabled = value
+	}
+	if value, ok := _c.mutation.DynamicPricingMarkup(); ok {
+		_spec.SetField(group.FieldDynamicPricingMarkup, field.TypeFloat64, value)
+		_node.DynamicPricingMarkup = value
+	}
+	if value, ok := _c.mutation.ManualRateMultiplier(); ok {
+		_spec.SetField(group.FieldManualRateMultiplier, field.TypeFloat64, value)
+		_node.ManualRateMultiplier = value
+	}
+	if value, ok := _c.mutation.DynamicSourceMaxMultiplier(); ok {
+		_spec.SetField(group.FieldDynamicSourceMaxMultiplier, field.TypeFloat64, value)
+		_node.DynamicSourceMaxMultiplier = &value
+	}
+	if value, ok := _c.mutation.DynamicPricingUpdatedAt(); ok {
+		_spec.SetField(group.FieldDynamicPricingUpdatedAt, field.TypeTime, value)
+		_node.DynamicPricingUpdatedAt = &value
+	}
+	if value, ok := _c.mutation.DynamicPricingStatus(); ok {
+		_spec.SetField(group.FieldDynamicPricingStatus, field.TypeString, value)
+		_node.DynamicPricingStatus = value
 	}
 	if value, ok := _c.mutation.PeakRateEnabled(); ok {
 		_spec.SetField(group.FieldPeakRateEnabled, field.TypeBool, value)
@@ -1917,6 +2058,108 @@ func (u *GroupUpsert) UpdateRateMultiplier() *GroupUpsert {
 // AddRateMultiplier adds v to the "rate_multiplier" field.
 func (u *GroupUpsert) AddRateMultiplier(v float64) *GroupUpsert {
 	u.Add(group.FieldRateMultiplier, v)
+	return u
+}
+
+// SetDynamicPricingEnabled sets the "dynamic_pricing_enabled" field.
+func (u *GroupUpsert) SetDynamicPricingEnabled(v bool) *GroupUpsert {
+	u.Set(group.FieldDynamicPricingEnabled, v)
+	return u
+}
+
+// UpdateDynamicPricingEnabled sets the "dynamic_pricing_enabled" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateDynamicPricingEnabled() *GroupUpsert {
+	u.SetExcluded(group.FieldDynamicPricingEnabled)
+	return u
+}
+
+// SetDynamicPricingMarkup sets the "dynamic_pricing_markup" field.
+func (u *GroupUpsert) SetDynamicPricingMarkup(v float64) *GroupUpsert {
+	u.Set(group.FieldDynamicPricingMarkup, v)
+	return u
+}
+
+// UpdateDynamicPricingMarkup sets the "dynamic_pricing_markup" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateDynamicPricingMarkup() *GroupUpsert {
+	u.SetExcluded(group.FieldDynamicPricingMarkup)
+	return u
+}
+
+// AddDynamicPricingMarkup adds v to the "dynamic_pricing_markup" field.
+func (u *GroupUpsert) AddDynamicPricingMarkup(v float64) *GroupUpsert {
+	u.Add(group.FieldDynamicPricingMarkup, v)
+	return u
+}
+
+// SetManualRateMultiplier sets the "manual_rate_multiplier" field.
+func (u *GroupUpsert) SetManualRateMultiplier(v float64) *GroupUpsert {
+	u.Set(group.FieldManualRateMultiplier, v)
+	return u
+}
+
+// UpdateManualRateMultiplier sets the "manual_rate_multiplier" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateManualRateMultiplier() *GroupUpsert {
+	u.SetExcluded(group.FieldManualRateMultiplier)
+	return u
+}
+
+// AddManualRateMultiplier adds v to the "manual_rate_multiplier" field.
+func (u *GroupUpsert) AddManualRateMultiplier(v float64) *GroupUpsert {
+	u.Add(group.FieldManualRateMultiplier, v)
+	return u
+}
+
+// SetDynamicSourceMaxMultiplier sets the "dynamic_source_max_multiplier" field.
+func (u *GroupUpsert) SetDynamicSourceMaxMultiplier(v float64) *GroupUpsert {
+	u.Set(group.FieldDynamicSourceMaxMultiplier, v)
+	return u
+}
+
+// UpdateDynamicSourceMaxMultiplier sets the "dynamic_source_max_multiplier" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateDynamicSourceMaxMultiplier() *GroupUpsert {
+	u.SetExcluded(group.FieldDynamicSourceMaxMultiplier)
+	return u
+}
+
+// AddDynamicSourceMaxMultiplier adds v to the "dynamic_source_max_multiplier" field.
+func (u *GroupUpsert) AddDynamicSourceMaxMultiplier(v float64) *GroupUpsert {
+	u.Add(group.FieldDynamicSourceMaxMultiplier, v)
+	return u
+}
+
+// ClearDynamicSourceMaxMultiplier clears the value of the "dynamic_source_max_multiplier" field.
+func (u *GroupUpsert) ClearDynamicSourceMaxMultiplier() *GroupUpsert {
+	u.SetNull(group.FieldDynamicSourceMaxMultiplier)
+	return u
+}
+
+// SetDynamicPricingUpdatedAt sets the "dynamic_pricing_updated_at" field.
+func (u *GroupUpsert) SetDynamicPricingUpdatedAt(v time.Time) *GroupUpsert {
+	u.Set(group.FieldDynamicPricingUpdatedAt, v)
+	return u
+}
+
+// UpdateDynamicPricingUpdatedAt sets the "dynamic_pricing_updated_at" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateDynamicPricingUpdatedAt() *GroupUpsert {
+	u.SetExcluded(group.FieldDynamicPricingUpdatedAt)
+	return u
+}
+
+// ClearDynamicPricingUpdatedAt clears the value of the "dynamic_pricing_updated_at" field.
+func (u *GroupUpsert) ClearDynamicPricingUpdatedAt() *GroupUpsert {
+	u.SetNull(group.FieldDynamicPricingUpdatedAt)
+	return u
+}
+
+// SetDynamicPricingStatus sets the "dynamic_pricing_status" field.
+func (u *GroupUpsert) SetDynamicPricingStatus(v string) *GroupUpsert {
+	u.Set(group.FieldDynamicPricingStatus, v)
+	return u
+}
+
+// UpdateDynamicPricingStatus sets the "dynamic_pricing_status" field to the value that was provided on create.
+func (u *GroupUpsert) UpdateDynamicPricingStatus() *GroupUpsert {
+	u.SetExcluded(group.FieldDynamicPricingStatus)
 	return u
 }
 
@@ -3100,6 +3343,125 @@ func (u *GroupUpsertOne) AddRateMultiplier(v float64) *GroupUpsertOne {
 func (u *GroupUpsertOne) UpdateRateMultiplier() *GroupUpsertOne {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateRateMultiplier()
+	})
+}
+
+// SetDynamicPricingEnabled sets the "dynamic_pricing_enabled" field.
+func (u *GroupUpsertOne) SetDynamicPricingEnabled(v bool) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetDynamicPricingEnabled(v)
+	})
+}
+
+// UpdateDynamicPricingEnabled sets the "dynamic_pricing_enabled" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateDynamicPricingEnabled() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateDynamicPricingEnabled()
+	})
+}
+
+// SetDynamicPricingMarkup sets the "dynamic_pricing_markup" field.
+func (u *GroupUpsertOne) SetDynamicPricingMarkup(v float64) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetDynamicPricingMarkup(v)
+	})
+}
+
+// AddDynamicPricingMarkup adds v to the "dynamic_pricing_markup" field.
+func (u *GroupUpsertOne) AddDynamicPricingMarkup(v float64) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddDynamicPricingMarkup(v)
+	})
+}
+
+// UpdateDynamicPricingMarkup sets the "dynamic_pricing_markup" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateDynamicPricingMarkup() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateDynamicPricingMarkup()
+	})
+}
+
+// SetManualRateMultiplier sets the "manual_rate_multiplier" field.
+func (u *GroupUpsertOne) SetManualRateMultiplier(v float64) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetManualRateMultiplier(v)
+	})
+}
+
+// AddManualRateMultiplier adds v to the "manual_rate_multiplier" field.
+func (u *GroupUpsertOne) AddManualRateMultiplier(v float64) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddManualRateMultiplier(v)
+	})
+}
+
+// UpdateManualRateMultiplier sets the "manual_rate_multiplier" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateManualRateMultiplier() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateManualRateMultiplier()
+	})
+}
+
+// SetDynamicSourceMaxMultiplier sets the "dynamic_source_max_multiplier" field.
+func (u *GroupUpsertOne) SetDynamicSourceMaxMultiplier(v float64) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetDynamicSourceMaxMultiplier(v)
+	})
+}
+
+// AddDynamicSourceMaxMultiplier adds v to the "dynamic_source_max_multiplier" field.
+func (u *GroupUpsertOne) AddDynamicSourceMaxMultiplier(v float64) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddDynamicSourceMaxMultiplier(v)
+	})
+}
+
+// UpdateDynamicSourceMaxMultiplier sets the "dynamic_source_max_multiplier" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateDynamicSourceMaxMultiplier() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateDynamicSourceMaxMultiplier()
+	})
+}
+
+// ClearDynamicSourceMaxMultiplier clears the value of the "dynamic_source_max_multiplier" field.
+func (u *GroupUpsertOne) ClearDynamicSourceMaxMultiplier() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearDynamicSourceMaxMultiplier()
+	})
+}
+
+// SetDynamicPricingUpdatedAt sets the "dynamic_pricing_updated_at" field.
+func (u *GroupUpsertOne) SetDynamicPricingUpdatedAt(v time.Time) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetDynamicPricingUpdatedAt(v)
+	})
+}
+
+// UpdateDynamicPricingUpdatedAt sets the "dynamic_pricing_updated_at" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateDynamicPricingUpdatedAt() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateDynamicPricingUpdatedAt()
+	})
+}
+
+// ClearDynamicPricingUpdatedAt clears the value of the "dynamic_pricing_updated_at" field.
+func (u *GroupUpsertOne) ClearDynamicPricingUpdatedAt() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearDynamicPricingUpdatedAt()
+	})
+}
+
+// SetDynamicPricingStatus sets the "dynamic_pricing_status" field.
+func (u *GroupUpsertOne) SetDynamicPricingStatus(v string) *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetDynamicPricingStatus(v)
+	})
+}
+
+// UpdateDynamicPricingStatus sets the "dynamic_pricing_status" field to the value that was provided on create.
+func (u *GroupUpsertOne) UpdateDynamicPricingStatus() *GroupUpsertOne {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateDynamicPricingStatus()
 	})
 }
 
@@ -4623,6 +4985,125 @@ func (u *GroupUpsertBulk) AddRateMultiplier(v float64) *GroupUpsertBulk {
 func (u *GroupUpsertBulk) UpdateRateMultiplier() *GroupUpsertBulk {
 	return u.Update(func(s *GroupUpsert) {
 		s.UpdateRateMultiplier()
+	})
+}
+
+// SetDynamicPricingEnabled sets the "dynamic_pricing_enabled" field.
+func (u *GroupUpsertBulk) SetDynamicPricingEnabled(v bool) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetDynamicPricingEnabled(v)
+	})
+}
+
+// UpdateDynamicPricingEnabled sets the "dynamic_pricing_enabled" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateDynamicPricingEnabled() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateDynamicPricingEnabled()
+	})
+}
+
+// SetDynamicPricingMarkup sets the "dynamic_pricing_markup" field.
+func (u *GroupUpsertBulk) SetDynamicPricingMarkup(v float64) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetDynamicPricingMarkup(v)
+	})
+}
+
+// AddDynamicPricingMarkup adds v to the "dynamic_pricing_markup" field.
+func (u *GroupUpsertBulk) AddDynamicPricingMarkup(v float64) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddDynamicPricingMarkup(v)
+	})
+}
+
+// UpdateDynamicPricingMarkup sets the "dynamic_pricing_markup" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateDynamicPricingMarkup() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateDynamicPricingMarkup()
+	})
+}
+
+// SetManualRateMultiplier sets the "manual_rate_multiplier" field.
+func (u *GroupUpsertBulk) SetManualRateMultiplier(v float64) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetManualRateMultiplier(v)
+	})
+}
+
+// AddManualRateMultiplier adds v to the "manual_rate_multiplier" field.
+func (u *GroupUpsertBulk) AddManualRateMultiplier(v float64) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddManualRateMultiplier(v)
+	})
+}
+
+// UpdateManualRateMultiplier sets the "manual_rate_multiplier" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateManualRateMultiplier() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateManualRateMultiplier()
+	})
+}
+
+// SetDynamicSourceMaxMultiplier sets the "dynamic_source_max_multiplier" field.
+func (u *GroupUpsertBulk) SetDynamicSourceMaxMultiplier(v float64) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetDynamicSourceMaxMultiplier(v)
+	})
+}
+
+// AddDynamicSourceMaxMultiplier adds v to the "dynamic_source_max_multiplier" field.
+func (u *GroupUpsertBulk) AddDynamicSourceMaxMultiplier(v float64) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.AddDynamicSourceMaxMultiplier(v)
+	})
+}
+
+// UpdateDynamicSourceMaxMultiplier sets the "dynamic_source_max_multiplier" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateDynamicSourceMaxMultiplier() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateDynamicSourceMaxMultiplier()
+	})
+}
+
+// ClearDynamicSourceMaxMultiplier clears the value of the "dynamic_source_max_multiplier" field.
+func (u *GroupUpsertBulk) ClearDynamicSourceMaxMultiplier() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearDynamicSourceMaxMultiplier()
+	})
+}
+
+// SetDynamicPricingUpdatedAt sets the "dynamic_pricing_updated_at" field.
+func (u *GroupUpsertBulk) SetDynamicPricingUpdatedAt(v time.Time) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetDynamicPricingUpdatedAt(v)
+	})
+}
+
+// UpdateDynamicPricingUpdatedAt sets the "dynamic_pricing_updated_at" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateDynamicPricingUpdatedAt() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateDynamicPricingUpdatedAt()
+	})
+}
+
+// ClearDynamicPricingUpdatedAt clears the value of the "dynamic_pricing_updated_at" field.
+func (u *GroupUpsertBulk) ClearDynamicPricingUpdatedAt() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.ClearDynamicPricingUpdatedAt()
+	})
+}
+
+// SetDynamicPricingStatus sets the "dynamic_pricing_status" field.
+func (u *GroupUpsertBulk) SetDynamicPricingStatus(v string) *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.SetDynamicPricingStatus(v)
+	})
+}
+
+// UpdateDynamicPricingStatus sets the "dynamic_pricing_status" field to the value that was provided on create.
+func (u *GroupUpsertBulk) UpdateDynamicPricingStatus() *GroupUpsertBulk {
+	return u.Update(func(s *GroupUpsert) {
+		s.UpdateDynamicPricingStatus()
 	})
 }
 

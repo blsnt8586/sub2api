@@ -2057,26 +2057,6 @@ func (s *stubAccountRepo) RevertProxyFallback(ctx context.Context, accountID int
 	return nil
 }
 
-func (s *stubAccountRepo) ClearProviderLink(ctx context.Context, accountID, providerID int64) error { // [CUSTOM]
-	return nil
-}
-
-func (s *stubAccountRepo) ListByProviderID(ctx context.Context, providerID int64) ([]service.Account, error) { // [CUSTOM]
-	return nil, nil
-}
-
-func (s *stubAccountRepo) UpdateProviderLink(ctx context.Context, accountID, providerID, providerAPIKeyID int64) error { // [CUSTOM]
-	return nil
-}
-
-func (s *stubAccountRepo) UpdateRemoteGroupInfo(ctx context.Context, accountID int64, groupName string, multiplier float64) error { // [CUSTOM]
-	return nil
-}
-
-func (s *stubAccountRepo) UpdateSub2APIOptimizeSettings(ctx context.Context, providerID, accountID int64, enabled bool, minMultiplier, maxMultiplier *float64, testModel *string) error { // [CUSTOM]
-	return nil
-}
-
 type stubProxyRepo struct{}
 
 func (stubProxyRepo) Create(ctx context.Context, proxy *service.Proxy) error {

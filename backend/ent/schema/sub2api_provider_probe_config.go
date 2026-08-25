@@ -11,8 +11,9 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/schema/mixins"
 )
 
-// Sub2APIProviderProbeConfig stores the opt-in policy for provider health probes.
-// Control-plane checks are enabled by default; data-plane and media probes are not.
+// Sub2APIProviderProbeConfig stores the policy for provider health probes.
+// Control-plane checks and display-only group-exhaustion diagnostics are enabled
+// by default; data-plane and media probes are not.
 type Sub2APIProviderProbeConfig struct {
 	ent.Schema
 }
@@ -38,6 +39,9 @@ func (Sub2APIProviderProbeConfig) Fields() []ent.Field {
 		field.Int("degraded_latency_ms").Default(2000).Range(100, 120000),
 		field.Int("failure_threshold").Default(3).Range(1, 20),
 		field.Int("recovery_threshold").Default(2).Range(1, 20),
+			field.Bool("account_status_sync_enabled").Default(true),
+		field.Int("account_status_failure_threshold").Default(3).Range(1, 20),
+		field.Int("account_status_recovery_threshold").Default(2).Range(1, 20),
 		field.Time("last_control_run_at").Optional().Nillable(),
 		field.Time("last_data_run_at").Optional().Nillable(),
 	}

@@ -11,30 +11,35 @@ import (
 )
 
 const (
-	// A failed or no-op optimization may be retried after two 5-minute probe
-	// cycles. Only a real group change earns the longer anti-flap cooldown.
+	// All probe-triggered optimization outcomes use a short ten-minute guard.
+	// This prevents repeated scheduled probes from switching the same key
+	// concurrently while still allowing recovery attempts quickly.
 	sub2apiProbeAutoOptimizeRetryCooldown   = 10 * time.Minute
-	sub2apiProbeAutoOptimizeSuccessCooldown = time.Hour
+	sub2apiProbeAutoOptimizeSuccessCooldown = 10 * time.Minute
 	sub2apiProbeAutoOptimizeTimeout         = 10 * time.Minute
-	probeAutoOptimizeTriggerCode            = OptimizeLogTriggerProbeUnhealthy
+	probeAutoOptimizeTriggerCode            = OptimizeLogTriggerProbeAuto
+	maxProbeAutoOptimizeHistory             = 20
 )
 
 // Sub2APIProbeAutoOptimizeInput is immutable evidence from one persisted route
 // probe. Only scheduled probes submit this input; manual probe buttons remain
 // observational and never change a remote group.
 type Sub2APIProbeAutoOptimizeInput struct {
-	TargetID         int64
-	ProbeRunID       int64
-	AccountID        int64
-	FailureThreshold int
-	ErrorCategory    string
-	ErrorMessage     string
+	TargetID                 int64
+	ProbeRunID               int64
+	AccountID                int64
+	AccountStatusSyncEnabled bool
+	Trigger                  string
+	DegradedLatencyMS        int
+	ErrorCategory            string
+	ErrorMessage             string
 }
 
 // Sub2APIProbeTargetBindingSyncer updates the monitoring route after the
 // optimizer changes the account's persisted remote group binding.
 type Sub2APIProbeTargetBindingSyncer interface {
 	SyncProbeTargetBindings(context.Context, int64, []int64) error
+	MarkProbeTargetsCostOptimize(context.Context, []int64, time.Time) error
 }
 
 type probeAutoOptimizeCandidate struct {
@@ -54,14 +59,52 @@ type leaderLockExtender interface {
 }
 
 func probeAutoOptimizeInput(target *ent.Sub2APIProviderProbeTarget, run *ent.Sub2APIProviderProbeTargetRun) (Sub2APIProbeAutoOptimizeInput, bool) {
-	if target == nil || run == nil || string(run.Status) != "unhealthy" {
+	// Compatibility helper for callers/tests that only have one persisted run.
+	// A single degraded/healthy sample must never trigger an automatic action.
+	return probeAutoOptimizeInputWithHistory(target, run, []*ent.Sub2APIProviderProbeTargetRun{run}, time.Now().UTC())
+}
+
+func probeAutoOptimizeInputWithHistory(
+	target *ent.Sub2APIProviderProbeTarget,
+	run *ent.Sub2APIProviderProbeTargetRun,
+	recentRuns []*ent.Sub2APIProviderProbeTargetRun,
+	now time.Time,
+) (Sub2APIProbeAutoOptimizeInput, bool) {
+	if target == nil || run == nil {
 		return Sub2APIProbeAutoOptimizeInput{}, false
 	}
 	input := Sub2APIProbeAutoOptimizeInput{
-		TargetID:         target.ID,
-		ProbeRunID:       run.ID,
-		AccountID:        target.AccountID,
-		FailureThreshold: target.FailureThreshold,
+		TargetID:          target.ID,
+		ProbeRunID:        run.ID,
+		AccountID:         target.AccountID,
+		DegradedLatencyMS: target.DegradedLatencyMs,
+	}
+	status := string(run.Status)
+	degradedThreshold := target.DegradedOptimizeThreshold
+	if degradedThreshold < 1 {
+		degradedThreshold = 3
+	}
+	healthyThreshold := target.CostOptimizeHealthyThreshold
+	if healthyThreshold < 1 {
+		healthyThreshold = 6
+	}
+	switch status {
+	case "unhealthy":
+		input.Trigger = OptimizeLogTriggerProbeUnhealthy
+	case "degraded":
+		if consecutiveProbeStatus(recentRuns, "degraded") < degradedThreshold {
+			return Sub2APIProbeAutoOptimizeInput{}, false
+		}
+		input.Trigger = OptimizeLogTriggerProbeDegraded
+	case "healthy":
+		if !target.CostOptimizeEnabled ||
+			consecutiveProbeStatus(recentRuns, "healthy") < healthyThreshold ||
+			!probeCostOptimizeDue(target, now) {
+			return Sub2APIProbeAutoOptimizeInput{}, false
+		}
+		input.Trigger = OptimizeLogTriggerProbeCost
+	default:
+		return Sub2APIProbeAutoOptimizeInput{}, false
 	}
 	if run.ErrorCategory != nil {
 		input.ErrorCategory = *run.ErrorCategory
@@ -69,10 +112,40 @@ func probeAutoOptimizeInput(target *ent.Sub2APIProviderProbeTarget, run *ent.Sub
 	if run.ErrorMessage != nil {
 		input.ErrorMessage = *run.ErrorMessage
 	}
-	if !probeErrorAllowsAutoOptimize(input.ErrorCategory) {
+	if input.Trigger == OptimizeLogTriggerProbeUnhealthy && !probeErrorAllowsAutoOptimize(input.ErrorCategory) {
 		return Sub2APIProbeAutoOptimizeInput{}, false
 	}
 	return input, true
+}
+
+func consecutiveProbeStatus(runs []*ent.Sub2APIProviderProbeTargetRun, status string) int {
+	count := 0
+	for _, run := range runs {
+		if run == nil {
+			continue
+		}
+		if string(run.Status) != status {
+			break
+		}
+		count++
+	}
+	return count
+}
+
+func probeCostOptimizeDue(target *ent.Sub2APIProviderProbeTarget, now time.Time) bool {
+	if target == nil || target.CostOptimizeIntervalSeconds < 1800 {
+		return false
+	}
+	var baseline *time.Time
+	if target.LastCostOptimizeAt != nil {
+		value := target.LastCostOptimizeAt.UTC()
+		baseline = &value
+	}
+	if target.RouteChangedAt != nil && (baseline == nil || target.RouteChangedAt.After(*baseline)) {
+		value := target.RouteChangedAt.UTC()
+		baseline = &value
+	}
+	return baseline == nil || !now.UTC().Before(baseline.Add(time.Duration(target.CostOptimizeIntervalSeconds)*time.Second))
 }
 
 func probeErrorAllowsAutoOptimize(category string) bool {
@@ -122,16 +195,30 @@ func (s *Sub2APIOptimizeScheduleService) TriggerProbeAutoOptimize(
 	providerID int64,
 	inputs []Sub2APIProbeAutoOptimizeInput,
 ) (int, error) {
+	admission, err := s.TriggerProbeAutoOptimizeWithAdmission(ctx, providerID, inputs)
+	return len(admission.TargetIDs), err
+}
+
+// TriggerProbeAutoOptimizeWithAdmission is the admission-aware variant used
+// by scheduled probes. It reports the exact targets whose cooldown and
+// provider execution locks were claimed before the asynchronous optimization
+// starts, so the probe can quarantine only the accounts that were not claimed.
+func (s *Sub2APIOptimizeScheduleService) TriggerProbeAutoOptimizeWithAdmission(
+	ctx context.Context,
+	providerID int64,
+	inputs []Sub2APIProbeAutoOptimizeInput,
+) (Sub2APIProbeAutoOptimizeAdmission, error) {
 	if s == nil || len(inputs) == 0 {
-		return 0, nil
+		return Sub2APIProbeAutoOptimizeAdmission{}, nil
 	}
 	accounts, err := s.providerSvc.accountRepo.ListByProviderID(ctx, providerID)
 	if err != nil {
-		return 0, fmt.Errorf("list probe auto-optimize accounts: %w", err)
+		return Sub2APIProbeAutoOptimizeAdmission{}, fmt.Errorf("list probe auto-optimize accounts: %w", err)
 	}
 	candidates := probeAutoOptimizeCandidates(accounts, inputs)
+	candidates = s.onlyIdleCostOptimizeCandidates(ctx, providerID, candidates)
 	if len(candidates) == 0 {
-		return 0, nil
+		return Sub2APIProbeAutoOptimizeAdmission{}, nil
 	}
 
 	claimed := make([]probeAutoOptimizeCandidate, 0, len(candidates))
@@ -149,7 +236,7 @@ func (s *Sub2APIOptimizeScheduleService) TriggerProbeAutoOptimize(
 		cooldownClaims = append(cooldownClaims, cooldownClaim)
 	}
 	if len(claimed) == 0 {
-		return 0, nil
+		return Sub2APIProbeAutoOptimizeAdmission{}, nil
 	}
 
 	releaseClaims := func() {
@@ -171,13 +258,14 @@ func (s *Sub2APIOptimizeScheduleService) TriggerProbeAutoOptimize(
 				Status:      "skipped",
 			})
 			extra := map[string]any{
-				"probe_target_id":   candidate.trigger.TargetID,
-				"probe_run_id":      candidate.trigger.ProbeRunID,
-				"failure_threshold": candidate.trigger.FailureThreshold,
+				"probe_target_id":     candidate.trigger.TargetID,
+				"probe_run_id":        candidate.trigger.ProbeRunID,
+				"degraded_latency_ms": candidate.trigger.DegradedLatencyMS,
 			}
 			if candidate.trigger.ErrorCategory != "" {
 				extra["probe_error_category"] = candidate.trigger.ErrorCategory
 			}
+			extra["probe_trigger"] = candidate.trigger.Trigger
 			extraByAccount[candidate.account.ID] = extra
 		}
 		logCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
@@ -185,7 +273,7 @@ func (s *Sub2APIOptimizeScheduleService) TriggerProbeAutoOptimize(
 			logCtx,
 			providerID,
 			nil,
-			OptimizeLogTriggerProbeUnhealthy,
+			OptimizeLogTriggerProbeAuto,
 			time.Now(),
 			"同一上游已有优化任务正在执行，本次探针联动已让位；冷却未消耗，后续异常探针可重试",
 			deferredDetails,
@@ -194,13 +282,13 @@ func (s *Sub2APIOptimizeScheduleService) TriggerProbeAutoOptimize(
 			logger.LegacyPrintf("service.sub2api_optimize_probe", "[Sub2APIProbeAutoOptimize] provider=%d persist deferred log failed: %v", providerID, err)
 		}
 		cancel()
-		return 0, nil
+		return Sub2APIProbeAutoOptimizeAdmission{}, nil
 	}
 	provider, err := s.providerSvc.repo.GetByID(ctx, providerID)
 	if err != nil {
 		releaseExecution()
 		releaseClaims()
-		return 0, fmt.Errorf("get provider for probe auto-optimize: %w", err)
+		return Sub2APIProbeAutoOptimizeAdmission{}, fmt.Errorf("get provider for probe auto-optimize: %w", err)
 	}
 
 	startedAt := time.Now()
@@ -209,24 +297,74 @@ func (s *Sub2APIOptimizeScheduleService) TriggerProbeAutoOptimize(
 		defer releaseExecution()
 		bgCtx, cancel := context.WithTimeout(context.Background(), sub2apiProbeAutoOptimizeTimeout)
 		defer cancel()
+		// Candidate-group tests are part of the probe state machine. They must
+		// not invoke ordinary account-test status side effects either.
+		bgCtx = suppressAccountTestStatusMutation(bgCtx)
 
 		batch := make([]Account, 0, len(claimed))
 		triggersByAccount := make(map[int64]Sub2APIProbeAutoOptimizeInput, len(claimed))
+		probePolicies := make(map[int64]probeOptimizePolicy, len(claimed))
 		for _, candidate := range claimed {
 			batch = append(batch, candidate.account)
 			triggersByAccount[candidate.account.ID] = candidate.trigger
+			probePolicies[candidate.account.ID] = probeOptimizePolicy{
+				trigger:           candidate.trigger.Trigger,
+				degradedLatencyMS: candidate.trigger.DegradedLatencyMS,
+			}
 		}
-		details := s.optimizeAccounts(bgCtx, provider, batch)
+		details := s.optimizeAccountsWithProbePolicies(bgCtx, provider, batch, probePolicies)
 		s.extendSuccessfulProbeAutoOptimizeCooldowns(claimed, cooldownClaims, details)
 		s.finishProbeAutoOptimize(providerID, startedAt, details, triggersByAccount)
 	}()
 
-	return len(claimed), nil
+	admission := Sub2APIProbeAutoOptimizeAdmission{
+		TargetIDs:  make([]int64, 0, len(claimed)),
+		AccountIDs: make([]int64, 0, len(claimed)),
+	}
+	for _, candidate := range claimed {
+		admission.TargetIDs = append(admission.TargetIDs, candidate.trigger.TargetID)
+		admission.AccountIDs = append(admission.AccountIDs, candidate.account.ID)
+	}
+	return admission, nil
 }
 
-// tryClaimProbeAutoOptimizeCooldown uses the shorter retry window initially.
-// A completed group change upgrades that target to the success cooldown; a
-// failed or no-op attempt remains eligible for a later scheduled probe retry.
+func (s *Sub2APIOptimizeScheduleService) onlyIdleCostOptimizeCandidates(
+	ctx context.Context,
+	providerID int64,
+	candidates []probeAutoOptimizeCandidate,
+) []probeAutoOptimizeCandidate {
+	accountIDs := make([]int64, 0, len(candidates))
+	for _, candidate := range candidates {
+		if candidate.trigger.Trigger == OptimizeLogTriggerProbeCost {
+			accountIDs = append(accountIDs, candidate.account.ID)
+		}
+	}
+	if len(accountIDs) == 0 {
+		return candidates
+	}
+	if s.concurrencyReader == nil {
+		return filterProbeAutoOptimizeCandidates(candidates, nil, false)
+	}
+	concurrency, err := s.concurrencyReader.GetAccountConcurrencyBatch(ctx, accountIDs)
+	if err != nil {
+		logger.LegacyPrintf("service.sub2api_optimize_probe", "[Sub2APIProbeAutoOptimize] provider=%d cost check deferred: concurrency unavailable: %v", providerID, err)
+		return filterProbeAutoOptimizeCandidates(candidates, nil, false)
+	}
+	return filterProbeAutoOptimizeCandidates(candidates, concurrency, true)
+}
+
+func filterProbeAutoOptimizeCandidates(candidates []probeAutoOptimizeCandidate, concurrency map[int64]int, allowCost bool) []probeAutoOptimizeCandidate {
+	filtered := make([]probeAutoOptimizeCandidate, 0, len(candidates))
+	for _, candidate := range candidates {
+		active, known := concurrency[candidate.account.ID]
+		if candidate.trigger.Trigger != OptimizeLogTriggerProbeCost || (allowCost && known && active == 0) {
+			filtered = append(filtered, candidate)
+		}
+	}
+	return filtered
+}
+
+// tryClaimProbeAutoOptimizeCooldown claims the ten-minute retry window.
 func (s *Sub2APIOptimizeScheduleService) tryClaimProbeAutoOptimizeCooldown(ctx context.Context, targetID int64) (*probeAutoOptimizeCooldownClaim, bool, error) {
 	return s.tryClaimProbeAutoOptimizeCooldownFor(ctx, targetID, sub2apiProbeAutoOptimizeRetryCooldown)
 }
@@ -304,8 +442,8 @@ func (s *Sub2APIOptimizeScheduleService) tryClaimProbeAutoOptimizeCooldownFor(
 	return claim, true, nil
 }
 
-// extendSuccessfulProbeAutoOptimizeCooldowns keeps failed/no-op attempts on the
-// retry cooldown while upgrading actual group changes to the anti-flap window.
+// extendSuccessfulProbeAutoOptimizeCooldowns records the same ten-minute
+// window for actual group changes; failed/no-op attempts already have it.
 func (s *Sub2APIOptimizeScheduleService) extendSuccessfulProbeAutoOptimizeCooldowns(
 	claimed []probeAutoOptimizeCandidate,
 	claims []*probeAutoOptimizeCooldownClaim,
@@ -345,6 +483,30 @@ func (s *Sub2APIOptimizeScheduleService) finishProbeAutoOptimize(
 	details []OptimizeAccountDetail,
 	triggersByAccount map[int64]Sub2APIProbeAutoOptimizeInput,
 ) {
+	// An admitted probe failure defers account status while asynchronous group
+	// comparison runs. A successful switch clears only the probe-owned error;
+	// manual/admin errors remain untouched. Inputs that were not admitted are
+	// projected by the probe immediately instead of reaching this path.
+	for _, detail := range details {
+		trigger, ok := triggersByAccount[detail.AccountID]
+		if !ok || !trigger.AccountStatusSyncEnabled || (trigger.Trigger != OptimizeLogTriggerProbeUnhealthy && trigger.Trigger != OptimizeLogTriggerProbeDegraded) || s.providerSvc == nil || s.providerSvc.accountRepo == nil {
+			continue
+		}
+		stateCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		if detail.Status == "failed" && detail.ProbeExhausted {
+			if err := markProbeManagedAccountError(stateCtx, s.providerSvc.accountRepo, detail.AccountID, detail.Reason); err != nil {
+				logger.LegacyPrintf("service.sub2api_optimize_probe", "[Sub2APIProbeAutoOptimize] provider=%d account=%d mark exhausted account error failed: %v", providerID, detail.AccountID, err)
+			}
+			if err := markProbeGroupsExhausted(stateCtx, s.providerSvc.accountRepo, detail.AccountID, detail.Reason); err != nil {
+				logger.LegacyPrintf("service.sub2api_optimize_probe", "[Sub2APIProbeAutoOptimize] provider=%d account=%d persist exhausted state failed: %v", providerID, detail.AccountID, err)
+			}
+		} else if detail.Status == "optimized" || detail.Status == "skipped" {
+			if err := clearProbeManagedAccountError(stateCtx, s.providerSvc.accountRepo, detail.AccountID); err != nil {
+				logger.LegacyPrintf("service.sub2api_optimize_probe", "[Sub2APIProbeAutoOptimize] provider=%d account=%d clear probe account state failed: %v", providerID, detail.AccountID, err)
+			}
+		}
+		cancel()
+	}
 	optimizedAccountIDs := make([]int64, 0, len(details))
 	for _, detail := range details {
 		if detail.Status == "optimized" {
@@ -358,6 +520,19 @@ func (s *Sub2APIOptimizeScheduleService) finishProbeAutoOptimize(
 		}
 		cancel()
 	}
+	if s.probeBindingSyncer != nil {
+		targetIDs := make([]int64, 0, len(triggersByAccount))
+		for _, trigger := range triggersByAccount {
+			if trigger.Trigger == OptimizeLogTriggerProbeCost {
+				targetIDs = append(targetIDs, trigger.TargetID)
+			}
+		}
+		markCtx, markCancel := context.WithTimeout(context.Background(), 10*time.Second)
+		if err := s.probeBindingSyncer.MarkProbeTargetsCostOptimize(markCtx, targetIDs, time.Now().UTC()); err != nil {
+			logger.LegacyPrintf("service.sub2api_optimize_probe", "[Sub2APIProbeAutoOptimize] provider=%d mark optimize time failed: %v", providerID, err)
+		}
+		markCancel()
+	}
 
 	logCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -365,9 +540,10 @@ func (s *Sub2APIOptimizeScheduleService) finishProbeAutoOptimize(
 	for _, detail := range details {
 		if trigger, ok := triggersByAccount[detail.AccountID]; ok {
 			item := map[string]any{
-				"probe_target_id":   trigger.TargetID,
-				"probe_run_id":      trigger.ProbeRunID,
-				"failure_threshold": trigger.FailureThreshold,
+				"probe_target_id":     trigger.TargetID,
+				"probe_run_id":        trigger.ProbeRunID,
+				"degraded_latency_ms": trigger.DegradedLatencyMS,
+				"probe_trigger":       trigger.Trigger,
 			}
 			if trigger.ErrorCategory != "" {
 				item["probe_error_category"] = trigger.ErrorCategory
@@ -378,7 +554,21 @@ func (s *Sub2APIOptimizeScheduleService) finishProbeAutoOptimize(
 			extraByAccount[detail.AccountID] = item
 		}
 	}
-	if err := s.persistOptimizeLog(logCtx, providerID, nil, probeAutoOptimizeTriggerCode, startedAt, details, extraByAccount); err != nil {
+	// Older callers/tests may not provide a per-account trigger. Keep their
+	// historical probe-unhealthy log value while new scheduled probes retain
+	// the generic probe-auto owner plus the concrete trigger in detail.
+	logTrigger := probeAutoOptimizeTriggerCode
+	hasExplicitTrigger := false
+	for _, trigger := range triggersByAccount {
+		if trigger.Trigger != "" {
+			hasExplicitTrigger = true
+			break
+		}
+	}
+	if !hasExplicitTrigger && len(triggersByAccount) > 0 {
+		logTrigger = OptimizeLogTriggerProbeUnhealthy
+	}
+	if err := s.persistOptimizeLog(logCtx, providerID, nil, logTrigger, startedAt, details, extraByAccount); err != nil {
 		logger.LegacyPrintf("service.sub2api_optimize_probe", "[Sub2APIProbeAutoOptimize] provider=%d persist log failed: %v", providerID, err)
 	}
 }

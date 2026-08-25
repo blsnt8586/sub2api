@@ -280,7 +280,7 @@
                         >
                           <span class="font-medium">{{ t('admin.sub2apiProviders.probeAutoOptimizeTrigger') }}</span>
                           <span>·</span>
-                          <span>{{ t('admin.sub2apiProviders.probeAutoOptimizeReason', { threshold: detail.failure_threshold ?? '-' }) }}</span>
+                          <span>{{ t('admin.sub2apiProviders.probeAutoOptimizeReason') }}</span>
                         </div>
 
                         <div v-if="detail.switch_events?.length" class="mt-2 space-y-1 border-l-2 border-gray-200 pl-2 dark:border-dark-600">
@@ -292,7 +292,7 @@
                           >
                             <div class="flex flex-wrap items-center gap-1.5">
                               <span class="font-medium" :class="event.action === 'rollback' ? 'text-amber-600 dark:text-amber-400' : 'text-blue-600 dark:text-blue-400'">
-                                {{ t(`admin.sub2apiProviders.switchAction.${event.action}`) }}
+                                {{ switchActionLabel(event, eventIndex, detail.switch_events) }}
                               </span>
                               <span class="font-mono">
                                 {{ event.from_group || '—' }}
@@ -304,7 +304,7 @@
                                 {{ t(`admin.sub2apiProviders.switchStatus.${event.status}`) }}
                               </span>
                               <span v-if="event.test_status" :class="event.test_status === 'passed' ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'">
-                                · {{ t(`admin.sub2apiProviders.switchTestStatus.${event.test_status}`) }}
+                                · {{ switchTestStatusLabel(event, eventIndex, detail.switch_events) }}
                               </span>
                               <span class="text-gray-400">{{ formatEventTime(event.occurred_at) }}</span>
                             </div>
@@ -392,6 +392,7 @@ import {
   runOptimizeNow,
   upsertOptimizeSchedule,
   type LinkedAccountInfo,
+  type OptimizeGroupSwitchEvent,
   type OptimizeLogInfo,
   type OptimizeLogTrigger,
   type OptimizeScheduleInfo,
@@ -717,6 +718,20 @@ function detailStatusClass(status: 'optimized' | 'skipped' | 'failed'): string {
   if (status === 'optimized') return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
   if (status === 'failed') return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
   return 'bg-gray-200 text-gray-500 dark:bg-dark-600 dark:text-gray-400'
+}
+
+function isFinalSwitchEvent(event: OptimizeGroupSwitchEvent, index: number, events?: OptimizeGroupSwitchEvent[]): boolean {
+  return event.action === 'switch' && event.test_status === 'passed' && index === (events?.length ?? 0) - 1
+}
+
+function switchActionLabel(event: OptimizeGroupSwitchEvent, index: number, events?: OptimizeGroupSwitchEvent[]): string {
+  if (isFinalSwitchEvent(event, index, events)) return t('admin.sub2apiProviders.switchAction.finalSwitch')
+  return t(`admin.sub2apiProviders.switchAction.${event.action}`)
+}
+
+function switchTestStatusLabel(event: OptimizeGroupSwitchEvent, index: number, events?: OptimizeGroupSwitchEvent[]): string {
+  if (isFinalSwitchEvent(event, index, events)) return t('admin.sub2apiProviders.switchTestStatus.selected')
+  return t(`admin.sub2apiProviders.switchTestStatus.${event.test_status}`)
 }
 
 function formatTime(value?: string | null): string {

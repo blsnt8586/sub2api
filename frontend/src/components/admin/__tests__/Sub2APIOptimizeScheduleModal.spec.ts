@@ -104,7 +104,7 @@ describe('Sub2APIOptimizeScheduleModal', () => {
     expect(events[2].text()).toContain('standard')
     const text = wrapper.text()
     expect(text).toContain('admin.sub2apiProviders.switchTestStatus.failed')
-    expect(text).toContain('admin.sub2apiProviders.switchTestStatus.passed')
+    expect(text).toContain('admin.sub2apiProviders.switchTestStatus.selected')
 
     wrapper.unmount()
   })

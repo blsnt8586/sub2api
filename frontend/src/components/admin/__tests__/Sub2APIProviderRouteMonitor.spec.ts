@@ -33,6 +33,11 @@ const route: Sub2APIProviderProbeTargetHealth = {
   allow_media_probe: false,
   timeout_seconds: 15,
   degraded_latency_ms: 2000,
+  degraded_optimize_threshold: 3,
+  cost_optimize_enabled: true,
+  cost_optimize_interval_seconds: 21600,
+  cost_optimize_healthy_threshold: 3,
+  last_cost_optimize_at: null,
   failure_threshold: 3,
   recovery_threshold: 2,
   status: 'unhealthy',
@@ -97,6 +102,17 @@ describe('Sub2APIProviderRouteMonitor', () => {
     expect(model.text()).toContain(route.test_model!)
     expect(model.text()).toContain('admin.sub2apiProviders.health.routes.modelSourceAccount')
     expect(model.find('input').exists()).toBe(false)
+  })
+
+  it('offers the 30-minute lower-cost check interval', async () => {
+    const wrapper = mount(Sub2APIProviderRouteMonitor, {
+      props: { routes: [route], historyByTarget: {} },
+    })
+
+    await wrapper.get('[data-test="route-toggle-77"]').trigger('click')
+
+    const interval = wrapper.get('select')
+    expect(interval.find('option[value="1800"]').exists()).toBe(true)
   })
 
   it('marks staged route changes as unsaved and prevents a probe run', async () => {

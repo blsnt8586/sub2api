@@ -189,6 +189,48 @@ func (_c *Sub2APIProviderProbeConfigCreate) SetNillableRecoveryThreshold(v *int)
 	return _c
 }
 
+// SetAccountStatusSyncEnabled sets the "account_status_sync_enabled" field.
+func (_c *Sub2APIProviderProbeConfigCreate) SetAccountStatusSyncEnabled(v bool) *Sub2APIProviderProbeConfigCreate {
+	_c.mutation.SetAccountStatusSyncEnabled(v)
+	return _c
+}
+
+// SetNillableAccountStatusSyncEnabled sets the "account_status_sync_enabled" field if the given value is not nil.
+func (_c *Sub2APIProviderProbeConfigCreate) SetNillableAccountStatusSyncEnabled(v *bool) *Sub2APIProviderProbeConfigCreate {
+	if v != nil {
+		_c.SetAccountStatusSyncEnabled(*v)
+	}
+	return _c
+}
+
+// SetAccountStatusFailureThreshold sets the "account_status_failure_threshold" field.
+func (_c *Sub2APIProviderProbeConfigCreate) SetAccountStatusFailureThreshold(v int) *Sub2APIProviderProbeConfigCreate {
+	_c.mutation.SetAccountStatusFailureThreshold(v)
+	return _c
+}
+
+// SetNillableAccountStatusFailureThreshold sets the "account_status_failure_threshold" field if the given value is not nil.
+func (_c *Sub2APIProviderProbeConfigCreate) SetNillableAccountStatusFailureThreshold(v *int) *Sub2APIProviderProbeConfigCreate {
+	if v != nil {
+		_c.SetAccountStatusFailureThreshold(*v)
+	}
+	return _c
+}
+
+// SetAccountStatusRecoveryThreshold sets the "account_status_recovery_threshold" field.
+func (_c *Sub2APIProviderProbeConfigCreate) SetAccountStatusRecoveryThreshold(v int) *Sub2APIProviderProbeConfigCreate {
+	_c.mutation.SetAccountStatusRecoveryThreshold(v)
+	return _c
+}
+
+// SetNillableAccountStatusRecoveryThreshold sets the "account_status_recovery_threshold" field if the given value is not nil.
+func (_c *Sub2APIProviderProbeConfigCreate) SetNillableAccountStatusRecoveryThreshold(v *int) *Sub2APIProviderProbeConfigCreate {
+	if v != nil {
+		_c.SetAccountStatusRecoveryThreshold(*v)
+	}
+	return _c
+}
+
 // SetLastControlRunAt sets the "last_control_run_at" field.
 func (_c *Sub2APIProviderProbeConfigCreate) SetLastControlRunAt(v time.Time) *Sub2APIProviderProbeConfigCreate {
 	_c.mutation.SetLastControlRunAt(v)
@@ -305,6 +347,18 @@ func (_c *Sub2APIProviderProbeConfigCreate) defaults() {
 		v := sub2apiproviderprobeconfig.DefaultRecoveryThreshold
 		_c.mutation.SetRecoveryThreshold(v)
 	}
+	if _, ok := _c.mutation.AccountStatusSyncEnabled(); !ok {
+		v := sub2apiproviderprobeconfig.DefaultAccountStatusSyncEnabled
+		_c.mutation.SetAccountStatusSyncEnabled(v)
+	}
+	if _, ok := _c.mutation.AccountStatusFailureThreshold(); !ok {
+		v := sub2apiproviderprobeconfig.DefaultAccountStatusFailureThreshold
+		_c.mutation.SetAccountStatusFailureThreshold(v)
+	}
+	if _, ok := _c.mutation.AccountStatusRecoveryThreshold(); !ok {
+		v := sub2apiproviderprobeconfig.DefaultAccountStatusRecoveryThreshold
+		_c.mutation.SetAccountStatusRecoveryThreshold(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -376,6 +430,25 @@ func (_c *Sub2APIProviderProbeConfigCreate) check() error {
 	if v, ok := _c.mutation.RecoveryThreshold(); ok {
 		if err := sub2apiproviderprobeconfig.RecoveryThresholdValidator(v); err != nil {
 			return &ValidationError{Name: "recovery_threshold", err: fmt.Errorf(`ent: validator failed for field "Sub2APIProviderProbeConfig.recovery_threshold": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.AccountStatusSyncEnabled(); !ok {
+		return &ValidationError{Name: "account_status_sync_enabled", err: errors.New(`ent: missing required field "Sub2APIProviderProbeConfig.account_status_sync_enabled"`)}
+	}
+	if _, ok := _c.mutation.AccountStatusFailureThreshold(); !ok {
+		return &ValidationError{Name: "account_status_failure_threshold", err: errors.New(`ent: missing required field "Sub2APIProviderProbeConfig.account_status_failure_threshold"`)}
+	}
+	if v, ok := _c.mutation.AccountStatusFailureThreshold(); ok {
+		if err := sub2apiproviderprobeconfig.AccountStatusFailureThresholdValidator(v); err != nil {
+			return &ValidationError{Name: "account_status_failure_threshold", err: fmt.Errorf(`ent: validator failed for field "Sub2APIProviderProbeConfig.account_status_failure_threshold": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.AccountStatusRecoveryThreshold(); !ok {
+		return &ValidationError{Name: "account_status_recovery_threshold", err: errors.New(`ent: missing required field "Sub2APIProviderProbeConfig.account_status_recovery_threshold"`)}
+	}
+	if v, ok := _c.mutation.AccountStatusRecoveryThreshold(); ok {
+		if err := sub2apiproviderprobeconfig.AccountStatusRecoveryThresholdValidator(v); err != nil {
+			return &ValidationError{Name: "account_status_recovery_threshold", err: fmt.Errorf(`ent: validator failed for field "Sub2APIProviderProbeConfig.account_status_recovery_threshold": %w`, err)}
 		}
 	}
 	if len(_c.mutation.ProviderIDs()) == 0 {
@@ -455,6 +528,18 @@ func (_c *Sub2APIProviderProbeConfigCreate) createSpec() (*Sub2APIProviderProbeC
 	if value, ok := _c.mutation.RecoveryThreshold(); ok {
 		_spec.SetField(sub2apiproviderprobeconfig.FieldRecoveryThreshold, field.TypeInt, value)
 		_node.RecoveryThreshold = value
+	}
+	if value, ok := _c.mutation.AccountStatusSyncEnabled(); ok {
+		_spec.SetField(sub2apiproviderprobeconfig.FieldAccountStatusSyncEnabled, field.TypeBool, value)
+		_node.AccountStatusSyncEnabled = value
+	}
+	if value, ok := _c.mutation.AccountStatusFailureThreshold(); ok {
+		_spec.SetField(sub2apiproviderprobeconfig.FieldAccountStatusFailureThreshold, field.TypeInt, value)
+		_node.AccountStatusFailureThreshold = value
+	}
+	if value, ok := _c.mutation.AccountStatusRecoveryThreshold(); ok {
+		_spec.SetField(sub2apiproviderprobeconfig.FieldAccountStatusRecoveryThreshold, field.TypeInt, value)
+		_node.AccountStatusRecoveryThreshold = value
 	}
 	if value, ok := _c.mutation.LastControlRunAt(); ok {
 		_spec.SetField(sub2apiproviderprobeconfig.FieldLastControlRunAt, field.TypeTime, value)
@@ -710,6 +795,54 @@ func (u *Sub2APIProviderProbeConfigUpsert) UpdateRecoveryThreshold() *Sub2APIPro
 // AddRecoveryThreshold adds v to the "recovery_threshold" field.
 func (u *Sub2APIProviderProbeConfigUpsert) AddRecoveryThreshold(v int) *Sub2APIProviderProbeConfigUpsert {
 	u.Add(sub2apiproviderprobeconfig.FieldRecoveryThreshold, v)
+	return u
+}
+
+// SetAccountStatusSyncEnabled sets the "account_status_sync_enabled" field.
+func (u *Sub2APIProviderProbeConfigUpsert) SetAccountStatusSyncEnabled(v bool) *Sub2APIProviderProbeConfigUpsert {
+	u.Set(sub2apiproviderprobeconfig.FieldAccountStatusSyncEnabled, v)
+	return u
+}
+
+// UpdateAccountStatusSyncEnabled sets the "account_status_sync_enabled" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeConfigUpsert) UpdateAccountStatusSyncEnabled() *Sub2APIProviderProbeConfigUpsert {
+	u.SetExcluded(sub2apiproviderprobeconfig.FieldAccountStatusSyncEnabled)
+	return u
+}
+
+// SetAccountStatusFailureThreshold sets the "account_status_failure_threshold" field.
+func (u *Sub2APIProviderProbeConfigUpsert) SetAccountStatusFailureThreshold(v int) *Sub2APIProviderProbeConfigUpsert {
+	u.Set(sub2apiproviderprobeconfig.FieldAccountStatusFailureThreshold, v)
+	return u
+}
+
+// UpdateAccountStatusFailureThreshold sets the "account_status_failure_threshold" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeConfigUpsert) UpdateAccountStatusFailureThreshold() *Sub2APIProviderProbeConfigUpsert {
+	u.SetExcluded(sub2apiproviderprobeconfig.FieldAccountStatusFailureThreshold)
+	return u
+}
+
+// AddAccountStatusFailureThreshold adds v to the "account_status_failure_threshold" field.
+func (u *Sub2APIProviderProbeConfigUpsert) AddAccountStatusFailureThreshold(v int) *Sub2APIProviderProbeConfigUpsert {
+	u.Add(sub2apiproviderprobeconfig.FieldAccountStatusFailureThreshold, v)
+	return u
+}
+
+// SetAccountStatusRecoveryThreshold sets the "account_status_recovery_threshold" field.
+func (u *Sub2APIProviderProbeConfigUpsert) SetAccountStatusRecoveryThreshold(v int) *Sub2APIProviderProbeConfigUpsert {
+	u.Set(sub2apiproviderprobeconfig.FieldAccountStatusRecoveryThreshold, v)
+	return u
+}
+
+// UpdateAccountStatusRecoveryThreshold sets the "account_status_recovery_threshold" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeConfigUpsert) UpdateAccountStatusRecoveryThreshold() *Sub2APIProviderProbeConfigUpsert {
+	u.SetExcluded(sub2apiproviderprobeconfig.FieldAccountStatusRecoveryThreshold)
+	return u
+}
+
+// AddAccountStatusRecoveryThreshold adds v to the "account_status_recovery_threshold" field.
+func (u *Sub2APIProviderProbeConfigUpsert) AddAccountStatusRecoveryThreshold(v int) *Sub2APIProviderProbeConfigUpsert {
+	u.Add(sub2apiproviderprobeconfig.FieldAccountStatusRecoveryThreshold, v)
 	return u
 }
 
@@ -1001,6 +1134,62 @@ func (u *Sub2APIProviderProbeConfigUpsertOne) AddRecoveryThreshold(v int) *Sub2A
 func (u *Sub2APIProviderProbeConfigUpsertOne) UpdateRecoveryThreshold() *Sub2APIProviderProbeConfigUpsertOne {
 	return u.Update(func(s *Sub2APIProviderProbeConfigUpsert) {
 		s.UpdateRecoveryThreshold()
+	})
+}
+
+// SetAccountStatusSyncEnabled sets the "account_status_sync_enabled" field.
+func (u *Sub2APIProviderProbeConfigUpsertOne) SetAccountStatusSyncEnabled(v bool) *Sub2APIProviderProbeConfigUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeConfigUpsert) {
+		s.SetAccountStatusSyncEnabled(v)
+	})
+}
+
+// UpdateAccountStatusSyncEnabled sets the "account_status_sync_enabled" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeConfigUpsertOne) UpdateAccountStatusSyncEnabled() *Sub2APIProviderProbeConfigUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeConfigUpsert) {
+		s.UpdateAccountStatusSyncEnabled()
+	})
+}
+
+// SetAccountStatusFailureThreshold sets the "account_status_failure_threshold" field.
+func (u *Sub2APIProviderProbeConfigUpsertOne) SetAccountStatusFailureThreshold(v int) *Sub2APIProviderProbeConfigUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeConfigUpsert) {
+		s.SetAccountStatusFailureThreshold(v)
+	})
+}
+
+// AddAccountStatusFailureThreshold adds v to the "account_status_failure_threshold" field.
+func (u *Sub2APIProviderProbeConfigUpsertOne) AddAccountStatusFailureThreshold(v int) *Sub2APIProviderProbeConfigUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeConfigUpsert) {
+		s.AddAccountStatusFailureThreshold(v)
+	})
+}
+
+// UpdateAccountStatusFailureThreshold sets the "account_status_failure_threshold" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeConfigUpsertOne) UpdateAccountStatusFailureThreshold() *Sub2APIProviderProbeConfigUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeConfigUpsert) {
+		s.UpdateAccountStatusFailureThreshold()
+	})
+}
+
+// SetAccountStatusRecoveryThreshold sets the "account_status_recovery_threshold" field.
+func (u *Sub2APIProviderProbeConfigUpsertOne) SetAccountStatusRecoveryThreshold(v int) *Sub2APIProviderProbeConfigUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeConfigUpsert) {
+		s.SetAccountStatusRecoveryThreshold(v)
+	})
+}
+
+// AddAccountStatusRecoveryThreshold adds v to the "account_status_recovery_threshold" field.
+func (u *Sub2APIProviderProbeConfigUpsertOne) AddAccountStatusRecoveryThreshold(v int) *Sub2APIProviderProbeConfigUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeConfigUpsert) {
+		s.AddAccountStatusRecoveryThreshold(v)
+	})
+}
+
+// UpdateAccountStatusRecoveryThreshold sets the "account_status_recovery_threshold" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeConfigUpsertOne) UpdateAccountStatusRecoveryThreshold() *Sub2APIProviderProbeConfigUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeConfigUpsert) {
+		s.UpdateAccountStatusRecoveryThreshold()
 	})
 }
 
@@ -1464,6 +1653,62 @@ func (u *Sub2APIProviderProbeConfigUpsertBulk) AddRecoveryThreshold(v int) *Sub2
 func (u *Sub2APIProviderProbeConfigUpsertBulk) UpdateRecoveryThreshold() *Sub2APIProviderProbeConfigUpsertBulk {
 	return u.Update(func(s *Sub2APIProviderProbeConfigUpsert) {
 		s.UpdateRecoveryThreshold()
+	})
+}
+
+// SetAccountStatusSyncEnabled sets the "account_status_sync_enabled" field.
+func (u *Sub2APIProviderProbeConfigUpsertBulk) SetAccountStatusSyncEnabled(v bool) *Sub2APIProviderProbeConfigUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeConfigUpsert) {
+		s.SetAccountStatusSyncEnabled(v)
+	})
+}
+
+// UpdateAccountStatusSyncEnabled sets the "account_status_sync_enabled" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeConfigUpsertBulk) UpdateAccountStatusSyncEnabled() *Sub2APIProviderProbeConfigUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeConfigUpsert) {
+		s.UpdateAccountStatusSyncEnabled()
+	})
+}
+
+// SetAccountStatusFailureThreshold sets the "account_status_failure_threshold" field.
+func (u *Sub2APIProviderProbeConfigUpsertBulk) SetAccountStatusFailureThreshold(v int) *Sub2APIProviderProbeConfigUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeConfigUpsert) {
+		s.SetAccountStatusFailureThreshold(v)
+	})
+}
+
+// AddAccountStatusFailureThreshold adds v to the "account_status_failure_threshold" field.
+func (u *Sub2APIProviderProbeConfigUpsertBulk) AddAccountStatusFailureThreshold(v int) *Sub2APIProviderProbeConfigUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeConfigUpsert) {
+		s.AddAccountStatusFailureThreshold(v)
+	})
+}
+
+// UpdateAccountStatusFailureThreshold sets the "account_status_failure_threshold" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeConfigUpsertBulk) UpdateAccountStatusFailureThreshold() *Sub2APIProviderProbeConfigUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeConfigUpsert) {
+		s.UpdateAccountStatusFailureThreshold()
+	})
+}
+
+// SetAccountStatusRecoveryThreshold sets the "account_status_recovery_threshold" field.
+func (u *Sub2APIProviderProbeConfigUpsertBulk) SetAccountStatusRecoveryThreshold(v int) *Sub2APIProviderProbeConfigUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeConfigUpsert) {
+		s.SetAccountStatusRecoveryThreshold(v)
+	})
+}
+
+// AddAccountStatusRecoveryThreshold adds v to the "account_status_recovery_threshold" field.
+func (u *Sub2APIProviderProbeConfigUpsertBulk) AddAccountStatusRecoveryThreshold(v int) *Sub2APIProviderProbeConfigUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeConfigUpsert) {
+		s.AddAccountStatusRecoveryThreshold(v)
+	})
+}
+
+// UpdateAccountStatusRecoveryThreshold sets the "account_status_recovery_threshold" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeConfigUpsertBulk) UpdateAccountStatusRecoveryThreshold() *Sub2APIProviderProbeConfigUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeConfigUpsert) {
+		s.UpdateAccountStatusRecoveryThreshold()
 	})
 }
 

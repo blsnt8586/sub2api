@@ -75,11 +75,13 @@ type Sub2APIProviderProbeRepository interface {
 	ListRunsSince(context.Context, []int64, time.Time) ([]*ent.Sub2APIProviderProbeRun, error)
 	TrafficStats(context.Context, int64, time.Time) (*Sub2APIProviderTrafficStats, error)
 	ListTargets(context.Context, int64) ([]*ent.Sub2APIProviderProbeTarget, error)
+	DeleteTargetsByIDs(context.Context, int64, []int64) (int, error)
 	GetTarget(context.Context, int64, int64) (*ent.Sub2APIProviderProbeTarget, error)
 	CreateTarget(context.Context, *Sub2APIProviderProbeTargetCreateInput) (*ent.Sub2APIProviderProbeTarget, error)
 	UpdateTarget(context.Context, int64, int64, *Sub2APIProviderProbeTargetInput) (*ent.Sub2APIProviderProbeTarget, error)
 	UpdateTargetBinding(context.Context, int64, *int64, *int64, *string, string) (*ent.Sub2APIProviderProbeTarget, error)
 	MarkTargetRun(context.Context, int64, time.Time) error
+	MarkTargetsCostOptimize(context.Context, []int64, time.Time) error
 	CreateTargetRun(context.Context, *Sub2APIProviderProbeTargetRunInput) (*ent.Sub2APIProviderProbeTargetRun, error)
 	ListTargetRunsSince(context.Context, []int64, time.Time) ([]*ent.Sub2APIProviderProbeTargetRun, error)
 	ListRecentTargetRuns(context.Context, []int64, time.Time, int) ([]*ent.Sub2APIProviderProbeTargetRun, error)
@@ -87,24 +89,45 @@ type Sub2APIProviderProbeRepository interface {
 }
 
 // Sub2APIProbeAutoOptimizeTrigger decouples route probing from the optimizer.
-// The scheduled probe submits only routes whose persisted result is unhealthy;
-// the optimizer remains the authority for participation, bounds, cooldowns,
-// locking, candidate switching, and result logging.
+// Account target probes persist each failed request as unhealthy, so a
+// scheduled probe submits the failure immediately; the optimizer remains the
+// authority for participation, bounds, cooldowns, locking, candidate
+// switching, and result logging.
 type Sub2APIProbeAutoOptimizeTrigger interface {
 	TriggerProbeAutoOptimize(context.Context, int64, []Sub2APIProbeAutoOptimizeInput) (int, error)
 }
 
+// Sub2APIProbeAutoOptimizeAdmission is the subset of probe inputs that the
+// optimizer actually claimed. A trigger may accept only part of a batch when
+// a target cooldown, provider lock, concurrency check, or account validation
+// filters the rest. The probe must quarantine every input that was not claimed
+// instead of assuming the returned count applies to all of them.
+type Sub2APIProbeAutoOptimizeAdmission struct {
+	TargetIDs  []int64
+	AccountIDs []int64
+}
+
+// Sub2APIProbeAutoOptimizeAdmissionTrigger is implemented by the production
+// optimizer. The legacy trigger interface remains supported for narrow test
+// doubles and older callers.
+type Sub2APIProbeAutoOptimizeAdmissionTrigger interface {
+	TriggerProbeAutoOptimizeWithAdmission(context.Context, int64, []Sub2APIProbeAutoOptimizeInput) (Sub2APIProbeAutoOptimizeAdmission, error)
+}
+
 type Sub2APIProviderProbeConfigInput struct {
-	ControlEnabled         *bool   `json:"control_enabled"`
-	ControlIntervalSeconds *int    `json:"control_interval_seconds"`
-	DataEnabled            *bool   `json:"data_enabled"`
-	DataIntervalSeconds    *int    `json:"data_interval_seconds"`
-	SelectedAccountIDs     []int64 `json:"selected_account_ids"`
-	AllowMediaProbe        *bool   `json:"allow_media_probe"`
-	TimeoutSeconds         *int    `json:"timeout_seconds"`
-	DegradedLatencyMS      *int    `json:"degraded_latency_ms"`
-	FailureThreshold       *int    `json:"failure_threshold"`
-	RecoveryThreshold      *int    `json:"recovery_threshold"`
+	ControlEnabled                 *bool   `json:"control_enabled"`
+	ControlIntervalSeconds         *int    `json:"control_interval_seconds"`
+	DataEnabled                    *bool   `json:"data_enabled"`
+	DataIntervalSeconds            *int    `json:"data_interval_seconds"`
+	SelectedAccountIDs             []int64 `json:"selected_account_ids"`
+	AllowMediaProbe                *bool   `json:"allow_media_probe"`
+	TimeoutSeconds                 *int    `json:"timeout_seconds"`
+	DegradedLatencyMS              *int    `json:"degraded_latency_ms"`
+	FailureThreshold               *int    `json:"failure_threshold"`
+	RecoveryThreshold              *int    `json:"recovery_threshold"`
+	AccountStatusSyncEnabled       *bool   `json:"account_status_sync_enabled"`
+	AccountStatusFailureThreshold  *int    `json:"account_status_failure_threshold"`
+	AccountStatusRecoveryThreshold *int    `json:"account_status_recovery_threshold"`
 }
 
 type Sub2APIProviderTrafficStats struct {
@@ -208,39 +231,43 @@ type Sub2APIProviderHealthOverview struct {
 }
 
 type Sub2APIProviderProbeConfigView struct {
-	ID                     int64      `json:"id"`
-	ProviderID             int64      `json:"provider_id"`
-	ControlEnabled         bool       `json:"control_enabled"`
-	ControlIntervalSeconds int        `json:"control_interval_seconds"`
-	DataEnabled            bool       `json:"data_enabled"`
-	DataIntervalSeconds    int        `json:"data_interval_seconds"`
-	SelectedAccountIDs     []int64    `json:"selected_account_ids"`
-	AllowMediaProbe        bool       `json:"allow_media_probe"`
-	TimeoutSeconds         int        `json:"timeout_seconds"`
-	DegradedLatencyMS      int        `json:"degraded_latency_ms"`
-	FailureThreshold       int        `json:"failure_threshold"`
-	RecoveryThreshold      int        `json:"recovery_threshold"`
-	LastControlRunAt       *time.Time `json:"last_control_run_at,omitempty"`
-	LastDataRunAt          *time.Time `json:"last_data_run_at,omitempty"`
+	ID                             int64      `json:"id"`
+	ProviderID                     int64      `json:"provider_id"`
+	ControlEnabled                 bool       `json:"control_enabled"`
+	ControlIntervalSeconds         int        `json:"control_interval_seconds"`
+	DataEnabled                    bool       `json:"data_enabled"`
+	DataIntervalSeconds            int        `json:"data_interval_seconds"`
+	SelectedAccountIDs             []int64    `json:"selected_account_ids"`
+	AllowMediaProbe                bool       `json:"allow_media_probe"`
+	TimeoutSeconds                 int        `json:"timeout_seconds"`
+	DegradedLatencyMS              int        `json:"degraded_latency_ms"`
+	FailureThreshold               int        `json:"failure_threshold"`
+	RecoveryThreshold              int        `json:"recovery_threshold"`
+	AccountStatusSyncEnabled       bool       `json:"account_status_sync_enabled"`
+	AccountStatusFailureThreshold  int        `json:"account_status_failure_threshold"`
+	AccountStatusRecoveryThreshold int        `json:"account_status_recovery_threshold"`
+	LastControlRunAt               *time.Time `json:"last_control_run_at,omitempty"`
+	LastDataRunAt                  *time.Time `json:"last_data_run_at,omitempty"`
 }
 
 type Sub2APIProviderProbeService struct {
 	providerRepo        Sub2APIProviderRepository
 	probeRepo           Sub2APIProviderProbeRepository
-	accountRepo         AccountRepository
+	accountRepo         Sub2APIAccountRepository
 	accountTest         *AccountTestService
+	rateLimitService    *RateLimitService
 	tokenCache          *sub2api.TokenCache
-	encryptor           SecretEncryptor
+	encryptor           ProviderTokenEncryptor
 	autoOptimizeTrigger Sub2APIProbeAutoOptimizeTrigger
 	remoteOverviewCache Sub2APIProviderRemoteOverviewCache
+	operationGate       *Sub2APIProviderOperationGate
 	lockCache           LeaderLockCache
 	db                  *sql.DB
 	instanceID          string
-	mu                  sync.Mutex
 }
 
-func NewSub2APIProviderProbeService(providerRepo Sub2APIProviderRepository, probeRepo Sub2APIProviderProbeRepository, accountRepo AccountRepository, accountTest *AccountTestService, tokenCache *sub2api.TokenCache, encryptor SecretEncryptor) *Sub2APIProviderProbeService {
-	return &Sub2APIProviderProbeService{providerRepo: providerRepo, probeRepo: probeRepo, accountRepo: accountRepo, accountTest: accountTest, tokenCache: tokenCache, encryptor: encryptor, instanceID: uuid.NewString()}
+func NewSub2APIProviderProbeService(providerRepo Sub2APIProviderRepository, probeRepo Sub2APIProviderProbeRepository, accountRepo Sub2APIAccountRepository, accountTest *AccountTestService, rateLimitService *RateLimitService, tokenCache *sub2api.TokenCache, encryptor ProviderTokenEncryptor, operationGate *Sub2APIProviderOperationGate) *Sub2APIProviderProbeService {
+	return &Sub2APIProviderProbeService{providerRepo: providerRepo, probeRepo: probeRepo, accountRepo: accountRepo, accountTest: accountTest, rateLimitService: rateLimitService, tokenCache: tokenCache, encryptor: encryptor, operationGate: operationGate, instanceID: uuid.NewString()}
 }
 
 func (s *Sub2APIProviderProbeService) SetLeaderLock(lockCache LeaderLockCache, db *sql.DB) {
@@ -335,21 +362,6 @@ func (s *Sub2APIProviderProbeService) GetHealth(ctx context.Context, providerID 
 		health.ConsecutiveFailures = countConsecutiveProbeFailures(runs)
 	}
 	return health, nil
-}
-
-func (s *Sub2APIProviderProbeService) History(ctx context.Context, providerID int64, limit int) ([]*Sub2APIProviderHealth, error) {
-	if _, err := s.providerRepo.GetByID(ctx, providerID); err != nil {
-		return nil, ErrProviderNotFound
-	}
-	runs, err := s.probeRepo.ListRuns(ctx, providerID, limit)
-	if err != nil {
-		return nil, err
-	}
-	out := make([]*Sub2APIProviderHealth, 0, len(runs))
-	for _, run := range runs {
-		out = append(out, healthFromRun(run))
-	}
-	return out, nil
 }
 
 func (s *Sub2APIProviderProbeService) HistorySince(ctx context.Context, providerID int64, since time.Time, limit int) ([]*Sub2APIProviderHealth, error) {
@@ -612,25 +624,102 @@ func (s *Sub2APIProviderProbeService) run(ctx context.Context, providerID int64,
 		return nil, targetErr
 	}
 	var targetRunErr error
-	autoOptimizeInputs := make([]Sub2APIProbeAutoOptimizeInput, 0)
+	type completedTargetProbe struct {
+		target *ent.Sub2APIProviderProbeTarget
+		run    *ent.Sub2APIProviderProbeTargetRun
+	}
+	completedTargetProbes := make([]completedTargetProbe, 0, len(targets))
 	for _, target := range targets {
 		if !shouldRunProviderProbeTarget(target, scheduled, includeTargets, time.Now()) {
 			continue
 		}
-		targetRun, err := s.runTarget(ctx, target)
+		// Persist the probe first. Account state is projected below from persisted
+		// history so failure/recovery thresholds and optimization ordering can be
+		// applied consistently across all routes in this scheduler cycle.
+		targetRun, acquired, err := s.runTargetIfProviderAvailable(ctx, target)
+		if !acquired {
+			// An optimizer or remote binding refresh currently owns this Provider.
+			// Do not manufacture an unhealthy sample or advance last_run_at; the
+			// target remains due and the next runner scan retries it.
+			continue
+		}
 		if err != nil {
 			targetRunErr = errors.Join(targetRunErr, err)
 			continue
 		}
-		if scheduled {
-			if input, ok := probeAutoOptimizeInput(target, targetRun); ok {
+		if scheduled && targetRun != nil {
+			completedTargetProbes = append(completedTargetProbes, completedTargetProbe{target: target, run: targetRun})
+		}
+	}
+	autoOptimizeInputs := make([]Sub2APIProbeAutoOptimizeInput, 0, len(completedTargetProbes))
+	historyByTarget := make(map[int64][]*ent.Sub2APIProviderProbeTargetRun, len(completedTargetProbes))
+	if scheduled && len(completedTargetProbes) > 0 {
+		targetIDs := make([]int64, 0, len(completedTargetProbes))
+		for _, completed := range completedTargetProbes {
+			targetIDs = append(targetIDs, completed.target.ID)
+		}
+		recentRuns, historyErr := s.probeRepo.ListRecentTargetRuns(
+			ctx,
+			targetIDs,
+			time.Now().UTC().Add(-upstreamLogRetentionPeriod),
+			maxProbeAutoOptimizeHistory,
+		)
+		now := time.Now().UTC()
+		runsByTarget := make(map[int64][]*ent.Sub2APIProviderProbeTargetRun, len(targetIDs))
+		if historyErr != nil {
+			logger.LegacyPrintf("service.sub2api_provider_probe", "[Sub2APIProviderProbe] provider=%d load target history failed: %v", providerID, historyErr)
+			// A history read is only required for streak-based degraded/cost
+			// actions. Preserve the single-sample unhealthy recovery path when
+			// the best-effort history query is temporarily unavailable.
+			for _, completed := range completedTargetProbes {
+				runsByTarget[completed.target.ID] = []*ent.Sub2APIProviderProbeTargetRun{completed.run}
+			}
+		} else {
+			for _, recentRun := range recentRuns {
+				runsByTarget[recentRun.TargetID] = append(runsByTarget[recentRun.TargetID], recentRun)
+			}
+		}
+		for _, completed := range completedTargetProbes {
+			history := runsByTarget[completed.target.ID]
+			historyByTarget[completed.target.ID] = history
+			if input, ok := probeAutoOptimizeInputWithHistory(completed.target, completed.run, history, now); ok {
+				input.AccountStatusSyncEnabled = cfg.AccountStatusSyncEnabled
 				autoOptimizeInputs = append(autoOptimizeInputs, input)
 			}
 		}
 	}
+	admittedTargets := make(map[int64]struct{})
 	if scheduled && s.autoOptimizeTrigger != nil && len(autoOptimizeInputs) > 0 {
-		if _, err := s.autoOptimizeTrigger.TriggerProbeAutoOptimize(ctx, providerID, autoOptimizeInputs); err != nil {
-			logger.LegacyPrintf("service.sub2api_provider_probe", "[Sub2APIProviderProbe] provider=%d auto optimize trigger failed: %v", providerID, err)
+		if detailed, ok := s.autoOptimizeTrigger.(Sub2APIProbeAutoOptimizeAdmissionTrigger); ok {
+			admission, err := detailed.TriggerProbeAutoOptimizeWithAdmission(ctx, providerID, autoOptimizeInputs)
+			for _, targetID := range admission.TargetIDs {
+				admittedTargets[targetID] = struct{}{}
+			}
+			if err != nil {
+				logger.LegacyPrintf("service.sub2api_provider_probe", "[Sub2APIProviderProbe] provider=%d auto optimize trigger failed: %v", providerID, err)
+			}
+		} else {
+			admitted, err := s.autoOptimizeTrigger.TriggerProbeAutoOptimize(ctx, providerID, autoOptimizeInputs)
+			// A legacy trigger exposes only a count. Fail closed when it
+			// admits a partial batch because the probe cannot identify which
+			// account was actually claimed.
+			if err == nil && admitted == len(autoOptimizeInputs) {
+				for _, input := range autoOptimizeInputs {
+					admittedTargets[input.TargetID] = struct{}{}
+				}
+			}
+			if err != nil {
+				logger.LegacyPrintf("service.sub2api_provider_probe", "[Sub2APIProviderProbe] provider=%d auto optimize trigger failed: %v", providerID, err)
+			}
+		}
+	}
+	if cfg.AccountStatusSyncEnabled {
+		for _, completed := range completedTargetProbes {
+			history := historyByTarget[completed.target.ID]
+			_, optimizerAdmitted := admittedTargets[completed.target.ID]
+			if err := s.projectAccountStatusFromProbe(ctx, cfg, completed.target, completed.run, history, optimizerAdmitted); err != nil {
+				logger.LegacyPrintf("service.sub2api_provider_probe", "[Sub2APIProviderProbe] provider=%d account=%d target=%d project account status failed: %v", providerID, completed.target.AccountID, completed.target.ID, err)
+			}
 		}
 	}
 	if !runControl {
@@ -652,28 +741,6 @@ func (s *Sub2APIProviderProbeService) run(ctx context.Context, providerID int64,
 		return health, nil
 	}
 	return healthFromInput(result), nil
-}
-
-func (s *Sub2APIProviderProbeService) inheritPreviousDataProbe(ctx context.Context, providerID int64, result *Sub2APIProviderProbeRunInput) {
-	runs, err := s.probeRepo.ListRuns(ctx, providerID, 100)
-	if err != nil {
-		return
-	}
-	for _, run := range runs {
-		if run == nil || string(run.DataStatus) == "unknown" {
-			continue
-		}
-		result.DataStatus = string(run.DataStatus)
-		result.DataProbeCount = run.DataProbeCount
-		result.DataProbeSuccess = run.DataProbeSuccess
-		result.DataProbeFailed = run.DataProbeFailed
-		if run.Details != nil {
-			if accountProbes, ok := run.Details["account_probes"]; ok {
-				result.Details["account_probes"] = accountProbes
-			}
-		}
-		return
-	}
 }
 
 func (s *Sub2APIProviderProbeService) applyHysteresis(ctx context.Context, cfg *ent.Sub2APIProviderProbeConfig, result *Sub2APIProviderProbeRunInput) {
@@ -815,80 +882,6 @@ func (s *Sub2APIProviderProbeService) runControl(ctx context.Context, provider *
 	return "healthy"
 }
 
-func (s *Sub2APIProviderProbeService) runData(ctx context.Context, cfg *ent.Sub2APIProviderProbeConfig, result *Sub2APIProviderProbeRunInput) string {
-	accountProbes := make([]Sub2APIProviderAccountProbe, 0, len(cfg.SelectedAccountIds))
-	defer func() {
-		result.Details["account_probes"] = accountProbes
-	}()
-	if len(cfg.SelectedAccountIds) == 0 {
-		return "unknown"
-	}
-	for _, accountID := range cfg.SelectedAccountIds {
-		checkedAt := time.Now()
-		accountProbe := Sub2APIProviderAccountProbe{AccountID: accountID, Status: "unknown", CheckedAt: &checkedAt}
-		account, err := s.accountRepo.GetByID(ctx, accountID)
-		if err != nil {
-			result.DataProbeCount++
-			result.DataProbeFailed++
-			probeErr := fmt.Errorf("load account %d: %w", accountID, err)
-			accountProbe.Status = "unhealthy"
-			accountProbe.ErrorCategory = providerProbeStringPtr(classifyProbeError(probeErr))
-			accountProbe.ErrorMessage = providerProbeStringPtr(trimProbeError(probeErr))
-			accountProbes = append(accountProbes, accountProbe)
-			continue
-		}
-		accountProbe.AccountName = account.Name
-		accountProbe.Platform = account.Platform
-		modelID := ""
-		if account.Sub2APITestModel != nil {
-			modelID = strings.TrimSpace(*account.Sub2APITestModel)
-		}
-		if (account.IsCanvas() || isProviderProbeMediaModel(modelID)) && !cfg.AllowMediaProbe {
-			accountProbe.Status = "disabled"
-			accountProbes = append(accountProbes, accountProbe)
-			continue
-		}
-		result.DataProbeCount++
-		probeCtx, cancel := context.WithTimeout(ctx, time.Duration(cfg.TimeoutSeconds)*time.Second)
-		res, err := s.accountTest.RunTestBackground(probeCtx, accountID, modelID)
-		cancel()
-		if err == nil && res != nil && res.Status == "success" {
-			result.DataProbeSuccess++
-			accountProbe.Status = "healthy"
-		} else {
-			result.DataProbeFailed++
-			accountProbe.Status = "unhealthy"
-			probeErr := err
-			if probeErr == nil && res != nil && res.ErrorMessage != "" {
-				probeErr = fmt.Errorf("%s", res.ErrorMessage)
-			}
-			if probeErr == nil {
-				probeErr = fmt.Errorf("account probe failed")
-			}
-			accountProbe.ErrorCategory = providerProbeStringPtr(classifyProbeError(probeErr))
-			accountProbe.ErrorMessage = providerProbeStringPtr(trimProbeError(probeErr))
-		}
-		if res != nil {
-			latency := int(res.LatencyMs)
-			accountProbe.LatencyMS = &latency
-			if !res.FinishedAt.IsZero() {
-				accountProbe.CheckedAt = providerProbeTimePtr(res.FinishedAt)
-			}
-		}
-		accountProbes = append(accountProbes, accountProbe)
-	}
-	if result.DataProbeCount == 0 {
-		return "unknown"
-	}
-	if result.DataProbeFailed > 0 && result.DataProbeSuccess == 0 {
-		return "unhealthy"
-	}
-	if result.DataProbeFailed > 0 {
-		return "degraded"
-	}
-	return "healthy"
-}
-
 func overallProbeStatus(control, data, traffic string) string {
 	if control == "unhealthy" {
 		return "unhealthy"
@@ -1007,7 +1000,7 @@ func countConsecutiveProbeFailures(runs []*ent.Sub2APIProviderProbeRun) int {
 }
 
 func probeConfigView(c *ent.Sub2APIProviderProbeConfig) *Sub2APIProviderProbeConfigView {
-	return &Sub2APIProviderProbeConfigView{ID: c.ID, ProviderID: c.ProviderID, ControlEnabled: c.ControlEnabled, ControlIntervalSeconds: c.ControlIntervalSeconds, DataEnabled: c.DataEnabled, DataIntervalSeconds: c.DataIntervalSeconds, SelectedAccountIDs: c.SelectedAccountIds, AllowMediaProbe: c.AllowMediaProbe, TimeoutSeconds: c.TimeoutSeconds, DegradedLatencyMS: c.DegradedLatencyMs, FailureThreshold: c.FailureThreshold, RecoveryThreshold: c.RecoveryThreshold, LastControlRunAt: c.LastControlRunAt, LastDataRunAt: c.LastDataRunAt}
+	return &Sub2APIProviderProbeConfigView{ID: c.ID, ProviderID: c.ProviderID, ControlEnabled: c.ControlEnabled, ControlIntervalSeconds: c.ControlIntervalSeconds, DataEnabled: c.DataEnabled, DataIntervalSeconds: c.DataIntervalSeconds, SelectedAccountIDs: c.SelectedAccountIds, AllowMediaProbe: c.AllowMediaProbe, TimeoutSeconds: c.TimeoutSeconds, DegradedLatencyMS: c.DegradedLatencyMs, FailureThreshold: c.FailureThreshold, RecoveryThreshold: c.RecoveryThreshold, AccountStatusSyncEnabled: c.AccountStatusSyncEnabled, AccountStatusFailureThreshold: c.AccountStatusFailureThreshold, AccountStatusRecoveryThreshold: c.AccountStatusRecoveryThreshold, LastControlRunAt: c.LastControlRunAt, LastDataRunAt: c.LastDataRunAt}
 }
 
 func validateProbeConfig(in *Sub2APIProviderProbeConfigInput) error {
@@ -1031,6 +1024,12 @@ func validateProbeConfig(in *Sub2APIProviderProbeConfigInput) error {
 	}
 	if in.RecoveryThreshold != nil && (*in.RecoveryThreshold < 1 || *in.RecoveryThreshold > 20) {
 		return invalidProviderProbeConfig("recovery_threshold must be between 1 and 20")
+	}
+	if in.AccountStatusFailureThreshold != nil && (*in.AccountStatusFailureThreshold < 1 || *in.AccountStatusFailureThreshold > 20) {
+		return invalidProviderProbeConfig("account_status_failure_threshold must be between 1 and 20")
+	}
+	if in.AccountStatusRecoveryThreshold != nil && (*in.AccountStatusRecoveryThreshold < 1 || *in.AccountStatusRecoveryThreshold > 20) {
+		return invalidProviderProbeConfig("account_status_recovery_threshold must be between 1 and 20")
 	}
 	return nil
 }
@@ -1243,13 +1242,6 @@ func shouldRunProviderProbeTarget(target *ent.Sub2APIProviderProbeTarget, schedu
 		return false
 	}
 	return !scheduled || probeIntervalDueWithJitterAt(target.LastRunAt, target.IntervalSeconds, target.ID, now)
-}
-
-func scheduledProbeDataIntervalSeconds(cfg *ent.Sub2APIProviderProbeConfig) int {
-	if cfg.AllowMediaProbe && cfg.DataIntervalSeconds < minMediaProbeIntervalSeconds {
-		return minMediaProbeIntervalSeconds
-	}
-	return cfg.DataIntervalSeconds
 }
 
 func providerProbeStringPtr(v string) *string     { return &v }

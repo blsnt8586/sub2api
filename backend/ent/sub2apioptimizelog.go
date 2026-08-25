@@ -28,7 +28,7 @@ type Sub2APIOptimizeLog struct {
 	ProviderID int64 `json:"provider_id,omitempty"`
 	// 关联的定时配置 ID，可空
 	ScheduleID *int64 `json:"schedule_id,omitempty"`
-	// 触发方式：cron / schedule_now / probe_unhealthy / manual_account / manual_all / legacy
+	// 触发方式：cron / schedule_now / probe_auto / probe_unhealthy / probe_degraded / probe_cost_check / manual_account / manual_all / legacy
 	Trigger string `json:"trigger,omitempty"`
 	// 整体状态：success / partial / failed / skipped
 	Status string `json:"status,omitempty"`

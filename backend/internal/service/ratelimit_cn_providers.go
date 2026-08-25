@@ -60,6 +60,7 @@ func (s *RateLimitService) handleCNProviderInsufficientBalance(
 
 	if err := s.accountRepo.UpdateExtra(ctx, account.ID, map[string]any{
 		cnExtraKey(account.Platform, cnBalanceExtraSuffixLow): true,
+		probeRuntimeRecoverableAccountErrorExtraKey:           true,
 	}); err != nil {
 		slog.Warn("cn_balance_low_mark_failed", "account_id", account.ID, "error", err)
 	}

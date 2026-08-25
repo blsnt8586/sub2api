@@ -47,6 +47,16 @@ type Sub2APIProviderProbeTarget struct {
 	TimeoutSeconds int `json:"timeout_seconds,omitempty"`
 	// DegradedLatencyMs holds the value of the "degraded_latency_ms" field.
 	DegradedLatencyMs int `json:"degraded_latency_ms,omitempty"`
+	// DegradedOptimizeThreshold holds the value of the "degraded_optimize_threshold" field.
+	DegradedOptimizeThreshold int `json:"degraded_optimize_threshold,omitempty"`
+	// CostOptimizeEnabled holds the value of the "cost_optimize_enabled" field.
+	CostOptimizeEnabled bool `json:"cost_optimize_enabled,omitempty"`
+	// CostOptimizeIntervalSeconds holds the value of the "cost_optimize_interval_seconds" field.
+	CostOptimizeIntervalSeconds int `json:"cost_optimize_interval_seconds,omitempty"`
+	// CostOptimizeHealthyThreshold holds the value of the "cost_optimize_healthy_threshold" field.
+	CostOptimizeHealthyThreshold int `json:"cost_optimize_healthy_threshold,omitempty"`
+	// LastCostOptimizeAt holds the value of the "last_cost_optimize_at" field.
+	LastCostOptimizeAt *time.Time `json:"last_cost_optimize_at,omitempty"`
 	// FailureThreshold holds the value of the "failure_threshold" field.
 	FailureThreshold int `json:"failure_threshold,omitempty"`
 	// RecoveryThreshold holds the value of the "recovery_threshold" field.
@@ -110,13 +120,13 @@ func (*Sub2APIProviderProbeTarget) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case sub2apiproviderprobetarget.FieldEnabled, sub2apiproviderprobetarget.FieldAllowMediaProbe:
+		case sub2apiproviderprobetarget.FieldEnabled, sub2apiproviderprobetarget.FieldAllowMediaProbe, sub2apiproviderprobetarget.FieldCostOptimizeEnabled:
 			values[i] = new(sql.NullBool)
-		case sub2apiproviderprobetarget.FieldID, sub2apiproviderprobetarget.FieldProviderID, sub2apiproviderprobetarget.FieldAccountID, sub2apiproviderprobetarget.FieldProviderAPIKeyID, sub2apiproviderprobetarget.FieldRemoteGroupID, sub2apiproviderprobetarget.FieldIntervalSeconds, sub2apiproviderprobetarget.FieldTimeoutSeconds, sub2apiproviderprobetarget.FieldDegradedLatencyMs, sub2apiproviderprobetarget.FieldFailureThreshold, sub2apiproviderprobetarget.FieldRecoveryThreshold:
+		case sub2apiproviderprobetarget.FieldID, sub2apiproviderprobetarget.FieldProviderID, sub2apiproviderprobetarget.FieldAccountID, sub2apiproviderprobetarget.FieldProviderAPIKeyID, sub2apiproviderprobetarget.FieldRemoteGroupID, sub2apiproviderprobetarget.FieldIntervalSeconds, sub2apiproviderprobetarget.FieldTimeoutSeconds, sub2apiproviderprobetarget.FieldDegradedLatencyMs, sub2apiproviderprobetarget.FieldDegradedOptimizeThreshold, sub2apiproviderprobetarget.FieldCostOptimizeIntervalSeconds, sub2apiproviderprobetarget.FieldCostOptimizeHealthyThreshold, sub2apiproviderprobetarget.FieldFailureThreshold, sub2apiproviderprobetarget.FieldRecoveryThreshold:
 			values[i] = new(sql.NullInt64)
 		case sub2apiproviderprobetarget.FieldRemoteGroupName, sub2apiproviderprobetarget.FieldPlatform, sub2apiproviderprobetarget.FieldTestModel:
 			values[i] = new(sql.NullString)
-		case sub2apiproviderprobetarget.FieldCreatedAt, sub2apiproviderprobetarget.FieldUpdatedAt, sub2apiproviderprobetarget.FieldLastRunAt, sub2apiproviderprobetarget.FieldRouteChangedAt:
+		case sub2apiproviderprobetarget.FieldCreatedAt, sub2apiproviderprobetarget.FieldUpdatedAt, sub2apiproviderprobetarget.FieldLastCostOptimizeAt, sub2apiproviderprobetarget.FieldLastRunAt, sub2apiproviderprobetarget.FieldRouteChangedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -226,6 +236,37 @@ func (_m *Sub2APIProviderProbeTarget) assignValues(columns []string, values []an
 				return fmt.Errorf("unexpected type %T for field degraded_latency_ms", values[i])
 			} else if value.Valid {
 				_m.DegradedLatencyMs = int(value.Int64)
+			}
+		case sub2apiproviderprobetarget.FieldDegradedOptimizeThreshold:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field degraded_optimize_threshold", values[i])
+			} else if value.Valid {
+				_m.DegradedOptimizeThreshold = int(value.Int64)
+			}
+		case sub2apiproviderprobetarget.FieldCostOptimizeEnabled:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field cost_optimize_enabled", values[i])
+			} else if value.Valid {
+				_m.CostOptimizeEnabled = value.Bool
+			}
+		case sub2apiproviderprobetarget.FieldCostOptimizeIntervalSeconds:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field cost_optimize_interval_seconds", values[i])
+			} else if value.Valid {
+				_m.CostOptimizeIntervalSeconds = int(value.Int64)
+			}
+		case sub2apiproviderprobetarget.FieldCostOptimizeHealthyThreshold:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field cost_optimize_healthy_threshold", values[i])
+			} else if value.Valid {
+				_m.CostOptimizeHealthyThreshold = int(value.Int64)
+			}
+		case sub2apiproviderprobetarget.FieldLastCostOptimizeAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field last_cost_optimize_at", values[i])
+			} else if value.Valid {
+				_m.LastCostOptimizeAt = new(time.Time)
+				*_m.LastCostOptimizeAt = value.Time
 			}
 		case sub2apiproviderprobetarget.FieldFailureThreshold:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -353,6 +394,23 @@ func (_m *Sub2APIProviderProbeTarget) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("degraded_latency_ms=")
 	builder.WriteString(fmt.Sprintf("%v", _m.DegradedLatencyMs))
+	builder.WriteString(", ")
+	builder.WriteString("degraded_optimize_threshold=")
+	builder.WriteString(fmt.Sprintf("%v", _m.DegradedOptimizeThreshold))
+	builder.WriteString(", ")
+	builder.WriteString("cost_optimize_enabled=")
+	builder.WriteString(fmt.Sprintf("%v", _m.CostOptimizeEnabled))
+	builder.WriteString(", ")
+	builder.WriteString("cost_optimize_interval_seconds=")
+	builder.WriteString(fmt.Sprintf("%v", _m.CostOptimizeIntervalSeconds))
+	builder.WriteString(", ")
+	builder.WriteString("cost_optimize_healthy_threshold=")
+	builder.WriteString(fmt.Sprintf("%v", _m.CostOptimizeHealthyThreshold))
+	builder.WriteString(", ")
+	if v := _m.LastCostOptimizeAt; v != nil {
+		builder.WriteString("last_cost_optimize_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteString(", ")
 	builder.WriteString("failure_threshold=")
 	builder.WriteString(fmt.Sprintf("%v", _m.FailureThreshold))

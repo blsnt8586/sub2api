@@ -109,6 +109,7 @@ func PreviewProfitAdmission(inputs []ProfitPreviewGroupInput, evalAt time.Time) 
 			if math.IsNaN(override) || math.IsInf(override, 0) || override < 0 {
 				continue
 			}
+			override = group.ApplyDynamicPricingFloor(override)
 			if override < minRate {
 				minRate = override
 			}

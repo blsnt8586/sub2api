@@ -880,11 +880,36 @@ func (s *RateLimitService) GeminiCooldown(ctx context.Context, account *Account)
 // handleAuthError 处理认证类错误(401/403)，停止账号调度
 func (s *RateLimitService) handleAuthError(ctx context.Context, account *Account, errorMsg string) {
 	s.notifyAccountSchedulingBlocked(account, time.Time{}, "auth_error")
+	s.markRuntimeRecoverableAccountError(ctx, account)
 	if err := s.accountRepo.SetError(ctx, account.ID, errorMsg); err != nil {
 		slog.Warn("account_set_error_failed", "account_id", account.ID, "error", err)
 		return
 	}
 	slog.Warn("account_disabled_auth_error", "account_id", account.ID, "error", errorMsg)
+}
+
+// markRuntimeRecoverableAccountError records that the account was disabled by
+// request-time upstream handling. Provider probes may clear this marker after
+// a successful check; explicit admin status edits never set it and therefore
+// remain protected from automatic recovery.
+func (s *RateLimitService) markRuntimeRecoverableAccountError(ctx context.Context, account *Account) {
+	if s == nil || s.accountRepo == nil || account == nil {
+		return
+	}
+	// A few narrow legacy test repositories embed AccountRepository without
+	// implementing UpdateExtra; calling the promoted nil method panics. The
+	// production repository always implements it, while this guard preserves
+	// compatibility for those deliberately minimal doubles.
+	defer func() {
+		if recovered := recover(); recovered != nil {
+			slog.Warn("account_runtime_recoverable_error_mark_unsupported", "account_id", account.ID)
+		}
+	}()
+	if err := s.accountRepo.UpdateExtra(ctx, account.ID, map[string]any{
+		probeRuntimeRecoverableAccountErrorExtraKey: true,
+	}); err != nil {
+		slog.Warn("account_runtime_recoverable_error_mark_failed", "account_id", account.ID, "error", err)
+	}
 }
 
 func buildForbiddenErrorMessage(prefix string, upstreamMsg string, responseBody []byte, fallback string) string {
@@ -991,6 +1016,7 @@ func (s *RateLimitService) handleOpenAI403(ctx context.Context, account *Account
 		s.handleAuthError(ctx, account, msg)
 		return true
 	}
+	s.markRuntimeRecoverableAccountError(ctx, account)
 
 	slog.Warn(
 		"openai_403_temp_unschedulable",
@@ -1052,6 +1078,7 @@ func (s *RateLimitService) handleAntigravity403(ctx context.Context, account *Ac
 func (s *RateLimitService) handleCustomErrorCode(ctx context.Context, account *Account, statusCode int, errorMsg string) {
 	msg := "Custom error code " + strconv.Itoa(statusCode) + ": " + errorMsg
 	s.notifyAccountSchedulingBlocked(account, time.Time{}, "custom_error_code")
+	s.markRuntimeRecoverableAccountError(ctx, account)
 	if err := s.accountRepo.SetError(ctx, account.ID, msg); err != nil {
 		slog.Warn("account_set_error_failed", "account_id", account.ID, "status_code", statusCode, "error", err)
 		return
@@ -1933,6 +1960,11 @@ func (s *RateLimitService) RecoverAccountState(ctx context.Context, accountID in
 		result.ClearedRateLimit = true
 	}
 	if result.ClearedError || result.ClearedRateLimit {
+		if err := s.accountRepo.UpdateExtra(ctx, accountID, map[string]any{
+			probeRuntimeRecoverableAccountErrorExtraKey: false,
+		}); err != nil {
+			slog.Warn("account_runtime_recoverable_error_clear_failed", "account_id", accountID, "error", err)
+		}
 		s.ResetOpenAI403Counter(ctx, accountID)
 		if result.ClearedError && !result.ClearedRateLimit {
 			s.notifyAccountSchedulingBlockCleared(accountID)

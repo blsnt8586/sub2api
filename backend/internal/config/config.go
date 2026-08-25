@@ -97,17 +97,8 @@ type Config struct {
 	Gemini                  GeminiConfig                  `mapstructure:"gemini"`
 	Update                  UpdateConfig                  `mapstructure:"update"`
 	Idempotency             IdempotencyConfig             `mapstructure:"idempotency"`
-	Sub2API                 Sub2APIConfig                 `mapstructure:"sub2api"`
 	BatchImage              BatchImageConfig              `mapstructure:"batch_image"`
 	ImageStorage            ImageStorageConfig            `mapstructure:"image_storage"`
-}
-
-// Sub2APIConfig 上游管理（定时分组优化）相关配置。
-type Sub2APIConfig struct {
-	// DefaultTestModels 定时优化切换分组后，账号未单独设置测试模型时按平台使用的默认测试模型。
-	// key 为平台标识（anthropic/openai/gemini），value 为模型 ID。
-	// 未配置的平台会回退到代码内置兜底（见 service.builtinDefaultTestModels）。
-	DefaultTestModels map[string]string `mapstructure:"default_test_models"`
 }
 
 type LogConfig struct {
@@ -719,6 +710,10 @@ type SecurityConfig struct {
 	CSP             CSPConfig            `mapstructure:"csp"`
 	ProxyFallback   ProxyFallbackConfig  `mapstructure:"proxy_fallback"`
 	ProxyProbe      ProxyProbeConfig     `mapstructure:"proxy_probe"`
+	// ProviderTokenKey encrypts Sub2API provider access/refresh tokens.
+	// It is intentionally separate from the TOTP encryption key so provider
+	// management does not depend on TOTP configuration.
+	ProviderTokenKey string `mapstructure:"provider_token_key"`
 	// TrustForwardedIPForAPIKeyACL enables legacy raw forwarded-header takeover.
 	// When disabled, server.trusted_proxies is authoritative for all client-IP consumers.
 	TrustForwardedIPForAPIKeyACL  bool                                       `mapstructure:"trust_forwarded_ip_for_api_key_acl"`
@@ -1908,6 +1903,8 @@ func load(allowMissingJWTSecret bool) (*Config, error) {
 		cfg.Gateway.UserMessageQueue.Mode = ""
 	}
 
+	cfg.Security.ProviderTokenKey = strings.TrimSpace(cfg.Security.ProviderTokenKey)
+
 	// Auto-generate TOTP encryption key if not set (32 bytes = 64 hex chars for AES-256)
 	cfg.Totp.EncryptionKey = strings.TrimSpace(cfg.Totp.EncryptionKey)
 	if cfg.Totp.EncryptionKey == "" {
@@ -2253,6 +2250,9 @@ func setDefaults() {
 	// TOTP
 	viper.SetDefault("totp.encryption_key", "")
 
+	// Provider Token encryption (independent from TOTP)
+	viper.SetDefault("security.provider_token_key", "")
+
 	// Default
 	// Admin credentials are created via the setup flow (web wizard / CLI / AUTO_SETUP).
 	// Do not ship fixed defaults here to avoid insecure "known credentials" in production.
@@ -2277,14 +2277,6 @@ func setDefaults() {
 
 	// Timezone (default to Asia/Shanghai for Chinese users)
 	viper.SetDefault("timezone", "Asia/Shanghai")
-
-	// Sub2API 上游管理（定时分组优化）
-	// 定时优化切换分组后的默认测试模型（账号未单独设置时按平台取用）。
-	viper.SetDefault("sub2api.default_test_models", map[string]string{
-		"anthropic": "claude-haiku-4-5-20251001",
-		"openai":    "gpt-4o-mini",
-		"gemini":    "gemini-1.5-flash",
-	})
 
 	// API Key auth cache
 	viper.SetDefault("api_key_auth_cache.l1_size", 65535)

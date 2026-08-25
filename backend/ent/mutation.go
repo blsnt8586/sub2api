@@ -23112,6 +23112,15 @@ type GroupMutation struct {
 	description                             *string
 	rate_multiplier                         *float64
 	addrate_multiplier                      *float64
+	dynamic_pricing_enabled                 *bool
+	dynamic_pricing_markup                  *float64
+	adddynamic_pricing_markup               *float64
+	manual_rate_multiplier                  *float64
+	addmanual_rate_multiplier               *float64
+	dynamic_source_max_multiplier           *float64
+	adddynamic_source_max_multiplier        *float64
+	dynamic_pricing_updated_at              *time.Time
+	dynamic_pricing_status                  *string
 	peak_rate_enabled                       *bool
 	peak_start                              *string
 	peak_end                                *string
@@ -23588,6 +23597,309 @@ func (m *GroupMutation) AddedRateMultiplier() (r float64, exists bool) {
 func (m *GroupMutation) ResetRateMultiplier() {
 	m.rate_multiplier = nil
 	m.addrate_multiplier = nil
+}
+
+// SetDynamicPricingEnabled sets the "dynamic_pricing_enabled" field.
+func (m *GroupMutation) SetDynamicPricingEnabled(b bool) {
+	m.dynamic_pricing_enabled = &b
+}
+
+// DynamicPricingEnabled returns the value of the "dynamic_pricing_enabled" field in the mutation.
+func (m *GroupMutation) DynamicPricingEnabled() (r bool, exists bool) {
+	v := m.dynamic_pricing_enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDynamicPricingEnabled returns the old "dynamic_pricing_enabled" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldDynamicPricingEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDynamicPricingEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDynamicPricingEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDynamicPricingEnabled: %w", err)
+	}
+	return oldValue.DynamicPricingEnabled, nil
+}
+
+// ResetDynamicPricingEnabled resets all changes to the "dynamic_pricing_enabled" field.
+func (m *GroupMutation) ResetDynamicPricingEnabled() {
+	m.dynamic_pricing_enabled = nil
+}
+
+// SetDynamicPricingMarkup sets the "dynamic_pricing_markup" field.
+func (m *GroupMutation) SetDynamicPricingMarkup(f float64) {
+	m.dynamic_pricing_markup = &f
+	m.adddynamic_pricing_markup = nil
+}
+
+// DynamicPricingMarkup returns the value of the "dynamic_pricing_markup" field in the mutation.
+func (m *GroupMutation) DynamicPricingMarkup() (r float64, exists bool) {
+	v := m.dynamic_pricing_markup
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDynamicPricingMarkup returns the old "dynamic_pricing_markup" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldDynamicPricingMarkup(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDynamicPricingMarkup is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDynamicPricingMarkup requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDynamicPricingMarkup: %w", err)
+	}
+	return oldValue.DynamicPricingMarkup, nil
+}
+
+// AddDynamicPricingMarkup adds f to the "dynamic_pricing_markup" field.
+func (m *GroupMutation) AddDynamicPricingMarkup(f float64) {
+	if m.adddynamic_pricing_markup != nil {
+		*m.adddynamic_pricing_markup += f
+	} else {
+		m.adddynamic_pricing_markup = &f
+	}
+}
+
+// AddedDynamicPricingMarkup returns the value that was added to the "dynamic_pricing_markup" field in this mutation.
+func (m *GroupMutation) AddedDynamicPricingMarkup() (r float64, exists bool) {
+	v := m.adddynamic_pricing_markup
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDynamicPricingMarkup resets all changes to the "dynamic_pricing_markup" field.
+func (m *GroupMutation) ResetDynamicPricingMarkup() {
+	m.dynamic_pricing_markup = nil
+	m.adddynamic_pricing_markup = nil
+}
+
+// SetManualRateMultiplier sets the "manual_rate_multiplier" field.
+func (m *GroupMutation) SetManualRateMultiplier(f float64) {
+	m.manual_rate_multiplier = &f
+	m.addmanual_rate_multiplier = nil
+}
+
+// ManualRateMultiplier returns the value of the "manual_rate_multiplier" field in the mutation.
+func (m *GroupMutation) ManualRateMultiplier() (r float64, exists bool) {
+	v := m.manual_rate_multiplier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldManualRateMultiplier returns the old "manual_rate_multiplier" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldManualRateMultiplier(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldManualRateMultiplier is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldManualRateMultiplier requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldManualRateMultiplier: %w", err)
+	}
+	return oldValue.ManualRateMultiplier, nil
+}
+
+// AddManualRateMultiplier adds f to the "manual_rate_multiplier" field.
+func (m *GroupMutation) AddManualRateMultiplier(f float64) {
+	if m.addmanual_rate_multiplier != nil {
+		*m.addmanual_rate_multiplier += f
+	} else {
+		m.addmanual_rate_multiplier = &f
+	}
+}
+
+// AddedManualRateMultiplier returns the value that was added to the "manual_rate_multiplier" field in this mutation.
+func (m *GroupMutation) AddedManualRateMultiplier() (r float64, exists bool) {
+	v := m.addmanual_rate_multiplier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetManualRateMultiplier resets all changes to the "manual_rate_multiplier" field.
+func (m *GroupMutation) ResetManualRateMultiplier() {
+	m.manual_rate_multiplier = nil
+	m.addmanual_rate_multiplier = nil
+}
+
+// SetDynamicSourceMaxMultiplier sets the "dynamic_source_max_multiplier" field.
+func (m *GroupMutation) SetDynamicSourceMaxMultiplier(f float64) {
+	m.dynamic_source_max_multiplier = &f
+	m.adddynamic_source_max_multiplier = nil
+}
+
+// DynamicSourceMaxMultiplier returns the value of the "dynamic_source_max_multiplier" field in the mutation.
+func (m *GroupMutation) DynamicSourceMaxMultiplier() (r float64, exists bool) {
+	v := m.dynamic_source_max_multiplier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDynamicSourceMaxMultiplier returns the old "dynamic_source_max_multiplier" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldDynamicSourceMaxMultiplier(ctx context.Context) (v *float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDynamicSourceMaxMultiplier is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDynamicSourceMaxMultiplier requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDynamicSourceMaxMultiplier: %w", err)
+	}
+	return oldValue.DynamicSourceMaxMultiplier, nil
+}
+
+// AddDynamicSourceMaxMultiplier adds f to the "dynamic_source_max_multiplier" field.
+func (m *GroupMutation) AddDynamicSourceMaxMultiplier(f float64) {
+	if m.adddynamic_source_max_multiplier != nil {
+		*m.adddynamic_source_max_multiplier += f
+	} else {
+		m.adddynamic_source_max_multiplier = &f
+	}
+}
+
+// AddedDynamicSourceMaxMultiplier returns the value that was added to the "dynamic_source_max_multiplier" field in this mutation.
+func (m *GroupMutation) AddedDynamicSourceMaxMultiplier() (r float64, exists bool) {
+	v := m.adddynamic_source_max_multiplier
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearDynamicSourceMaxMultiplier clears the value of the "dynamic_source_max_multiplier" field.
+func (m *GroupMutation) ClearDynamicSourceMaxMultiplier() {
+	m.dynamic_source_max_multiplier = nil
+	m.adddynamic_source_max_multiplier = nil
+	m.clearedFields[group.FieldDynamicSourceMaxMultiplier] = struct{}{}
+}
+
+// DynamicSourceMaxMultiplierCleared returns if the "dynamic_source_max_multiplier" field was cleared in this mutation.
+func (m *GroupMutation) DynamicSourceMaxMultiplierCleared() bool {
+	_, ok := m.clearedFields[group.FieldDynamicSourceMaxMultiplier]
+	return ok
+}
+
+// ResetDynamicSourceMaxMultiplier resets all changes to the "dynamic_source_max_multiplier" field.
+func (m *GroupMutation) ResetDynamicSourceMaxMultiplier() {
+	m.dynamic_source_max_multiplier = nil
+	m.adddynamic_source_max_multiplier = nil
+	delete(m.clearedFields, group.FieldDynamicSourceMaxMultiplier)
+}
+
+// SetDynamicPricingUpdatedAt sets the "dynamic_pricing_updated_at" field.
+func (m *GroupMutation) SetDynamicPricingUpdatedAt(t time.Time) {
+	m.dynamic_pricing_updated_at = &t
+}
+
+// DynamicPricingUpdatedAt returns the value of the "dynamic_pricing_updated_at" field in the mutation.
+func (m *GroupMutation) DynamicPricingUpdatedAt() (r time.Time, exists bool) {
+	v := m.dynamic_pricing_updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDynamicPricingUpdatedAt returns the old "dynamic_pricing_updated_at" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldDynamicPricingUpdatedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDynamicPricingUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDynamicPricingUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDynamicPricingUpdatedAt: %w", err)
+	}
+	return oldValue.DynamicPricingUpdatedAt, nil
+}
+
+// ClearDynamicPricingUpdatedAt clears the value of the "dynamic_pricing_updated_at" field.
+func (m *GroupMutation) ClearDynamicPricingUpdatedAt() {
+	m.dynamic_pricing_updated_at = nil
+	m.clearedFields[group.FieldDynamicPricingUpdatedAt] = struct{}{}
+}
+
+// DynamicPricingUpdatedAtCleared returns if the "dynamic_pricing_updated_at" field was cleared in this mutation.
+func (m *GroupMutation) DynamicPricingUpdatedAtCleared() bool {
+	_, ok := m.clearedFields[group.FieldDynamicPricingUpdatedAt]
+	return ok
+}
+
+// ResetDynamicPricingUpdatedAt resets all changes to the "dynamic_pricing_updated_at" field.
+func (m *GroupMutation) ResetDynamicPricingUpdatedAt() {
+	m.dynamic_pricing_updated_at = nil
+	delete(m.clearedFields, group.FieldDynamicPricingUpdatedAt)
+}
+
+// SetDynamicPricingStatus sets the "dynamic_pricing_status" field.
+func (m *GroupMutation) SetDynamicPricingStatus(s string) {
+	m.dynamic_pricing_status = &s
+}
+
+// DynamicPricingStatus returns the value of the "dynamic_pricing_status" field in the mutation.
+func (m *GroupMutation) DynamicPricingStatus() (r string, exists bool) {
+	v := m.dynamic_pricing_status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDynamicPricingStatus returns the old "dynamic_pricing_status" field's value of the Group entity.
+// If the Group object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GroupMutation) OldDynamicPricingStatus(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDynamicPricingStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDynamicPricingStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDynamicPricingStatus: %w", err)
+	}
+	return oldValue.DynamicPricingStatus, nil
+}
+
+// ResetDynamicPricingStatus resets all changes to the "dynamic_pricing_status" field.
+func (m *GroupMutation) ResetDynamicPricingStatus() {
+	m.dynamic_pricing_status = nil
 }
 
 // SetPeakRateEnabled sets the "peak_rate_enabled" field.
@@ -27135,7 +27447,7 @@ func (m *GroupMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GroupMutation) Fields() []string {
-	fields := make([]string, 0, 67)
+	fields := make([]string, 0, 73)
 	if m.created_at != nil {
 		fields = append(fields, group.FieldCreatedAt)
 	}
@@ -27153,6 +27465,24 @@ func (m *GroupMutation) Fields() []string {
 	}
 	if m.rate_multiplier != nil {
 		fields = append(fields, group.FieldRateMultiplier)
+	}
+	if m.dynamic_pricing_enabled != nil {
+		fields = append(fields, group.FieldDynamicPricingEnabled)
+	}
+	if m.dynamic_pricing_markup != nil {
+		fields = append(fields, group.FieldDynamicPricingMarkup)
+	}
+	if m.manual_rate_multiplier != nil {
+		fields = append(fields, group.FieldManualRateMultiplier)
+	}
+	if m.dynamic_source_max_multiplier != nil {
+		fields = append(fields, group.FieldDynamicSourceMaxMultiplier)
+	}
+	if m.dynamic_pricing_updated_at != nil {
+		fields = append(fields, group.FieldDynamicPricingUpdatedAt)
+	}
+	if m.dynamic_pricing_status != nil {
+		fields = append(fields, group.FieldDynamicPricingStatus)
 	}
 	if m.peak_rate_enabled != nil {
 		fields = append(fields, group.FieldPeakRateEnabled)
@@ -27357,6 +27687,18 @@ func (m *GroupMutation) Field(name string) (ent.Value, bool) {
 		return m.Description()
 	case group.FieldRateMultiplier:
 		return m.RateMultiplier()
+	case group.FieldDynamicPricingEnabled:
+		return m.DynamicPricingEnabled()
+	case group.FieldDynamicPricingMarkup:
+		return m.DynamicPricingMarkup()
+	case group.FieldManualRateMultiplier:
+		return m.ManualRateMultiplier()
+	case group.FieldDynamicSourceMaxMultiplier:
+		return m.DynamicSourceMaxMultiplier()
+	case group.FieldDynamicPricingUpdatedAt:
+		return m.DynamicPricingUpdatedAt()
+	case group.FieldDynamicPricingStatus:
+		return m.DynamicPricingStatus()
 	case group.FieldPeakRateEnabled:
 		return m.PeakRateEnabled()
 	case group.FieldPeakStart:
@@ -27500,6 +27842,18 @@ func (m *GroupMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldDescription(ctx)
 	case group.FieldRateMultiplier:
 		return m.OldRateMultiplier(ctx)
+	case group.FieldDynamicPricingEnabled:
+		return m.OldDynamicPricingEnabled(ctx)
+	case group.FieldDynamicPricingMarkup:
+		return m.OldDynamicPricingMarkup(ctx)
+	case group.FieldManualRateMultiplier:
+		return m.OldManualRateMultiplier(ctx)
+	case group.FieldDynamicSourceMaxMultiplier:
+		return m.OldDynamicSourceMaxMultiplier(ctx)
+	case group.FieldDynamicPricingUpdatedAt:
+		return m.OldDynamicPricingUpdatedAt(ctx)
+	case group.FieldDynamicPricingStatus:
+		return m.OldDynamicPricingStatus(ctx)
 	case group.FieldPeakRateEnabled:
 		return m.OldPeakRateEnabled(ctx)
 	case group.FieldPeakStart:
@@ -27672,6 +28026,48 @@ func (m *GroupMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetRateMultiplier(v)
+		return nil
+	case group.FieldDynamicPricingEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDynamicPricingEnabled(v)
+		return nil
+	case group.FieldDynamicPricingMarkup:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDynamicPricingMarkup(v)
+		return nil
+	case group.FieldManualRateMultiplier:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetManualRateMultiplier(v)
+		return nil
+	case group.FieldDynamicSourceMaxMultiplier:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDynamicSourceMaxMultiplier(v)
+		return nil
+	case group.FieldDynamicPricingUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDynamicPricingUpdatedAt(v)
+		return nil
+	case group.FieldDynamicPricingStatus:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDynamicPricingStatus(v)
 		return nil
 	case group.FieldPeakRateEnabled:
 		v, ok := value.(bool)
@@ -28111,6 +28507,15 @@ func (m *GroupMutation) AddedFields() []string {
 	if m.addrate_multiplier != nil {
 		fields = append(fields, group.FieldRateMultiplier)
 	}
+	if m.adddynamic_pricing_markup != nil {
+		fields = append(fields, group.FieldDynamicPricingMarkup)
+	}
+	if m.addmanual_rate_multiplier != nil {
+		fields = append(fields, group.FieldManualRateMultiplier)
+	}
+	if m.adddynamic_source_max_multiplier != nil {
+		fields = append(fields, group.FieldDynamicSourceMaxMultiplier)
+	}
 	if m.addpeak_rate_multiplier != nil {
 		fields = append(fields, group.FieldPeakRateMultiplier)
 	}
@@ -28211,6 +28616,12 @@ func (m *GroupMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case group.FieldRateMultiplier:
 		return m.AddedRateMultiplier()
+	case group.FieldDynamicPricingMarkup:
+		return m.AddedDynamicPricingMarkup()
+	case group.FieldManualRateMultiplier:
+		return m.AddedManualRateMultiplier()
+	case group.FieldDynamicSourceMaxMultiplier:
+		return m.AddedDynamicSourceMaxMultiplier()
 	case group.FieldPeakRateMultiplier:
 		return m.AddedPeakRateMultiplier()
 	case group.FieldDailyLimitUsd:
@@ -28286,6 +28697,27 @@ func (m *GroupMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddRateMultiplier(v)
+		return nil
+	case group.FieldDynamicPricingMarkup:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDynamicPricingMarkup(v)
+		return nil
+	case group.FieldManualRateMultiplier:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddManualRateMultiplier(v)
+		return nil
+	case group.FieldDynamicSourceMaxMultiplier:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDynamicSourceMaxMultiplier(v)
 		return nil
 	case group.FieldPeakRateMultiplier:
 		v, ok := value.(float64)
@@ -28511,6 +28943,12 @@ func (m *GroupMutation) ClearedFields() []string {
 	if m.FieldCleared(group.FieldDescription) {
 		fields = append(fields, group.FieldDescription)
 	}
+	if m.FieldCleared(group.FieldDynamicSourceMaxMultiplier) {
+		fields = append(fields, group.FieldDynamicSourceMaxMultiplier)
+	}
+	if m.FieldCleared(group.FieldDynamicPricingUpdatedAt) {
+		fields = append(fields, group.FieldDynamicPricingUpdatedAt)
+	}
 	if m.FieldCleared(group.FieldDuplicateOperationID) {
 		fields = append(fields, group.FieldDuplicateOperationID)
 	}
@@ -28605,6 +29043,12 @@ func (m *GroupMutation) ClearField(name string) error {
 		return nil
 	case group.FieldDescription:
 		m.ClearDescription()
+		return nil
+	case group.FieldDynamicSourceMaxMultiplier:
+		m.ClearDynamicSourceMaxMultiplier()
+		return nil
+	case group.FieldDynamicPricingUpdatedAt:
+		m.ClearDynamicPricingUpdatedAt()
 		return nil
 	case group.FieldDuplicateOperationID:
 		m.ClearDuplicateOperationID()
@@ -28706,6 +29150,24 @@ func (m *GroupMutation) ResetField(name string) error {
 		return nil
 	case group.FieldRateMultiplier:
 		m.ResetRateMultiplier()
+		return nil
+	case group.FieldDynamicPricingEnabled:
+		m.ResetDynamicPricingEnabled()
+		return nil
+	case group.FieldDynamicPricingMarkup:
+		m.ResetDynamicPricingMarkup()
+		return nil
+	case group.FieldManualRateMultiplier:
+		m.ResetManualRateMultiplier()
+		return nil
+	case group.FieldDynamicSourceMaxMultiplier:
+		m.ResetDynamicSourceMaxMultiplier()
+		return nil
+	case group.FieldDynamicPricingUpdatedAt:
+		m.ResetDynamicPricingUpdatedAt()
+		return nil
+	case group.FieldDynamicPricingStatus:
+		m.ResetDynamicPricingStatus()
 		return nil
 	case group.FieldPeakRateEnabled:
 		m.ResetPeakRateEnabled()
@@ -46517,36 +46979,41 @@ func (m *Sub2APIProviderMutation) ResetEdge(name string) error {
 // Sub2APIProviderProbeConfigMutation represents an operation that mutates the Sub2APIProviderProbeConfig nodes in the graph.
 type Sub2APIProviderProbeConfigMutation struct {
 	config
-	op                          Op
-	typ                         string
-	id                          *int64
-	created_at                  *time.Time
-	updated_at                  *time.Time
-	control_enabled             *bool
-	control_interval_seconds    *int
-	addcontrol_interval_seconds *int
-	data_enabled                *bool
-	data_interval_seconds       *int
-	adddata_interval_seconds    *int
-	selected_account_ids        *[]int64
-	appendselected_account_ids  []int64
-	allow_media_probe           *bool
-	timeout_seconds             *int
-	addtimeout_seconds          *int
-	degraded_latency_ms         *int
-	adddegraded_latency_ms      *int
-	failure_threshold           *int
-	addfailure_threshold        *int
-	recovery_threshold          *int
-	addrecovery_threshold       *int
-	last_control_run_at         *time.Time
-	last_data_run_at            *time.Time
-	clearedFields               map[string]struct{}
-	provider                    *int64
-	clearedprovider             bool
-	done                        bool
-	oldValue                    func(context.Context) (*Sub2APIProviderProbeConfig, error)
-	predicates                  []predicate.Sub2APIProviderProbeConfig
+	op                                   Op
+	typ                                  string
+	id                                   *int64
+	created_at                           *time.Time
+	updated_at                           *time.Time
+	control_enabled                      *bool
+	control_interval_seconds             *int
+	addcontrol_interval_seconds          *int
+	data_enabled                         *bool
+	data_interval_seconds                *int
+	adddata_interval_seconds             *int
+	selected_account_ids                 *[]int64
+	appendselected_account_ids           []int64
+	allow_media_probe                    *bool
+	timeout_seconds                      *int
+	addtimeout_seconds                   *int
+	degraded_latency_ms                  *int
+	adddegraded_latency_ms               *int
+	failure_threshold                    *int
+	addfailure_threshold                 *int
+	recovery_threshold                   *int
+	addrecovery_threshold                *int
+	account_status_sync_enabled          *bool
+	account_status_failure_threshold     *int
+	addaccount_status_failure_threshold  *int
+	account_status_recovery_threshold    *int
+	addaccount_status_recovery_threshold *int
+	last_control_run_at                  *time.Time
+	last_data_run_at                     *time.Time
+	clearedFields                        map[string]struct{}
+	provider                             *int64
+	clearedprovider                      bool
+	done                                 bool
+	oldValue                             func(context.Context) (*Sub2APIProviderProbeConfig, error)
+	predicates                           []predicate.Sub2APIProviderProbeConfig
 }
 
 var _ ent.Mutation = (*Sub2APIProviderProbeConfigMutation)(nil)
@@ -47250,6 +47717,154 @@ func (m *Sub2APIProviderProbeConfigMutation) ResetRecoveryThreshold() {
 	m.addrecovery_threshold = nil
 }
 
+// SetAccountStatusSyncEnabled sets the "account_status_sync_enabled" field.
+func (m *Sub2APIProviderProbeConfigMutation) SetAccountStatusSyncEnabled(b bool) {
+	m.account_status_sync_enabled = &b
+}
+
+// AccountStatusSyncEnabled returns the value of the "account_status_sync_enabled" field in the mutation.
+func (m *Sub2APIProviderProbeConfigMutation) AccountStatusSyncEnabled() (r bool, exists bool) {
+	v := m.account_status_sync_enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAccountStatusSyncEnabled returns the old "account_status_sync_enabled" field's value of the Sub2APIProviderProbeConfig entity.
+// If the Sub2APIProviderProbeConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeConfigMutation) OldAccountStatusSyncEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAccountStatusSyncEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAccountStatusSyncEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAccountStatusSyncEnabled: %w", err)
+	}
+	return oldValue.AccountStatusSyncEnabled, nil
+}
+
+// ResetAccountStatusSyncEnabled resets all changes to the "account_status_sync_enabled" field.
+func (m *Sub2APIProviderProbeConfigMutation) ResetAccountStatusSyncEnabled() {
+	m.account_status_sync_enabled = nil
+}
+
+// SetAccountStatusFailureThreshold sets the "account_status_failure_threshold" field.
+func (m *Sub2APIProviderProbeConfigMutation) SetAccountStatusFailureThreshold(i int) {
+	m.account_status_failure_threshold = &i
+	m.addaccount_status_failure_threshold = nil
+}
+
+// AccountStatusFailureThreshold returns the value of the "account_status_failure_threshold" field in the mutation.
+func (m *Sub2APIProviderProbeConfigMutation) AccountStatusFailureThreshold() (r int, exists bool) {
+	v := m.account_status_failure_threshold
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAccountStatusFailureThreshold returns the old "account_status_failure_threshold" field's value of the Sub2APIProviderProbeConfig entity.
+// If the Sub2APIProviderProbeConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeConfigMutation) OldAccountStatusFailureThreshold(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAccountStatusFailureThreshold is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAccountStatusFailureThreshold requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAccountStatusFailureThreshold: %w", err)
+	}
+	return oldValue.AccountStatusFailureThreshold, nil
+}
+
+// AddAccountStatusFailureThreshold adds i to the "account_status_failure_threshold" field.
+func (m *Sub2APIProviderProbeConfigMutation) AddAccountStatusFailureThreshold(i int) {
+	if m.addaccount_status_failure_threshold != nil {
+		*m.addaccount_status_failure_threshold += i
+	} else {
+		m.addaccount_status_failure_threshold = &i
+	}
+}
+
+// AddedAccountStatusFailureThreshold returns the value that was added to the "account_status_failure_threshold" field in this mutation.
+func (m *Sub2APIProviderProbeConfigMutation) AddedAccountStatusFailureThreshold() (r int, exists bool) {
+	v := m.addaccount_status_failure_threshold
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAccountStatusFailureThreshold resets all changes to the "account_status_failure_threshold" field.
+func (m *Sub2APIProviderProbeConfigMutation) ResetAccountStatusFailureThreshold() {
+	m.account_status_failure_threshold = nil
+	m.addaccount_status_failure_threshold = nil
+}
+
+// SetAccountStatusRecoveryThreshold sets the "account_status_recovery_threshold" field.
+func (m *Sub2APIProviderProbeConfigMutation) SetAccountStatusRecoveryThreshold(i int) {
+	m.account_status_recovery_threshold = &i
+	m.addaccount_status_recovery_threshold = nil
+}
+
+// AccountStatusRecoveryThreshold returns the value of the "account_status_recovery_threshold" field in the mutation.
+func (m *Sub2APIProviderProbeConfigMutation) AccountStatusRecoveryThreshold() (r int, exists bool) {
+	v := m.account_status_recovery_threshold
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAccountStatusRecoveryThreshold returns the old "account_status_recovery_threshold" field's value of the Sub2APIProviderProbeConfig entity.
+// If the Sub2APIProviderProbeConfig object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeConfigMutation) OldAccountStatusRecoveryThreshold(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAccountStatusRecoveryThreshold is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAccountStatusRecoveryThreshold requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAccountStatusRecoveryThreshold: %w", err)
+	}
+	return oldValue.AccountStatusRecoveryThreshold, nil
+}
+
+// AddAccountStatusRecoveryThreshold adds i to the "account_status_recovery_threshold" field.
+func (m *Sub2APIProviderProbeConfigMutation) AddAccountStatusRecoveryThreshold(i int) {
+	if m.addaccount_status_recovery_threshold != nil {
+		*m.addaccount_status_recovery_threshold += i
+	} else {
+		m.addaccount_status_recovery_threshold = &i
+	}
+}
+
+// AddedAccountStatusRecoveryThreshold returns the value that was added to the "account_status_recovery_threshold" field in this mutation.
+func (m *Sub2APIProviderProbeConfigMutation) AddedAccountStatusRecoveryThreshold() (r int, exists bool) {
+	v := m.addaccount_status_recovery_threshold
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAccountStatusRecoveryThreshold resets all changes to the "account_status_recovery_threshold" field.
+func (m *Sub2APIProviderProbeConfigMutation) ResetAccountStatusRecoveryThreshold() {
+	m.account_status_recovery_threshold = nil
+	m.addaccount_status_recovery_threshold = nil
+}
+
 // SetLastControlRunAt sets the "last_control_run_at" field.
 func (m *Sub2APIProviderProbeConfigMutation) SetLastControlRunAt(t time.Time) {
 	m.last_control_run_at = &t
@@ -47409,7 +48024,7 @@ func (m *Sub2APIProviderProbeConfigMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *Sub2APIProviderProbeConfigMutation) Fields() []string {
-	fields := make([]string, 0, 15)
+	fields := make([]string, 0, 18)
 	if m.created_at != nil {
 		fields = append(fields, sub2apiproviderprobeconfig.FieldCreatedAt)
 	}
@@ -47448,6 +48063,15 @@ func (m *Sub2APIProviderProbeConfigMutation) Fields() []string {
 	}
 	if m.recovery_threshold != nil {
 		fields = append(fields, sub2apiproviderprobeconfig.FieldRecoveryThreshold)
+	}
+	if m.account_status_sync_enabled != nil {
+		fields = append(fields, sub2apiproviderprobeconfig.FieldAccountStatusSyncEnabled)
+	}
+	if m.account_status_failure_threshold != nil {
+		fields = append(fields, sub2apiproviderprobeconfig.FieldAccountStatusFailureThreshold)
+	}
+	if m.account_status_recovery_threshold != nil {
+		fields = append(fields, sub2apiproviderprobeconfig.FieldAccountStatusRecoveryThreshold)
 	}
 	if m.last_control_run_at != nil {
 		fields = append(fields, sub2apiproviderprobeconfig.FieldLastControlRunAt)
@@ -47489,6 +48113,12 @@ func (m *Sub2APIProviderProbeConfigMutation) Field(name string) (ent.Value, bool
 		return m.FailureThreshold()
 	case sub2apiproviderprobeconfig.FieldRecoveryThreshold:
 		return m.RecoveryThreshold()
+	case sub2apiproviderprobeconfig.FieldAccountStatusSyncEnabled:
+		return m.AccountStatusSyncEnabled()
+	case sub2apiproviderprobeconfig.FieldAccountStatusFailureThreshold:
+		return m.AccountStatusFailureThreshold()
+	case sub2apiproviderprobeconfig.FieldAccountStatusRecoveryThreshold:
+		return m.AccountStatusRecoveryThreshold()
 	case sub2apiproviderprobeconfig.FieldLastControlRunAt:
 		return m.LastControlRunAt()
 	case sub2apiproviderprobeconfig.FieldLastDataRunAt:
@@ -47528,6 +48158,12 @@ func (m *Sub2APIProviderProbeConfigMutation) OldField(ctx context.Context, name 
 		return m.OldFailureThreshold(ctx)
 	case sub2apiproviderprobeconfig.FieldRecoveryThreshold:
 		return m.OldRecoveryThreshold(ctx)
+	case sub2apiproviderprobeconfig.FieldAccountStatusSyncEnabled:
+		return m.OldAccountStatusSyncEnabled(ctx)
+	case sub2apiproviderprobeconfig.FieldAccountStatusFailureThreshold:
+		return m.OldAccountStatusFailureThreshold(ctx)
+	case sub2apiproviderprobeconfig.FieldAccountStatusRecoveryThreshold:
+		return m.OldAccountStatusRecoveryThreshold(ctx)
 	case sub2apiproviderprobeconfig.FieldLastControlRunAt:
 		return m.OldLastControlRunAt(ctx)
 	case sub2apiproviderprobeconfig.FieldLastDataRunAt:
@@ -47632,6 +48268,27 @@ func (m *Sub2APIProviderProbeConfigMutation) SetField(name string, value ent.Val
 		}
 		m.SetRecoveryThreshold(v)
 		return nil
+	case sub2apiproviderprobeconfig.FieldAccountStatusSyncEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccountStatusSyncEnabled(v)
+		return nil
+	case sub2apiproviderprobeconfig.FieldAccountStatusFailureThreshold:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccountStatusFailureThreshold(v)
+		return nil
+	case sub2apiproviderprobeconfig.FieldAccountStatusRecoveryThreshold:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccountStatusRecoveryThreshold(v)
+		return nil
 	case sub2apiproviderprobeconfig.FieldLastControlRunAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -47672,6 +48329,12 @@ func (m *Sub2APIProviderProbeConfigMutation) AddedFields() []string {
 	if m.addrecovery_threshold != nil {
 		fields = append(fields, sub2apiproviderprobeconfig.FieldRecoveryThreshold)
 	}
+	if m.addaccount_status_failure_threshold != nil {
+		fields = append(fields, sub2apiproviderprobeconfig.FieldAccountStatusFailureThreshold)
+	}
+	if m.addaccount_status_recovery_threshold != nil {
+		fields = append(fields, sub2apiproviderprobeconfig.FieldAccountStatusRecoveryThreshold)
+	}
 	return fields
 }
 
@@ -47692,6 +48355,10 @@ func (m *Sub2APIProviderProbeConfigMutation) AddedField(name string) (ent.Value,
 		return m.AddedFailureThreshold()
 	case sub2apiproviderprobeconfig.FieldRecoveryThreshold:
 		return m.AddedRecoveryThreshold()
+	case sub2apiproviderprobeconfig.FieldAccountStatusFailureThreshold:
+		return m.AddedAccountStatusFailureThreshold()
+	case sub2apiproviderprobeconfig.FieldAccountStatusRecoveryThreshold:
+		return m.AddedAccountStatusRecoveryThreshold()
 	}
 	return nil, false
 }
@@ -47742,6 +48409,20 @@ func (m *Sub2APIProviderProbeConfigMutation) AddField(name string, value ent.Val
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddRecoveryThreshold(v)
+		return nil
+	case sub2apiproviderprobeconfig.FieldAccountStatusFailureThreshold:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAccountStatusFailureThreshold(v)
+		return nil
+	case sub2apiproviderprobeconfig.FieldAccountStatusRecoveryThreshold:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAccountStatusRecoveryThreshold(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Sub2APIProviderProbeConfig numeric field %s", name)
@@ -47823,6 +48504,15 @@ func (m *Sub2APIProviderProbeConfigMutation) ResetField(name string) error {
 		return nil
 	case sub2apiproviderprobeconfig.FieldRecoveryThreshold:
 		m.ResetRecoveryThreshold()
+		return nil
+	case sub2apiproviderprobeconfig.FieldAccountStatusSyncEnabled:
+		m.ResetAccountStatusSyncEnabled()
+		return nil
+	case sub2apiproviderprobeconfig.FieldAccountStatusFailureThreshold:
+		m.ResetAccountStatusFailureThreshold()
+		return nil
+	case sub2apiproviderprobeconfig.FieldAccountStatusRecoveryThreshold:
+		m.ResetAccountStatusRecoveryThreshold()
 		return nil
 	case sub2apiproviderprobeconfig.FieldLastControlRunAt:
 		m.ResetLastControlRunAt()
@@ -49865,43 +50555,51 @@ func (m *Sub2APIProviderProbeRunMutation) ResetEdge(name string) error {
 // Sub2APIProviderProbeTargetMutation represents an operation that mutates the Sub2APIProviderProbeTarget nodes in the graph.
 type Sub2APIProviderProbeTargetMutation struct {
 	config
-	op                     Op
-	typ                    string
-	id                     *int64
-	created_at             *time.Time
-	updated_at             *time.Time
-	provider_api_key_id    *int64
-	addprovider_api_key_id *int64
-	remote_group_id        *int64
-	addremote_group_id     *int64
-	remote_group_name      *string
-	platform               *string
-	enabled                *bool
-	interval_seconds       *int
-	addinterval_seconds    *int
-	test_model             *string
-	allow_media_probe      *bool
-	timeout_seconds        *int
-	addtimeout_seconds     *int
-	degraded_latency_ms    *int
-	adddegraded_latency_ms *int
-	failure_threshold      *int
-	addfailure_threshold   *int
-	recovery_threshold     *int
-	addrecovery_threshold  *int
-	last_run_at            *time.Time
-	route_changed_at       *time.Time
-	clearedFields          map[string]struct{}
-	provider               *int64
-	clearedprovider        bool
-	account                *int64
-	clearedaccount         bool
-	runs                   map[int64]struct{}
-	removedruns            map[int64]struct{}
-	clearedruns            bool
-	done                   bool
-	oldValue               func(context.Context) (*Sub2APIProviderProbeTarget, error)
-	predicates             []predicate.Sub2APIProviderProbeTarget
+	op                                 Op
+	typ                                string
+	id                                 *int64
+	created_at                         *time.Time
+	updated_at                         *time.Time
+	provider_api_key_id                *int64
+	addprovider_api_key_id             *int64
+	remote_group_id                    *int64
+	addremote_group_id                 *int64
+	remote_group_name                  *string
+	platform                           *string
+	enabled                            *bool
+	interval_seconds                   *int
+	addinterval_seconds                *int
+	test_model                         *string
+	allow_media_probe                  *bool
+	timeout_seconds                    *int
+	addtimeout_seconds                 *int
+	degraded_latency_ms                *int
+	adddegraded_latency_ms             *int
+	degraded_optimize_threshold        *int
+	adddegraded_optimize_threshold     *int
+	cost_optimize_enabled              *bool
+	cost_optimize_interval_seconds     *int
+	addcost_optimize_interval_seconds  *int
+	cost_optimize_healthy_threshold    *int
+	addcost_optimize_healthy_threshold *int
+	last_cost_optimize_at              *time.Time
+	failure_threshold                  *int
+	addfailure_threshold               *int
+	recovery_threshold                 *int
+	addrecovery_threshold              *int
+	last_run_at                        *time.Time
+	route_changed_at                   *time.Time
+	clearedFields                      map[string]struct{}
+	provider                           *int64
+	clearedprovider                    bool
+	account                            *int64
+	clearedaccount                     bool
+	runs                               map[int64]struct{}
+	removedruns                        map[int64]struct{}
+	clearedruns                        bool
+	done                               bool
+	oldValue                           func(context.Context) (*Sub2APIProviderProbeTarget, error)
+	predicates                         []predicate.Sub2APIProviderProbeTarget
 }
 
 var _ ent.Mutation = (*Sub2APIProviderProbeTargetMutation)(nil)
@@ -50660,6 +51358,259 @@ func (m *Sub2APIProviderProbeTargetMutation) ResetDegradedLatencyMs() {
 	m.adddegraded_latency_ms = nil
 }
 
+// SetDegradedOptimizeThreshold sets the "degraded_optimize_threshold" field.
+func (m *Sub2APIProviderProbeTargetMutation) SetDegradedOptimizeThreshold(i int) {
+	m.degraded_optimize_threshold = &i
+	m.adddegraded_optimize_threshold = nil
+}
+
+// DegradedOptimizeThreshold returns the value of the "degraded_optimize_threshold" field in the mutation.
+func (m *Sub2APIProviderProbeTargetMutation) DegradedOptimizeThreshold() (r int, exists bool) {
+	v := m.degraded_optimize_threshold
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDegradedOptimizeThreshold returns the old "degraded_optimize_threshold" field's value of the Sub2APIProviderProbeTarget entity.
+// If the Sub2APIProviderProbeTarget object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetMutation) OldDegradedOptimizeThreshold(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDegradedOptimizeThreshold is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDegradedOptimizeThreshold requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDegradedOptimizeThreshold: %w", err)
+	}
+	return oldValue.DegradedOptimizeThreshold, nil
+}
+
+// AddDegradedOptimizeThreshold adds i to the "degraded_optimize_threshold" field.
+func (m *Sub2APIProviderProbeTargetMutation) AddDegradedOptimizeThreshold(i int) {
+	if m.adddegraded_optimize_threshold != nil {
+		*m.adddegraded_optimize_threshold += i
+	} else {
+		m.adddegraded_optimize_threshold = &i
+	}
+}
+
+// AddedDegradedOptimizeThreshold returns the value that was added to the "degraded_optimize_threshold" field in this mutation.
+func (m *Sub2APIProviderProbeTargetMutation) AddedDegradedOptimizeThreshold() (r int, exists bool) {
+	v := m.adddegraded_optimize_threshold
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDegradedOptimizeThreshold resets all changes to the "degraded_optimize_threshold" field.
+func (m *Sub2APIProviderProbeTargetMutation) ResetDegradedOptimizeThreshold() {
+	m.degraded_optimize_threshold = nil
+	m.adddegraded_optimize_threshold = nil
+}
+
+// SetCostOptimizeEnabled sets the "cost_optimize_enabled" field.
+func (m *Sub2APIProviderProbeTargetMutation) SetCostOptimizeEnabled(b bool) {
+	m.cost_optimize_enabled = &b
+}
+
+// CostOptimizeEnabled returns the value of the "cost_optimize_enabled" field in the mutation.
+func (m *Sub2APIProviderProbeTargetMutation) CostOptimizeEnabled() (r bool, exists bool) {
+	v := m.cost_optimize_enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCostOptimizeEnabled returns the old "cost_optimize_enabled" field's value of the Sub2APIProviderProbeTarget entity.
+// If the Sub2APIProviderProbeTarget object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetMutation) OldCostOptimizeEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCostOptimizeEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCostOptimizeEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCostOptimizeEnabled: %w", err)
+	}
+	return oldValue.CostOptimizeEnabled, nil
+}
+
+// ResetCostOptimizeEnabled resets all changes to the "cost_optimize_enabled" field.
+func (m *Sub2APIProviderProbeTargetMutation) ResetCostOptimizeEnabled() {
+	m.cost_optimize_enabled = nil
+}
+
+// SetCostOptimizeIntervalSeconds sets the "cost_optimize_interval_seconds" field.
+func (m *Sub2APIProviderProbeTargetMutation) SetCostOptimizeIntervalSeconds(i int) {
+	m.cost_optimize_interval_seconds = &i
+	m.addcost_optimize_interval_seconds = nil
+}
+
+// CostOptimizeIntervalSeconds returns the value of the "cost_optimize_interval_seconds" field in the mutation.
+func (m *Sub2APIProviderProbeTargetMutation) CostOptimizeIntervalSeconds() (r int, exists bool) {
+	v := m.cost_optimize_interval_seconds
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCostOptimizeIntervalSeconds returns the old "cost_optimize_interval_seconds" field's value of the Sub2APIProviderProbeTarget entity.
+// If the Sub2APIProviderProbeTarget object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetMutation) OldCostOptimizeIntervalSeconds(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCostOptimizeIntervalSeconds is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCostOptimizeIntervalSeconds requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCostOptimizeIntervalSeconds: %w", err)
+	}
+	return oldValue.CostOptimizeIntervalSeconds, nil
+}
+
+// AddCostOptimizeIntervalSeconds adds i to the "cost_optimize_interval_seconds" field.
+func (m *Sub2APIProviderProbeTargetMutation) AddCostOptimizeIntervalSeconds(i int) {
+	if m.addcost_optimize_interval_seconds != nil {
+		*m.addcost_optimize_interval_seconds += i
+	} else {
+		m.addcost_optimize_interval_seconds = &i
+	}
+}
+
+// AddedCostOptimizeIntervalSeconds returns the value that was added to the "cost_optimize_interval_seconds" field in this mutation.
+func (m *Sub2APIProviderProbeTargetMutation) AddedCostOptimizeIntervalSeconds() (r int, exists bool) {
+	v := m.addcost_optimize_interval_seconds
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCostOptimizeIntervalSeconds resets all changes to the "cost_optimize_interval_seconds" field.
+func (m *Sub2APIProviderProbeTargetMutation) ResetCostOptimizeIntervalSeconds() {
+	m.cost_optimize_interval_seconds = nil
+	m.addcost_optimize_interval_seconds = nil
+}
+
+// SetCostOptimizeHealthyThreshold sets the "cost_optimize_healthy_threshold" field.
+func (m *Sub2APIProviderProbeTargetMutation) SetCostOptimizeHealthyThreshold(i int) {
+	m.cost_optimize_healthy_threshold = &i
+	m.addcost_optimize_healthy_threshold = nil
+}
+
+// CostOptimizeHealthyThreshold returns the value of the "cost_optimize_healthy_threshold" field in the mutation.
+func (m *Sub2APIProviderProbeTargetMutation) CostOptimizeHealthyThreshold() (r int, exists bool) {
+	v := m.cost_optimize_healthy_threshold
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCostOptimizeHealthyThreshold returns the old "cost_optimize_healthy_threshold" field's value of the Sub2APIProviderProbeTarget entity.
+// If the Sub2APIProviderProbeTarget object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetMutation) OldCostOptimizeHealthyThreshold(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCostOptimizeHealthyThreshold is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCostOptimizeHealthyThreshold requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCostOptimizeHealthyThreshold: %w", err)
+	}
+	return oldValue.CostOptimizeHealthyThreshold, nil
+}
+
+// AddCostOptimizeHealthyThreshold adds i to the "cost_optimize_healthy_threshold" field.
+func (m *Sub2APIProviderProbeTargetMutation) AddCostOptimizeHealthyThreshold(i int) {
+	if m.addcost_optimize_healthy_threshold != nil {
+		*m.addcost_optimize_healthy_threshold += i
+	} else {
+		m.addcost_optimize_healthy_threshold = &i
+	}
+}
+
+// AddedCostOptimizeHealthyThreshold returns the value that was added to the "cost_optimize_healthy_threshold" field in this mutation.
+func (m *Sub2APIProviderProbeTargetMutation) AddedCostOptimizeHealthyThreshold() (r int, exists bool) {
+	v := m.addcost_optimize_healthy_threshold
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCostOptimizeHealthyThreshold resets all changes to the "cost_optimize_healthy_threshold" field.
+func (m *Sub2APIProviderProbeTargetMutation) ResetCostOptimizeHealthyThreshold() {
+	m.cost_optimize_healthy_threshold = nil
+	m.addcost_optimize_healthy_threshold = nil
+}
+
+// SetLastCostOptimizeAt sets the "last_cost_optimize_at" field.
+func (m *Sub2APIProviderProbeTargetMutation) SetLastCostOptimizeAt(t time.Time) {
+	m.last_cost_optimize_at = &t
+}
+
+// LastCostOptimizeAt returns the value of the "last_cost_optimize_at" field in the mutation.
+func (m *Sub2APIProviderProbeTargetMutation) LastCostOptimizeAt() (r time.Time, exists bool) {
+	v := m.last_cost_optimize_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastCostOptimizeAt returns the old "last_cost_optimize_at" field's value of the Sub2APIProviderProbeTarget entity.
+// If the Sub2APIProviderProbeTarget object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetMutation) OldLastCostOptimizeAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastCostOptimizeAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastCostOptimizeAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastCostOptimizeAt: %w", err)
+	}
+	return oldValue.LastCostOptimizeAt, nil
+}
+
+// ClearLastCostOptimizeAt clears the value of the "last_cost_optimize_at" field.
+func (m *Sub2APIProviderProbeTargetMutation) ClearLastCostOptimizeAt() {
+	m.last_cost_optimize_at = nil
+	m.clearedFields[sub2apiproviderprobetarget.FieldLastCostOptimizeAt] = struct{}{}
+}
+
+// LastCostOptimizeAtCleared returns if the "last_cost_optimize_at" field was cleared in this mutation.
+func (m *Sub2APIProviderProbeTargetMutation) LastCostOptimizeAtCleared() bool {
+	_, ok := m.clearedFields[sub2apiproviderprobetarget.FieldLastCostOptimizeAt]
+	return ok
+}
+
+// ResetLastCostOptimizeAt resets all changes to the "last_cost_optimize_at" field.
+func (m *Sub2APIProviderProbeTargetMutation) ResetLastCostOptimizeAt() {
+	m.last_cost_optimize_at = nil
+	delete(m.clearedFields, sub2apiproviderprobetarget.FieldLastCostOptimizeAt)
+}
+
 // SetFailureThreshold sets the "failure_threshold" field.
 func (m *Sub2APIProviderProbeTargetMutation) SetFailureThreshold(i int) {
 	m.failure_threshold = &i
@@ -51012,7 +51963,7 @@ func (m *Sub2APIProviderProbeTargetMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *Sub2APIProviderProbeTargetMutation) Fields() []string {
-	fields := make([]string, 0, 18)
+	fields := make([]string, 0, 23)
 	if m.created_at != nil {
 		fields = append(fields, sub2apiproviderprobetarget.FieldCreatedAt)
 	}
@@ -51054,6 +52005,21 @@ func (m *Sub2APIProviderProbeTargetMutation) Fields() []string {
 	}
 	if m.degraded_latency_ms != nil {
 		fields = append(fields, sub2apiproviderprobetarget.FieldDegradedLatencyMs)
+	}
+	if m.degraded_optimize_threshold != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldDegradedOptimizeThreshold)
+	}
+	if m.cost_optimize_enabled != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldCostOptimizeEnabled)
+	}
+	if m.cost_optimize_interval_seconds != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldCostOptimizeIntervalSeconds)
+	}
+	if m.cost_optimize_healthy_threshold != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldCostOptimizeHealthyThreshold)
+	}
+	if m.last_cost_optimize_at != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldLastCostOptimizeAt)
 	}
 	if m.failure_threshold != nil {
 		fields = append(fields, sub2apiproviderprobetarget.FieldFailureThreshold)
@@ -51103,6 +52069,16 @@ func (m *Sub2APIProviderProbeTargetMutation) Field(name string) (ent.Value, bool
 		return m.TimeoutSeconds()
 	case sub2apiproviderprobetarget.FieldDegradedLatencyMs:
 		return m.DegradedLatencyMs()
+	case sub2apiproviderprobetarget.FieldDegradedOptimizeThreshold:
+		return m.DegradedOptimizeThreshold()
+	case sub2apiproviderprobetarget.FieldCostOptimizeEnabled:
+		return m.CostOptimizeEnabled()
+	case sub2apiproviderprobetarget.FieldCostOptimizeIntervalSeconds:
+		return m.CostOptimizeIntervalSeconds()
+	case sub2apiproviderprobetarget.FieldCostOptimizeHealthyThreshold:
+		return m.CostOptimizeHealthyThreshold()
+	case sub2apiproviderprobetarget.FieldLastCostOptimizeAt:
+		return m.LastCostOptimizeAt()
 	case sub2apiproviderprobetarget.FieldFailureThreshold:
 		return m.FailureThreshold()
 	case sub2apiproviderprobetarget.FieldRecoveryThreshold:
@@ -51148,6 +52124,16 @@ func (m *Sub2APIProviderProbeTargetMutation) OldField(ctx context.Context, name 
 		return m.OldTimeoutSeconds(ctx)
 	case sub2apiproviderprobetarget.FieldDegradedLatencyMs:
 		return m.OldDegradedLatencyMs(ctx)
+	case sub2apiproviderprobetarget.FieldDegradedOptimizeThreshold:
+		return m.OldDegradedOptimizeThreshold(ctx)
+	case sub2apiproviderprobetarget.FieldCostOptimizeEnabled:
+		return m.OldCostOptimizeEnabled(ctx)
+	case sub2apiproviderprobetarget.FieldCostOptimizeIntervalSeconds:
+		return m.OldCostOptimizeIntervalSeconds(ctx)
+	case sub2apiproviderprobetarget.FieldCostOptimizeHealthyThreshold:
+		return m.OldCostOptimizeHealthyThreshold(ctx)
+	case sub2apiproviderprobetarget.FieldLastCostOptimizeAt:
+		return m.OldLastCostOptimizeAt(ctx)
 	case sub2apiproviderprobetarget.FieldFailureThreshold:
 		return m.OldFailureThreshold(ctx)
 	case sub2apiproviderprobetarget.FieldRecoveryThreshold:
@@ -51263,6 +52249,41 @@ func (m *Sub2APIProviderProbeTargetMutation) SetField(name string, value ent.Val
 		}
 		m.SetDegradedLatencyMs(v)
 		return nil
+	case sub2apiproviderprobetarget.FieldDegradedOptimizeThreshold:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDegradedOptimizeThreshold(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldCostOptimizeEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCostOptimizeEnabled(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldCostOptimizeIntervalSeconds:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCostOptimizeIntervalSeconds(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldCostOptimizeHealthyThreshold:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCostOptimizeHealthyThreshold(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldLastCostOptimizeAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastCostOptimizeAt(v)
+		return nil
 	case sub2apiproviderprobetarget.FieldFailureThreshold:
 		v, ok := value.(int)
 		if !ok {
@@ -51314,6 +52335,15 @@ func (m *Sub2APIProviderProbeTargetMutation) AddedFields() []string {
 	if m.adddegraded_latency_ms != nil {
 		fields = append(fields, sub2apiproviderprobetarget.FieldDegradedLatencyMs)
 	}
+	if m.adddegraded_optimize_threshold != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldDegradedOptimizeThreshold)
+	}
+	if m.addcost_optimize_interval_seconds != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldCostOptimizeIntervalSeconds)
+	}
+	if m.addcost_optimize_healthy_threshold != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldCostOptimizeHealthyThreshold)
+	}
 	if m.addfailure_threshold != nil {
 		fields = append(fields, sub2apiproviderprobetarget.FieldFailureThreshold)
 	}
@@ -51338,6 +52368,12 @@ func (m *Sub2APIProviderProbeTargetMutation) AddedField(name string) (ent.Value,
 		return m.AddedTimeoutSeconds()
 	case sub2apiproviderprobetarget.FieldDegradedLatencyMs:
 		return m.AddedDegradedLatencyMs()
+	case sub2apiproviderprobetarget.FieldDegradedOptimizeThreshold:
+		return m.AddedDegradedOptimizeThreshold()
+	case sub2apiproviderprobetarget.FieldCostOptimizeIntervalSeconds:
+		return m.AddedCostOptimizeIntervalSeconds()
+	case sub2apiproviderprobetarget.FieldCostOptimizeHealthyThreshold:
+		return m.AddedCostOptimizeHealthyThreshold()
 	case sub2apiproviderprobetarget.FieldFailureThreshold:
 		return m.AddedFailureThreshold()
 	case sub2apiproviderprobetarget.FieldRecoveryThreshold:
@@ -51386,6 +52422,27 @@ func (m *Sub2APIProviderProbeTargetMutation) AddField(name string, value ent.Val
 		}
 		m.AddDegradedLatencyMs(v)
 		return nil
+	case sub2apiproviderprobetarget.FieldDegradedOptimizeThreshold:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDegradedOptimizeThreshold(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldCostOptimizeIntervalSeconds:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCostOptimizeIntervalSeconds(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldCostOptimizeHealthyThreshold:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCostOptimizeHealthyThreshold(v)
+		return nil
 	case sub2apiproviderprobetarget.FieldFailureThreshold:
 		v, ok := value.(int)
 		if !ok {
@@ -51420,6 +52477,9 @@ func (m *Sub2APIProviderProbeTargetMutation) ClearedFields() []string {
 	if m.FieldCleared(sub2apiproviderprobetarget.FieldTestModel) {
 		fields = append(fields, sub2apiproviderprobetarget.FieldTestModel)
 	}
+	if m.FieldCleared(sub2apiproviderprobetarget.FieldLastCostOptimizeAt) {
+		fields = append(fields, sub2apiproviderprobetarget.FieldLastCostOptimizeAt)
+	}
 	if m.FieldCleared(sub2apiproviderprobetarget.FieldLastRunAt) {
 		fields = append(fields, sub2apiproviderprobetarget.FieldLastRunAt)
 	}
@@ -51451,6 +52511,9 @@ func (m *Sub2APIProviderProbeTargetMutation) ClearField(name string) error {
 		return nil
 	case sub2apiproviderprobetarget.FieldTestModel:
 		m.ClearTestModel()
+		return nil
+	case sub2apiproviderprobetarget.FieldLastCostOptimizeAt:
+		m.ClearLastCostOptimizeAt()
 		return nil
 	case sub2apiproviderprobetarget.FieldLastRunAt:
 		m.ClearLastRunAt()
@@ -51507,6 +52570,21 @@ func (m *Sub2APIProviderProbeTargetMutation) ResetField(name string) error {
 		return nil
 	case sub2apiproviderprobetarget.FieldDegradedLatencyMs:
 		m.ResetDegradedLatencyMs()
+		return nil
+	case sub2apiproviderprobetarget.FieldDegradedOptimizeThreshold:
+		m.ResetDegradedOptimizeThreshold()
+		return nil
+	case sub2apiproviderprobetarget.FieldCostOptimizeEnabled:
+		m.ResetCostOptimizeEnabled()
+		return nil
+	case sub2apiproviderprobetarget.FieldCostOptimizeIntervalSeconds:
+		m.ResetCostOptimizeIntervalSeconds()
+		return nil
+	case sub2apiproviderprobetarget.FieldCostOptimizeHealthyThreshold:
+		m.ResetCostOptimizeHealthyThreshold()
+		return nil
+	case sub2apiproviderprobetarget.FieldLastCostOptimizeAt:
+		m.ResetLastCostOptimizeAt()
 		return nil
 	case sub2apiproviderprobetarget.FieldFailureThreshold:
 		m.ResetFailureThreshold()

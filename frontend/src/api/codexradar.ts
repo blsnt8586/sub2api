@@ -46,7 +46,13 @@ export interface CodexRadarData {
     recommendations?: CodexRadarRecommendationGroup[]
     [key: string]: unknown
   }
+  /** 「软件工程能力」（deep-swe 基准）数据。 */
   intelligence?: {
+    points?: CodexRadarIntelligencePoint[]
+    [key: string]: unknown
+  }
+  /** 「视觉空间推理」（pompeii-adjacency 基准）数据；旧缓存可能缺失。 */
+  visual?: {
     points?: CodexRadarIntelligencePoint[]
     [key: string]: unknown
   }

@@ -14,15 +14,16 @@ import (
 // 既写入定时任务运行日志，也作为手动优化（单个/批量）的同步返回结构，
 // json tag 与前端 OptimizeLogDetail 保持一致，前后端与日志三处共用同一契约。
 type OptimizeAccountDetail struct {
-	AccountID    int64                      `json:"account_id"`
-	AccountName  string                     `json:"account_name"`
-	Status       string                     `json:"status"` // optimized / skipped / failed
-	OldGroup     string                     `json:"old_group,omitempty"`
-	NewGroup     string                     `json:"new_group,omitempty"`
-	OldMult      float64                    `json:"old_multiplier,omitempty"`
-	NewMult      float64                    `json:"new_multiplier,omitempty"`
-	Reason       string                     `json:"reason,omitempty"`
-	SwitchEvents []OptimizeGroupSwitchEvent `json:"switch_events,omitempty"`
+	AccountID      int64                      `json:"account_id"`
+	AccountName    string                     `json:"account_name"`
+	Status         string                     `json:"status"` // optimized / skipped / failed
+	OldGroup       string                     `json:"old_group,omitempty"`
+	NewGroup       string                     `json:"new_group,omitempty"`
+	OldMult        float64                    `json:"old_multiplier,omitempty"`
+	NewMult        float64                    `json:"new_multiplier,omitempty"`
+	Reason         string                     `json:"reason,omitempty"`
+	ProbeExhausted bool                       `json:"probe_exhausted,omitempty"`
+	SwitchEvents   []OptimizeGroupSwitchEvent `json:"switch_events,omitempty"`
 }
 
 // OptimizeGroupSwitchEvent is an ordered audit event for every remote group
@@ -47,6 +48,11 @@ type optimizeKeyState struct {
 	groupID    int64
 	groupName  string
 	multiplier float64
+}
+
+type probeOptimizePolicy struct {
+	trigger           string
+	degradedLatencyMS int
 }
 
 // optimizeReadyAccounts 将已开启参与的账号分成可执行和配置无效两组。
@@ -166,6 +172,20 @@ func (s *Sub2APIOptimizeScheduleService) optimizeAccounts(
 	provider *ent.Sub2APIProvider,
 	participating []Account,
 ) []OptimizeAccountDetail {
+	return s.optimizeAccountsWithProbePolicies(ctx, provider, participating, nil)
+}
+
+// optimizeAccountsWithProbePolicies applies the normal cheapest-first policy
+// unless an account was admitted by an unhealthy probe. Probe-triggered runs
+// use that target's slow-response threshold to select the cheapest responsive
+// group, falling back to the fastest successful group when every candidate is
+// above the threshold.
+func (s *Sub2APIOptimizeScheduleService) optimizeAccountsWithProbePolicies(
+	ctx context.Context,
+	provider *ent.Sub2APIProvider,
+	participating []Account,
+	probePolicies map[int64]probeOptimizePolicy,
+) []OptimizeAccountDetail {
 	details := make([]OptimizeAccountDetail, 0, len(participating))
 
 	// 登录一次（复用 token cache）
@@ -233,22 +253,31 @@ func (s *Sub2APIOptimizeScheduleService) optimizeAccounts(
 	// 逐个账号优化
 	for i := range participating {
 		acc := participating[i]
-		detail := s.optimizeOneAccount(ctx, client, &acc, groups, keyStateMap, keysPath)
+		detail := s.optimizeOneAccountWithPolicy(ctx, client, &acc, groups, keyStateMap, keysPath, probePolicies[acc.ID])
 		details = append(details, detail)
 	}
 
 	return details
 }
 
-// optimizeOneAccount 处理单个账号：找候选分组→切换+测试→失败回滚尝试下一个。
-func (s *Sub2APIOptimizeScheduleService) optimizeOneAccount(
+// optimizeOneAccountWithPolicy uses the aggressive probe policy when
+// degradedLatencyMS is positive; zero retains the existing cheapest-first
+// behavior used by manual and scheduled optimization.
+func (s *Sub2APIOptimizeScheduleService) optimizeOneAccountWithPolicy(
 	ctx context.Context,
 	client *sub2api.Client,
 	acc *Account,
 	groups []sub2api.Group,
 	keyStateMap map[int64]optimizeKeyState,
 	keysPath string,
+	policy probeOptimizePolicy,
 ) OptimizeAccountDetail {
+	if policy.trigger == OptimizeLogTriggerProbeCost {
+		return s.optimizeOneAccountCheaper(ctx, client, acc, groups, keyStateMap, keysPath)
+	}
+	if policy.degradedLatencyMS > 0 {
+		return s.optimizeOneAccountAggressive(ctx, client, acc, groups, keyStateMap, keysPath, policy.degradedLatencyMS)
+	}
 	detail := OptimizeAccountDetail{
 		AccountID:   acc.ID,
 		AccountName: acc.Name,
@@ -428,6 +457,296 @@ func (s *Sub2APIOptimizeScheduleService) optimizeOneAccount(
 	return detail
 }
 
+// optimizeOneAccountCheaper runs only after a healthy probe streak. It never
+// promotes the account to a more expensive group: only lower-multiplier
+// candidates and the already-healthy current group are passed to the normal
+// cheapest-first tester.
+func (s *Sub2APIOptimizeScheduleService) optimizeOneAccountCheaper(
+	ctx context.Context,
+	client *sub2api.Client,
+	acc *Account,
+	groups []sub2api.Group,
+	keyStateMap map[int64]optimizeKeyState,
+	keysPath string,
+) OptimizeAccountDetail {
+	detail := OptimizeAccountDetail{AccountID: acc.ID, AccountName: acc.Name}
+	if acc.ProviderAPIKeyID == nil {
+		detail.Status = "failed"
+		detail.Reason = "账号未关联远端 Key"
+		return detail
+	}
+	ks, ok := keyStateMap[*acc.ProviderAPIKeyID]
+	if !ok {
+		detail.Status = "failed"
+		detail.Reason = "关联的远端 Key 不存在，请重新同步或重新关联账号"
+		return detail
+	}
+	detail.OldGroup, detail.NewGroup = ks.groupName, ks.groupName
+	detail.OldMult, detail.NewMult = ks.multiplier, ks.multiplier
+
+	minMult, maxMult := *acc.Sub2APIMinMultiplier, *acc.Sub2APIMaxMultiplier
+	filtered := make([]sub2api.Group, 0, len(groups))
+	cheaperCount := 0
+	for _, group := range groups {
+		if group.ID == ks.groupID {
+			filtered = append(filtered, group)
+			continue
+		}
+		if group.Platform == acc.Platform && group.Status == "active" &&
+			group.RateMultiplier >= minMult && group.RateMultiplier <= maxMult &&
+			group.RateMultiplier < ks.multiplier {
+			filtered = append(filtered, group)
+			cheaperCount++
+		}
+	}
+	if cheaperCount == 0 {
+		detail.Status = "skipped"
+		detail.Reason = "低价巡检完成，当前没有符合倍率区间的更便宜分组"
+		return detail
+	}
+
+	result := s.optimizeOneAccountWithPolicy(ctx, client, acc, filtered, keyStateMap, keysPath, probeOptimizePolicy{})
+	if result.Status == "skipped" {
+		result.Reason = fmt.Sprintf("低价巡检完成；%d 个更便宜候选未通过，保留当前分组", cheaperCount)
+	}
+	return result
+}
+
+// optimizeOneAccountAggressive is used only for an unhealthy probe trigger.
+// It first looks for the cheapest candidate whose successful probe is within
+// the configured slow-response threshold. If every successful candidate is
+// slower than that threshold, it selects the fastest successful candidate.
+func (s *Sub2APIOptimizeScheduleService) optimizeOneAccountAggressive(
+	ctx context.Context,
+	client *sub2api.Client,
+	acc *Account,
+	groups []sub2api.Group,
+	keyStateMap map[int64]optimizeKeyState,
+	keysPath string,
+	thresholdMS int,
+) OptimizeAccountDetail {
+	detail := OptimizeAccountDetail{AccountID: acc.ID, AccountName: acc.Name}
+	if acc.ProviderAPIKeyID == nil {
+		detail.Status = "failed"
+		detail.Reason = "账号未关联远端 Key"
+		return detail
+	}
+	ks, ok := keyStateMap[*acc.ProviderAPIKeyID]
+	if !ok {
+		detail.Status = "failed"
+		detail.Reason = "关联的远端 Key 不存在，请重新同步或重新关联账号"
+		return detail
+	}
+	detail.OldGroup, detail.OldMult = ks.groupName, ks.multiplier
+	if ks.groupID <= 0 {
+		detail.Status = "failed"
+		detail.Reason = "原分组 ID 缺失，无法安全测试并回滚其他候选分组，请先同步远端账号状态"
+		return detail
+	}
+	minMult, maxMult := *acc.Sub2APIMinMultiplier, *acc.Sub2APIMaxMultiplier
+	candidates := aggressiveProbeCandidates(groups, acc.Platform, ks.groupID, minMult, maxMult)
+	if len(candidates) == 0 {
+		detail.Status = "failed"
+		detail.ProbeExhausted = true
+		detail.Reason = "除当前不可用分组外，无符合倍率区间的其他候选分组"
+		return detail
+	}
+
+	successes := make([]aggressiveProbeSuccess, 0, len(candidates))
+	testedCandidates := 0
+	failedTests := 0
+	var lastErr string
+	for _, candidate := range candidates {
+		switchEvent := OptimizeGroupSwitchEvent{
+			Action:         "switch",
+			FromGroupID:    ks.groupID,
+			FromGroup:      ks.groupName,
+			FromMultiplier: ks.multiplier,
+			ToGroupID:      candidate.ID,
+			ToGroup:        candidate.Name,
+			ToMultiplier:   candidate.RateMultiplier,
+			Status:         "success",
+			OccurredAt:     time.Now().Format(time.RFC3339Nano),
+		}
+		if err := client.UpdateAPIKeyGroup(ctx, keysPath, *acc.ProviderAPIKeyID, candidate.ID); err != nil {
+			switchEvent.Status = "failed"
+			switchEvent.Reason = err.Error()
+			detail.SwitchEvents = append(detail.SwitchEvents, switchEvent)
+			lastErr = fmt.Sprintf("切换到 %s 失败: %v", candidate.Name, err)
+			continue
+		}
+		detail.SwitchEvents = append(detail.SwitchEvents, switchEvent)
+		switchEventIndex := len(detail.SwitchEvents) - 1
+		testedCandidates++
+		result, testErr := s.testAccountModelResult(ctx, acc)
+		if testErr == nil && result != nil && result.Status == "success" {
+			latency := result.LatencyMs
+			detail.SwitchEvents[switchEventIndex].TestStatus = "passed"
+			if latency <= int64(thresholdMS) {
+				if err := s.updateRemoteGroupBinding(ctx, acc.ID, candidate.ID, candidate.Name, candidate.RateMultiplier); err != nil {
+					rollbackErr := client.UpdateAPIKeyGroup(ctx, keysPath, *acc.ProviderAPIKeyID, ks.groupID)
+					rollbackEvent := makeOptimizeGroupRollbackEvent(candidate, ks, fmt.Sprintf("本地状态保存失败: %v", err))
+					if rollbackErr != nil {
+						rollbackEvent.Status = "failed"
+						rollbackEvent.Reason = fmt.Sprintf("本地状态保存失败: %v; 回滚失败: %v", err, rollbackErr)
+					}
+					detail.SwitchEvents = append(detail.SwitchEvents, rollbackEvent)
+					detail.Status = "failed"
+					if rollbackErr != nil {
+						detail.Reason = fmt.Sprintf("本地状态保存失败且回滚失败: save=%v, rollback=%v", err, rollbackErr)
+					} else {
+						detail.Reason = fmt.Sprintf("本地状态保存失败，远端已回滚: %v", err)
+					}
+					return detail
+				}
+				keyStateMap[*acc.ProviderAPIKeyID] = optimizeKeyState{groupID: candidate.ID, groupName: candidate.Name, multiplier: candidate.RateMultiplier}
+				detail.Status, detail.NewGroup, detail.NewMult = "optimized", candidate.Name, candidate.RateMultiplier
+				detail.Reason = fmt.Sprintf("探针不可用触发：选择倍率区间内首个响应不超过 %dms 的分组（实际 %dms）", thresholdMS, latency)
+				return detail
+			}
+			successes = append(successes, aggressiveProbeSuccess{group: candidate, latency: latency})
+			lastErr = fmt.Sprintf("分组 %s 响应 %dms，超过慢响应阈值 %dms", candidate.Name, latency, thresholdMS)
+		} else {
+			if testErr == nil {
+				if result == nil {
+					testErr = fmt.Errorf("测试未返回结果")
+				} else if result.ErrorMessage != "" {
+					testErr = fmt.Errorf("%s", result.ErrorMessage)
+				} else {
+					testErr = fmt.Errorf("测试状态为 %s", result.Status)
+				}
+			}
+			detail.SwitchEvents[switchEventIndex].TestStatus = "failed"
+			detail.SwitchEvents[switchEventIndex].Reason = testErr.Error()
+			failedTests++
+			lastErr = fmt.Sprintf("分组 %s 测试失败: %v", candidate.Name, testErr)
+		}
+		rollbackEvent := makeOptimizeGroupRollbackEvent(candidate, ks, "候选分组测试完成后恢复原分组")
+		if err := client.UpdateAPIKeyGroup(ctx, keysPath, *acc.ProviderAPIKeyID, ks.groupID); err != nil {
+			rollbackEvent.Status = "failed"
+			rollbackEvent.Reason = err.Error()
+			detail.SwitchEvents = append(detail.SwitchEvents, rollbackEvent)
+			detail.Status = "failed"
+			detail.Reason = fmt.Sprintf("候选分组测试后回滚失败: %v", err)
+			return detail
+		}
+		detail.SwitchEvents = append(detail.SwitchEvents, rollbackEvent)
+	}
+	if bestSlow, ok := selectAggressiveProbeSuccess(successes, int64(thresholdMS)); ok {
+		finalSwitchEvent := OptimizeGroupSwitchEvent{
+			Action:         "switch",
+			FromGroupID:    ks.groupID,
+			FromGroup:      ks.groupName,
+			FromMultiplier: ks.multiplier,
+			ToGroupID:      bestSlow.group.ID,
+			ToGroup:        bestSlow.group.Name,
+			ToMultiplier:   bestSlow.group.RateMultiplier,
+			Status:         "success",
+			TestStatus:     "passed",
+			Reason:         fmt.Sprintf("所有候选均超过阈值，最终选择最快响应 %dms", bestSlow.latency),
+			OccurredAt:     time.Now().Format(time.RFC3339Nano),
+		}
+		if err := client.UpdateAPIKeyGroup(ctx, keysPath, *acc.ProviderAPIKeyID, bestSlow.group.ID); err != nil {
+			finalSwitchEvent.Status = "failed"
+			finalSwitchEvent.Reason = err.Error()
+			detail.SwitchEvents = append(detail.SwitchEvents, finalSwitchEvent)
+			detail.Status = "failed"
+			detail.Reason = fmt.Sprintf("切换到最快成功分组失败: %v", err)
+			return detail
+		}
+		detail.SwitchEvents = append(detail.SwitchEvents, finalSwitchEvent)
+		if err := s.updateRemoteGroupBinding(ctx, acc.ID, bestSlow.group.ID, bestSlow.group.Name, bestSlow.group.RateMultiplier); err != nil {
+			rollbackErr := client.UpdateAPIKeyGroup(ctx, keysPath, *acc.ProviderAPIKeyID, ks.groupID)
+			rollbackEvent := makeOptimizeGroupRollbackEvent(bestSlow.group, ks, fmt.Sprintf("保存最快分组失败: %v", err))
+			if rollbackErr != nil {
+				rollbackEvent.Status = "failed"
+				rollbackEvent.Reason = fmt.Sprintf("保存最快分组失败: %v; 回滚失败: %v", err, rollbackErr)
+			}
+			detail.SwitchEvents = append(detail.SwitchEvents, rollbackEvent)
+			detail.Status = "failed"
+			if rollbackErr != nil {
+				detail.Reason = fmt.Sprintf("保存最快分组失败且回滚失败: save=%v, rollback=%v", err, rollbackErr)
+			} else {
+				detail.Reason = fmt.Sprintf("保存最快分组失败，远端已回滚: %v", err)
+			}
+			return detail
+		}
+		keyStateMap[*acc.ProviderAPIKeyID] = optimizeKeyState{groupID: bestSlow.group.ID, groupName: bestSlow.group.Name, multiplier: bestSlow.group.RateMultiplier}
+		detail.Status, detail.NewGroup, detail.NewMult = "optimized", bestSlow.group.Name, bestSlow.group.RateMultiplier
+		detail.Reason = fmt.Sprintf("探针不可用触发：所有候选均超过慢响应阈值 %dms，选择最快分组（实际 %dms）", thresholdMS, bestSlow.latency)
+		return detail
+	}
+	detail.Status = "failed"
+	// Only publish the exhausted indicator when every candidate was actually
+	// switched to and tested, and every one of those tests failed. A switch API
+	// failure or rollback failure is an operational error, not proof that the
+	// candidate group is unavailable.
+	detail.ProbeExhausted = aggressiveProbeCandidatesExhausted(len(candidates), testedCandidates, failedTests)
+	detail.Reason = fmt.Sprintf("倍率区间内无可用分组：%s", lastErr)
+	return detail
+}
+
+func aggressiveProbeCandidatesExhausted(candidateCount, testedCandidates, failedTests int) bool {
+	if candidateCount == 0 {
+		return true
+	}
+	return testedCandidates == candidateCount && failedTests == candidateCount
+}
+
+type aggressiveProbeSuccess struct {
+	group   sub2api.Group
+	latency int64
+}
+
+// aggressiveProbeCandidates excludes the unhealthy current group and keeps
+// only active groups on the same platform inside the account's multiplier
+// bounds. The stable multiplier order makes the first in-threshold success the
+// cheapest acceptable option.
+func aggressiveProbeCandidates(groups []sub2api.Group, platform string, currentGroupID int64, minMultiplier, maxMultiplier float64) []sub2api.Group {
+	candidates := make([]sub2api.Group, 0, len(groups))
+	for _, group := range groups {
+		if group.ID == currentGroupID || group.Platform != platform || group.Status != "active" || group.RateMultiplier < minMultiplier || group.RateMultiplier > maxMultiplier {
+			continue
+		}
+		candidates = append(candidates, group)
+	}
+	sort.SliceStable(candidates, func(i, j int) bool { return candidates[i].RateMultiplier < candidates[j].RateMultiplier })
+	return candidates
+}
+
+// selectAggressiveProbeSuccess chooses the first successful candidate within
+// the latency threshold (candidates are multiplier-sorted), or the fastest
+// successful candidate when every result is slower than that threshold.
+func selectAggressiveProbeSuccess(successes []aggressiveProbeSuccess, thresholdMS int64) (aggressiveProbeSuccess, bool) {
+	var fastest aggressiveProbeSuccess
+	foundFastest := false
+	for _, success := range successes {
+		if success.latency <= thresholdMS {
+			return success, true
+		}
+		if !foundFastest || success.latency < fastest.latency {
+			fastest = success
+			foundFastest = true
+		}
+	}
+	return fastest, foundFastest
+}
+
+func makeOptimizeGroupRollbackEvent(from sub2api.Group, to optimizeKeyState, reason string) OptimizeGroupSwitchEvent {
+	return OptimizeGroupSwitchEvent{
+		Action:         "rollback",
+		FromGroupID:    from.ID,
+		FromGroup:      from.Name,
+		FromMultiplier: from.RateMultiplier,
+		ToGroupID:      to.groupID,
+		ToGroup:        to.groupName,
+		ToMultiplier:   to.multiplier,
+		Status:         "success",
+		Reason:         reason,
+		OccurredAt:     time.Now().Format(time.RFC3339Nano),
+	}
+}
+
 func retainedCurrentGroupReason(events []OptimizeGroupSwitchEvent) string {
 	failedCandidates := 0
 	for _, event := range events {
@@ -447,10 +766,5 @@ func (s *Sub2APIOptimizeScheduleService) updateRemoteGroupBinding(
 	groupName string,
 	multiplier float64,
 ) error {
-	if updater, ok := s.providerSvc.accountRepo.(interface {
-		UpdateRemoteGroupBinding(context.Context, int64, int64, string, float64) error
-	}); ok {
-		return updater.UpdateRemoteGroupBinding(ctx, accountID, groupID, groupName, multiplier)
-	}
-	return s.providerSvc.accountRepo.UpdateRemoteGroupInfo(ctx, accountID, groupName, multiplier)
+	return s.providerSvc.accountRepo.UpdateRemoteGroupBinding(ctx, accountID, groupID, groupName, multiplier)
 }

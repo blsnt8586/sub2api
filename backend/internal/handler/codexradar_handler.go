@@ -73,12 +73,19 @@ func (h *CodexRadarHandler) Summary(c *gin.Context) {
 	if data.Available {
 		resp.Available = true
 		resp.FetchedAt = data.FetchedAt.UTC().Format("2006-01-02T15:04:05Z07:00")
+		// visual 可能为空（历史缓存或抓取失败），置 null 由前端降级处理。
+		var visual json.RawMessage
+		if len(data.Visual) > 0 {
+			visual = json.RawMessage(data.Visual)
+		}
 		resp.Data = struct {
 			Recommendations json.RawMessage `json:"recommendations"`
 			Intelligence    json.RawMessage `json:"intelligence"`
+			Visual          json.RawMessage `json:"visual,omitempty"`
 		}{
 			Recommendations: json.RawMessage(data.Recommendations),
 			Intelligence:    json.RawMessage(data.Intelligence),
+			Visual:          visual,
 		}
 	} else if snap.Available {
 		resp.Available = true

@@ -230,6 +230,62 @@ func (_u *Sub2APIProviderProbeConfigUpdate) AddRecoveryThreshold(v int) *Sub2API
 	return _u
 }
 
+// SetAccountStatusSyncEnabled sets the "account_status_sync_enabled" field.
+func (_u *Sub2APIProviderProbeConfigUpdate) SetAccountStatusSyncEnabled(v bool) *Sub2APIProviderProbeConfigUpdate {
+	_u.mutation.SetAccountStatusSyncEnabled(v)
+	return _u
+}
+
+// SetNillableAccountStatusSyncEnabled sets the "account_status_sync_enabled" field if the given value is not nil.
+func (_u *Sub2APIProviderProbeConfigUpdate) SetNillableAccountStatusSyncEnabled(v *bool) *Sub2APIProviderProbeConfigUpdate {
+	if v != nil {
+		_u.SetAccountStatusSyncEnabled(*v)
+	}
+	return _u
+}
+
+// SetAccountStatusFailureThreshold sets the "account_status_failure_threshold" field.
+func (_u *Sub2APIProviderProbeConfigUpdate) SetAccountStatusFailureThreshold(v int) *Sub2APIProviderProbeConfigUpdate {
+	_u.mutation.ResetAccountStatusFailureThreshold()
+	_u.mutation.SetAccountStatusFailureThreshold(v)
+	return _u
+}
+
+// SetNillableAccountStatusFailureThreshold sets the "account_status_failure_threshold" field if the given value is not nil.
+func (_u *Sub2APIProviderProbeConfigUpdate) SetNillableAccountStatusFailureThreshold(v *int) *Sub2APIProviderProbeConfigUpdate {
+	if v != nil {
+		_u.SetAccountStatusFailureThreshold(*v)
+	}
+	return _u
+}
+
+// AddAccountStatusFailureThreshold adds value to the "account_status_failure_threshold" field.
+func (_u *Sub2APIProviderProbeConfigUpdate) AddAccountStatusFailureThreshold(v int) *Sub2APIProviderProbeConfigUpdate {
+	_u.mutation.AddAccountStatusFailureThreshold(v)
+	return _u
+}
+
+// SetAccountStatusRecoveryThreshold sets the "account_status_recovery_threshold" field.
+func (_u *Sub2APIProviderProbeConfigUpdate) SetAccountStatusRecoveryThreshold(v int) *Sub2APIProviderProbeConfigUpdate {
+	_u.mutation.ResetAccountStatusRecoveryThreshold()
+	_u.mutation.SetAccountStatusRecoveryThreshold(v)
+	return _u
+}
+
+// SetNillableAccountStatusRecoveryThreshold sets the "account_status_recovery_threshold" field if the given value is not nil.
+func (_u *Sub2APIProviderProbeConfigUpdate) SetNillableAccountStatusRecoveryThreshold(v *int) *Sub2APIProviderProbeConfigUpdate {
+	if v != nil {
+		_u.SetAccountStatusRecoveryThreshold(*v)
+	}
+	return _u
+}
+
+// AddAccountStatusRecoveryThreshold adds value to the "account_status_recovery_threshold" field.
+func (_u *Sub2APIProviderProbeConfigUpdate) AddAccountStatusRecoveryThreshold(v int) *Sub2APIProviderProbeConfigUpdate {
+	_u.mutation.AddAccountStatusRecoveryThreshold(v)
+	return _u
+}
+
 // SetLastControlRunAt sets the "last_control_run_at" field.
 func (_u *Sub2APIProviderProbeConfigUpdate) SetLastControlRunAt(v time.Time) *Sub2APIProviderProbeConfigUpdate {
 	_u.mutation.SetLastControlRunAt(v)
@@ -354,6 +410,16 @@ func (_u *Sub2APIProviderProbeConfigUpdate) check() error {
 			return &ValidationError{Name: "recovery_threshold", err: fmt.Errorf(`ent: validator failed for field "Sub2APIProviderProbeConfig.recovery_threshold": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.AccountStatusFailureThreshold(); ok {
+		if err := sub2apiproviderprobeconfig.AccountStatusFailureThresholdValidator(v); err != nil {
+			return &ValidationError{Name: "account_status_failure_threshold", err: fmt.Errorf(`ent: validator failed for field "Sub2APIProviderProbeConfig.account_status_failure_threshold": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.AccountStatusRecoveryThreshold(); ok {
+		if err := sub2apiproviderprobeconfig.AccountStatusRecoveryThresholdValidator(v); err != nil {
+			return &ValidationError{Name: "account_status_recovery_threshold", err: fmt.Errorf(`ent: validator failed for field "Sub2APIProviderProbeConfig.account_status_recovery_threshold": %w`, err)}
+		}
+	}
 	if _u.mutation.ProviderCleared() && len(_u.mutation.ProviderIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Sub2APIProviderProbeConfig.provider"`)
 	}
@@ -427,6 +493,21 @@ func (_u *Sub2APIProviderProbeConfigUpdate) sqlSave(ctx context.Context) (_node 
 	}
 	if value, ok := _u.mutation.AddedRecoveryThreshold(); ok {
 		_spec.AddField(sub2apiproviderprobeconfig.FieldRecoveryThreshold, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AccountStatusSyncEnabled(); ok {
+		_spec.SetField(sub2apiproviderprobeconfig.FieldAccountStatusSyncEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.AccountStatusFailureThreshold(); ok {
+		_spec.SetField(sub2apiproviderprobeconfig.FieldAccountStatusFailureThreshold, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedAccountStatusFailureThreshold(); ok {
+		_spec.AddField(sub2apiproviderprobeconfig.FieldAccountStatusFailureThreshold, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AccountStatusRecoveryThreshold(); ok {
+		_spec.SetField(sub2apiproviderprobeconfig.FieldAccountStatusRecoveryThreshold, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedAccountStatusRecoveryThreshold(); ok {
+		_spec.AddField(sub2apiproviderprobeconfig.FieldAccountStatusRecoveryThreshold, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.LastControlRunAt(); ok {
 		_spec.SetField(sub2apiproviderprobeconfig.FieldLastControlRunAt, field.TypeTime, value)
@@ -689,6 +770,62 @@ func (_u *Sub2APIProviderProbeConfigUpdateOne) AddRecoveryThreshold(v int) *Sub2
 	return _u
 }
 
+// SetAccountStatusSyncEnabled sets the "account_status_sync_enabled" field.
+func (_u *Sub2APIProviderProbeConfigUpdateOne) SetAccountStatusSyncEnabled(v bool) *Sub2APIProviderProbeConfigUpdateOne {
+	_u.mutation.SetAccountStatusSyncEnabled(v)
+	return _u
+}
+
+// SetNillableAccountStatusSyncEnabled sets the "account_status_sync_enabled" field if the given value is not nil.
+func (_u *Sub2APIProviderProbeConfigUpdateOne) SetNillableAccountStatusSyncEnabled(v *bool) *Sub2APIProviderProbeConfigUpdateOne {
+	if v != nil {
+		_u.SetAccountStatusSyncEnabled(*v)
+	}
+	return _u
+}
+
+// SetAccountStatusFailureThreshold sets the "account_status_failure_threshold" field.
+func (_u *Sub2APIProviderProbeConfigUpdateOne) SetAccountStatusFailureThreshold(v int) *Sub2APIProviderProbeConfigUpdateOne {
+	_u.mutation.ResetAccountStatusFailureThreshold()
+	_u.mutation.SetAccountStatusFailureThreshold(v)
+	return _u
+}
+
+// SetNillableAccountStatusFailureThreshold sets the "account_status_failure_threshold" field if the given value is not nil.
+func (_u *Sub2APIProviderProbeConfigUpdateOne) SetNillableAccountStatusFailureThreshold(v *int) *Sub2APIProviderProbeConfigUpdateOne {
+	if v != nil {
+		_u.SetAccountStatusFailureThreshold(*v)
+	}
+	return _u
+}
+
+// AddAccountStatusFailureThreshold adds value to the "account_status_failure_threshold" field.
+func (_u *Sub2APIProviderProbeConfigUpdateOne) AddAccountStatusFailureThreshold(v int) *Sub2APIProviderProbeConfigUpdateOne {
+	_u.mutation.AddAccountStatusFailureThreshold(v)
+	return _u
+}
+
+// SetAccountStatusRecoveryThreshold sets the "account_status_recovery_threshold" field.
+func (_u *Sub2APIProviderProbeConfigUpdateOne) SetAccountStatusRecoveryThreshold(v int) *Sub2APIProviderProbeConfigUpdateOne {
+	_u.mutation.ResetAccountStatusRecoveryThreshold()
+	_u.mutation.SetAccountStatusRecoveryThreshold(v)
+	return _u
+}
+
+// SetNillableAccountStatusRecoveryThreshold sets the "account_status_recovery_threshold" field if the given value is not nil.
+func (_u *Sub2APIProviderProbeConfigUpdateOne) SetNillableAccountStatusRecoveryThreshold(v *int) *Sub2APIProviderProbeConfigUpdateOne {
+	if v != nil {
+		_u.SetAccountStatusRecoveryThreshold(*v)
+	}
+	return _u
+}
+
+// AddAccountStatusRecoveryThreshold adds value to the "account_status_recovery_threshold" field.
+func (_u *Sub2APIProviderProbeConfigUpdateOne) AddAccountStatusRecoveryThreshold(v int) *Sub2APIProviderProbeConfigUpdateOne {
+	_u.mutation.AddAccountStatusRecoveryThreshold(v)
+	return _u
+}
+
 // SetLastControlRunAt sets the "last_control_run_at" field.
 func (_u *Sub2APIProviderProbeConfigUpdateOne) SetLastControlRunAt(v time.Time) *Sub2APIProviderProbeConfigUpdateOne {
 	_u.mutation.SetLastControlRunAt(v)
@@ -826,6 +963,16 @@ func (_u *Sub2APIProviderProbeConfigUpdateOne) check() error {
 			return &ValidationError{Name: "recovery_threshold", err: fmt.Errorf(`ent: validator failed for field "Sub2APIProviderProbeConfig.recovery_threshold": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.AccountStatusFailureThreshold(); ok {
+		if err := sub2apiproviderprobeconfig.AccountStatusFailureThresholdValidator(v); err != nil {
+			return &ValidationError{Name: "account_status_failure_threshold", err: fmt.Errorf(`ent: validator failed for field "Sub2APIProviderProbeConfig.account_status_failure_threshold": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.AccountStatusRecoveryThreshold(); ok {
+		if err := sub2apiproviderprobeconfig.AccountStatusRecoveryThresholdValidator(v); err != nil {
+			return &ValidationError{Name: "account_status_recovery_threshold", err: fmt.Errorf(`ent: validator failed for field "Sub2APIProviderProbeConfig.account_status_recovery_threshold": %w`, err)}
+		}
+	}
 	if _u.mutation.ProviderCleared() && len(_u.mutation.ProviderIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Sub2APIProviderProbeConfig.provider"`)
 	}
@@ -916,6 +1063,21 @@ func (_u *Sub2APIProviderProbeConfigUpdateOne) sqlSave(ctx context.Context) (_no
 	}
 	if value, ok := _u.mutation.AddedRecoveryThreshold(); ok {
 		_spec.AddField(sub2apiproviderprobeconfig.FieldRecoveryThreshold, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AccountStatusSyncEnabled(); ok {
+		_spec.SetField(sub2apiproviderprobeconfig.FieldAccountStatusSyncEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.AccountStatusFailureThreshold(); ok {
+		_spec.SetField(sub2apiproviderprobeconfig.FieldAccountStatusFailureThreshold, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedAccountStatusFailureThreshold(); ok {
+		_spec.AddField(sub2apiproviderprobeconfig.FieldAccountStatusFailureThreshold, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AccountStatusRecoveryThreshold(); ok {
+		_spec.SetField(sub2apiproviderprobeconfig.FieldAccountStatusRecoveryThreshold, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedAccountStatusRecoveryThreshold(); ok {
+		_spec.AddField(sub2apiproviderprobeconfig.FieldAccountStatusRecoveryThreshold, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.LastControlRunAt(); ok {
 		_spec.SetField(sub2apiproviderprobeconfig.FieldLastControlRunAt, field.TypeTime, value)

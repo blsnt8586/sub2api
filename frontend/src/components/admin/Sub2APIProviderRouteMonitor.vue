@@ -134,6 +134,67 @@
                 </span>
               </div>
             </div>
+            <div class="border-t border-gray-100 pt-3 dark:border-dark-700 sm:col-span-2">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <span class="text-sm font-semibold text-gray-700 dark:text-dark-200">{{ t('admin.sub2apiProviders.health.routes.autoSelection') }}</span>
+                <span class="text-xs font-medium" :class="route.sub2api_optimize_enabled ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'">
+                  {{ route.sub2api_optimize_enabled ? t('admin.sub2apiProviders.health.routes.autoSelectionEnabled') : t('admin.sub2apiProviders.health.routes.autoSelectionDisabled') }}
+                </span>
+              </div>
+              <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                <label class="route-field">
+                  <span class="font-medium">{{ t('admin.sub2apiProviders.health.routes.degradedOptimizeThreshold') }}</span>
+                  <span class="route-field__hint">{{ t('admin.sub2apiProviders.health.routes.degradedOptimizeThresholdHint') }}</span>
+                  <input
+                    :value="route.degraded_optimize_threshold"
+                    type="number"
+                    min="1"
+                    max="20"
+                    :disabled="!route.sub2api_optimize_enabled"
+                    class="input mt-1"
+                    @change="emitNumber(route.id, 'degraded_optimize_threshold', $event)"
+                  />
+                </label>
+                <label class="route-field">
+                  <span class="font-medium">{{ t('admin.sub2apiProviders.health.routes.costOptimizeHealthyThreshold') }}</span>
+                  <span class="route-field__hint">{{ t('admin.sub2apiProviders.health.routes.costOptimizeHealthyThresholdHint') }}</span>
+                  <input
+                    :value="route.cost_optimize_healthy_threshold"
+                    type="number"
+                    min="1"
+                    max="20"
+                    :disabled="!route.sub2api_optimize_enabled || !route.cost_optimize_enabled"
+                    class="input mt-1"
+                    @change="emitNumber(route.id, 'cost_optimize_healthy_threshold', $event)"
+                  />
+                </label>
+                <label class="route-field flex min-h-11 items-center justify-between gap-3">
+                  <span>
+                    <span class="block font-medium">{{ t('admin.sub2apiProviders.health.routes.costOptimizeEnabled') }}</span>
+                    <span class="route-field__hint">{{ t('admin.sub2apiProviders.health.routes.costOptimizeEnabledHint') }}</span>
+                  </span>
+                  <input
+                    :checked="route.cost_optimize_enabled"
+                    type="checkbox"
+                    :disabled="!route.sub2api_optimize_enabled"
+                    class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                    @change="emit('update', route.id, { cost_optimize_enabled: ($event.target as HTMLInputElement).checked })"
+                  />
+                </label>
+                <label class="route-field">
+                  <span class="font-medium">{{ t('admin.sub2apiProviders.health.routes.costOptimizeInterval') }}</span>
+                  <span class="route-field__hint">{{ t('admin.sub2apiProviders.health.routes.costOptimizeIntervalHint') }}</span>
+                  <select
+                    :value="route.cost_optimize_interval_seconds"
+                    :disabled="!route.sub2api_optimize_enabled || !route.cost_optimize_enabled"
+                    class="input mt-1"
+                    @change="emitNumber(route.id, 'cost_optimize_interval_seconds', $event)"
+                  >
+                    <option v-for="option in costOptimizeIntervals" :key="option.value" :value="option.value">{{ option.label }}</option>
+                  </select>
+                </label>
+              </div>
+            </div>
             <label class="route-field flex min-h-11 items-center justify-between gap-3 sm:col-span-2">
               <span class="font-medium">{{ t('admin.sub2apiProviders.health.routes.allowMedia') }}</span>
               <input
@@ -176,7 +237,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type {
   ProviderAccountProbeStatus,
@@ -206,6 +267,13 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const expandedRouteID = ref<number | null>(null)
+const costOptimizeIntervals = computed(() => [
+  { value: 1800, label: t('admin.sub2apiProviders.health.routes.costIntervals.minutes30') },
+  { value: 3600, label: t('admin.sub2apiProviders.health.routes.costIntervals.hour1') },
+  { value: 21600, label: t('admin.sub2apiProviders.health.routes.costIntervals.hours6') },
+  { value: 43200, label: t('admin.sub2apiProviders.health.routes.costIntervals.hours12') },
+  { value: 86400, label: t('admin.sub2apiProviders.health.routes.costIntervals.hours24') },
+])
 const formatRelative = (value: string | Date | null | undefined) => {
   void props.nowTick
   return formatRelativeTime(value)
@@ -220,8 +288,12 @@ const openHistory = (targetID: number) => {
   emit('history', targetID)
 }
 
-const emitNumber = (targetID: number, key: 'interval_seconds' | 'timeout_seconds' | 'degraded_latency_ms', event: Event) => {
-  const value = Number((event.target as HTMLInputElement).value)
+const emitNumber = (
+  targetID: number,
+  key: 'interval_seconds' | 'timeout_seconds' | 'degraded_latency_ms' | 'degraded_optimize_threshold' | 'cost_optimize_interval_seconds' | 'cost_optimize_healthy_threshold',
+  event: Event,
+) => {
+  const value = Number((event.target as HTMLInputElement | HTMLSelectElement).value)
   if (Number.isInteger(value)) emit('update', targetID, { [key]: value })
 }
 

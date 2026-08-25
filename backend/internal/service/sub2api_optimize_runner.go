@@ -3,19 +3,11 @@ package service
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 )
-
-// builtinDefaultTestModelByPlatform 是按平台的默认测试模型兜底表。
-// 优先级：账号 sub2api_test_model > 配置 sub2api.default_test_models > 此内置表。
-// 内置值仅作最终兜底，模型下线后可通过配置覆盖而无需改代码。
-var builtinDefaultTestModelByPlatform = map[string]string{
-	"anthropic": "claude-haiku-4-5-20251001",
-	"openai":    "gpt-4o-mini",
-	"gemini":    "gemini-1.5-flash",
-}
 
 // RunOptimize 执行一次完整的分组优化任务（供定时调度和手动触发调用）。
 // 流程：取上游关联账号→登录一次→拉 groups+keys→逐账号切换+测试→写运行日志→更新下次运行时间。
@@ -129,50 +121,44 @@ const sub2apiOptimizeTestAttempts = 2
 // sub2apiOptimizeTestRetryDelay 是相邻两次测试之间的等待时间。
 const sub2apiOptimizeTestRetryDelay = 2 * time.Second
 
-// resolveTestModel 解析账号最终使用的测试模型。
-// 优先级：账号 sub2api_test_model > 配置 sub2api.default_test_models > 内置兜底表。
-// 返回空字符串表示无法解析（该平台既未配默认模型、账号也未单独设置）。
-func (s *Sub2APIOptimizeScheduleService) resolveTestModel(acc *Account) string {
-	if acc.Sub2APITestModel != nil && *acc.Sub2APITestModel != "" {
-		return *acc.Sub2APITestModel
-	}
-	return s.defaultTestModelForPlatform(acc.Platform)
+// testAccountModel 对账号执行连接测试（复用账号测试服务），失败会重试若干次。
+func (s *Sub2APIOptimizeScheduleService) testAccountModel(ctx context.Context, acc *Account) error {
+	_, err := s.testAccountModelResult(ctx, acc)
+	return err
 }
 
-// testAccountModel 对账号执行连接测试（复用账号测试服务），失败会重试若干次。
-// 测试模型优先级见 resolveTestModel。
-func (s *Sub2APIOptimizeScheduleService) testAccountModel(ctx context.Context, acc *Account) error {
-	testModel := s.resolveTestModel(acc)
-	if testModel == "" {
-		return fmt.Errorf("平台 %s 无默认测试模型，请在账号上设置测试模型或配置 sub2api.default_test_models", acc.Platform)
+func (s *Sub2APIOptimizeScheduleService) testAccountModelResult(ctx context.Context, acc *Account) (*ScheduledTestResult, error) {
+	if acc == nil || acc.Sub2APITestModel == nil || strings.TrimSpace(*acc.Sub2APITestModel) == "" {
+		return nil, fmt.Errorf("账号未设置测试模型")
 	}
+	testModel := strings.TrimSpace(*acc.Sub2APITestModel)
 
 	var lastErr error
+	var lastResult *ScheduledTestResult
 	for attempt := 0; attempt < sub2apiOptimizeTestAttempts; attempt++ {
 		if attempt > 0 {
 			select {
 			case <-ctx.Done():
-				return ctx.Err()
+				return nil, ctx.Err()
 			case <-time.After(sub2apiOptimizeTestRetryDelay):
 			}
 		}
-		result, err := s.accountTestSvc.RunTestBackground(ctx, acc.ID, testModel)
+		var result *ScheduledTestResult
+		var err error
+		if accountTestStatusMutationAllowed(ctx) {
+			result, err = s.accountTestSvc.RunTestBackground(ctx, acc.ID, testModel)
+		} else {
+			result, err = s.accountTestSvc.RunProbeTestBackground(ctx, acc.ID, testModel)
+		}
 		if err != nil {
 			lastErr = err
 			continue
 		}
+		lastResult = result
 		if result.Status == "success" {
-			return nil
+			return result, nil
 		}
 		lastErr = fmt.Errorf("%s", result.ErrorMessage)
 	}
-	return lastErr
-}
-
-// defaultTestModelForPlatform 返回某平台的默认测试模型：配置优先，内置表兜底。
-func (s *Sub2APIOptimizeScheduleService) defaultTestModelForPlatform(platform string) string {
-	if m, ok := s.defaultTestModels[platform]; ok && m != "" {
-		return m
-	}
-	return builtinDefaultTestModelByPlatform[platform]
+	return lastResult, lastErr
 }

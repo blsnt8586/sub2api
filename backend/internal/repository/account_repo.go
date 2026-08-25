@@ -909,6 +909,12 @@ func (r *accountRepository) List(ctx context.Context, params pagination.Paginati
 	return r.ListWithFilters(ctx, params, "", "", "", "", 0, "")
 }
 
+func sub2APIProbeGroupsExhaustedPredicate() dbpredicate.Account {
+	return dbpredicate.Account(func(s *entsql.Selector) {
+		s.Where(sqljson.ValueEQ(dbaccount.FieldExtra, true, sqljson.Path("sub2api_probe_groups_exhausted")))
+	})
+}
+
 func (r *accountRepository) accountListFilteredQuery(platform, accountType, status, search string, groupID int64, privacyMode string) *dbent.AccountQuery {
 	q := r.client.Account.Query()
 
@@ -924,6 +930,7 @@ func (r *accountRepository) accountListFilteredQuery(platform, accountType, stat
 			q = q.Where(
 				dbaccount.StatusEQ(status),
 				dbaccount.SchedulableEQ(true),
+				dbaccount.Not(sub2APIProbeGroupsExhaustedPredicate()),
 				dbaccount.Or(
 					dbaccount.RateLimitResetAtIsNil(),
 					dbaccount.RateLimitResetAtLTE(time.Now()),
@@ -975,6 +982,11 @@ func (r *accountRepository) accountListFilteredQuery(platform, accountType, stat
 					))
 				}),
 			)
+		case service.StatusError:
+			q = q.Where(dbaccount.Or(
+				dbaccount.StatusEQ(status),
+				sub2APIProbeGroupsExhaustedPredicate(),
+			))
 		default:
 			q = q.Where(dbaccount.StatusEQ(status))
 		}

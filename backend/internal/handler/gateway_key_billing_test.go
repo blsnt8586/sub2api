@@ -188,6 +188,30 @@ func TestBuildKeyBillingInfoAppliesPeakMultiplier(t *testing.T) {
 	}
 }
 
+func TestKeyBillingInfoAppliesDynamicPricingFloor(t *testing.T) {
+	groupID := int64(7)
+	userRate := 0.05
+	apiKey := &service.APIKey{
+		UserID:  11,
+		GroupID: &groupID,
+		Group: &service.Group{
+			ID:                    groupID,
+			Platform:              service.PlatformAnthropic,
+			RateMultiplier:        0.10,
+			DynamicPricingEnabled: true,
+		},
+	}
+	c, w := newKeyBillingContext(apiKey)
+
+	newKeyBillingHandler(&keyBillingUserGroupRateRepo{rate: &userRate}).KeyBillingInfo(c)
+
+	require.Equal(t, http.StatusOK, w.Code)
+	var got keyBillingInfoResponse
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &got))
+	require.Equal(t, 0.10, got.ResolvedRateMultiplier)
+	require.Equal(t, 0.10, got.EffectiveRateMultiplier)
+}
+
 func TestKeyBillingInfoJSONKeepsZeroPeakMultiplierWhenEnabled(t *testing.T) {
 	groupID := int64(7)
 	apiKey := &service.APIKey{

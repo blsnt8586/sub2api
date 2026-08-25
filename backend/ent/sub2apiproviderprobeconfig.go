@@ -45,6 +45,12 @@ type Sub2APIProviderProbeConfig struct {
 	FailureThreshold int `json:"failure_threshold,omitempty"`
 	// RecoveryThreshold holds the value of the "recovery_threshold" field.
 	RecoveryThreshold int `json:"recovery_threshold,omitempty"`
+	// AccountStatusSyncEnabled holds the value of the "account_status_sync_enabled" field.
+	AccountStatusSyncEnabled bool `json:"account_status_sync_enabled,omitempty"`
+	// AccountStatusFailureThreshold holds the value of the "account_status_failure_threshold" field.
+	AccountStatusFailureThreshold int `json:"account_status_failure_threshold,omitempty"`
+	// AccountStatusRecoveryThreshold holds the value of the "account_status_recovery_threshold" field.
+	AccountStatusRecoveryThreshold int `json:"account_status_recovery_threshold,omitempty"`
 	// LastControlRunAt holds the value of the "last_control_run_at" field.
 	LastControlRunAt *time.Time `json:"last_control_run_at,omitempty"`
 	// LastDataRunAt holds the value of the "last_data_run_at" field.
@@ -82,9 +88,9 @@ func (*Sub2APIProviderProbeConfig) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case sub2apiproviderprobeconfig.FieldSelectedAccountIds:
 			values[i] = new([]byte)
-		case sub2apiproviderprobeconfig.FieldControlEnabled, sub2apiproviderprobeconfig.FieldDataEnabled, sub2apiproviderprobeconfig.FieldAllowMediaProbe:
+		case sub2apiproviderprobeconfig.FieldControlEnabled, sub2apiproviderprobeconfig.FieldDataEnabled, sub2apiproviderprobeconfig.FieldAllowMediaProbe, sub2apiproviderprobeconfig.FieldAccountStatusSyncEnabled:
 			values[i] = new(sql.NullBool)
-		case sub2apiproviderprobeconfig.FieldID, sub2apiproviderprobeconfig.FieldProviderID, sub2apiproviderprobeconfig.FieldControlIntervalSeconds, sub2apiproviderprobeconfig.FieldDataIntervalSeconds, sub2apiproviderprobeconfig.FieldTimeoutSeconds, sub2apiproviderprobeconfig.FieldDegradedLatencyMs, sub2apiproviderprobeconfig.FieldFailureThreshold, sub2apiproviderprobeconfig.FieldRecoveryThreshold:
+		case sub2apiproviderprobeconfig.FieldID, sub2apiproviderprobeconfig.FieldProviderID, sub2apiproviderprobeconfig.FieldControlIntervalSeconds, sub2apiproviderprobeconfig.FieldDataIntervalSeconds, sub2apiproviderprobeconfig.FieldTimeoutSeconds, sub2apiproviderprobeconfig.FieldDegradedLatencyMs, sub2apiproviderprobeconfig.FieldFailureThreshold, sub2apiproviderprobeconfig.FieldRecoveryThreshold, sub2apiproviderprobeconfig.FieldAccountStatusFailureThreshold, sub2apiproviderprobeconfig.FieldAccountStatusRecoveryThreshold:
 			values[i] = new(sql.NullInt64)
 		case sub2apiproviderprobeconfig.FieldCreatedAt, sub2apiproviderprobeconfig.FieldUpdatedAt, sub2apiproviderprobeconfig.FieldLastControlRunAt, sub2apiproviderprobeconfig.FieldLastDataRunAt:
 			values[i] = new(sql.NullTime)
@@ -189,6 +195,24 @@ func (_m *Sub2APIProviderProbeConfig) assignValues(columns []string, values []an
 			} else if value.Valid {
 				_m.RecoveryThreshold = int(value.Int64)
 			}
+		case sub2apiproviderprobeconfig.FieldAccountStatusSyncEnabled:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field account_status_sync_enabled", values[i])
+			} else if value.Valid {
+				_m.AccountStatusSyncEnabled = value.Bool
+			}
+		case sub2apiproviderprobeconfig.FieldAccountStatusFailureThreshold:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field account_status_failure_threshold", values[i])
+			} else if value.Valid {
+				_m.AccountStatusFailureThreshold = int(value.Int64)
+			}
+		case sub2apiproviderprobeconfig.FieldAccountStatusRecoveryThreshold:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field account_status_recovery_threshold", values[i])
+			} else if value.Valid {
+				_m.AccountStatusRecoveryThreshold = int(value.Int64)
+			}
 		case sub2apiproviderprobeconfig.FieldLastControlRunAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field last_control_run_at", values[i])
@@ -282,6 +306,15 @@ func (_m *Sub2APIProviderProbeConfig) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("recovery_threshold=")
 	builder.WriteString(fmt.Sprintf("%v", _m.RecoveryThreshold))
+	builder.WriteString(", ")
+	builder.WriteString("account_status_sync_enabled=")
+	builder.WriteString(fmt.Sprintf("%v", _m.AccountStatusSyncEnabled))
+	builder.WriteString(", ")
+	builder.WriteString("account_status_failure_threshold=")
+	builder.WriteString(fmt.Sprintf("%v", _m.AccountStatusFailureThreshold))
+	builder.WriteString(", ")
+	builder.WriteString("account_status_recovery_threshold=")
+	builder.WriteString(fmt.Sprintf("%v", _m.AccountStatusRecoveryThreshold))
 	builder.WriteString(", ")
 	if v := _m.LastControlRunAt; v != nil {
 		builder.WriteString("last_control_run_at=")

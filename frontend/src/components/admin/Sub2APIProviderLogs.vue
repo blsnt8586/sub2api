@@ -70,7 +70,7 @@
                 class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 py-1 text-[11px]"
               >
                 <Icon :name="event.action === 'rollback' ? 'refresh' : 'swap'" size="xs" class="flex-shrink-0 text-gray-400 dark:text-dark-500" />
-                <span class="font-medium text-gray-600 dark:text-dark-300">{{ optimizationActionLabel(event) }}</span>
+                <span class="font-medium text-gray-600 dark:text-dark-300">{{ optimizationActionLabel(event, eventIndex, entry.switchEvents) }}</span>
                 <span class="min-w-0 truncate text-gray-500 dark:text-dark-400" :title="optimizationGroupLabel(event.from_group, event.from_group_id, event.from_multiplier)">
                   {{ optimizationGroupLabel(event.from_group, event.from_group_id, event.from_multiplier) }}
                 </span>
@@ -78,7 +78,7 @@
                 <span class="min-w-0 truncate font-medium text-gray-700 dark:text-dark-200" :title="optimizationGroupLabel(event.to_group, event.to_group_id, event.to_multiplier)">
                   {{ optimizationGroupLabel(event.to_group, event.to_group_id, event.to_multiplier) }}
                 </span>
-                <span class="font-medium" :class="optimizationEventTextClass(event)">{{ optimizationEventLabel(event) }}</span>
+                <span class="font-medium" :class="optimizationEventTextClass(event)">{{ optimizationEventLabel(event, eventIndex, entry.switchEvents) }}</span>
                 <time class="ml-auto flex-shrink-0 tabular-nums text-gray-400 dark:text-dark-500" :datetime="event.occurred_at">
                   {{ formatDateTime(event.occurred_at) }}
                 </time>
@@ -275,7 +275,7 @@ const entries = computed<DiagnosticEntry[]>(() => {
       status: optimizationStatus(log, detail),
       statusLabel: optimizationStatusLabel(log, detail),
       multiplier: detail?.new_multiplier,
-      stage: optimizationTriggerLabel(log.trigger),
+      stage: optimizationTriggerLabel(detail?.probe_trigger || log.trigger),
       category: detail?.probe_error_category,
       trafficCount: 0,
       checkedAt: log.finished_at || log.created_at,
@@ -336,15 +336,30 @@ const optimizationGroupLabel = (name?: string, id?: number, multiplier?: number)
   return multiplier == null ? identity : `${identity} ×${formatMultiplier(multiplier)}`
 }
 
-const optimizationActionLabel = (event: OptimizeGroupSwitchEvent) => t(
-  `admin.sub2apiProviders.health.logs.optimization.actions.${event.action}`
+const isFinalSwitchEvent = (event: OptimizeGroupSwitchEvent, index: number, events: OptimizeGroupSwitchEvent[]) => (
+  event.action === 'switch' && event.test_status === 'passed' && index === events.length - 1
 )
 
-const optimizationEventLabel = (event: OptimizeGroupSwitchEvent) => {
+const optimizationActionLabel = (event: OptimizeGroupSwitchEvent, index: number, events: OptimizeGroupSwitchEvent[]) => {
+  if (isFinalSwitchEvent(event, index, events)) {
+    return t('admin.sub2apiProviders.health.logs.optimization.actions.finalSwitch')
+  }
+  return t(`admin.sub2apiProviders.health.logs.optimization.actions.${event.action}`)
+}
+
+const optimizationEventLabel = (event: OptimizeGroupSwitchEvent, index: number, events: OptimizeGroupSwitchEvent[]) => {
   if (event.status === 'failed') return t('admin.sub2apiProviders.health.logs.optimization.events.operationFailed')
-  if (event.action === 'rollback') return t('admin.sub2apiProviders.health.logs.optimization.events.rollbackSucceeded')
+  if (event.action === 'rollback') {
+    return index < events.length - 1
+      ? t('admin.sub2apiProviders.health.logs.optimization.events.rollbackForComparison')
+      : t('admin.sub2apiProviders.health.logs.optimization.events.rollbackSucceeded')
+  }
   if (event.test_status === 'failed') return t('admin.sub2apiProviders.health.logs.optimization.events.testFailed')
-  if (event.test_status === 'passed') return t('admin.sub2apiProviders.health.logs.optimization.events.testPassed')
+  if (event.test_status === 'passed') {
+    return isFinalSwitchEvent(event, index, events)
+      ? t('admin.sub2apiProviders.health.logs.optimization.events.selected')
+      : t('admin.sub2apiProviders.health.logs.optimization.events.testPassed')
+  }
   return t('admin.sub2apiProviders.health.logs.optimization.events.switched')
 }
 

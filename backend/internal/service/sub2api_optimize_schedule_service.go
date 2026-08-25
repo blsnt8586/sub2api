@@ -26,7 +26,6 @@ type Sub2APIOptimizeScheduleRepository interface {
 	Upsert(ctx context.Context, input *UpsertOptimizeScheduleInput) (*ent.Sub2APIOptimizeSchedule, error)
 	UpdateRunTimes(ctx context.Context, id int64, lastRun time.Time, nextRun time.Time) error
 	Delete(ctx context.Context, providerID int64) error
-	ListEnabled(ctx context.Context) ([]*ent.Sub2APIOptimizeSchedule, error)
 	ListDue(ctx context.Context, now time.Time) ([]*ent.Sub2APIOptimizeSchedule, error)
 	CreateLog(ctx context.Context, input *CreateOptimizeLogInput) (*ent.Sub2APIOptimizeLog, error)
 	ListLogs(ctx context.Context, providerID int64, filter OptimizeLogFilter) ([]*ent.Sub2APIOptimizeLog, int64, error)
@@ -62,7 +61,10 @@ type CreateOptimizeLogInput struct {
 const (
 	OptimizeLogTriggerCron           = "cron"
 	OptimizeLogTriggerScheduleNow    = "schedule_now"
+	OptimizeLogTriggerProbeAuto      = "probe_auto"
 	OptimizeLogTriggerProbeUnhealthy = "probe_unhealthy"
+	OptimizeLogTriggerProbeDegraded  = "probe_degraded"
+	OptimizeLogTriggerProbeCost      = "probe_cost_check"
 	OptimizeLogTriggerManualAccount  = "manual_account"
 	OptimizeLogTriggerManualAll      = "manual_all"
 	OptimizeLogTriggerLegacy         = "legacy"
@@ -71,7 +73,10 @@ const (
 var validOptimizeLogTriggers = map[string]struct{}{
 	OptimizeLogTriggerCron:           {},
 	OptimizeLogTriggerScheduleNow:    {},
+	OptimizeLogTriggerProbeAuto:      {},
 	OptimizeLogTriggerProbeUnhealthy: {},
+	OptimizeLogTriggerProbeDegraded:  {},
+	OptimizeLogTriggerProbeCost:      {},
 	OptimizeLogTriggerManualAccount:  {},
 	OptimizeLogTriggerManualAll:      {},
 	OptimizeLogTriggerLegacy:         {},
@@ -138,17 +143,13 @@ type Sub2APIOptimizeScheduleService struct {
 	accountTestSvc *AccountTestService
 	tokenCache     *sub2api.TokenCache
 
-	// defaultTestModels 保留旧配置兼容；参与优化仍要求账号显式选择测试模型。
-	defaultTestModels map[string]string
+	// Account probes, binding refreshes and every optimization entry point share
+	// one Provider operation gate, so temporary candidate groups cannot leak into
+	// monitoring state.
+	operationGate *Sub2APIProviderOperationGate
 
-	// running 记录正在执行优化的 providerID，防止同一上游并发重跑
-	// （用户狂点「立即执行」或与定时调度撞车）
-	runningMu sync.Mutex
-	running   map[int64]bool
-
-	// 所有触发入口共享 provider 级分布式锁，避免多实例同时切换同一个远端 Key。
+	// lockCache is only used for per-target probe auto-optimize cooldown claims.
 	lockCache  LeaderLockCache
-	db         *sql.DB
 	instanceID string
 
 	// Redis 不可用或未配置时，单实例仍用本地到期时间执行探针联动冷却。
@@ -156,6 +157,11 @@ type Sub2APIOptimizeScheduleService struct {
 	probeCooldownMu    sync.Mutex
 	probeCooldownUntil map[int64]time.Time
 	probeBindingSyncer Sub2APIProbeTargetBindingSyncer
+	concurrencyReader  Sub2APIAccountConcurrencyReader
+}
+
+type Sub2APIAccountConcurrencyReader interface {
+	GetAccountConcurrencyBatch(context.Context, []int64) (map[int64]int, error)
 }
 
 // NewSub2APIOptimizeScheduleService 创建实例
@@ -163,32 +169,37 @@ func NewSub2APIOptimizeScheduleService(
 	scheduleRepo Sub2APIOptimizeScheduleRepository,
 	providerSvc *Sub2APIProviderService,
 	accountTestSvc *AccountTestService,
-	defaultTestModels map[string]string,
+	operationGate *Sub2APIProviderOperationGate,
 ) *Sub2APIOptimizeScheduleService {
 	return &Sub2APIOptimizeScheduleService{
 		scheduleRepo:       scheduleRepo,
 		providerSvc:        providerSvc,
 		accountTestSvc:     accountTestSvc,
 		tokenCache:         providerSvc.tokenCache,
-		defaultTestModels:  defaultTestModels,
-		running:            make(map[int64]bool),
+		operationGate:      operationGate,
 		instanceID:         uuid.NewString(),
 		probeCooldownUntil: make(map[int64]time.Time),
 	}
 }
 
-// SetExecutionLock 注入跨实例互斥所需的 Redis/数据库锁后端。
-func (s *Sub2APIOptimizeScheduleService) SetExecutionLock(lockCache LeaderLockCache, db *sql.DB) {
+// SetProbeAutoOptimizeCooldownLock injects the Redis-backed per-target cooldown
+// store. Provider execution mutual exclusion is owned by operationGate.
+func (s *Sub2APIOptimizeScheduleService) SetProbeAutoOptimizeCooldownLock(lockCache LeaderLockCache) {
 	if s == nil {
 		return
 	}
 	s.lockCache = lockCache
-	s.db = db
 }
 
 func (s *Sub2APIOptimizeScheduleService) SetProbeTargetBindingSyncer(syncer Sub2APIProbeTargetBindingSyncer) {
 	if s != nil {
 		s.probeBindingSyncer = syncer
+	}
+}
+
+func (s *Sub2APIOptimizeScheduleService) SetAccountConcurrencyReader(reader Sub2APIAccountConcurrencyReader) {
+	if s != nil {
+		s.concurrencyReader = reader
 	}
 }
 
@@ -375,39 +386,10 @@ func (s *Sub2APIOptimizeScheduleService) RunNow(ctx context.Context, providerID 
 // 辅助
 // ============================================================
 
-// tryAcquire 同时获取进程内锁和 provider 级分布式锁。
-// 返回的 release 可安全调用一次；任何一步失败都会释放已持有的本地状态。
+// tryAcquire shares the Provider operation gate with account probes and remote
+// binding refreshes. The returned release function is idempotent.
 func (s *Sub2APIOptimizeScheduleService) tryAcquire(ctx context.Context, providerID int64) (func(), bool) {
-	s.runningMu.Lock()
-	if s.running[providerID] {
-		s.runningMu.Unlock()
-		return nil, false
-	}
-	s.running[providerID] = true
-	s.runningMu.Unlock()
-
-	lockCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
-	key := fmt.Sprintf("sub2api:optimize:provider:%d", providerID)
-	distributedRelease, ok := tryAcquireSingletonLeaderLock(lockCtx, s.lockCache, s.db, key, s.instanceID, sub2apiOptimizeLeaderLockTTL)
-	cancel()
-	if !ok {
-		s.releaseLocal(providerID)
-		return nil, false
-	}
-
-	var once sync.Once
-	return func() {
-		once.Do(func() {
-			distributedRelease()
-			s.releaseLocal(providerID)
-		})
-	}, true
-}
-
-func (s *Sub2APIOptimizeScheduleService) releaseLocal(providerID int64) {
-	s.runningMu.Lock()
-	defer s.runningMu.Unlock()
-	delete(s.running, providerID)
+	return s.operationGate.TryAcquire(ctx, providerID, sub2APIProviderOptimizeOperationTTL)
 }
 
 // ============================================================
@@ -421,7 +403,7 @@ func (s *Sub2APIOptimizeScheduleService) releaseLocal(providerID int64) {
 // 任一不满足返回带具体原因的 BadRequest，供 handler 直接透传给前端提示用户先去配置。
 func (s *Sub2APIOptimizeScheduleService) checkOptimizeReady(acc *Account) error {
 	if !acc.Sub2APIOptimizeEnabled {
-		return infraerrors.BadRequest("OPTIMIZE_NOT_ENABLED", "请先开启该账号的「参与定时优化」开关后再优化")
+		return infraerrors.BadRequest("OPTIMIZE_NOT_ENABLED", "请先开启该账号的「允许自动选组」开关后再优化")
 	}
 	if acc.ProviderAPIKeyID == nil {
 		return infraerrors.BadRequest("ACCOUNT_NO_REMOTE_KEY_ID", "账号未正确关联远端 Key，请重新关联后再优化")
@@ -448,13 +430,13 @@ func optimizeAccountConfigError(acc *Account) string {
 		return "账号未正确关联远端 Key，请重新关联后再优化"
 	}
 	if acc.Sub2APIMaxMultiplier == nil {
-		return "缺少倍率上限，请补充配置后重新开启参与定时优化"
+		return "缺少倍率上限，请补充配置后重新开启自动选组"
 	}
 	if acc.Sub2APIMinMultiplier == nil {
-		return "缺少倍率下限，请补充配置后重新开启参与定时优化"
+		return "缺少倍率下限，请补充配置后重新开启自动选组"
 	}
 	if acc.Sub2APITestModel == nil || strings.TrimSpace(*acc.Sub2APITestModel) == "" {
-		return "缺少测试模型，请补充配置后重新开启参与定时优化"
+		return "缺少测试模型，请补充配置后重新开启自动选组"
 	}
 	return ""
 }

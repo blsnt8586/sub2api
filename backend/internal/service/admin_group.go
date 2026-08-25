@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"strings"
 	"time"
@@ -305,6 +306,9 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 	if input.RateMultiplier <= 0 {
 		return nil, errors.New("rate_multiplier must be > 0")
 	}
+	if err := validateDynamicPricingConfig(input.RateMultiplier, input.DynamicPricingMarkup); err != nil {
+		return nil, err
+	}
 
 	platform := NormalizeGroupPlatform(input.Platform)
 	modelPricing, err := normalizeGroupModelPricing(platform, input.ModelPricing)
@@ -466,6 +470,10 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		Description:                     input.Description,
 		Platform:                        platform,
 		RateMultiplier:                  input.RateMultiplier,
+		DynamicPricingEnabled:           input.DynamicPricingEnabled,
+		DynamicPricingMarkup:            input.DynamicPricingMarkup,
+		ManualRateMultiplier:            input.RateMultiplier,
+		DynamicPricingStatus:            "manual",
 		IsExclusive:                     input.IsExclusive,
 		Status:                          StatusActive,
 		SubscriptionType:                subscriptionType,
@@ -521,6 +529,9 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		MaxReasoningEffort:              maxReasoningEffort,
 		ReasoningEffortMappings:         reasoningEffortMappings,
 	}
+	if group.DynamicPricingEnabled {
+		group.DynamicPricingStatus = "no_accounts"
+	}
 	sanitizeGroupMessagesDispatchFields(group)
 	if group.Platform != PlatformOpenAI && group.Platform != PlatformComposite {
 		group.AllowLive = false
@@ -558,8 +569,25 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		}
 		group.AccountCount = int64(len(accountIDsToCopy))
 	}
+	if group.DynamicPricingEnabled {
+		refreshed, err := s.groupRepo.GetByID(ctx, group.ID)
+		if err != nil {
+			return nil, fmt.Errorf("reload dynamically priced group: %w", err)
+		}
+		return refreshed, nil
+	}
 
 	return group, nil
+}
+
+func validateDynamicPricingConfig(manualRate, markup float64) error {
+	if manualRate <= 0 || math.IsNaN(manualRate) || math.IsInf(manualRate, 0) {
+		return errors.New("manual_rate_multiplier must be > 0")
+	}
+	if markup < 0 || math.IsNaN(markup) || math.IsInf(markup, 0) {
+		return errors.New("dynamic_pricing_markup must be >= 0")
+	}
+	return nil
 }
 
 // normalizeLimit 将负数转换为 nil（表示无限制），0 保留（表示限额为零）
@@ -703,6 +731,17 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 
 	// 渠道缓存里存了 groupID → platform 的映射，改了平台要让它失效（见函数末尾）
 	previousPlatform := group.Platform
+	dynamicPricingTouched := input.DynamicPricingEnabled != nil ||
+		input.DynamicPricingMarkup != nil ||
+		input.ManualRateMultiplier != nil ||
+		input.RateMultiplier != nil
+	if group.ManualRateMultiplier <= 0 {
+		// Compatibility for pre-migration test fixtures and partially hydrated groups.
+		group.ManualRateMultiplier = group.RateMultiplier
+		if group.ManualRateMultiplier <= 0 {
+			group.ManualRateMultiplier = 1
+		}
+	}
 
 	if input.Name != "" {
 		group.Name = input.Name
@@ -713,11 +752,37 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 	if input.Platform != "" {
 		group.Platform = input.Platform
 	}
+	if input.DynamicPricingEnabled != nil {
+		group.DynamicPricingEnabled = *input.DynamicPricingEnabled
+	}
+	if input.DynamicPricingMarkup != nil {
+		group.DynamicPricingMarkup = *input.DynamicPricingMarkup
+	}
+	if input.ManualRateMultiplier != nil {
+		group.ManualRateMultiplier = *input.ManualRateMultiplier
+	}
 	if input.RateMultiplier != nil {
 		if *input.RateMultiplier <= 0 {
 			return nil, errors.New("rate_multiplier must be > 0")
 		}
-		group.RateMultiplier = *input.RateMultiplier
+		// Backward compatibility: rate_multiplier remains the manual price input
+		// for static callers. Dynamic-aware clients use manual_rate_multiplier.
+		group.ManualRateMultiplier = *input.RateMultiplier
+	}
+	if group.DynamicPricingEnabled || dynamicPricingTouched {
+		if err := validateDynamicPricingConfig(group.ManualRateMultiplier, group.DynamicPricingMarkup); err != nil {
+			return nil, err
+		}
+	}
+	if group.DynamicPricingEnabled {
+		if group.DynamicPricingStatus == "" || group.DynamicPricingStatus == "manual" {
+			group.DynamicPricingStatus = "no_accounts"
+		}
+	} else if dynamicPricingTouched {
+		group.RateMultiplier = group.ManualRateMultiplier
+		group.DynamicSourceMaxMultiplier = nil
+		group.DynamicPricingUpdatedAt = nil
+		group.DynamicPricingStatus = "manual"
 	}
 	if input.IsExclusive != nil {
 		group.IsExclusive = *input.IsExclusive
@@ -1049,6 +1114,13 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 		}
 	}
 
+	if group.DynamicPricingEnabled {
+		refreshed, err := s.groupRepo.GetByID(ctx, group.ID)
+		if err != nil {
+			return nil, fmt.Errorf("reload dynamically priced group: %w", err)
+		}
+		return refreshed, nil
+	}
 	return group, nil
 }
 

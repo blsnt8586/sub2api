@@ -37,7 +37,7 @@ func (Sub2APIOptimizeLog) Fields() []ent.Field {
 		field.String("trigger").
 			MaxLen(32).
 			Default("legacy").
-			Comment("触发方式：cron / schedule_now / probe_unhealthy / manual_account / manual_all / legacy"),
+			Comment("触发方式：cron / schedule_now / probe_auto / probe_unhealthy / probe_degraded / probe_cost_check / manual_account / manual_all / legacy"),
 
 		// status: 整体运行状态
 		field.String("status").

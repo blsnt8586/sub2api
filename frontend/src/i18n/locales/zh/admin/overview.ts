@@ -875,6 +875,21 @@ export default {
           '公开分组费率 0.8，您可以创建一个费率 0.7 的专属分组，手动分配给 VIP 用户，让他们享受更优惠的价格。'
       },
       rateMultiplierHint: '1.0 = 标准费率，0.5 = 半价，2.0 = 双倍',
+      dynamicPricing: {
+        mode: '定价模式',
+        manualMode: '固定倍率',
+        dynamicMode: '动态倍率',
+        markup: '固定盈利加成',
+        markupHint: '绝对倍率加成。例如最高上游倍率 0.08，加成 0.02，最终倍率为 0.10。',
+        fallbackRate: '静态备用倍率',
+        fallbackHint: '分组内暂无有效账号倍率时使用；关闭动态定价后也会恢复为此倍率。',
+        currentFormula: '当前计算：最高上游 {source} + 加成 {markup} = 最终 {final}',
+        listFormula: '动态：{source} + {markup}',
+        usingFallback: '动态待计算，使用静态备用倍率',
+        sourceMissing: '账号缺少上游采购倍率，暂用静态备用倍率',
+        invalidFallback: '静态备用倍率必须大于 0',
+        invalidMarkup: '固定盈利加成必须大于或等于 0'
+      },
       platforms: {
         all: '全部平台',
         anthropic: 'Anthropic',

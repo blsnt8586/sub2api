@@ -1,8 +1,9 @@
 // Sub2API 二开扩展：账号的 Provider 关联与定时优化相关数据访问。
 //
-// 这些方法都挂在 accountRepository 上（Go 允许同包 struct 方法跨文件），
-// 但刻意从上游的 account_repo.go 中分离出来，独立成文件，以便同步上游时
-// 避开与上游改动的合并冲突。详见 memory: sub2api-fork-isolation-principle。
+// This adapter delegates shared account reads to the upstream repository and
+// owns only Provider-specific SQL writes. Keeping it separate prevents the
+// upstream AccountRepository contract and unrelated test doubles from growing
+// whenever Provider management gains a capability.
 package repository
 
 import (
@@ -14,21 +15,68 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/service"
 )
 
+type sub2APIAccountRepository struct {
+	base service.AccountRepository
+	sql  sqlExecutor
+}
+
+func NewSub2APIAccountRepository(base service.AccountRepository, db *sql.DB) service.Sub2APIAccountRepository {
+	return &sub2APIAccountRepository{base: base, sql: db}
+}
+
+func (r *sub2APIAccountRepository) GetByID(ctx context.Context, id int64) (*service.Account, error) {
+	return r.base.GetByID(ctx, id)
+}
+
+func (r *sub2APIAccountRepository) GetByIDs(ctx context.Context, ids []int64) ([]*service.Account, error) {
+	return r.base.GetByIDs(ctx, ids)
+}
+
+func (r *sub2APIAccountRepository) SetError(ctx context.Context, id int64, errorMsg string) error {
+	return r.base.SetError(ctx, id, errorMsg)
+}
+
+func (r *sub2APIAccountRepository) ClearError(ctx context.Context, id int64) error {
+	return r.base.ClearError(ctx, id)
+}
+
+func (r *sub2APIAccountRepository) UpdateExtra(ctx context.Context, id int64, updates map[string]any) error {
+	return r.base.UpdateExtra(ctx, id, updates)
+}
+
+// These runtime-state methods are intentionally exposed by the Provider
+// adapter so a healthy Provider probe can clear transient request-time blocks
+// without expanding the narrow Sub2APIAccountRepository contract used by all
+// existing test doubles and callers.
+func (r *sub2APIAccountRepository) ClearTempUnschedulable(ctx context.Context, id int64) error {
+	return r.base.ClearTempUnschedulable(ctx, id)
+}
+
+func (r *sub2APIAccountRepository) ClearRateLimit(ctx context.Context, id int64) error {
+	return r.base.ClearRateLimit(ctx, id)
+}
+
 // UpdateProviderLink 更新 Account 的 Provider 关联
-func (r *accountRepository) UpdateProviderLink(ctx context.Context, accountID, providerID, providerAPIKeyID int64) error {
+func (r *sub2APIAccountRepository) UpdateProviderLink(ctx context.Context, accountID, providerID, providerAPIKeyID int64) error {
 	result, err := r.sql.ExecContext(ctx,
 		`UPDATE accounts
 			 SET provider_id = $1, provider_api_key_id = $2,
 			     proxy_id = (SELECT proxy_id FROM sub2api_providers WHERE id = $1 AND deleted_at IS NULL),
-			     proxy_fallback_origin_id = NULL, updated_at = NOW()
+			     proxy_fallback_origin_id = NULL,
+			     remote_group_id = NULL, remote_group_name = NULL,
+			     remote_group_multiplier = NULL, remote_group_synced_at = NULL,
+			     updated_at = NOW()
 			 WHERE id = $3 AND deleted_at IS NULL`,
 		providerID, providerAPIKeyID, accountID)
 	if err != nil {
 		return err
 	}
 	rows, err := result.RowsAffected()
-	if err != nil || rows == 0 {
+	if err != nil {
 		return err
+	}
+	if rows == 0 {
+		return sql.ErrNoRows
 	}
 	if err := enqueueSchedulerOutbox(ctx, r.sql, service.SchedulerOutboxEventAccountChanged, &accountID, nil, nil); err != nil {
 		logger.LegacyPrintf("repository.account", "[SchedulerOutbox] enqueue provider link change failed: account=%d err=%v", accountID, err)
@@ -37,7 +85,7 @@ func (r *accountRepository) UpdateProviderLink(ctx context.Context, accountID, p
 }
 
 // ClearProviderLink 清除 Account 的 Provider 关联
-func (r *accountRepository) ClearProviderLink(ctx context.Context, accountID, providerID int64) error {
+func (r *sub2APIAccountRepository) ClearProviderLink(ctx context.Context, accountID, providerID int64) error {
 	result, err := r.sql.ExecContext(ctx,
 		`UPDATE accounts
 			 SET provider_id = NULL, provider_api_key_id = NULL,
@@ -51,8 +99,11 @@ func (r *accountRepository) ClearProviderLink(ctx context.Context, accountID, pr
 		return err
 	}
 	rows, err := result.RowsAffected()
-	if err != nil || rows == 0 {
+	if err != nil {
 		return err
+	}
+	if rows == 0 {
+		return sql.ErrNoRows
 	}
 	if err := enqueueSchedulerOutbox(ctx, r.sql, service.SchedulerOutboxEventAccountChanged, &accountID, nil, nil); err != nil {
 		logger.LegacyPrintf("repository.account", "[SchedulerOutbox] enqueue provider unlink change failed: account=%d err=%v", accountID, err)
@@ -62,7 +113,7 @@ func (r *accountRepository) ClearProviderLink(ctx context.Context, accountID, pr
 
 // UpdateProviderAccountsProxy applies the Provider's selected route to all
 // linked accounts. Clearing the Provider proxy restores direct connections.
-func (r *accountRepository) UpdateProviderAccountsProxy(ctx context.Context, providerID int64, proxyID *int64) error {
+func (r *sub2APIAccountRepository) UpdateProviderAccountsProxy(ctx context.Context, providerID int64, proxyID *int64) error {
 	rows, err := r.sql.QueryContext(ctx, `
 		UPDATE accounts
 		   SET proxy_id = $1, proxy_fallback_origin_id = NULL, updated_at = NOW()
@@ -99,33 +150,77 @@ func (r *accountRepository) UpdateProviderAccountsProxy(ctx context.Context, pro
 	return nil
 }
 
-// UpdateRemoteGroupInfo 更新远程分组缓存信息
-func (r *accountRepository) UpdateRemoteGroupInfo(ctx context.Context, accountID int64, groupName string, multiplier float64) error {
-	_, err := r.sql.ExecContext(ctx,
-		`UPDATE accounts
-		 SET remote_group_name = $1, remote_group_multiplier = $2, remote_group_synced_at = NOW(), updated_at = NOW()
-		 WHERE id = $3 AND deleted_at IS NULL`,
-		groupName, multiplier, accountID)
-	return err
-}
-
 // UpdateRemoteGroupBinding persists the remote group's stable ID together with
-// its display cache. It is intentionally an optional extension method so old
-// test repositories remain compatible with the primary AccountRepository.
-func (r *accountRepository) UpdateRemoteGroupBinding(ctx context.Context, accountID, groupID int64, groupName string, multiplier float64) error {
-	_, err := r.sql.ExecContext(ctx,
+// its display cache.
+func (r *sub2APIAccountRepository) UpdateRemoteGroupBinding(ctx context.Context, accountID, groupID int64, groupName string, multiplier float64) error {
+	result, err := r.sql.ExecContext(ctx,
 		`UPDATE accounts
 		 SET remote_group_id = $1, remote_group_name = $2, remote_group_multiplier = $3,
 		     remote_group_synced_at = NOW(), updated_at = NOW()
 		 WHERE id = $4 AND deleted_at IS NULL`,
 		groupID, groupName, multiplier, accountID)
-	return err
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}
+
+func (r *sub2APIAccountRepository) UpdateRemoteGroupIdentity(ctx context.Context, accountID, groupID int64) error {
+	result, err := r.sql.ExecContext(ctx,
+		`UPDATE accounts
+		 SET remote_group_id = $1, remote_group_name = NULL, remote_group_multiplier = NULL,
+		     remote_group_synced_at = NOW(), updated_at = NOW()
+		 WHERE id = $2 AND deleted_at IS NULL`,
+		groupID, accountID)
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}
+
+// ClearRemoteGroupBinding removes a stale remote group/key snapshot while
+// keeping the local Provider account association intact. A missing upstream
+// key must not continue contributing an obsolete procurement multiplier to a
+// dynamic local group.
+func (r *sub2APIAccountRepository) ClearRemoteGroupBinding(ctx context.Context, accountID int64) error {
+	result, err := r.sql.ExecContext(ctx,
+		`UPDATE accounts
+		 SET remote_group_id = NULL, remote_group_name = NULL,
+		     remote_group_multiplier = NULL, remote_group_synced_at = NOW(),
+		     updated_at = NOW()
+		 WHERE id = $1 AND deleted_at IS NULL`,
+		accountID)
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
 }
 
 // UpdateSub2APIOptimizeSettings 全量覆盖账号的定时优化配置（是否参与 + 倍率上限 + 测试模型）。
 // enabled 独立控制是否参与定时优化；三项配置在 enabled=false 时允许为空并照常持久化，
 // 便于用户逐项填写或关闭后保留。enabled=true 时由 service 和数据库约束保证三项均非空。
-func (r *accountRepository) UpdateSub2APIOptimizeSettings(ctx context.Context, providerID, accountID int64, enabled bool, minMultiplier, maxMultiplier *float64, testModel *string) error {
+func (r *sub2APIAccountRepository) UpdateSub2APIOptimizeSettings(ctx context.Context, providerID, accountID int64, enabled bool, minMultiplier, maxMultiplier *float64, testModel *string) error {
 	result, err := r.sql.ExecContext(ctx,
 		`UPDATE accounts
 		 SET sub2api_optimize_enabled = $1, sub2api_min_multiplier = $2, sub2api_max_multiplier = $3, sub2api_test_model = $4, updated_at = NOW()
@@ -145,7 +240,7 @@ func (r *accountRepository) UpdateSub2APIOptimizeSettings(ctx context.Context, p
 }
 
 // ListByProviderID 获取关联到指定 Provider 的所有 Account（含远端分组信息）
-func (r *accountRepository) ListByProviderID(ctx context.Context, providerID int64) ([]service.Account, error) {
+func (r *sub2APIAccountRepository) ListByProviderID(ctx context.Context, providerID int64) ([]service.Account, error) {
 	rows, err := r.sql.QueryContext(ctx, `
 		SELECT id, name, platform, status,
 		       provider_id, provider_api_key_id, remote_group_id,

@@ -488,7 +488,7 @@
                 ><Icon v-if="accountMultiplierOutOfRange(acc)" name="exclamationCircle" size="xs" class="flex-shrink-0" />×{{ acc.remote_group_multiplier }}</span>
                 <span v-else class="text-gray-400 text-xs">—</span>
               </div>
-              <!-- 参与定时开关（独立列） -->
+              <!-- 探针自动选组开关（独立列） -->
               <div class="flex items-center justify-center">
                 <button
                   type="button"
@@ -869,18 +869,7 @@
       @test-connection="handleTestConnection"
       @probe-settings="openProbeDialog"
       @optimize-all="handleOptimizeAll"
-      @schedule-optimize="handleScheduleOptimize"
       @delete="handleDeleteClick"
-    />
-
-    <!-- ============================================================ -->
-    <!-- ⏰ 定时优化配置                                               -->
-    <!-- ============================================================ -->
-    <Sub2APIOptimizeScheduleModal
-      v-if="scheduleModal.providerId"
-      :show="scheduleModal.show"
-      :provider-id="scheduleModal.providerId"
-      @close="scheduleModal.show = false"
     />
 
     <BaseDialog
@@ -959,6 +948,29 @@
             </label>
             <label class="text-sm font-medium text-gray-700 dark:text-dark-200"><span>{{ t('admin.sub2apiProviders.health.controlInterval') }}</span><span class="mt-1 block text-xs font-normal text-gray-500 dark:text-dark-400">{{ t('admin.sub2apiProviders.health.controlIntervalHint') }}</span><input v-model.number="probeForm.control_interval_seconds" type="number" min="60" max="86400" class="input mt-2 min-h-11" /></label>
             <label class="text-sm font-medium text-gray-700 dark:text-dark-200"><span>{{ t('admin.sub2apiProviders.health.controlTimeout') }}</span><span class="mt-1 block text-xs font-normal text-gray-500 dark:text-dark-400">{{ t('admin.sub2apiProviders.health.controlTimeoutHint') }}</span><input v-model.number="probeForm.timeout_seconds" type="number" min="3" max="120" class="input mt-2 min-h-11" /></label>
+          </div>
+        </section>
+
+        <section class="border-t border-gray-100 py-5 dark:border-dark-700">
+          <div class="mb-4">
+            <h3 class="text-base font-semibold text-gray-900 dark:text-white">{{ t('admin.sub2apiProviders.health.accountStatusSyncTitle') }}</h3>
+            <p class="mt-1 max-w-3xl text-sm leading-5 text-gray-500 dark:text-dark-400">{{ t('admin.sub2apiProviders.health.accountStatusSyncDescription') }}</p>
+          </div>
+          <div class="grid gap-4 md:max-w-3xl md:grid-cols-2">
+            <label class="flex min-h-11 items-center gap-3 md:col-span-2">
+              <input v-model="probeForm.account_status_sync_enabled" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
+              <span><span class="block text-sm font-semibold text-gray-800 dark:text-dark-100">{{ t('admin.sub2apiProviders.health.accountStatusSyncEnabled') }}</span><span class="mt-1 block text-sm leading-5 text-gray-500 dark:text-dark-400">{{ t('admin.sub2apiProviders.health.accountStatusSyncHint') }}</span></span>
+            </label>
+            <label class="text-sm font-medium text-gray-700 dark:text-dark-200">
+              <span>{{ t('admin.sub2apiProviders.health.accountStatusFailureThreshold') }}</span>
+              <span class="mt-1 block text-xs font-normal text-gray-500 dark:text-dark-400">{{ t('admin.sub2apiProviders.health.accountStatusFailureThresholdHint') }}</span>
+              <input v-model.number="probeForm.account_status_failure_threshold" type="number" min="1" max="20" :disabled="!probeForm.account_status_sync_enabled" class="input mt-2 min-h-11 disabled:cursor-not-allowed disabled:opacity-50" />
+            </label>
+            <label class="text-sm font-medium text-gray-700 dark:text-dark-200">
+              <span>{{ t('admin.sub2apiProviders.health.accountStatusRecoveryThreshold') }}</span>
+              <span class="mt-1 block text-xs font-normal text-gray-500 dark:text-dark-400">{{ t('admin.sub2apiProviders.health.accountStatusRecoveryThresholdHint') }}</span>
+              <input v-model.number="probeForm.account_status_recovery_threshold" type="number" min="1" max="20" :disabled="!probeForm.account_status_sync_enabled" class="input mt-2 min-h-11 disabled:cursor-not-allowed disabled:opacity-50" />
+            </label>
           </div>
         </section>
 
@@ -1102,6 +1114,7 @@ import {
 } from '@/utils/sub2apiValidation'
 import { applyOptimizeResultToAccounts } from '@/utils/sub2apiOptimization'
 import { extractErrorMessage } from '@/utils/errorHandler'
+import { extractI18nErrorMessage } from '@/utils/apiError'
 import { formatDateTime } from '@/utils/format'
 import type { Sub2APICredentialBundle } from '@/utils/sub2apiCredentialBundle'
 
@@ -1114,7 +1127,6 @@ import Sub2APIProviderLogs from '@/components/admin/Sub2APIProviderLogs.vue'
 import Sub2APIProviderRouteMonitor from '@/components/admin/Sub2APIProviderRouteMonitor.vue'
 import Sub2APICredentialBundleImport from '@/components/admin/Sub2APICredentialBundleImport.vue'
 import Sub2APIProviderActionMenu from '@/components/admin/Sub2APIProviderActionMenu.vue'
-import Sub2APIOptimizeScheduleModal from '@/components/admin/Sub2APIOptimizeScheduleModal.vue'
 import AccountTestModal from '@/components/account/AccountTestModal.vue'
 import Select from '@/components/common/Select.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
@@ -1722,17 +1734,6 @@ const openActionMenu = (row: Sub2APIProvider, event: MouseEvent) => {
   actionMenu.show = true
 }
 
-// ==================== ⏰ 定时优化配置弹窗 ====================
-const scheduleModal = reactive<{
-  show: boolean
-  providerId: number | null
-}>({ show: false, providerId: null })
-
-const handleScheduleOptimize = (row: Sub2APIProvider) => {
-  scheduleModal.providerId = row.id
-  scheduleModal.show = true
-}
-
 // ==================== Provider 健康探针 ====================
 const showProbeDialog = ref(false)
 const loadingProbeDialog = ref(false)
@@ -1748,6 +1749,9 @@ const probeForm = reactive({
   control_interval_seconds: 1800,
   timeout_seconds: 15,
   degraded_latency_ms: 2000,
+  account_status_sync_enabled: true,
+  account_status_failure_threshold: 3,
+  account_status_recovery_threshold: 2,
 })
 
 const applyProbeConfig = (config: Sub2APIProviderProbeConfig) => {
@@ -1756,6 +1760,9 @@ const applyProbeConfig = (config: Sub2APIProviderProbeConfig) => {
     control_interval_seconds: config.control_interval_seconds,
     timeout_seconds: config.timeout_seconds,
     degraded_latency_ms: config.degraded_latency_ms,
+    account_status_sync_enabled: config.account_status_sync_enabled,
+    account_status_failure_threshold: config.account_status_failure_threshold,
+    account_status_recovery_threshold: config.account_status_recovery_threshold,
   })
 }
 
@@ -2063,7 +2070,7 @@ const saveAccountOptimizeSettings = async (
   }
 }
 
-// 切换「是否参与定时优化」。
+// 切换「是否允许探针自动选组」。
 // 开启参与的前提:倍率上限、倍率下限、测试模型三者必须已填写;未填则提示先设置。
 // 三个字段的值始终保留，仅切换 enabled。
 const handleToggleParticipate = async (acc: LinkedAccountInfo) => {
@@ -2190,6 +2197,9 @@ const refreshLinkedAccounts = async (providerId: number, sync = false) => {
     if (accountsPanelProvider.value?.id === providerId) {
       accountsPanelProbeTargets.value = targets
     }
+    // Account deletion is soft-delete, so refresh the card overview after the
+    // linked-account snapshot to drop any route removed during target cleanup.
+    await loadHealthOverviews([providerId], false, true)
   } catch {
     panelLinkedAccounts.value = []
     accountsPanelProbeTargets.value = []
@@ -2380,7 +2390,12 @@ const handleLinkAccount = async () => {
     accountsPanelProvider.value = provider
     showAccountsPanel.value = true
   } catch (e:any) {
-    appStore.showError(extractErrorMessage(e, t('admin.sub2apiProviders.linkFailed')))
+    appStore.showError(extractI18nErrorMessage(
+      e,
+      t,
+      'admin.sub2apiProviders.linkErrors',
+      t('admin.sub2apiProviders.linkFailed'),
+    ))
   }
   finally { linking.value = false }
 }

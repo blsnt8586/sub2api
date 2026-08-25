@@ -18,7 +18,9 @@ import (
 // v21: Canvas 图片/音频全局按次价进入认证快照。
 // 必须升版本强制刷新——否则升级后 Redis 里旧快照仍被判定有效，新字段缺失会导致
 // canvas 分组/语音搜索计费一直回退到分组全局价直到缓存自然过期。[CUSTOM+upstream]
-const apiKeyAuthSnapshotVersion = 22
+// v23: DynamicPricingEnabled enters the auth snapshot so dynamic group floors
+// remain enforced after an L2 cache hit.
+const apiKeyAuthSnapshotVersion = 23
 
 type apiKeyAuthCacheConfig struct {
 	l1Size        int
@@ -389,6 +391,7 @@ func (s *APIKeyService) snapshotFromAPIKey(ctx context.Context, apiKey *APIKey) 
 			Status:                          apiKey.Group.Status,
 			SubscriptionType:                apiKey.Group.SubscriptionType,
 			RateMultiplier:                  apiKey.Group.RateMultiplier,
+			DynamicPricingEnabled:           apiKey.Group.DynamicPricingEnabled,
 			DailyLimitUSD:                   apiKey.Group.DailyLimitUSD,
 			WeeklyLimitUSD:                  apiKey.Group.WeeklyLimitUSD,
 			MonthlyLimitUSD:                 apiKey.Group.MonthlyLimitUSD,
@@ -489,6 +492,7 @@ func (s *APIKeyService) snapshotToAPIKey(key string, snapshot *APIKeyAuthSnapsho
 			Hydrated:                        true,
 			SubscriptionType:                snapshot.Group.SubscriptionType,
 			RateMultiplier:                  snapshot.Group.RateMultiplier,
+			DynamicPricingEnabled:           snapshot.Group.DynamicPricingEnabled,
 			DailyLimitUSD:                   snapshot.Group.DailyLimitUSD,
 			WeeklyLimitUSD:                  snapshot.Group.WeeklyLimitUSD,
 			MonthlyLimitUSD:                 snapshot.Group.MonthlyLimitUSD,

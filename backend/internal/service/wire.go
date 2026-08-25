@@ -597,7 +597,8 @@ func ProvideScheduledTestService(
 	return NewScheduledTestService(planRepo, resultRepo)
 }
 
-// ProvideScheduledTestRunnerService creates and starts ScheduledTestRunnerService.
+// ProvideScheduledTestRunnerService keeps the legacy scheduled-test service
+// available for compatibility, but does not start its old account-probe cron.
 func ProvideScheduledTestRunnerService(
 	planRepo ScheduledTestPlanRepository,
 	scheduledSvc *ScheduledTestService,
@@ -606,7 +607,6 @@ func ProvideScheduledTestRunnerService(
 	cfg *config.Config,
 ) *ScheduledTestRunnerService {
 	svc := NewScheduledTestRunnerService(planRepo, scheduledSvc, accountTestSvc, rateLimitSvc, cfg)
-	svc.Start()
 	return svc
 }
 
@@ -904,6 +904,7 @@ var ProviderSet = wire.NewSet(
 	NewContentModerationService,
 	NewAffiliateService,
 	sub2api.NewTokenCache,
+	NewSub2APIProviderOperationGate,
 	NewSub2APIProviderService,
 	NewSub2APIProviderProbeService,
 	ProvideSub2APIProviderProbeRunner,
@@ -948,19 +949,20 @@ func ProvideUserPlatformQuotaUsageFlusher(cfg *config.Config, cache BillingCache
 	return svc
 }
 
-// ProvideSub2APIOptimizeScheduleService 创建定时优化调度服务，
-// 从配置解析各平台默认测试模型（sub2api.default_test_models），为空时服务内回退内置兜底表。
+// ProvideSub2APIOptimizeScheduleService creates the optimizer with the shared
+// Provider operation gate and per-target cooldown store.
 func ProvideSub2APIOptimizeScheduleService(
 	scheduleRepo Sub2APIOptimizeScheduleRepository,
 	providerSvc *Sub2APIProviderService,
 	accountTestSvc *AccountTestService,
-	cfg *config.Config,
+	operationGate *Sub2APIProviderOperationGate,
+	lockCache LeaderLockCache,
+	concurrencyService *ConcurrencyService,
 ) *Sub2APIOptimizeScheduleService {
-	var defaultTestModels map[string]string
-	if cfg != nil {
-		defaultTestModels = cfg.Sub2API.DefaultTestModels
-	}
-	return NewSub2APIOptimizeScheduleService(scheduleRepo, providerSvc, accountTestSvc, defaultTestModels)
+	svc := NewSub2APIOptimizeScheduleService(scheduleRepo, providerSvc, accountTestSvc, operationGate)
+	svc.SetProbeAutoOptimizeCooldownLock(lockCache)
+	svc.SetAccountConcurrencyReader(concurrencyService)
+	return svc
 }
 
 // ProvideSub2APIProviderProbeRunner starts the persisted Provider health probe
@@ -980,18 +982,17 @@ func ProvideSub2APIProviderProbeRunner(
 	return runner
 }
 
-// ProvideSub2APIOptimizeRunnerService 创建并启动定时优化 Runner。
-// 注入 leader 锁，多实例部署时每个扫描周期只由一个实例执行。
+// ProvideSub2APIOptimizeRunnerService keeps the legacy schedule service
+// available for shutdown compatibility. Probe targets now own every automatic
+// optimization cadence, so legacy cron rows are intentionally not started.
 func ProvideSub2APIOptimizeRunnerService(
 	scheduleSvc *Sub2APIOptimizeScheduleService,
 	cfg *config.Config,
 	lockCache LeaderLockCache,
 	db *sql.DB,
 ) *Sub2APIOptimizeRunnerService {
-	scheduleSvc.SetExecutionLock(lockCache, db)
 	svc := NewSub2APIOptimizeRunnerService(scheduleSvc, cfg)
 	svc.SetLeaderLock(lockCache, db)
-	svc.Start()
 	return svc
 }
 

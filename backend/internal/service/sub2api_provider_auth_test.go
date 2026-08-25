@@ -15,6 +15,8 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent"
 	"github.com/Wei-Shaw/sub2api/internal/domain"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/sub2api"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type providerAuthTestEncryptor struct{}
@@ -84,20 +86,20 @@ func (r *providerAuthTestRepo) UpdateAuthError(_ context.Context, _ int64, messa
 	return nil
 }
 
-func TestPrepareCreateProviderAuthRequiresStableEncryptionKey(t *testing.T) {
+func TestPrepareCreateProviderAuthRequiresProviderEncryptionKey(t *testing.T) {
 	access, refresh := "access", "refresh"
 	svc := &Sub2APIProviderService{encryptor: providerAuthTestEncryptor{}}
 	_, err := svc.prepareCreateProviderAuth(&CreateProviderInput{
 		AuthMode: domain.Sub2APIProviderAuthModeTokenPair, AccessToken: &access, RefreshToken: &refresh,
 	})
-	if err == nil || !strings.Contains(err.Error(), "totp.encryption_key") {
+	if err == nil || !strings.Contains(err.Error(), "security.provider_token_key") {
 		t.Fatalf("prepareCreateProviderAuth error=%v, want fixed encryption key requirement", err)
 	}
 }
 
 func TestPrepareCreateProviderAuthEncryptsImportedTokens(t *testing.T) {
 	access, refresh := "access-secret", "refresh-secret"
-	svc := &Sub2APIProviderService{encryptor: providerAuthTestEncryptor{}, tokenEncryptionKeyConfigured: true}
+	svc := &Sub2APIProviderService{encryptor: providerAuthTestEncryptor{}, providerTokenKeyConfigured: true}
 	prepared, err := svc.prepareCreateProviderAuth(&CreateProviderInput{
 		AuthMode: domain.Sub2APIProviderAuthModeTokenPair, AccessToken: &access, RefreshToken: &refresh,
 	})
@@ -113,6 +115,18 @@ func TestPrepareCreateProviderAuthEncryptsImportedTokens(t *testing.T) {
 	if prepared.expiresAt == nil || !prepared.expiresAt.After(time.Now()) {
 		t.Fatalf("missing conservative token expiry: %+v", prepared.expiresAt)
 	}
+}
+
+func TestPrepareCreateProviderAuthPasswordDoesNotRequireProviderKey(t *testing.T) {
+	svc := &Sub2APIProviderService{}
+	password := "password"
+	prepared, err := svc.prepareCreateProviderAuth(&CreateProviderInput{
+		AuthMode: domain.Sub2APIProviderAuthModePassword,
+		Password: password,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, prepared)
+	assert.Equal(t, domain.Sub2APIProviderAuthModePassword, prepared.mode)
 }
 
 func TestValidateProviderProxyRequiresActiveUnexpiredProxy(t *testing.T) {

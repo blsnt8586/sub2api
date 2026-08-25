@@ -22,6 +22,7 @@ fork 在上游之上叠加了三大功能块，外加一层解耦重构：
 | E. OpenAI/Codex 全局 system prompt 注入 | 管理端配置全局系统提示词，前置合并到 Responses `instructions`，覆盖 responses/codex/chat 三条路径 | 低（逻辑全在新增文件，上游纯追加 + 2 处网关钩子） |
 | F. Codex 雷达（第三方数据代理） | 代理缓存第三方站点 codexradar.com 的 Codex 观测数据，用户+管理员共用页面，带第三方来源免责说明 | 极低（全新增文件 + opt-in 功能开关，零上游钩子） |
 | G. 首页整体重构（2026-07 提交 `0f60c3edd`） | `HomeView.vue` 全量重写为深空网关风格：明暗双主题（默认亮色）、canvas 波形/星尘/剖半点阵地球、Base URL 复制组件、SDK 兼容徽章、终端三 Tab、FAQ；`landing.ts`(zh/en) 新增大量 key；`site_subtitle` 支持 JSON 多语言；router `scrollBehavior` 刷新不恢复滚动位置 | **高（HomeView.vue 与上游完全分叉，同步时保留本 fork 版本）** |
+| H. 分组动态定价 | 按本地分组内账号最高上游倍率加固定盈利倍率，自动维护最终销售倍率；空分组回退静态备用倍率 | 中（Group schema/API/管理页 + 计费保护，数据库触发器为核心） |
 
 > 注：**Grok 平台是上游自带**，非本 fork 新增。fork 唯一新增的平台是**即梦（jimeng）**。
 
@@ -380,6 +381,31 @@ Refresh Token 轮换、Cloudflare 错误分类和管理面板，不引入它的 
 
 ---
 
+## 四之二、分组动态定价（功能块 H）
+
+管理端分组支持“固定倍率 / 动态倍率”两种模式。动态模式的有效销售倍率为：
+
+```text
+groups.rate_multiplier = MAX(COALESCE(accounts.remote_group_multiplier, accounts.rate_multiplier))
+                         + groups.dynamic_pricing_markup
+```
+
+- `dynamic_pricing_markup` 是绝对倍率加成，不是百分比；`0.08 + 0.02 = 0.10`。
+- 统计所有未删除且仍绑定在本地分组的账号，不因临时 `error`、限流或
+  `schedulable=false` 降价，避免账号恢复后重新调度形成亏损窗口。
+- 无有效账号倍率时使用 `manual_rate_multiplier`；关闭动态模式也恢复此备用倍率。
+- `groups.rate_multiplier` 仍是所有计费链路的唯一生效字段。动态模式下用户专属倍率
+  低于动态底价时按动态底价计费。
+
+数据库迁移 `backend/migrations/238_group_dynamic_pricing.sql` 提供带分组行锁的原子重算函数，
+并通过 statement-level transition-table triggers 覆盖账号绑定/解绑、软删除、Provider
+关联解除、远端分组同步和优化切组。`groups` 的配置变更也由触发器立即重算，最终倍率变化
+继续复用 `auth_cache_invalidation_outbox` 使所有实例的 API Key 认证缓存失效。
+
+主要冲突文件：`ent/schema/group.go`、`internal/service/admin_group.go`、
+`internal/repository/group_repo.go`、两条 usage billing/profit-control 链路和
+`frontend/src/views/admin/GroupsView.vue`。同步上游后必须重新生成 Ent 并执行迁移测试。
+
 ## 五、部署改动
 
 ### 5.1 自建镜像
@@ -457,7 +483,8 @@ cd backend && make build            # 产出 backend/bin/server
 
 ### F.1 设计要点
 
-- **数据源**：仅代理原站两个公开结构化接口：`https://codexradar.com/api/radar-insights`（站长推荐）和 `https://codexradar.com/api/intelligence-efficiency-metrics`（综合智能）。不再采集原站图片、`current.json`、社区体感分、额度/Fast 雷达等其他区域。
+- **数据源**：仅代理原站三个公开结构化接口：`https://codexradar.com/api/radar-insights`（站长推荐）、`https://codexradar.com/api/intelligence-efficiency-metrics`（软件工程能力，deep-swe 基准）和 `https://codexradar.com/api/visual-spatial-reasoning`（视觉空间推理，pompeii-adjacency 基准）。不再采集原站图片、`current.json`、社区体感分、额度/Fast 雷达等其他区域。
+- **综合智能为前端合成**：原站没有现成的「综合智能」接口——其页面展示的是两个基准按「模型|档位」配对后的合成结果。本平台前端复刻原站算法（`CodexRadarView.vue` 的 `comprehensivePoints`）：IQ 取等权几何平均 `√(软件IQ×视觉IQ)`，价格/耗时按各自样本数（`price_samples`/`duration_samples`，缺失回退 `valid_tasks`/`total`）加权平均，运行次数相加；只纳入两维均有有效成绩的档位，visual 数据缺失时降级展示软件工程数据。
 - **后端代理缓存**：不让终端用户浏览器直连第三方；进程内 `atomic.Value` 缓存，1 小时 TTL。
 - **懒加载 + stale-while-revalidate**：请求命中时按需刷新；缓存过期时先返回旧数据、后台异步刷新，不阻塞请求；失败按 30s 节流，绝不打爆对方。
 - **定时预热（治冷启动加载失败）**：cron `0 * * * *`（时区取 `cfg.Timezone`，默认 Asia/Shanghai）每小时整点拉取；另在进程启动后延迟 5s 做一次启动预热。预热仅在功能开关开启时执行，与上游解耦。
@@ -465,7 +492,7 @@ cd backend && make build            # 产出 backend/bin/server
 
 ### F.2 新增文件（零上游依赖，直接保留）
 
-- `backend/internal/service/codexradar_service.go` — 核心：`NewCodexRadarService`、`EnsureFresh`（懒加载+SWR）、`DataSnapshot`（两个 JSON 快照）、`ConfigureScheduler`/`Start`/`Stop`/`warmup`/`forceRefresh`（每小时预热）。
+- `backend/internal/service/codexradar_service.go` — 核心：`NewCodexRadarService`、`EnsureFresh`（懒加载+SWR）、`DataSnapshot`（三个 JSON 快照：推荐/软件工程/视觉空间）、`ConfigureScheduler`/`Start`/`Stop`/`warmup`/`forceRefresh`（每小时预热）。
 - `backend/internal/service/codexradar_service_test.go` — 10 用例（拉取缓存/空态/SWR/上游报错保留旧数据 + 预热开关关闭跳过/开启拉取/forceRefresh 绕过 TTL/Start-Stop 幂等 + 图片缩放变小/非图透传）。
 - `backend/internal/handler/codexradar_handler.go` — `Image`（ETag 协商缓存 + 私有 1h 缓存，源站日更两次）、`Summary`（原始 JSON + source/attribution/fetched_at 元信息）。开关关闭返回 403。
 - `frontend/src/api/codexradar.ts` — `getCodexRadarSummary` 及两类数据类型。

@@ -121,10 +121,6 @@ type AccountRepository interface {
 	// 仅当 proxy_fallback_origin_id IS NOT NULL 时更新，否则视为账号不存在（返回 ErrAccountNotFound）。
 	RevertProxyFallback(ctx context.Context, accountID int64) error
 
-	// Sub2APIAccountRepository 二开扩展方法（Provider 关联 + 定时优化），
-	// 定义在 account_service_sub2api.go，以隔离上游同步冲突。
-	Sub2APIAccountRepository
-
 	// ListShadowsByParent 返回指定父账号的影子账号；当前实现仅查 quota_dimension='spark'（唯一预设）。
 	// ⚠️ 新增影子维度时：须更新此函数（或新增维度专用列举），并检查所有调用点（级联删除/一母一影校验/type 守卫），否则会静默漏掉新维度。
 	ListShadowsByParent(ctx context.Context, parentID int64) ([]*Account, error)

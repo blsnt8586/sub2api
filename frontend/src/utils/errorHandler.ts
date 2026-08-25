@@ -9,7 +9,16 @@
  * @returns 错误消息字符串
  */
 export function extractErrorMessage(error: any, fallback: string): string {
-  return error?.response?.data?.message ?? fallback
+  const message =
+    error?.response?.data?.message ??
+    error?.response?.data?.error?.message ??
+    error?.message
+  if (typeof message === 'string' && message.trim()) return message
+
+  const reason = error?.reason ?? error?.response?.data?.reason
+  if (typeof reason === 'string' && reason.trim()) return reason
+
+  return fallback
 }
 
 /**

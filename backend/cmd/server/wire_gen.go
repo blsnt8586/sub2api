@@ -277,14 +277,20 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	affiliateHandler := admin.NewAffiliateHandler(affiliateService, adminService)
 	complianceHandler := admin.NewComplianceHandler(settingService)
 	sub2APIProviderRepository := repository.NewSub2APIProviderRepository(client)
+	sub2APIAccountRepository := repository.NewSub2APIAccountRepository(accountRepository, db)
 	tokenCache := sub2api.NewTokenCache()
+	providerTokenEncryptor, err := repository.NewProviderTokenEncryptor(configConfig)
+	if err != nil {
+		return nil, err
+	}
 	sub2APIProviderRemoteOverviewCache := repository.NewSub2APIProviderRemoteOverviewCache(redisClient)
-	sub2APIProviderService := service.NewSub2APIProviderService(sub2APIProviderRepository, accountRepository, proxyRepository, tokenCache, secretEncryptor, sub2APIProviderRemoteOverviewCache, configConfig)
+	sub2APIProviderOperationGate := service.NewSub2APIProviderOperationGate(leaderLockCache, db)
+	sub2APIProviderService := service.NewSub2APIProviderService(sub2APIProviderRepository, sub2APIAccountRepository, proxyRepository, tokenCache, providerTokenEncryptor, sub2APIProviderRemoteOverviewCache, sub2APIProviderOperationGate, configConfig)
 	sub2APIProviderProbeRepository := repository.NewSub2APIProviderProbeRepository(client, db)
-	sub2APIProviderProbeService := service.NewSub2APIProviderProbeService(sub2APIProviderRepository, sub2APIProviderProbeRepository, accountRepository, accountTestService, tokenCache, secretEncryptor)
+	sub2APIProviderProbeService := service.NewSub2APIProviderProbeService(sub2APIProviderRepository, sub2APIProviderProbeRepository, sub2APIAccountRepository, accountTestService, rateLimitService, tokenCache, providerTokenEncryptor, sub2APIProviderOperationGate)
 	sub2APIProviderHandler := admin.NewSub2APIProviderHandler(sub2APIProviderService, sub2APIProviderProbeService)
 	sub2APIOptimizeScheduleRepository := repository.NewSub2APIOptimizeScheduleRepository(client)
-	sub2APIOptimizeScheduleService := service.ProvideSub2APIOptimizeScheduleService(sub2APIOptimizeScheduleRepository, sub2APIProviderService, accountTestService, configConfig)
+	sub2APIOptimizeScheduleService := service.ProvideSub2APIOptimizeScheduleService(sub2APIOptimizeScheduleRepository, sub2APIProviderService, accountTestService, sub2APIProviderOperationGate, leaderLockCache, concurrencyService)
 	sub2APIOptimizeScheduleHandler := admin.NewSub2APIOptimizeScheduleHandler(sub2APIOptimizeScheduleService)
 	auditLogRepository := repository.NewAuditLogRepository(db)
 	auditLogService := service.ProvideAuditLogService(auditLogRepository, settingService)

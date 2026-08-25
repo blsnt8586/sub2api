@@ -278,8 +278,9 @@ describe('Sub2APIProviderCard', () => {
     expect(wrapper.get('[data-test="provider-remote-overview"]').attributes('disabled')).toBeDefined()
   })
 
-  it('prioritizes a compact account preview and links to the full account panel', () => {
+  it('shows every account probe in the provider pane while keeping abnormal accounts first', () => {
     const routes = Array.from({ length: 12 }, (_, index) => route(index + 1, `Account ${index + 1}`, index % 2 ? 'anthropic' : 'openai'))
+    routes[7] = { ...routes[7], status: 'unhealthy', latency_ms: 4800 }
     const wrapper = mount(Sub2APIProviderCard, {
       props: {
         provider: { ...provider, accounts_count: routes.length },
@@ -288,8 +289,12 @@ describe('Sub2APIProviderCard', () => {
     })
 
     expect(wrapper.find('[data-test="provider-route-scroll"]').exists()).toBe(false)
-    expect(wrapper.findAll('[data-test^="provider-route-probe-"]')).toHaveLength(3)
-    expect(wrapper.get('[data-test="provider-view-all-routes"]').exists()).toBe(true)
+    expect(wrapper.findAll('[data-test^="provider-route-probe-"]')).toHaveLength(routes.length)
+    expect(wrapper.find('[data-test="provider-view-all-routes"]').exists()).toBe(false)
+    expect(wrapper.findAll('[data-test^="provider-route-probe-"]')[0].attributes('data-test')).toBe('provider-route-probe-8')
+    for (const item of routes) {
+      expect(wrapper.find(`[data-test="provider-route-probe-${item.id}"]`).exists()).toBe(true)
+    }
   })
 
   it('keeps multiplier metadata neutral unless an enabled optimization range is exceeded', () => {

@@ -205,6 +205,76 @@ func (_c *Sub2APIProviderProbeTargetCreate) SetNillableDegradedLatencyMs(v *int)
 	return _c
 }
 
+// SetDegradedOptimizeThreshold sets the "degraded_optimize_threshold" field.
+func (_c *Sub2APIProviderProbeTargetCreate) SetDegradedOptimizeThreshold(v int) *Sub2APIProviderProbeTargetCreate {
+	_c.mutation.SetDegradedOptimizeThreshold(v)
+	return _c
+}
+
+// SetNillableDegradedOptimizeThreshold sets the "degraded_optimize_threshold" field if the given value is not nil.
+func (_c *Sub2APIProviderProbeTargetCreate) SetNillableDegradedOptimizeThreshold(v *int) *Sub2APIProviderProbeTargetCreate {
+	if v != nil {
+		_c.SetDegradedOptimizeThreshold(*v)
+	}
+	return _c
+}
+
+// SetCostOptimizeEnabled sets the "cost_optimize_enabled" field.
+func (_c *Sub2APIProviderProbeTargetCreate) SetCostOptimizeEnabled(v bool) *Sub2APIProviderProbeTargetCreate {
+	_c.mutation.SetCostOptimizeEnabled(v)
+	return _c
+}
+
+// SetNillableCostOptimizeEnabled sets the "cost_optimize_enabled" field if the given value is not nil.
+func (_c *Sub2APIProviderProbeTargetCreate) SetNillableCostOptimizeEnabled(v *bool) *Sub2APIProviderProbeTargetCreate {
+	if v != nil {
+		_c.SetCostOptimizeEnabled(*v)
+	}
+	return _c
+}
+
+// SetCostOptimizeIntervalSeconds sets the "cost_optimize_interval_seconds" field.
+func (_c *Sub2APIProviderProbeTargetCreate) SetCostOptimizeIntervalSeconds(v int) *Sub2APIProviderProbeTargetCreate {
+	_c.mutation.SetCostOptimizeIntervalSeconds(v)
+	return _c
+}
+
+// SetNillableCostOptimizeIntervalSeconds sets the "cost_optimize_interval_seconds" field if the given value is not nil.
+func (_c *Sub2APIProviderProbeTargetCreate) SetNillableCostOptimizeIntervalSeconds(v *int) *Sub2APIProviderProbeTargetCreate {
+	if v != nil {
+		_c.SetCostOptimizeIntervalSeconds(*v)
+	}
+	return _c
+}
+
+// SetCostOptimizeHealthyThreshold sets the "cost_optimize_healthy_threshold" field.
+func (_c *Sub2APIProviderProbeTargetCreate) SetCostOptimizeHealthyThreshold(v int) *Sub2APIProviderProbeTargetCreate {
+	_c.mutation.SetCostOptimizeHealthyThreshold(v)
+	return _c
+}
+
+// SetNillableCostOptimizeHealthyThreshold sets the "cost_optimize_healthy_threshold" field if the given value is not nil.
+func (_c *Sub2APIProviderProbeTargetCreate) SetNillableCostOptimizeHealthyThreshold(v *int) *Sub2APIProviderProbeTargetCreate {
+	if v != nil {
+		_c.SetCostOptimizeHealthyThreshold(*v)
+	}
+	return _c
+}
+
+// SetLastCostOptimizeAt sets the "last_cost_optimize_at" field.
+func (_c *Sub2APIProviderProbeTargetCreate) SetLastCostOptimizeAt(v time.Time) *Sub2APIProviderProbeTargetCreate {
+	_c.mutation.SetLastCostOptimizeAt(v)
+	return _c
+}
+
+// SetNillableLastCostOptimizeAt sets the "last_cost_optimize_at" field if the given value is not nil.
+func (_c *Sub2APIProviderProbeTargetCreate) SetNillableLastCostOptimizeAt(v *time.Time) *Sub2APIProviderProbeTargetCreate {
+	if v != nil {
+		_c.SetLastCostOptimizeAt(*v)
+	}
+	return _c
+}
+
 // SetFailureThreshold sets the "failure_threshold" field.
 func (_c *Sub2APIProviderProbeTargetCreate) SetFailureThreshold(v int) *Sub2APIProviderProbeTargetCreate {
 	_c.mutation.SetFailureThreshold(v)
@@ -353,6 +423,22 @@ func (_c *Sub2APIProviderProbeTargetCreate) defaults() {
 		v := sub2apiproviderprobetarget.DefaultDegradedLatencyMs
 		_c.mutation.SetDegradedLatencyMs(v)
 	}
+	if _, ok := _c.mutation.DegradedOptimizeThreshold(); !ok {
+		v := sub2apiproviderprobetarget.DefaultDegradedOptimizeThreshold
+		_c.mutation.SetDegradedOptimizeThreshold(v)
+	}
+	if _, ok := _c.mutation.CostOptimizeEnabled(); !ok {
+		v := sub2apiproviderprobetarget.DefaultCostOptimizeEnabled
+		_c.mutation.SetCostOptimizeEnabled(v)
+	}
+	if _, ok := _c.mutation.CostOptimizeIntervalSeconds(); !ok {
+		v := sub2apiproviderprobetarget.DefaultCostOptimizeIntervalSeconds
+		_c.mutation.SetCostOptimizeIntervalSeconds(v)
+	}
+	if _, ok := _c.mutation.CostOptimizeHealthyThreshold(); !ok {
+		v := sub2apiproviderprobetarget.DefaultCostOptimizeHealthyThreshold
+		_c.mutation.SetCostOptimizeHealthyThreshold(v)
+	}
 	if _, ok := _c.mutation.FailureThreshold(); !ok {
 		v := sub2apiproviderprobetarget.DefaultFailureThreshold
 		_c.mutation.SetFailureThreshold(v)
@@ -423,6 +509,33 @@ func (_c *Sub2APIProviderProbeTargetCreate) check() error {
 	if v, ok := _c.mutation.DegradedLatencyMs(); ok {
 		if err := sub2apiproviderprobetarget.DegradedLatencyMsValidator(v); err != nil {
 			return &ValidationError{Name: "degraded_latency_ms", err: fmt.Errorf(`ent: validator failed for field "Sub2APIProviderProbeTarget.degraded_latency_ms": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.DegradedOptimizeThreshold(); !ok {
+		return &ValidationError{Name: "degraded_optimize_threshold", err: errors.New(`ent: missing required field "Sub2APIProviderProbeTarget.degraded_optimize_threshold"`)}
+	}
+	if v, ok := _c.mutation.DegradedOptimizeThreshold(); ok {
+		if err := sub2apiproviderprobetarget.DegradedOptimizeThresholdValidator(v); err != nil {
+			return &ValidationError{Name: "degraded_optimize_threshold", err: fmt.Errorf(`ent: validator failed for field "Sub2APIProviderProbeTarget.degraded_optimize_threshold": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.CostOptimizeEnabled(); !ok {
+		return &ValidationError{Name: "cost_optimize_enabled", err: errors.New(`ent: missing required field "Sub2APIProviderProbeTarget.cost_optimize_enabled"`)}
+	}
+	if _, ok := _c.mutation.CostOptimizeIntervalSeconds(); !ok {
+		return &ValidationError{Name: "cost_optimize_interval_seconds", err: errors.New(`ent: missing required field "Sub2APIProviderProbeTarget.cost_optimize_interval_seconds"`)}
+	}
+	if v, ok := _c.mutation.CostOptimizeIntervalSeconds(); ok {
+		if err := sub2apiproviderprobetarget.CostOptimizeIntervalSecondsValidator(v); err != nil {
+			return &ValidationError{Name: "cost_optimize_interval_seconds", err: fmt.Errorf(`ent: validator failed for field "Sub2APIProviderProbeTarget.cost_optimize_interval_seconds": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.CostOptimizeHealthyThreshold(); !ok {
+		return &ValidationError{Name: "cost_optimize_healthy_threshold", err: errors.New(`ent: missing required field "Sub2APIProviderProbeTarget.cost_optimize_healthy_threshold"`)}
+	}
+	if v, ok := _c.mutation.CostOptimizeHealthyThreshold(); ok {
+		if err := sub2apiproviderprobetarget.CostOptimizeHealthyThresholdValidator(v); err != nil {
+			return &ValidationError{Name: "cost_optimize_healthy_threshold", err: fmt.Errorf(`ent: validator failed for field "Sub2APIProviderProbeTarget.cost_optimize_healthy_threshold": %w`, err)}
 		}
 	}
 	if _, ok := _c.mutation.FailureThreshold(); !ok {
@@ -521,6 +634,26 @@ func (_c *Sub2APIProviderProbeTargetCreate) createSpec() (*Sub2APIProviderProbeT
 	if value, ok := _c.mutation.DegradedLatencyMs(); ok {
 		_spec.SetField(sub2apiproviderprobetarget.FieldDegradedLatencyMs, field.TypeInt, value)
 		_node.DegradedLatencyMs = value
+	}
+	if value, ok := _c.mutation.DegradedOptimizeThreshold(); ok {
+		_spec.SetField(sub2apiproviderprobetarget.FieldDegradedOptimizeThreshold, field.TypeInt, value)
+		_node.DegradedOptimizeThreshold = value
+	}
+	if value, ok := _c.mutation.CostOptimizeEnabled(); ok {
+		_spec.SetField(sub2apiproviderprobetarget.FieldCostOptimizeEnabled, field.TypeBool, value)
+		_node.CostOptimizeEnabled = value
+	}
+	if value, ok := _c.mutation.CostOptimizeIntervalSeconds(); ok {
+		_spec.SetField(sub2apiproviderprobetarget.FieldCostOptimizeIntervalSeconds, field.TypeInt, value)
+		_node.CostOptimizeIntervalSeconds = value
+	}
+	if value, ok := _c.mutation.CostOptimizeHealthyThreshold(); ok {
+		_spec.SetField(sub2apiproviderprobetarget.FieldCostOptimizeHealthyThreshold, field.TypeInt, value)
+		_node.CostOptimizeHealthyThreshold = value
+	}
+	if value, ok := _c.mutation.LastCostOptimizeAt(); ok {
+		_spec.SetField(sub2apiproviderprobetarget.FieldLastCostOptimizeAt, field.TypeTime, value)
+		_node.LastCostOptimizeAt = &value
 	}
 	if value, ok := _c.mutation.FailureThreshold(); ok {
 		_spec.SetField(sub2apiproviderprobetarget.FieldFailureThreshold, field.TypeInt, value)
@@ -847,6 +980,90 @@ func (u *Sub2APIProviderProbeTargetUpsert) UpdateDegradedLatencyMs() *Sub2APIPro
 // AddDegradedLatencyMs adds v to the "degraded_latency_ms" field.
 func (u *Sub2APIProviderProbeTargetUpsert) AddDegradedLatencyMs(v int) *Sub2APIProviderProbeTargetUpsert {
 	u.Add(sub2apiproviderprobetarget.FieldDegradedLatencyMs, v)
+	return u
+}
+
+// SetDegradedOptimizeThreshold sets the "degraded_optimize_threshold" field.
+func (u *Sub2APIProviderProbeTargetUpsert) SetDegradedOptimizeThreshold(v int) *Sub2APIProviderProbeTargetUpsert {
+	u.Set(sub2apiproviderprobetarget.FieldDegradedOptimizeThreshold, v)
+	return u
+}
+
+// UpdateDegradedOptimizeThreshold sets the "degraded_optimize_threshold" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsert) UpdateDegradedOptimizeThreshold() *Sub2APIProviderProbeTargetUpsert {
+	u.SetExcluded(sub2apiproviderprobetarget.FieldDegradedOptimizeThreshold)
+	return u
+}
+
+// AddDegradedOptimizeThreshold adds v to the "degraded_optimize_threshold" field.
+func (u *Sub2APIProviderProbeTargetUpsert) AddDegradedOptimizeThreshold(v int) *Sub2APIProviderProbeTargetUpsert {
+	u.Add(sub2apiproviderprobetarget.FieldDegradedOptimizeThreshold, v)
+	return u
+}
+
+// SetCostOptimizeEnabled sets the "cost_optimize_enabled" field.
+func (u *Sub2APIProviderProbeTargetUpsert) SetCostOptimizeEnabled(v bool) *Sub2APIProviderProbeTargetUpsert {
+	u.Set(sub2apiproviderprobetarget.FieldCostOptimizeEnabled, v)
+	return u
+}
+
+// UpdateCostOptimizeEnabled sets the "cost_optimize_enabled" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsert) UpdateCostOptimizeEnabled() *Sub2APIProviderProbeTargetUpsert {
+	u.SetExcluded(sub2apiproviderprobetarget.FieldCostOptimizeEnabled)
+	return u
+}
+
+// SetCostOptimizeIntervalSeconds sets the "cost_optimize_interval_seconds" field.
+func (u *Sub2APIProviderProbeTargetUpsert) SetCostOptimizeIntervalSeconds(v int) *Sub2APIProviderProbeTargetUpsert {
+	u.Set(sub2apiproviderprobetarget.FieldCostOptimizeIntervalSeconds, v)
+	return u
+}
+
+// UpdateCostOptimizeIntervalSeconds sets the "cost_optimize_interval_seconds" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsert) UpdateCostOptimizeIntervalSeconds() *Sub2APIProviderProbeTargetUpsert {
+	u.SetExcluded(sub2apiproviderprobetarget.FieldCostOptimizeIntervalSeconds)
+	return u
+}
+
+// AddCostOptimizeIntervalSeconds adds v to the "cost_optimize_interval_seconds" field.
+func (u *Sub2APIProviderProbeTargetUpsert) AddCostOptimizeIntervalSeconds(v int) *Sub2APIProviderProbeTargetUpsert {
+	u.Add(sub2apiproviderprobetarget.FieldCostOptimizeIntervalSeconds, v)
+	return u
+}
+
+// SetCostOptimizeHealthyThreshold sets the "cost_optimize_healthy_threshold" field.
+func (u *Sub2APIProviderProbeTargetUpsert) SetCostOptimizeHealthyThreshold(v int) *Sub2APIProviderProbeTargetUpsert {
+	u.Set(sub2apiproviderprobetarget.FieldCostOptimizeHealthyThreshold, v)
+	return u
+}
+
+// UpdateCostOptimizeHealthyThreshold sets the "cost_optimize_healthy_threshold" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsert) UpdateCostOptimizeHealthyThreshold() *Sub2APIProviderProbeTargetUpsert {
+	u.SetExcluded(sub2apiproviderprobetarget.FieldCostOptimizeHealthyThreshold)
+	return u
+}
+
+// AddCostOptimizeHealthyThreshold adds v to the "cost_optimize_healthy_threshold" field.
+func (u *Sub2APIProviderProbeTargetUpsert) AddCostOptimizeHealthyThreshold(v int) *Sub2APIProviderProbeTargetUpsert {
+	u.Add(sub2apiproviderprobetarget.FieldCostOptimizeHealthyThreshold, v)
+	return u
+}
+
+// SetLastCostOptimizeAt sets the "last_cost_optimize_at" field.
+func (u *Sub2APIProviderProbeTargetUpsert) SetLastCostOptimizeAt(v time.Time) *Sub2APIProviderProbeTargetUpsert {
+	u.Set(sub2apiproviderprobetarget.FieldLastCostOptimizeAt, v)
+	return u
+}
+
+// UpdateLastCostOptimizeAt sets the "last_cost_optimize_at" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsert) UpdateLastCostOptimizeAt() *Sub2APIProviderProbeTargetUpsert {
+	u.SetExcluded(sub2apiproviderprobetarget.FieldLastCostOptimizeAt)
+	return u
+}
+
+// ClearLastCostOptimizeAt clears the value of the "last_cost_optimize_at" field.
+func (u *Sub2APIProviderProbeTargetUpsert) ClearLastCostOptimizeAt() *Sub2APIProviderProbeTargetUpsert {
+	u.SetNull(sub2apiproviderprobetarget.FieldLastCostOptimizeAt)
 	return u
 }
 
@@ -1209,6 +1426,104 @@ func (u *Sub2APIProviderProbeTargetUpsertOne) AddDegradedLatencyMs(v int) *Sub2A
 func (u *Sub2APIProviderProbeTargetUpsertOne) UpdateDegradedLatencyMs() *Sub2APIProviderProbeTargetUpsertOne {
 	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
 		s.UpdateDegradedLatencyMs()
+	})
+}
+
+// SetDegradedOptimizeThreshold sets the "degraded_optimize_threshold" field.
+func (u *Sub2APIProviderProbeTargetUpsertOne) SetDegradedOptimizeThreshold(v int) *Sub2APIProviderProbeTargetUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.SetDegradedOptimizeThreshold(v)
+	})
+}
+
+// AddDegradedOptimizeThreshold adds v to the "degraded_optimize_threshold" field.
+func (u *Sub2APIProviderProbeTargetUpsertOne) AddDegradedOptimizeThreshold(v int) *Sub2APIProviderProbeTargetUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.AddDegradedOptimizeThreshold(v)
+	})
+}
+
+// UpdateDegradedOptimizeThreshold sets the "degraded_optimize_threshold" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsertOne) UpdateDegradedOptimizeThreshold() *Sub2APIProviderProbeTargetUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.UpdateDegradedOptimizeThreshold()
+	})
+}
+
+// SetCostOptimizeEnabled sets the "cost_optimize_enabled" field.
+func (u *Sub2APIProviderProbeTargetUpsertOne) SetCostOptimizeEnabled(v bool) *Sub2APIProviderProbeTargetUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.SetCostOptimizeEnabled(v)
+	})
+}
+
+// UpdateCostOptimizeEnabled sets the "cost_optimize_enabled" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsertOne) UpdateCostOptimizeEnabled() *Sub2APIProviderProbeTargetUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.UpdateCostOptimizeEnabled()
+	})
+}
+
+// SetCostOptimizeIntervalSeconds sets the "cost_optimize_interval_seconds" field.
+func (u *Sub2APIProviderProbeTargetUpsertOne) SetCostOptimizeIntervalSeconds(v int) *Sub2APIProviderProbeTargetUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.SetCostOptimizeIntervalSeconds(v)
+	})
+}
+
+// AddCostOptimizeIntervalSeconds adds v to the "cost_optimize_interval_seconds" field.
+func (u *Sub2APIProviderProbeTargetUpsertOne) AddCostOptimizeIntervalSeconds(v int) *Sub2APIProviderProbeTargetUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.AddCostOptimizeIntervalSeconds(v)
+	})
+}
+
+// UpdateCostOptimizeIntervalSeconds sets the "cost_optimize_interval_seconds" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsertOne) UpdateCostOptimizeIntervalSeconds() *Sub2APIProviderProbeTargetUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.UpdateCostOptimizeIntervalSeconds()
+	})
+}
+
+// SetCostOptimizeHealthyThreshold sets the "cost_optimize_healthy_threshold" field.
+func (u *Sub2APIProviderProbeTargetUpsertOne) SetCostOptimizeHealthyThreshold(v int) *Sub2APIProviderProbeTargetUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.SetCostOptimizeHealthyThreshold(v)
+	})
+}
+
+// AddCostOptimizeHealthyThreshold adds v to the "cost_optimize_healthy_threshold" field.
+func (u *Sub2APIProviderProbeTargetUpsertOne) AddCostOptimizeHealthyThreshold(v int) *Sub2APIProviderProbeTargetUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.AddCostOptimizeHealthyThreshold(v)
+	})
+}
+
+// UpdateCostOptimizeHealthyThreshold sets the "cost_optimize_healthy_threshold" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsertOne) UpdateCostOptimizeHealthyThreshold() *Sub2APIProviderProbeTargetUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.UpdateCostOptimizeHealthyThreshold()
+	})
+}
+
+// SetLastCostOptimizeAt sets the "last_cost_optimize_at" field.
+func (u *Sub2APIProviderProbeTargetUpsertOne) SetLastCostOptimizeAt(v time.Time) *Sub2APIProviderProbeTargetUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.SetLastCostOptimizeAt(v)
+	})
+}
+
+// UpdateLastCostOptimizeAt sets the "last_cost_optimize_at" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsertOne) UpdateLastCostOptimizeAt() *Sub2APIProviderProbeTargetUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.UpdateLastCostOptimizeAt()
+	})
+}
+
+// ClearLastCostOptimizeAt clears the value of the "last_cost_optimize_at" field.
+func (u *Sub2APIProviderProbeTargetUpsertOne) ClearLastCostOptimizeAt() *Sub2APIProviderProbeTargetUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.ClearLastCostOptimizeAt()
 	})
 }
 
@@ -1749,6 +2064,104 @@ func (u *Sub2APIProviderProbeTargetUpsertBulk) AddDegradedLatencyMs(v int) *Sub2
 func (u *Sub2APIProviderProbeTargetUpsertBulk) UpdateDegradedLatencyMs() *Sub2APIProviderProbeTargetUpsertBulk {
 	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
 		s.UpdateDegradedLatencyMs()
+	})
+}
+
+// SetDegradedOptimizeThreshold sets the "degraded_optimize_threshold" field.
+func (u *Sub2APIProviderProbeTargetUpsertBulk) SetDegradedOptimizeThreshold(v int) *Sub2APIProviderProbeTargetUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.SetDegradedOptimizeThreshold(v)
+	})
+}
+
+// AddDegradedOptimizeThreshold adds v to the "degraded_optimize_threshold" field.
+func (u *Sub2APIProviderProbeTargetUpsertBulk) AddDegradedOptimizeThreshold(v int) *Sub2APIProviderProbeTargetUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.AddDegradedOptimizeThreshold(v)
+	})
+}
+
+// UpdateDegradedOptimizeThreshold sets the "degraded_optimize_threshold" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsertBulk) UpdateDegradedOptimizeThreshold() *Sub2APIProviderProbeTargetUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.UpdateDegradedOptimizeThreshold()
+	})
+}
+
+// SetCostOptimizeEnabled sets the "cost_optimize_enabled" field.
+func (u *Sub2APIProviderProbeTargetUpsertBulk) SetCostOptimizeEnabled(v bool) *Sub2APIProviderProbeTargetUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.SetCostOptimizeEnabled(v)
+	})
+}
+
+// UpdateCostOptimizeEnabled sets the "cost_optimize_enabled" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsertBulk) UpdateCostOptimizeEnabled() *Sub2APIProviderProbeTargetUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.UpdateCostOptimizeEnabled()
+	})
+}
+
+// SetCostOptimizeIntervalSeconds sets the "cost_optimize_interval_seconds" field.
+func (u *Sub2APIProviderProbeTargetUpsertBulk) SetCostOptimizeIntervalSeconds(v int) *Sub2APIProviderProbeTargetUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.SetCostOptimizeIntervalSeconds(v)
+	})
+}
+
+// AddCostOptimizeIntervalSeconds adds v to the "cost_optimize_interval_seconds" field.
+func (u *Sub2APIProviderProbeTargetUpsertBulk) AddCostOptimizeIntervalSeconds(v int) *Sub2APIProviderProbeTargetUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.AddCostOptimizeIntervalSeconds(v)
+	})
+}
+
+// UpdateCostOptimizeIntervalSeconds sets the "cost_optimize_interval_seconds" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsertBulk) UpdateCostOptimizeIntervalSeconds() *Sub2APIProviderProbeTargetUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.UpdateCostOptimizeIntervalSeconds()
+	})
+}
+
+// SetCostOptimizeHealthyThreshold sets the "cost_optimize_healthy_threshold" field.
+func (u *Sub2APIProviderProbeTargetUpsertBulk) SetCostOptimizeHealthyThreshold(v int) *Sub2APIProviderProbeTargetUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.SetCostOptimizeHealthyThreshold(v)
+	})
+}
+
+// AddCostOptimizeHealthyThreshold adds v to the "cost_optimize_healthy_threshold" field.
+func (u *Sub2APIProviderProbeTargetUpsertBulk) AddCostOptimizeHealthyThreshold(v int) *Sub2APIProviderProbeTargetUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.AddCostOptimizeHealthyThreshold(v)
+	})
+}
+
+// UpdateCostOptimizeHealthyThreshold sets the "cost_optimize_healthy_threshold" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsertBulk) UpdateCostOptimizeHealthyThreshold() *Sub2APIProviderProbeTargetUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.UpdateCostOptimizeHealthyThreshold()
+	})
+}
+
+// SetLastCostOptimizeAt sets the "last_cost_optimize_at" field.
+func (u *Sub2APIProviderProbeTargetUpsertBulk) SetLastCostOptimizeAt(v time.Time) *Sub2APIProviderProbeTargetUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.SetLastCostOptimizeAt(v)
+	})
+}
+
+// UpdateLastCostOptimizeAt sets the "last_cost_optimize_at" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsertBulk) UpdateLastCostOptimizeAt() *Sub2APIProviderProbeTargetUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.UpdateLastCostOptimizeAt()
+	})
+}
+
+// ClearLastCostOptimizeAt clears the value of the "last_cost_optimize_at" field.
+func (u *Sub2APIProviderProbeTargetUpsertBulk) ClearLastCostOptimizeAt() *Sub2APIProviderProbeTargetUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.ClearLastCostOptimizeAt()
 	})
 }
 

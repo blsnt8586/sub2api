@@ -302,14 +302,15 @@ func (c *Client) storeBoundTokenPair(ctx context.Context) error {
 
 // APIKey API Key 结构
 type APIKey struct {
-	ID              int64   `json:"id"`
-	Name            string  `json:"name"`
-	Key             string  `json:"key"`
-	Status          string  `json:"status"`
-	GroupID         int64   `json:"group_id"`
-	GroupName       string  `json:"-"` // 从嵌套的 group 对象中读取
-	GroupMultiplier float64 `json:"-"` // 从嵌套的 group 对象中读取
-	Group           *struct {
+	ID        int64  `json:"id"`
+	Name      string `json:"name"`
+	Key       string `json:"key"`
+	LegacyKey string `json:"api_key"`
+	KeyPrefix string `json:"key_prefix"`
+	MaskedKey string `json:"masked_key"`
+	Status    string `json:"status"`
+	GroupID   int64  `json:"group_id"`
+	Group     *struct {
 		ID             int64   `json:"id"`
 		Name           string  `json:"name"`
 		RateMultiplier float64 `json:"rate_multiplier"`

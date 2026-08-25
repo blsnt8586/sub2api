@@ -146,6 +146,12 @@ func GroupFromServiceAdmin(g *service.Group) *AdminGroup {
 	}
 	out := &AdminGroup{
 		Group:                       groupFromServiceBase(g),
+		DynamicPricingEnabled:       g.DynamicPricingEnabled,
+		DynamicPricingMarkup:        g.DynamicPricingMarkup,
+		ManualRateMultiplier:        g.ManualRateMultiplier,
+		DynamicSourceMaxMultiplier:  g.DynamicSourceMaxMultiplier,
+		DynamicPricingUpdatedAt:     g.DynamicPricingUpdatedAt,
+		DynamicPricingStatus:        g.DynamicPricingStatus,
 		ProfitControlEnabled:        g.ProfitControlEnabled,
 		ProfitMinMargin:             g.ProfitMinMargin,
 		ProfitSafetyBuffer:          g.ProfitSafetyBuffer,

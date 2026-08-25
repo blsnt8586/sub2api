@@ -53,6 +53,14 @@ type SecretEncryptor interface {
 	Decrypt(ciphertext string) (string, error)
 }
 
+// ProviderTokenEncryptor is intentionally a distinct DI type from
+// SecretEncryptor. Provider credentials use their own configured key and
+// must not implicitly reuse the TOTP encryption key.
+type ProviderTokenEncryptor interface {
+	Encrypt(plaintext string) (string, error)
+	Decrypt(ciphertext string) (string, error)
+}
+
 // TotpSetupSession represents a TOTP setup session
 type TotpSetupSession struct {
 	Secret     string // Plain text TOTP secret (not encrypted yet)

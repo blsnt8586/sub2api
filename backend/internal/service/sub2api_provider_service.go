@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"sort"
 	"strconv"
@@ -12,6 +14,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/domain"
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/sub2api"
 )
 
@@ -98,20 +101,21 @@ type Sub2APIProviderFilters struct {
 
 // Sub2APIProviderService 处理 Provider 业务逻辑
 type Sub2APIProviderService struct {
-	repo                         Sub2APIProviderRepository
-	accountRepo                  AccountRepository
-	proxyRepo                    Sub2APIProviderProxyRepository
-	tokenCache                   *sub2api.TokenCache // 复用各上游的登录 token，避免每次重新登录
-	encryptor                    SecretEncryptor
-	remoteOverviewCache          Sub2APIProviderRemoteOverviewCache
-	tokenEncryptionKeyConfigured bool
+	repo                       Sub2APIProviderRepository
+	accountRepo                Sub2APIAccountRepository
+	proxyRepo                  Sub2APIProviderProxyRepository
+	tokenCache                 *sub2api.TokenCache // 复用各上游的登录 token，避免每次重新登录
+	encryptor                  ProviderTokenEncryptor
+	remoteOverviewCache        Sub2APIProviderRemoteOverviewCache
+	operationGate              *Sub2APIProviderOperationGate
+	providerTokenKeyConfigured bool
 }
 
 // NewSub2APIProviderService 创建 Service 实例
-func NewSub2APIProviderService(repo Sub2APIProviderRepository, accountRepo AccountRepository, proxyRepo ProxyRepository, tokenCache *sub2api.TokenCache, encryptor SecretEncryptor, remoteOverviewCache Sub2APIProviderRemoteOverviewCache, cfg *config.Config) *Sub2APIProviderService {
+func NewSub2APIProviderService(repo Sub2APIProviderRepository, accountRepo Sub2APIAccountRepository, proxyRepo ProxyRepository, tokenCache *sub2api.TokenCache, encryptor ProviderTokenEncryptor, remoteOverviewCache Sub2APIProviderRemoteOverviewCache, operationGate *Sub2APIProviderOperationGate, cfg *config.Config) *Sub2APIProviderService {
 	return &Sub2APIProviderService{
-		repo: repo, accountRepo: accountRepo, proxyRepo: proxyRepo, tokenCache: tokenCache, encryptor: encryptor, remoteOverviewCache: remoteOverviewCache,
-		tokenEncryptionKeyConfigured: cfg != nil && cfg.Totp.EncryptionKeyConfigured,
+		repo: repo, accountRepo: accountRepo, proxyRepo: proxyRepo, tokenCache: tokenCache, encryptor: encryptor, remoteOverviewCache: remoteOverviewCache, operationGate: operationGate,
+		providerTokenKeyConfigured: encryptor != nil && cfg != nil && strings.TrimSpace(cfg.Security.ProviderTokenKey) != "",
 	}
 }
 
@@ -126,7 +130,7 @@ func newAuthedSub2APIProviderClient(
 	provider *ent.Sub2APIProvider,
 	repo Sub2APIProviderRepository,
 	tokenCache *sub2api.TokenCache,
-	encryptor SecretEncryptor,
+	encryptor ProviderTokenEncryptor,
 ) (*sub2api.Client, error) {
 	if provider == nil {
 		return nil, fmt.Errorf("provider is nil")
@@ -316,11 +320,11 @@ func (s *Sub2APIProviderService) prepareCreateProviderAuth(input *CreateProvider
 	if input.AccessToken == nil || strings.TrimSpace(*input.AccessToken) == "" || input.RefreshToken == nil || strings.TrimSpace(*input.RefreshToken) == "" {
 		return nil, infraerrors.BadRequest("PROVIDER_TOKEN_PAIR_REQUIRED", "access_token and refresh_token are required for token authentication")
 	}
+	if !s.providerTokenKeyConfigured {
+		return nil, infraerrors.ServiceUnavailable("PROVIDER_TOKEN_KEY_REQUIRED", "configure a fixed security.provider_token_key before importing provider tokens")
+	}
 	if s.encryptor == nil {
 		return nil, fmt.Errorf("provider token encryption is unavailable")
-	}
-	if !s.tokenEncryptionKeyConfigured {
-		return nil, infraerrors.ServiceUnavailable("PROVIDER_TOKEN_ENCRYPTION_KEY_REQUIRED", "configure a fixed totp.encryption_key before importing provider tokens")
 	}
 	accessEncrypted, err := s.encryptor.Encrypt(strings.TrimSpace(*input.AccessToken))
 	if err != nil {
@@ -335,19 +339,6 @@ func (s *Sub2APIProviderService) prepareCreateProviderAuth(input *CreateProvider
 	prepared.refreshEncrypted = &refreshEncrypted
 	prepared.expiresAt = &pair.ExpiresAt
 	return prepared, nil
-}
-
-// GetProvider 根据 ID 获取 Provider
-func (s *Sub2APIProviderService) GetProvider(ctx context.Context, id int64) (*Provider, error) {
-	provider, err := s.repo.GetByID(ctx, id)
-	if err != nil {
-		if ent.IsNotFound(err) {
-			return nil, ErrProviderNotFound
-		}
-		return nil, fmt.Errorf("get provider failed: %w", err)
-	}
-
-	return providerFromEnt(provider), nil
 }
 
 // GetProviderWithAccounts 获取 Provider 及其关联的 Accounts
@@ -429,18 +420,6 @@ func (s *Sub2APIProviderService) UpdateProvider(ctx context.Context, id int64, i
 			return nil, err
 		}
 	}
-	var proxyUpdater interface {
-		UpdateProviderAccountsProxy(context.Context, int64, *int64) error
-	}
-	if input.ProxyID.Set {
-		var ok bool
-		proxyUpdater, ok = s.accountRepo.(interface {
-			UpdateProviderAccountsProxy(context.Context, int64, *int64) error
-		})
-		if !ok {
-			return nil, fmt.Errorf("account repository does not support provider proxy synchronization")
-		}
-	}
 	var baseURL *string
 	if input.BaseURL != nil {
 		normalized, normalizeErr := normalizeSub2APIProviderBaseURL(*input.BaseURL)
@@ -473,7 +452,7 @@ func (s *Sub2APIProviderService) UpdateProvider(ctx context.Context, id int64, i
 		return nil, fmt.Errorf("update provider failed: %w", err)
 	}
 	if input.ProxyID.Set {
-		if err := proxyUpdater.UpdateProviderAccountsProxy(ctx, id, input.ProxyID.Value); err != nil {
+		if err := s.accountRepo.UpdateProviderAccountsProxy(ctx, id, input.ProxyID.Value); err != nil {
 			rollbackInput := &UpdateSub2APIProviderInput{
 				ProxyID: OptionalProviderProxyID{Set: true, Value: existing.ProxyID},
 			}
@@ -535,15 +514,15 @@ func (s *Sub2APIProviderService) prepareUpdateProviderAuth(existing *ent.Sub2API
 		}
 		return update, nil
 	}
-	if s.encryptor == nil {
-		return nil, fmt.Errorf("provider token encryption is unavailable")
-	}
 	if (input.AccessToken != nil && strings.TrimSpace(*input.AccessToken) != "") ||
 		(input.RefreshToken != nil && strings.TrimSpace(*input.RefreshToken) != "") ||
 		existing.AuthMode != domain.Sub2APIProviderAuthModeTokenPair {
-		if !s.tokenEncryptionKeyConfigured {
-			return nil, infraerrors.ServiceUnavailable("PROVIDER_TOKEN_ENCRYPTION_KEY_REQUIRED", "configure a fixed totp.encryption_key before importing provider tokens")
+		if !s.providerTokenKeyConfigured {
+			return nil, infraerrors.ServiceUnavailable("PROVIDER_TOKEN_KEY_REQUIRED", "configure a fixed security.provider_token_key before importing provider tokens")
 		}
+	}
+	if s.encryptor == nil {
+		return nil, fmt.Errorf("provider token encryption is unavailable")
 	}
 	hasAccess := existing.AccessTokenEncrypted != nil && strings.TrimSpace(*existing.AccessTokenEncrypted) != ""
 	hasRefresh := existing.RefreshTokenEncrypted != nil && strings.TrimSpace(*existing.RefreshTokenEncrypted) != ""
@@ -1008,17 +987,32 @@ func (s *Sub2APIProviderService) LinkAccount(
 
 	// 获取 Account 的 api_key（从 credentials 中读取）
 	apiKey, _ := account.Credentials["api_key"].(string)
+	apiKey = strings.TrimSpace(apiKey)
 	if apiKey == "" {
 		return nil, infraerrors.BadRequest("ACCOUNT_NO_API_KEY", "account has no api_key in credentials")
 	}
 
 	// 登录远程 Sub2API 并查找 APIKey ID（优先使用缓存 token）
+	// 邮箱密码模式在已有缓存时强制重新登录一次，防止历史 Token 属于修改前的
+	// 邮箱账号，导致连接正常但读取的是另一个用户的 Key 列表。
+	forcePasswordLogin := false
+	if providerUsesPasswordAuth(provider) && s.tokenCache != nil {
+		_, forcePasswordLogin = s.tokenCache.GetTokenPair(provider.ID)
+	}
 	client, err := s.newAuthedClient(ctx, provider)
 	if err != nil {
 		return nil, infraerrors.ServiceUnavailable(
 			"PROVIDER_CONNECTION_FAILED",
 			fmt.Sprintf("login failed: %s", err.Error()),
 		)
+	}
+	if forcePasswordLogin {
+		if err := client.Login(ctx); err != nil {
+			return nil, infraerrors.ServiceUnavailable(
+				"PROVIDER_CONNECTION_FAILED",
+				fmt.Sprintf("password login failed: %s", err.Error()),
+			)
+		}
 	}
 
 	// 确定 Keys 路径
@@ -1036,24 +1030,26 @@ func (s *Sub2APIProviderService) LinkAccount(
 		)
 	}
 
-	var remoteKeyID *int64
-	for _, k := range remoteKeys {
-		if k.Key == apiKey {
-			id := k.ID
-			remoteKeyID = &id
-			break
-		}
+	remoteKeyID, matchErr := findProviderRemoteAPIKeyID(apiKey, remoteKeys)
+	if matchErr != nil {
+		return nil, infraerrors.Conflict(
+			"REMOTE_API_KEY_AMBIGUOUS",
+			"multiple remote API keys match the selected account; use a full unique key on the remote provider",
+		).WithMetadata(map[string]string{"remote_key_count": strconv.Itoa(len(remoteKeys))})
 	}
 
 	if remoteKeyID == nil {
 		return nil, infraerrors.NotFound(
 			"REMOTE_API_KEY_NOT_FOUND",
-			fmt.Sprintf("api key not found on remote provider, please ensure the key exists: %s...", apiKey[:min(16, len(apiKey))]),
-		)
+			fmt.Sprintf("provider login succeeded and returned %d API keys, but none belongs to the selected account; verify the provider email and the account API key", len(remoteKeys)),
+		).WithMetadata(map[string]string{"remote_key_count": strconv.Itoa(len(remoteKeys))})
 	}
 
 	// 更新 Account 的 provider 关联
 	if err := s.accountRepo.UpdateProviderLink(ctx, accountID, providerID, *remoteKeyID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, infraerrors.BadRequest("ACCOUNT_LINK_CHANGED", "account changed while linking; refresh and try again")
+		}
 		return nil, fmt.Errorf("update account provider link failed: %w", err)
 	}
 
@@ -1064,6 +1060,144 @@ func (s *Sub2APIProviderService) LinkAccount(
 		ProviderID:       providerID,
 		ProviderAPIKeyID: remoteKeyID,
 	}, nil
+}
+
+func providerUsesPasswordAuth(provider *ent.Sub2APIProvider) bool {
+	if provider == nil {
+		return false
+	}
+	mode := strings.TrimSpace(provider.AuthMode)
+	return mode == "" || mode == domain.Sub2APIProviderAuthModePassword
+}
+
+var errProviderRemoteAPIKeyAmbiguous = errors.New("multiple remote API keys match the local account key")
+
+func findProviderRemoteAPIKeyID(localKey string, remoteKeys []sub2api.APIKey) (*int64, error) {
+	localKey = strings.TrimSpace(localKey)
+	if localKey == "" {
+		return nil, nil
+	}
+
+	exact := make(map[int64]struct{})
+	for _, remoteKey := range remoteKeys {
+		for _, candidate := range []string{remoteKey.Key, remoteKey.LegacyKey} {
+			if providerAPIKeysEquivalent(localKey, candidate) {
+				exact[remoteKey.ID] = struct{}{}
+			}
+		}
+	}
+	if id, ok, ambiguous := singleProviderRemoteKeyID(exact); ok {
+		return &id, nil
+	} else if ambiguous {
+		return nil, errProviderRemoteAPIKeyAmbiguous
+	}
+
+	masked := make(map[int64]struct{})
+	for _, remoteKey := range remoteKeys {
+		if providerAPIKeyPrefixMatches(localKey, remoteKey.KeyPrefix) ||
+			providerMaskedAPIKeyMatches(localKey, remoteKey.MaskedKey) ||
+			providerMaskedAPIKeyMatches(localKey, remoteKey.Key) ||
+			providerMaskedAPIKeyMatches(localKey, remoteKey.LegacyKey) {
+			masked[remoteKey.ID] = struct{}{}
+		}
+	}
+	if id, ok, ambiguous := singleProviderRemoteKeyID(masked); ok {
+		return &id, nil
+	} else if ambiguous {
+		return nil, errProviderRemoteAPIKeyAmbiguous
+	}
+	return nil, nil
+}
+
+func singleProviderRemoteKeyID(matches map[int64]struct{}) (id int64, ok, ambiguous bool) {
+	if len(matches) != 1 {
+		return 0, false, len(matches) > 1
+	}
+	for id = range matches {
+		return id, true, false
+	}
+	return 0, false, false
+}
+
+func providerAPIKeysEquivalent(left, right string) bool {
+	leftVariants := providerAPIKeyVariants(left)
+	rightVariants := providerAPIKeyVariants(right)
+	for _, leftVariant := range leftVariants {
+		for _, rightVariant := range rightVariants {
+			if leftVariant == rightVariant {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func providerAPIKeyVariants(value string) []string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return nil
+	}
+	variants := []string{value}
+	if strings.HasPrefix(value, "sk-") {
+		if withoutPrefix := strings.TrimPrefix(value, "sk-"); withoutPrefix != "" {
+			variants = append(variants, withoutPrefix)
+		}
+	} else {
+		variants = append(variants, "sk-"+value)
+	}
+	return variants
+}
+
+const providerAPIKeyMinimumVisibleChars = 12
+
+func providerAPIKeyPrefixMatches(localKey, prefix string) bool {
+	prefix = strings.TrimSpace(prefix)
+	if len(prefix) < providerAPIKeyMinimumVisibleChars {
+		return false
+	}
+	for _, variant := range providerAPIKeyVariants(localKey) {
+		if strings.HasPrefix(variant, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
+func providerMaskedAPIKeyMatches(localKey, masked string) bool {
+	prefix, suffix, ok := splitProviderMaskedAPIKey(masked)
+	if !ok || len(prefix)+len(suffix) < providerAPIKeyMinimumVisibleChars {
+		return false
+	}
+	for _, variant := range providerAPIKeyVariants(localKey) {
+		if len(variant) >= len(prefix)+len(suffix) && strings.HasPrefix(variant, prefix) && strings.HasSuffix(variant, suffix) {
+			return true
+		}
+	}
+	return false
+}
+
+func splitProviderMaskedAPIKey(value string) (prefix, suffix string, ok bool) {
+	value = strings.TrimSpace(strings.ReplaceAll(value, "\u2026", "..."))
+	if value == "" {
+		return "", "", false
+	}
+	maskStart, maskEnd := -1, -1
+	if index := strings.Index(value, "..."); index >= 0 {
+		maskStart, maskEnd = index, index+3
+	}
+	if index := strings.Index(value, "*"); index >= 0 {
+		end := index
+		for end < len(value) && value[end] == '*' {
+			end++
+		}
+		if end-index >= 3 && (maskStart < 0 || index < maskStart) {
+			maskStart, maskEnd = index, end
+		}
+	}
+	if maskStart < 0 {
+		return "", "", false
+	}
+	return strings.TrimSpace(value[:maskStart]), strings.TrimSpace(value[maskEnd:]), true
 }
 
 // UnlinkAccount 解除 Account 与 Provider 的关联
@@ -1082,6 +1216,9 @@ func (s *Sub2APIProviderService) UnlinkAccount(
 
 	// 清除 Account 的 provider 关联
 	if err := s.accountRepo.ClearProviderLink(ctx, accountID, providerID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return infraerrors.BadRequest("ACCOUNT_NOT_LINKED", "account is not linked to this provider")
+		}
 		return fmt.Errorf("clear account provider link failed: %w", err)
 	}
 
@@ -1158,6 +1295,15 @@ func (s *Sub2APIProviderService) GetLinkedAccounts(ctx context.Context, provider
 // syncRemoteGroups 登录上游拉取一次 API Keys，将每个账号的当前分组回写到 accounts 切片与数据库缓存。
 // 该函数尽力而为：任何上游错误都被吞掉，保证面板仍能展示已有缓存。
 func (s *Sub2APIProviderService) syncRemoteGroups(ctx context.Context, provider *ent.Sub2APIProvider, accounts []Account) {
+	if provider == nil {
+		return
+	}
+	release, acquired := s.operationGate.TryAcquire(ctx, provider.ID, sub2APIProviderProbeOperationTTL)
+	if !acquired {
+		return
+	}
+	defer release()
+
 	// 优先使用缓存 token，避免每次打开面板都重新登录
 	client, err := s.newAuthedClient(ctx, provider)
 	if err != nil {
@@ -1174,18 +1320,21 @@ func (s *Sub2APIProviderService) syncRemoteGroups(ctx context.Context, provider 
 		return
 	}
 
-	// keyID -> 当前分组信息
-	type groupInfo struct {
-		id         int64
-		name       string
-		multiplier float64
+	groupsPath := "/api/v1/groups/available"
+	if provider.APIPathGroups != nil && *provider.APIPathGroups != "" {
+		groupsPath = *provider.APIPathGroups
 	}
-	byKeyID := make(map[int64]groupInfo, len(remoteKeys))
+	groupsByID := make(map[int64]sub2api.Group)
+	if groups, groupErr := client.GetGroups(ctx, groupsPath); groupErr == nil {
+		for _, group := range groups {
+			groupsByID[group.ID] = group
+		}
+	}
+
+	byKeyID := make(map[int64]providerRemoteGroupInfo, len(remoteKeys))
 	for _, k := range remoteKeys {
-		if k.Group != nil {
-			byKeyID[k.ID] = groupInfo{id: k.Group.ID, name: k.Group.Name, multiplier: k.Group.RateMultiplier}
-		} else if k.GroupID > 0 {
-			byKeyID[k.ID] = groupInfo{id: k.GroupID}
+		if group, ok := resolveProviderRemoteKeyGroup(k, groupsByID); ok {
+			byKeyID[k.ID] = group
 		}
 	}
 
@@ -1197,25 +1346,61 @@ func (s *Sub2APIProviderService) syncRemoteGroups(ctx context.Context, provider 
 		}
 		gi, ok := byKeyID[*acc.ProviderAPIKeyID]
 		if !ok {
+			// The upstream key was removed or is no longer visible. Clear the
+			// cached remote group so dynamic pricing cannot keep charging from
+			// an obsolete procurement multiplier; the local account remains
+			// linked and its probe can continue reporting the failure.
+			acc.RemoteGroupID = nil
+			acc.RemoteGroupName = nil
+			acc.RemoteGroupMultiplier = nil
+			acc.RemoteGroupSyncedAt = &now
+			if clearer, supported := s.accountRepo.(interface {
+				ClearRemoteGroupBinding(context.Context, int64) error
+			}); supported {
+				if clearErr := clearer.ClearRemoteGroupBinding(ctx, acc.ID); clearErr != nil {
+					logger.LegacyPrintf("service.sub2api_provider", "[Sub2APIProvider] account=%d clear stale remote group failed: %v", acc.ID, clearErr)
+				}
+			}
 			continue
 		}
 		// 回写内存中的切片，供本次响应使用
-		name := gi.name
-		mult := gi.multiplier
 		groupID := gi.id
-		if groupID > 0 {
-			acc.RemoteGroupID = &groupID
-		}
-		acc.RemoteGroupName = &name
-		acc.RemoteGroupMultiplier = &mult
-		acc.RemoteGroupSyncedAt = &now
-		// 持久化缓存（非致命）
-		if updater, ok := s.accountRepo.(interface {
-			UpdateRemoteGroupBinding(context.Context, int64, int64, string, float64) error
-		}); ok && gi.id > 0 {
-			_ = updater.UpdateRemoteGroupBinding(ctx, acc.ID, gi.id, gi.name, gi.multiplier)
+		acc.RemoteGroupID = &groupID
+		var persistErr error
+		if gi.complete {
+			name := gi.name
+			mult := gi.multiplier
+			acc.RemoteGroupName = &name
+			acc.RemoteGroupMultiplier = &mult
+			persistErr = s.accountRepo.UpdateRemoteGroupBinding(ctx, acc.ID, gi.id, gi.name, gi.multiplier)
 		} else {
-			_ = s.accountRepo.UpdateRemoteGroupInfo(ctx, acc.ID, gi.name, gi.multiplier)
+			acc.RemoteGroupName = nil
+			acc.RemoteGroupMultiplier = nil
+			persistErr = s.accountRepo.UpdateRemoteGroupIdentity(ctx, acc.ID, gi.id)
+		}
+		acc.RemoteGroupSyncedAt = &now
+		if persistErr != nil {
+			logger.LegacyPrintf("service.sub2api_provider", "[Sub2APIProvider] account=%d persist remote group failed: %v", acc.ID, persistErr)
 		}
 	}
+}
+
+type providerRemoteGroupInfo struct {
+	id         int64
+	name       string
+	multiplier float64
+	complete   bool
+}
+
+func resolveProviderRemoteKeyGroup(key sub2api.APIKey, groupsByID map[int64]sub2api.Group) (providerRemoteGroupInfo, bool) {
+	if key.Group != nil && key.Group.ID > 0 {
+		return providerRemoteGroupInfo{id: key.Group.ID, name: key.Group.Name, multiplier: key.Group.RateMultiplier, complete: true}, true
+	}
+	if key.GroupID <= 0 {
+		return providerRemoteGroupInfo{}, false
+	}
+	if group, ok := groupsByID[key.GroupID]; ok {
+		return providerRemoteGroupInfo{id: group.ID, name: group.Name, multiplier: group.RateMultiplier, complete: true}, true
+	}
+	return providerRemoteGroupInfo{id: key.GroupID}, true
 }

@@ -496,6 +496,32 @@ func TestGetAPIKeysStopsWhenUpstreamIgnoresPagination(t *testing.T) {
 	}
 }
 
+func TestGetAPIKeysDecodesCompatibilityKeyFields(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"code": 0,
+			"data": map[string]any{
+				"items": []map[string]any{
+					{"id": 1, "api_key": "legacy-value"},
+					{"id": 2, "key_prefix": "sk-prefix-value", "masked_key": "sk-prefix-value...tail"},
+				},
+				"total": 2,
+			},
+		})
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL, "admin@example.com", "secret")
+	client.Token = "token"
+	keys, err := client.GetAPIKeys(context.Background(), "/api/v1/keys")
+	if err != nil {
+		t.Fatalf("GetAPIKeys: %v", err)
+	}
+	if len(keys) != 2 || keys[0].LegacyKey != "legacy-value" || keys[1].KeyPrefix != "sk-prefix-value" || keys[1].MaskedKey != "sk-prefix-value...tail" {
+		t.Fatalf("unexpected compatibility fields: %+v", keys)
+	}
+}
+
 func TestGetCurrentUserBalanceUsesAuthenticatedEnvelope(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/api/v1/auth/me" {

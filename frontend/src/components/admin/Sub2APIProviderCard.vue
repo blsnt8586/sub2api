@@ -139,7 +139,7 @@
 
         <div v-if="routes.length" data-test="provider-route-list" class="mt-1 divide-y divide-gray-100 dark:divide-dark-700">
           <button
-            v-for="route in visibleRoutes"
+            v-for="route in sortedRoutes"
             :key="route.id"
             type="button"
             class="group w-full min-w-0 cursor-pointer py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-inset"
@@ -180,16 +180,6 @@
             </div>
           </button>
 
-          <button
-            v-if="hiddenRouteCount > 0"
-            type="button"
-            data-test="provider-view-all-routes"
-            class="flex min-h-10 w-full cursor-pointer items-center justify-center gap-1.5 text-xs font-medium text-primary-600 transition-colors hover:bg-primary-50 hover:text-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-inset dark:text-primary-400 dark:hover:bg-primary-900/20"
-            @click="emit('view-accounts')"
-          >
-            {{ t('admin.sub2apiProviders.health.routes.viewAll', { count: routes.length }) }}
-            <Icon name="chevronRight" size="xs" />
-          </button>
         </div>
 
         <button
@@ -342,10 +332,10 @@ const availabilityStatus = computed<ProviderHealthStatus>(() => props.overview?.
 const routes = computed(() => props.overview?.routes ?? [])
 const enabledRouteCount = computed(() => routes.value.filter(route => route.enabled).length)
 const abnormalRouteCount = computed(() => routes.value.filter(route => route.status === 'unhealthy' || route.status === 'degraded').length)
-const visibleRoutes = computed(() => [...routes.value]
-  .sort((a, b) => routeSeverity(b.status) - routeSeverity(a.status) || a.account_name.localeCompare(b.account_name))
-  .slice(0, 3))
-const hiddenRouteCount = computed(() => Math.max(0, routes.value.length - visibleRoutes.value.length))
+// The provider pane is the at-a-glance operational view. Keep unhealthy routes
+// first, but never hide healthy/disabled accounts behind a secondary panel.
+const sortedRoutes = computed(() => [...routes.value]
+  .sort((a, b) => routeSeverity(b.status) - routeSeverity(a.status) || a.account_name.localeCompare(b.account_name)))
 
 const availabilityDotClass = computed(() => statusDotClass(availabilityStatus.value))
 const availabilityTextClass = computed(() => statusTextClass(availabilityStatus.value))

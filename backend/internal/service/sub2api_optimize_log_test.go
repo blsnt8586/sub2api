@@ -18,6 +18,57 @@ type optimizeLogRepositoryStub struct {
 	total            int64
 }
 
+type exhaustedStateAccountRepoStub struct {
+	Sub2APIAccountRepository
+	account         *Account
+	updates         []map[string]any
+	clearErrorCalls int
+}
+
+func (r *exhaustedStateAccountRepoStub) GetByID(context.Context, int64) (*Account, error) {
+	if r.account != nil {
+		return r.account, nil
+	}
+	return &Account{
+		Status:      StatusError,
+		Schedulable: false,
+		Extra:       map[string]any{probeManagedAccountStatusExtraKey: true},
+	}, nil
+}
+
+func TestFinishProbeAutoOptimizeDoesNotRestoreProbeOwnershipAfterAdminOverride(t *testing.T) {
+	accountRepo := &exhaustedStateAccountRepoStub{account: &Account{
+		Status:      StatusError,
+		Schedulable: false,
+		Extra:       map[string]any{probeManagedAccountStatusExtraKey: false},
+	}}
+	svc := &Sub2APIOptimizeScheduleService{
+		scheduleRepo: &optimizeLogRepositoryStub{},
+		providerSvc:  &Sub2APIProviderService{accountRepo: accountRepo},
+	}
+	svc.finishProbeAutoOptimize(7, time.Now(), []OptimizeAccountDetail{{
+		AccountID:      42,
+		Status:         "failed",
+		ProbeExhausted: true,
+		Reason:         "all candidates failed",
+	}}, map[int64]Sub2APIProbeAutoOptimizeInput{
+		42: {AccountID: 42, Trigger: OptimizeLogTriggerProbeUnhealthy},
+	})
+	if len(accountRepo.updates) != 0 {
+		t.Fatalf("admin-owned account must not receive exhausted marker: %+v", accountRepo.updates)
+	}
+}
+
+func (r *exhaustedStateAccountRepoStub) ClearError(context.Context, int64) error {
+	r.clearErrorCalls++
+	return nil
+}
+
+func (r *exhaustedStateAccountRepoStub) UpdateExtra(_ context.Context, _ int64, updates map[string]any) error {
+	r.updates = append(r.updates, updates)
+	return nil
+}
+
 func (r *optimizeLogRepositoryStub) GetByProviderID(context.Context, int64) (*ent.Sub2APIOptimizeSchedule, error) {
 	return nil, nil
 }
@@ -205,9 +256,15 @@ func TestCoalesceRecentOptimizeCoverageOnlySkipsOverlappingAccounts(t *testing.T
 
 func TestRunOptimizeLockContentionWritesDeferredAudit(t *testing.T) {
 	repo := &optimizeLogRepositoryStub{}
+	gate := NewSub2APIProviderOperationGate(nil, nil)
+	release, acquired := gate.TryAcquire(context.Background(), 7, time.Minute)
+	if !acquired {
+		t.Fatal("failed to acquire test Provider operation gate")
+	}
+	defer release()
 	svc := &Sub2APIOptimizeScheduleService{
-		scheduleRepo: repo,
-		running:      map[int64]bool{7: true},
+		scheduleRepo:  repo,
+		operationGate: gate,
 	}
 	if err := svc.RunOptimize(context.Background(), 9, 7); err != nil {
 		t.Fatalf("run optimize contention: %v", err)
@@ -229,7 +286,7 @@ func TestProbeOptimizeLogDoesNotRequireSchedule(t *testing.T) {
 		Status:    "failed",
 		Reason:    "no candidate passed",
 	}}, map[int64]Sub2APIProbeAutoOptimizeInput{
-		42: {TargetID: 13, ProbeRunID: 21, AccountID: 42, FailureThreshold: 3},
+		42: {TargetID: 13, ProbeRunID: 21, AccountID: 42},
 	})
 
 	if len(repo.created) != 1 {
@@ -241,6 +298,53 @@ func TestProbeOptimizeLogDoesNotRequireSchedule(t *testing.T) {
 	}
 	if got := created.Detail[0]["probe_target_id"]; got != int64(13) {
 		t.Fatalf("probe target id=%v, want 13", got)
+	}
+}
+
+func TestFinishProbeAutoOptimizePublishesOnlyExhaustedProbeErrors(t *testing.T) {
+	tests := []struct {
+		name       string
+		detail     OptimizeAccountDetail
+		trigger    Sub2APIProbeAutoOptimizeInput
+		wantUpdate bool
+		wantValue  any
+	}{
+		{
+			name:       "all candidate groups failed",
+			detail:     OptimizeAccountDetail{AccountID: 42, Status: "failed", ProbeExhausted: true, Reason: "all candidates failed"},
+			trigger:    Sub2APIProbeAutoOptimizeInput{AccountID: 42, Trigger: OptimizeLogTriggerProbeUnhealthy, AccountStatusSyncEnabled: true},
+			wantUpdate: true,
+			wantValue:  true,
+		},
+		{
+			name:       "successful group switch clears prior marker",
+			detail:     OptimizeAccountDetail{AccountID: 42, Status: "optimized"},
+			trigger:    Sub2APIProbeAutoOptimizeInput{AccountID: 42, Trigger: OptimizeLogTriggerProbeUnhealthy, AccountStatusSyncEnabled: true},
+			wantUpdate: true,
+			wantValue:  false,
+		},
+		{
+			name:       "cost check does not publish error",
+			detail:     OptimizeAccountDetail{AccountID: 42, Status: "failed", ProbeExhausted: true},
+			trigger:    Sub2APIProbeAutoOptimizeInput{AccountID: 42, Trigger: OptimizeLogTriggerProbeCost, AccountStatusSyncEnabled: true},
+			wantUpdate: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			accountRepo := &exhaustedStateAccountRepoStub{}
+			svc := &Sub2APIOptimizeScheduleService{
+				scheduleRepo: &optimizeLogRepositoryStub{},
+				providerSvc:  &Sub2APIProviderService{accountRepo: accountRepo},
+			}
+			svc.finishProbeAutoOptimize(7, time.Now(), []OptimizeAccountDetail{tt.detail}, map[int64]Sub2APIProbeAutoOptimizeInput{42: tt.trigger})
+			if got := len(accountRepo.updates) > 0; got != tt.wantUpdate {
+				t.Fatalf("update called=%v, want %v; updates=%+v", got, tt.wantUpdate, accountRepo.updates)
+			}
+			if tt.wantUpdate && accountRepo.updates[0][probeGroupsExhaustedExtraKey] != tt.wantValue {
+				t.Fatalf("exhausted marker=%v, want %v", accountRepo.updates[0][probeGroupsExhaustedExtraKey], tt.wantValue)
+			}
+		})
 	}
 }
 

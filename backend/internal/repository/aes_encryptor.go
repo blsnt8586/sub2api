@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/service"
@@ -20,13 +21,31 @@ type AESEncryptor struct {
 
 // NewAESEncryptor creates a new AES encryptor
 func NewAESEncryptor(cfg *config.Config) (service.SecretEncryptor, error) {
-	key, err := hex.DecodeString(cfg.Totp.EncryptionKey)
+	if cfg == nil {
+		return nil, fmt.Errorf("totp encryption key is not configured")
+	}
+	return newAESEncryptorFromHex(cfg.Totp.EncryptionKey, "totp")
+}
+
+// NewProviderTokenEncryptor creates the independent encryptor used for
+// Sub2API provider access/refresh tokens. An empty key leaves token-pair
+// management unavailable without preventing the rest of the server from
+// starting; password-auth providers continue to work.
+func NewProviderTokenEncryptor(cfg *config.Config) (service.ProviderTokenEncryptor, error) {
+	if cfg == nil || strings.TrimSpace(cfg.Security.ProviderTokenKey) == "" {
+		return nil, nil
+	}
+	return newAESEncryptorFromHex(cfg.Security.ProviderTokenKey, "provider token")
+}
+
+func newAESEncryptorFromHex(keyHex, name string) (*AESEncryptor, error) {
+	key, err := hex.DecodeString(strings.TrimSpace(keyHex))
 	if err != nil {
-		return nil, fmt.Errorf("invalid totp encryption key: %w", err)
+		return nil, fmt.Errorf("invalid %s encryption key: %w", name, err)
 	}
 
 	if len(key) != 32 {
-		return nil, fmt.Errorf("totp encryption key must be 32 bytes (64 hex chars), got %d bytes", len(key))
+		return nil, fmt.Errorf("%s encryption key must be 32 bytes (64 hex chars), got %d bytes", name, len(key))
 	}
 
 	return &AESEncryptor{key: key}, nil

@@ -767,6 +767,15 @@ func (s *adminServiceImpl) UpdateAccount(ctx context.Context, id int64, input *U
 	}
 	if input.Status != "" {
 		account.Status = input.Status
+		// An explicit admin status edit takes ownership back from the optional
+		// provider-probe projection. Future healthy probes must not undo it.
+		if account.Extra == nil {
+			account.Extra = make(map[string]any)
+		}
+		account.Extra[probeManagedAccountStatusExtraKey] = false
+		account.Extra[probeRuntimeRecoverableAccountErrorExtraKey] = false
+		account.Extra[probeGroupsExhaustedExtraKey] = false
+		account.Extra[probeGroupsExhaustedMessageKey] = ""
 	}
 	if input.ExpiresAt != nil {
 		if *input.ExpiresAt <= 0 {
@@ -1039,6 +1048,17 @@ func (s *adminServiceImpl) BulkUpdateAccounts(ctx context.Context, input *BulkUp
 		ProbeEnabled:               input.ProbeEnabled,
 		EnsureCodexFingerprintSeed: ShouldEnsureCodexFingerprintSeedForExtraUpdates(input.Extra),
 	}
+	if input.Status != "" || input.Schedulable != nil {
+		if repoUpdates.Extra == nil {
+			repoUpdates.Extra = make(map[string]any)
+		}
+		// Bulk status/scheduling edits are explicit admin overrides and must
+		// cancel any probe-owned recovery marker for the same accounts.
+		repoUpdates.Extra[probeManagedAccountStatusExtraKey] = false
+		repoUpdates.Extra[probeRuntimeRecoverableAccountErrorExtraKey] = false
+		repoUpdates.Extra[probeGroupsExhaustedExtraKey] = false
+		repoUpdates.Extra[probeGroupsExhaustedMessageKey] = ""
+	}
 	if input.ProbeEnabled != nil {
 		if repoUpdates.Extra == nil {
 			repoUpdates.Extra = make(map[string]any)
@@ -1233,6 +1253,11 @@ func (s *adminServiceImpl) ClearAccountError(ctx context.Context, id int64) (*Ac
 	if err := s.accountRepo.ClearError(ctx, id); err != nil {
 		return nil, err
 	}
+	// Manual recovery relinquishes probe ownership; a later unhealthy streak
+	// may claim the account again only after the configured failure threshold.
+	if err := s.accountRepo.UpdateExtra(ctx, id, map[string]any{probeManagedAccountStatusExtraKey: false, probeRuntimeRecoverableAccountErrorExtraKey: false, probeGroupsExhaustedExtraKey: false, probeGroupsExhaustedMessageKey: ""}); err != nil {
+		return nil, err
+	}
 	if err := s.accountRepo.ClearRateLimit(ctx, id); err != nil {
 		return nil, err
 	}
@@ -1252,11 +1277,19 @@ func (s *adminServiceImpl) ClearAccountError(ctx context.Context, id int64) (*Ac
 }
 
 func (s *adminServiceImpl) SetAccountError(ctx context.Context, id int64, errorMsg string) error {
-	return s.accountRepo.SetError(ctx, id, errorMsg)
+	if err := s.accountRepo.SetError(ctx, id, errorMsg); err != nil {
+		return err
+	}
+	return s.accountRepo.UpdateExtra(ctx, id, map[string]any{probeManagedAccountStatusExtraKey: false, probeRuntimeRecoverableAccountErrorExtraKey: false, probeGroupsExhaustedExtraKey: false, probeGroupsExhaustedMessageKey: ""})
 }
 
 func (s *adminServiceImpl) SetAccountSchedulable(ctx context.Context, id int64, schedulable bool) (*Account, error) {
 	if err := s.accountRepo.SetSchedulable(ctx, id, schedulable); err != nil {
+		return nil, err
+	}
+	// A manual scheduling change is an explicit override of probe-owned
+	// account state. Clear the marker before returning the refreshed account.
+	if err := s.accountRepo.UpdateExtra(ctx, id, map[string]any{probeManagedAccountStatusExtraKey: false, probeRuntimeRecoverableAccountErrorExtraKey: false, probeGroupsExhaustedExtraKey: false, probeGroupsExhaustedMessageKey: ""}); err != nil {
 		return nil, err
 	}
 	updated, err := s.accountRepo.GetByID(ctx, id)

@@ -6,7 +6,7 @@ package service
 //
 // 设计要点：
 //   - 数据源为第三方社区站点，本平台仅做代理缓存 + 署名转载，不对数据准确性负责。
-//   - 懒加载 + 定时预热：请求命中时按需刷新；另有定时器在 07:00–15:00 每小时整点预热，
+//   - 懒加载 + 定时预热：请求命中时按需刷新；另有定时器全天每小时整点预热，
 //     使缓存常年温热，用户不再吃「进程重启 / 缓存过期无人访问」时的冷启动阻塞。
 //     预热仅在功能开关（codex_radar_enabled）开启时拉取第三方数据。
 //   - stale-while-revalidate：缓存过期时先返回旧数据、后台异步刷新，避免请求阻塞。
@@ -39,8 +39,12 @@ import (
 const (
 	// CodexRadarRecommendationsURL 是原站「站长推荐」数据接口。
 	CodexRadarRecommendationsURL = "https://codexradar.com/api/radar-insights"
-	// CodexRadarIntelligenceURL 是原站「综合智能」数据接口。
+	// CodexRadarIntelligenceURL 是原站「软件工程能力」（deep-swe 基准）数据接口。
+	// 注意：原站没有现成的「综合智能」接口——综合智能 = 本接口与视觉空间推理接口
+	// 按档位配对后合成（IQ 取等权几何平均，均值指标按样本数加权），合成在前端完成。
 	CodexRadarIntelligenceURL = "https://codexradar.com/api/intelligence-efficiency-metrics"
+	// CodexRadarVisualURL 是原站「视觉空间推理」（pompeii-adjacency 基准）数据接口。
+	CodexRadarVisualURL = "https://codexradar.com/api/visual-spatial-reasoning"
 	// 旧接口常量仅供兼容旧测试/调用方；默认服务不再抓取图片和 current.json。
 	CodexRadarImageURL   = ""
 	CodexRadarSummaryURL = ""
@@ -84,12 +88,13 @@ type codexRadarSnapshot struct {
 	summaryBytes         []byte
 	recommendationsBytes []byte
 	intelligenceBytes    []byte
+	visualBytes          []byte
 	fetchedAt            time.Time
 	ok                   bool // 是否含至少一项可用数据
 }
 
 // CodexRadarService 代理并缓存 codexradar.com 的公开数据。
-// 懒加载（请求命中时刷新）+ 定时预热（07:00–15:00 每小时整点后台拉取，保持缓存温热）。
+// 懒加载（请求命中时刷新）+ 定时预热（全天每小时整点后台拉取，保持缓存温热）。
 type CodexRadarService struct {
 	httpClient      *http.Client
 	cache           atomic.Value // *codexRadarSnapshot
@@ -100,6 +105,7 @@ type CodexRadarService struct {
 	summaryURL         string
 	recommendationsURL string
 	intelligenceURL    string
+	visualURL          string
 	ttl                time.Duration
 	minRetry           time.Duration
 
@@ -126,6 +132,7 @@ func NewCodexRadarService() *CodexRadarService {
 		summaryURL:         CodexRadarSummaryURL,
 		recommendationsURL: CodexRadarRecommendationsURL,
 		intelligenceURL:    CodexRadarIntelligenceURL,
+		visualURL:          CodexRadarVisualURL,
 		ttl:                codexRadarCacheTTL,
 		minRetry:           codexRadarMinRetry,
 		location:           time.Local,
@@ -145,7 +152,7 @@ func (s *CodexRadarService) ConfigureScheduler(enabledFn func(ctx context.Contex
 	}
 }
 
-// Start 启动定时预热：注册 07:00–15:00 每小时整点的 cron 任务，并在延迟后做一次启动预热。
+// Start 启动定时预热：注册全天每小时整点的 cron 任务，并在延迟后做一次启动预热。
 // 幂等；未配置 enabledFn 时不启动（保持纯懒加载行为，主要用于测试）。
 func (s *CodexRadarService) Start() {
 	if s == nil {
@@ -290,7 +297,7 @@ func (s *CodexRadarService) forceRefresh(ctx context.Context) {
 	})
 }
 
-// fetch 拉取「站长推荐」和「综合智能」两个结构化接口，构造新快照。
+// fetch 拉取「站长推荐」「软件工程能力」「视觉空间推理」三个结构化接口，构造新快照。
 // 旧 imageURL/summaryURL 非空时保留兼容抓取，但默认服务不会设置它们。
 func (s *CodexRadarService) fetch(ctx context.Context, prev *codexRadarSnapshot) *codexRadarSnapshot {
 	fetchCtx, cancel := context.WithTimeout(ctx, codexRadarFetchTimeout)
@@ -354,7 +361,20 @@ func (s *CodexRadarService) fetch(ctx context.Context, prev *codexRadarSnapshot)
 		next.intelligenceBytes = prev.intelligenceBytes
 	}
 
-	next.ok = len(next.imageBytes) > 0 || len(next.summaryBytes) > 0 || len(next.recommendationsBytes) > 0 || len(next.intelligenceBytes) > 0
+	if s.visualURL != "" {
+		if body, _, _, err := s.get(fetchCtx, s.visualURL, codexRadarMaxSummaryBytes); err == nil && len(body) > 0 {
+			next.visualBytes = body
+		} else if err != nil {
+			slog.Warn("codexradar: fetch visual failed", "error", err)
+			if prev != nil {
+				next.visualBytes = prev.visualBytes
+			}
+		} else if prev != nil {
+			next.visualBytes = prev.visualBytes
+		}
+	}
+
+	next.ok = len(next.imageBytes) > 0 || len(next.summaryBytes) > 0 || len(next.recommendationsBytes) > 0 || len(next.intelligenceBytes) > 0 || len(next.visualBytes) > 0
 	if !next.ok {
 		return nil // 全部失败且无旧数据可沿用：不覆盖缓存
 	}
@@ -508,15 +528,16 @@ type CodexRadarSummaryResult struct {
 	Available bool
 }
 
-// CodexRadarDataResult 是两个结构化雷达接口的只读快照。
+// CodexRadarDataResult 是结构化雷达接口的只读快照。
 type CodexRadarDataResult struct {
 	Recommendations []byte
 	Intelligence    []byte
+	Visual          []byte
 	FetchedAt       time.Time
 	Available       bool
 }
 
-// DataSnapshot 返回「站长推荐」与「综合智能」的原始 JSON，不触发网络。
+// DataSnapshot 返回「站长推荐」「软件工程能力」「视觉空间推理」的原始 JSON，不触发网络。
 func (s *CodexRadarService) DataSnapshot() CodexRadarDataResult {
 	snap, _ := s.cache.Load().(*codexRadarSnapshot)
 	if snap == nil || (len(snap.recommendationsBytes) == 0 && len(snap.intelligenceBytes) == 0) {
@@ -525,6 +546,7 @@ func (s *CodexRadarService) DataSnapshot() CodexRadarDataResult {
 	return CodexRadarDataResult{
 		Recommendations: snap.recommendationsBytes,
 		Intelligence:    snap.intelligenceBytes,
+		Visual:          snap.visualBytes,
 		FetchedAt:       snap.fetchedAt,
 		Available:       len(snap.recommendationsBytes) > 0 || len(snap.intelligenceBytes) > 0,
 	}

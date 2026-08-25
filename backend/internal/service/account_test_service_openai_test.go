@@ -137,6 +137,23 @@ func TestAccountTestService_OpenAISuccessPersistsSnapshotFromHeaders(t *testing.
 	require.Contains(t, recorder.Body.String(), "test_complete")
 }
 
+func TestAccountTestService_ProbeContextDoesNotPersist429SchedulingState(t *testing.T) {
+	repo := &openAIAccountTestRepo{}
+	svc := &AccountTestService{accountRepo: repo}
+	account := &Account{ID: 89, Status: StatusActive}
+	reset := time.Now().Add(10 * time.Minute)
+	serviceCtx := context.Background()
+	// The helper derives the reset timestamp from the response headers. The
+	// exact value is not important; the suppressed context must prevent the
+	// repository mutation entirely.
+	headers := make(http.Header)
+	headers.Set("x-ratelimit-reset-requests", fmt.Sprintf("%.0f", float64(reset.Unix())))
+	svc.reconcileOpenAI429State(suppressAccountTestStatusMutation(serviceCtx), account, headers, nil)
+	if repo.rateLimitedID != 0 || repo.clearedErrorID != 0 {
+		t.Fatalf("probe context persisted scheduling state: rate_limited_id=%d cleared_error_id=%d", repo.rateLimitedID, repo.clearedErrorID)
+	}
+}
+
 func TestAccountTestService_OpenAIOAuthTestNormalizesGPT56Alias(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	ctx, _ := newTestContext()

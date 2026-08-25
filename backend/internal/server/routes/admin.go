@@ -106,9 +106,6 @@ func RegisterAdminRoutes(
 		// API Key 管理
 		registerAdminAPIKeyRoutes(admin, h)
 
-		// 定时测试计划
-		registerScheduledTestRoutes(admin, h)
-
 		// 渠道管理
 		registerChannelRoutes(admin, h)
 
@@ -706,18 +703,6 @@ func registerUserAttributeRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 	}
 }
 
-func registerScheduledTestRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
-	plans := admin.Group("/scheduled-test-plans")
-	{
-		plans.POST("", h.Admin.ScheduledTest.Create)
-		plans.PUT("/:id", h.Admin.ScheduledTest.Update)
-		plans.DELETE("/:id", h.Admin.ScheduledTest.Delete)
-		plans.GET("/:id/results", h.Admin.ScheduledTest.ListResults)
-	}
-	// Nested under accounts
-	admin.GET("/accounts/:id/scheduled-test-plans", h.Admin.ScheduledTest.ListByAccount)
-}
-
 func registerErrorPassthroughRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 	rules := admin.Group("/error-passthrough-rules")
 	{
@@ -837,12 +822,9 @@ func registerSub2APIProviderRoutes(admin *gin.RouterGroup, h *handler.Handlers) 
 		providers.POST("/:id/accounts/:account_id/optimize", h.Admin.Sub2APIOptimize.OptimizeAccount)
 		providers.POST("/:id/optimize-all", h.Admin.Sub2APIOptimize.OptimizeAll)
 
-		// 阶段5：定时优化配置
-		providers.GET("/:id/optimize-schedule", h.Admin.Sub2APIOptimize.Get)
+		// 自动选组由账号探针触发；保留审计日志和手动操作，不再暴露旧的
+		// Provider 级 Cron 定时优化配置/立即执行入口。
 		providers.GET("/:id/optimize-logs", h.Admin.Sub2APIOptimize.ListLogs)
-		providers.PUT("/:id/optimize-schedule", h.Admin.Sub2APIOptimize.Upsert)
-		providers.DELETE("/:id/optimize-schedule", h.Admin.Sub2APIOptimize.Delete)
-		providers.POST("/:id/optimize-schedule/run", h.Admin.Sub2APIOptimize.RunNow)
 		providers.PUT("/:id/accounts/:account_id/optimize-settings", h.Admin.Sub2APIOptimize.UpdateAccountSettings)
 	}
 }

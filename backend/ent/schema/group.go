@@ -47,6 +47,30 @@ func (Group) Fields() []ent.Field {
 		field.Float("rate_multiplier").
 			SchemaType(map[string]string{dialect.Postgres: "decimal(10,4)"}).
 			Default(1.0),
+		field.Bool("dynamic_pricing_enabled").
+			Default(false).
+			Comment("是否按分组内账号最高上游倍率加固定加成自动定价"),
+		field.Float("dynamic_pricing_markup").
+			SchemaType(map[string]string{dialect.Postgres: "decimal(10,4)"}).
+			Default(0).
+			Comment("动态定价固定盈利加成（绝对倍率，不是百分比）"),
+		field.Float("manual_rate_multiplier").
+			SchemaType(map[string]string{dialect.Postgres: "decimal(10,4)"}).
+			Default(1.0).
+			Comment("关闭动态定价或无法计算时使用的静态备用倍率"),
+		field.Float("dynamic_source_max_multiplier").
+			Optional().
+			Nillable().
+			SchemaType(map[string]string{dialect.Postgres: "decimal(10,4)"}).
+			Comment("最近一次动态计算采用的账号最高上游倍率"),
+		field.Time("dynamic_pricing_updated_at").
+			Optional().
+			Nillable().
+			Comment("最近一次动态定价计算时间"),
+		field.String("dynamic_pricing_status").
+			MaxLen(20).
+			Default("manual").
+			Comment("动态定价状态：manual/ready/no_accounts/error"),
 		// 高峰时段倍率（added by migration 158）
 		field.Bool("peak_rate_enabled").
 			Default(false).

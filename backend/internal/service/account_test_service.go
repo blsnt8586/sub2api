@@ -72,6 +72,32 @@ type AccountTestOptions struct {
 	AudioDataURL string
 }
 
+type accountTestStatusMutationContextKey struct{}
+
+func suppressAccountTestStatusMutation(ctx context.Context) context.Context {
+	return context.WithValue(ctx, accountTestStatusMutationContextKey{}, true)
+}
+
+func accountTestStatusMutationAllowed(ctx context.Context) bool {
+	if ctx == nil {
+		return true
+	}
+	suppressed, _ := ctx.Value(accountTestStatusMutationContextKey{}).(bool)
+	return !suppressed
+}
+
+func isRecoverableUpstreamError(message string) bool {
+	lower := strings.ToLower(strings.TrimSpace(message))
+	for _, marker := range []string{
+		"insufficient", "insufficient balance", "balance", "credit", "quota", "payment required", "billing",
+	} {
+		if strings.Contains(lower, marker) {
+			return true
+		}
+	}
+	return false
+}
+
 func firstAccountTestOptions(opts []AccountTestOptions) AccountTestOptions {
 	if len(opts) == 0 {
 		return AccountTestOptions{}
@@ -565,7 +591,11 @@ func (s *AccountTestService) testClaudeAccountConnection(c *gin.Context, account
 		}
 
 		// 403 表示账号被上游封禁，标记为 error 状态
-		if resp.StatusCode == http.StatusForbidden {
+		if resp.StatusCode == http.StatusForbidden && accountTestStatusMutationAllowed(ctx) {
+			// A successful later probe is authoritative for this account. Mark
+			// request-time 403s as recoverable; administrator status edits clear
+			// this marker and remain protected from automatic recovery.
+			_ = s.accountRepo.UpdateExtra(ctx, account.ID, map[string]any{probeRuntimeRecoverableAccountErrorExtraKey: true})
 			_ = s.accountRepo.SetError(ctx, account.ID, errMsg)
 		}
 
@@ -638,7 +668,8 @@ func (s *AccountTestService) testClaudeVertexServiceAccountConnection(c *gin.Con
 		if sanitized, ok := sanitizeCloudflareErrorMessage(errMsg); ok {
 			errMsg = sanitized
 		}
-		if resp.StatusCode == http.StatusForbidden {
+		if resp.StatusCode == http.StatusForbidden && accountTestStatusMutationAllowed(ctx) {
+			_ = s.accountRepo.UpdateExtra(ctx, account.ID, map[string]any{probeRuntimeRecoverableAccountErrorExtraKey: true})
 			_ = s.accountRepo.SetError(ctx, account.ID, errMsg)
 		}
 		return s.sendErrorAndEnd(c, errMsg)
@@ -933,7 +964,7 @@ func (s *AccountTestService) testOpenAIAccountConnection(c *gin.Context, account
 			s.reconcileOpenAI429State(ctx, account, resp.Header, body)
 		}
 		// 401 Unauthorized: 标记账号为永久错误
-		if resp.StatusCode == http.StatusUnauthorized && s.accountRepo != nil {
+		if resp.StatusCode == http.StatusUnauthorized && s.accountRepo != nil && accountTestStatusMutationAllowed(ctx) {
 			errMsg := fmt.Sprintf("Authentication failed (401): %s", string(body))
 			_ = s.accountRepo.SetError(ctx, account.ID, errMsg)
 		}
@@ -1121,6 +1152,12 @@ func (s *AccountTestService) observeGrokTestResponse(ctx context.Context, accoun
 		responseBody, _ = io.ReadAll(resp.Body)
 		_ = resp.Body.Close()
 		resp.Body = io.NopCloser(bytes.NewReader(responseBody))
+	}
+	// Provider probes own availability state. Do not let a probe response write
+	// rate-limit or temporary-unschedulable fields that would remove the account
+	// from the gateway scheduler; the probe result is persisted separately.
+	if !accountTestStatusMutationAllowed(ctx) {
+		return
 	}
 	snapshot := parseGrokQuotaSnapshot(resp.Header, resp.StatusCode, now)
 	stampGrokQuotaSnapshotForPlan(account, snapshot, grokRequestedModelFromCtx(ctx))
@@ -2120,7 +2157,7 @@ func (s *AccountTestService) testOpenAIChatCompletionsConnection(
 		if resp.StatusCode == http.StatusTooManyRequests {
 			s.reconcileOpenAI429State(ctx, account, resp.Header, body)
 		}
-		if resp.StatusCode == http.StatusUnauthorized && s.accountRepo != nil {
+		if resp.StatusCode == http.StatusUnauthorized && s.accountRepo != nil && accountTestStatusMutationAllowed(ctx) {
 			errMsg := fmt.Sprintf("Chat Completions authentication failed (401): %s", string(body))
 			_ = s.accountRepo.SetError(ctx, account.ID, errMsg)
 		}
@@ -2281,7 +2318,7 @@ func (s *AccountTestService) testOpenAICompactConnection(c *gin.Context, account
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		if resp.StatusCode == http.StatusUnauthorized && s.accountRepo != nil {
+		if resp.StatusCode == http.StatusUnauthorized && s.accountRepo != nil && accountTestStatusMutationAllowed(ctx) {
 			errMsg := fmt.Sprintf("Authentication failed (401): %s", string(body))
 			_ = s.accountRepo.SetError(ctx, account.ID, errMsg)
 		}
@@ -2299,6 +2336,9 @@ func (s *AccountTestService) testOpenAICompactConnection(c *gin.Context, account
 
 func (s *AccountTestService) reconcileOpenAI429State(ctx context.Context, account *Account, headers http.Header, body []byte) {
 	if s == nil || s.accountRepo == nil || account == nil {
+		return
+	}
+	if !accountTestStatusMutationAllowed(ctx) {
 		return
 	}
 
@@ -2323,7 +2363,7 @@ func (s *AccountTestService) reconcileOpenAI429State(ctx context.Context, accoun
 	account.RateLimitedAt = &now
 	account.RateLimitResetAt = resetAt
 
-	if account.Status == StatusError {
+	if account.Status == StatusError && accountTestStatusMutationAllowed(ctx) {
 		if err := s.accountRepo.ClearError(ctx, account.ID); err != nil {
 			return
 		}
@@ -3218,6 +3258,16 @@ func (s *AccountTestService) sendErrorAndEnd(c *gin.Context, errorMsg string) er
 // RunTestBackground executes an account test in-memory (no real HTTP client),
 // capturing SSE output via httptest.NewRecorder, then parses the result.
 func (s *AccountTestService) RunTestBackground(ctx context.Context, accountID int64, modelID string) (*ScheduledTestResult, error) {
+	return s.runTestBackground(ctx, accountID, modelID)
+}
+
+// RunProbeTestBackground executes the same real account request while keeping
+// persistent status/error ownership with the provider-probe state machine.
+func (s *AccountTestService) RunProbeTestBackground(ctx context.Context, accountID int64, modelID string) (*ScheduledTestResult, error) {
+	return s.runTestBackground(suppressAccountTestStatusMutation(ctx), accountID, modelID)
+}
+
+func (s *AccountTestService) runTestBackground(ctx context.Context, accountID int64, modelID string) (*ScheduledTestResult, error) {
 	startedAt := time.Now()
 
 	w := httptest.NewRecorder()

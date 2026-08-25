@@ -455,8 +455,7 @@
     <ReAuthAccountModal :show="showReAuth" :account="reAuthAcc" @close="closeReAuthModal" @reauthorized="handleAccountUpdated" />
     <AccountTestModal :show="showTest" :account="testingAcc" @close="closeTestModal" />
     <AccountStatsModal :show="showStats" :account="statsAcc" @close="closeStatsModal" />
-    <ScheduledTestsPanel :show="showSchedulePanel" :account-id="scheduleAcc?.id ?? null" :model-options="scheduleModelOptions" @close="closeSchedulePanel" />
-    <AccountActionMenu :show="menu.show" :account="menu.acc" :position="menu.pos" @close="menu.show = false" @test="handleTest" @stats="handleViewStats" @schedule="handleSchedule" @duplicate="handleDuplicateAccount" @reauth="handleReAuth" @refresh-token="handleRefresh" @recover-state="handleRecoverState" @reset-quota="handleResetQuota" @set-privacy="handleSetPrivacy" @create-spark-shadow="handleCreateSparkShadow" />
+    <AccountActionMenu :show="menu.show" :account="menu.acc" :position="menu.pos" @close="menu.show = false" @test="handleTest" @stats="handleViewStats" @duplicate="handleDuplicateAccount" @reauth="handleReAuth" @refresh-token="handleRefresh" @recover-state="handleRecoverState" @reset-quota="handleResetQuota" @set-privacy="handleSetPrivacy" @create-spark-shadow="handleCreateSparkShadow" />
     <SyncFromCrsModal :show="showSync" @close="showSync = false" @synced="reload" />
     <ImportDataModal :show="showImportData" @close="showImportData = false" @imported="handleDataImported" />
     <BulkEditAccountModal
@@ -512,8 +511,6 @@ import ImportDataModal from '@/components/admin/account/ImportDataModal.vue'
 import ReAuthAccountModal from '@/components/admin/account/ReAuthAccountModal.vue'
 import AccountTestModal from '@/components/admin/account/AccountTestModal.vue'
 import AccountStatsModal from '@/components/admin/account/AccountStatsModal.vue'
-import ScheduledTestsPanel from '@/components/admin/account/ScheduledTestsPanel.vue'
-import type { SelectOption } from '@/components/common/Select.vue'
 import AccountStatusIndicator from '@/components/account/AccountStatusIndicator.vue'
 import AccountUsageCell from '@/components/account/AccountUsageCell.vue'
 import AccountTodayStatsCell from '@/components/account/AccountTodayStatsCell.vue'
@@ -532,7 +529,7 @@ import { extractApiErrorMessage } from '@/utils/apiError'
 import { sanitizeUrl } from '@/utils/url'
 import { getFloatingPanelPosition } from '@/utils/floatingPanel'
 import { formatMultiplier } from '@/utils/formatters'
-import type { Account, AccountPlatform, AccountSchedulerGroupScore, AccountType, AccountUsageInfo, Proxy as AccountProxy, AdminGroup, WindowStats, ClaudeModel, UpstreamBillingProbeSnapshot } from '@/types'
+import type { Account, AccountPlatform, AccountSchedulerGroupScore, AccountType, AccountUsageInfo, Proxy as AccountProxy, AdminGroup, WindowStats, UpstreamBillingProbeSnapshot } from '@/types'
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -604,9 +601,6 @@ const creatingShadowAcc = ref<Account | null>(null)
 const reAuthAcc = ref<Account | null>(null)
 const testingAcc = ref<Account | null>(null)
 const statsAcc = ref<Account | null>(null)
-const showSchedulePanel = ref(false)
-const scheduleAcc = ref<Account | null>(null)
-const scheduleModelOptions = ref<SelectOption[]>([])
 const togglingSchedulable = ref<number | null>(null)
 const menu = reactive<{show:boolean, acc:Account|null, pos:{top:number, left:number}|null}>({ show: false, acc: null, pos: null })
 const exportingData = ref(false)
@@ -1274,7 +1268,6 @@ const isAnyModalOpen = computed(() => {
     showReAuth.value ||
     showTest.value ||
     showStats.value ||
-    showSchedulePanel.value ||
     showErrorPassthrough.value ||
     showTLSFingerprintProfiles.value
   )
@@ -2074,15 +2067,18 @@ const accountMatchesCurrentFilters = (account: Account) => {
     const isRateLimited = Number.isFinite(rateLimitResetAt) && rateLimitResetAt > now
     const tempUnschedUntil = account.temp_unschedulable_until ? new Date(account.temp_unschedulable_until).getTime() : Number.NaN
     const isTempUnschedulable = Number.isFinite(tempUnschedUntil) && tempUnschedUntil > now
+    const hasProbeGroupsExhausted = account.extra?.sub2api_probe_groups_exhausted === true
 
     if (filters.status === 'active') {
-      if (account.status !== 'active' || isRateLimited || isTempUnschedulable || !account.schedulable) return false
+      if (account.status !== 'active' || hasProbeGroupsExhausted || isRateLimited || isTempUnschedulable || !account.schedulable) return false
     } else if (filters.status === 'rate_limited') {
       if (account.status !== 'active' || !isRateLimited || isTempUnschedulable) return false
     } else if (filters.status === 'temp_unschedulable') {
       if (account.status !== 'active' || !isTempUnschedulable) return false
     } else if (filters.status === 'unschedulable') {
       if (account.status !== 'active' || account.schedulable || isRateLimited || isTempUnschedulable) return false
+    } else if (filters.status === 'error') {
+      if (account.status !== 'error' && !hasProbeGroupsExhausted) return false
     } else if (account.status !== filters.status) {
       return false
     }
@@ -2244,18 +2240,6 @@ const closeStatsModal = () => { showStats.value = false; statsAcc.value = null }
 const closeReAuthModal = () => { showReAuth.value = false; reAuthAcc.value = null }
 const handleTest = (a: Account) => { testingAcc.value = a; showTest.value = true }
 const handleViewStats = (a: Account) => { statsAcc.value = a; showStats.value = true }
-const handleSchedule = async (a: Account) => {
-  scheduleAcc.value = a
-  scheduleModelOptions.value = []
-  showSchedulePanel.value = true
-  try {
-    const models = await adminAPI.accounts.getAvailableModels(a.id)
-    scheduleModelOptions.value = models.map((m: ClaudeModel) => ({ value: m.id, label: m.display_name || m.id }))
-  } catch {
-    scheduleModelOptions.value = []
-  }
-}
-const closeSchedulePanel = () => { showSchedulePanel.value = false; scheduleAcc.value = null; scheduleModelOptions.value = [] }
 const handleReAuth = (a: Account) => { reAuthAcc.value = a; showReAuth.value = true }
 const duplicatingAccountIDs = new Set<number>()
 const handleDuplicateAccount = async (a: Account) => {

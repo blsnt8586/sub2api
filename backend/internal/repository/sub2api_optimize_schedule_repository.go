@@ -81,13 +81,6 @@ func (r *Sub2APIOptimizeScheduleRepository) Delete(ctx context.Context, provider
 	return err
 }
 
-// ListEnabled 列出所有已启用的定时配置（定时运行器扫描用）
-func (r *Sub2APIOptimizeScheduleRepository) ListEnabled(ctx context.Context) ([]*ent.Sub2APIOptimizeSchedule, error) {
-	return r.client.Sub2APIOptimizeSchedule.Query().
-		Where(sub2apioptimizeschedule.Enabled(true)).
-		All(ctx)
-}
-
 // ListDue 列出所有已启用且到期（next_run_at <= now 或为空）的定时配置
 func (r *Sub2APIOptimizeScheduleRepository) ListDue(ctx context.Context, now time.Time) ([]*ent.Sub2APIOptimizeSchedule, error) {
 	return r.client.Sub2APIOptimizeSchedule.Query().

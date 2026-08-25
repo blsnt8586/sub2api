@@ -67,15 +67,6 @@
             <Icon :name="optimizing ? 'refresh' : 'bolt'" size="sm" class="text-orange-500" :class="optimizing ? 'animate-spin' : ''" />
             {{ t('admin.sub2apiProviders.optimizeAll') }}
           </button>
-          <!-- 定时优化 -->
-          <button
-            @click="emit('schedule-optimize', provider); emit('close')"
-            class="flex min-h-11 w-full items-center gap-2 px-4 py-2 text-sm hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500 dark:hover:bg-dark-700"
-          >
-            <Icon name="clock" size="sm" class="text-blue-500" />
-            {{ t('admin.sub2apiProviders.scheduleOptimize') }}
-          </button>
-
           <div class="my-1 border-t border-gray-100 dark:border-dark-700"></div>
 
           <!-- 删除 -->
@@ -116,7 +107,6 @@ const emit = defineEmits<{
   (e: 'test-connection', provider: Sub2APIProvider): void
   (e: 'probe-settings', provider: Sub2APIProvider): void
   (e: 'optimize-all', provider: Sub2APIProvider): void
-  (e: 'schedule-optimize', provider: Sub2APIProvider): void
   (e: 'delete', provider: Sub2APIProvider): void
 }>()
 

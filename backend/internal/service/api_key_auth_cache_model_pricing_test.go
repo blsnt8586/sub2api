@@ -72,7 +72,7 @@ func TestAPIKeyAuthGroupSnapshot_NilCanvasModelPricingOmitted(t *testing.T) {
 
 // 旧版本快照必须被拒绝，否则升级后仍会命中不含 model_pricing 的缓存。
 func TestAPIKeyService_RejectsSnapshotWithoutModelPricingSupport(t *testing.T) {
-	require.Equal(t, 22, apiKeyAuthSnapshotVersion,
+	require.Equal(t, 23, apiKeyAuthSnapshotVersion,
 		"新增快照字段后必须递增版本号，否则旧缓存不会失效")
 
 	svc := &APIKeyService{}

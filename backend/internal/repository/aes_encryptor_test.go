@@ -90,6 +90,28 @@ func TestNewAESEncryptor_MissingOrInvalidConfig(t *testing.T) {
 	}
 }
 
+func TestNewProviderTokenEncryptorUsesIndependentSecurityKey(t *testing.T) {
+	providerKey := aesHexKey(32, 0x7b)
+	enc, err := NewProviderTokenEncryptor(&config.Config{
+		Security: config.SecurityConfig{ProviderTokenKey: providerKey},
+		Totp:     config.TotpConfig{EncryptionKey: aesHexKey(32, 0x2a)},
+	})
+	require.NoError(t, err)
+	require.NotNil(t, enc)
+
+	ciphertext, err := enc.Encrypt("provider-secret")
+	require.NoError(t, err)
+	plaintext, err := enc.Decrypt(ciphertext)
+	require.NoError(t, err)
+	assert.Equal(t, "provider-secret", plaintext)
+}
+
+func TestNewProviderTokenEncryptorMissingKeyDoesNotCreateEncryptor(t *testing.T) {
+	enc, err := NewProviderTokenEncryptor(&config.Config{})
+	require.NoError(t, err)
+	assert.Nil(t, enc)
+}
+
 // ── 加解密往返（Roundtrip）───────────────────────────────────────────────────
 
 func TestAESEncryptor_RoundTrip(t *testing.T) {

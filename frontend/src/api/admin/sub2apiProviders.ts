@@ -200,6 +200,11 @@ export interface Sub2APIProviderProbeTargetHealth {
   allow_media_probe: boolean
   timeout_seconds: number
   degraded_latency_ms: number
+  degraded_optimize_threshold: number
+  cost_optimize_enabled: boolean
+  cost_optimize_interval_seconds: number
+  cost_optimize_healthy_threshold: number
+  last_cost_optimize_at?: string | null
   failure_threshold: number
   recovery_threshold: number
   status: ProviderAccountProbeStatus
@@ -223,6 +228,10 @@ export type UpdateProviderProbeTargetRequest = Partial<Pick<
   | 'allow_media_probe'
   | 'timeout_seconds'
   | 'degraded_latency_ms'
+  | 'degraded_optimize_threshold'
+  | 'cost_optimize_enabled'
+  | 'cost_optimize_interval_seconds'
+  | 'cost_optimize_healthy_threshold'
   | 'failure_threshold'
   | 'recovery_threshold'
 >>
@@ -240,6 +249,9 @@ export interface Sub2APIProviderProbeConfig {
   degraded_latency_ms: number
   failure_threshold: number
   recovery_threshold: number
+  account_status_sync_enabled: boolean
+  account_status_failure_threshold: number
+  account_status_recovery_threshold: number
   last_control_run_at?: string | null
   last_data_run_at?: string | null
 }
@@ -552,7 +564,9 @@ export interface OptimizeLogDetail {
   old_multiplier?: number
   new_multiplier?: number
   reason?: string
+  probe_exhausted?: boolean
   trigger?: OptimizeLogTrigger
+  probe_trigger?: OptimizeLogTrigger
   switch_events?: OptimizeGroupSwitchEvent[]
   probe_target_id?: number
   probe_run_id?: number
@@ -567,7 +581,10 @@ export interface OptimizeLogDetail {
 export type OptimizeLogTrigger =
   | 'cron'
   | 'schedule_now'
+  | 'probe_auto'
   | 'probe_unhealthy'
+  | 'probe_degraded'
+  | 'probe_cost_check'
   | 'manual_account'
   | 'manual_all'
   | 'legacy'

@@ -42,6 +42,16 @@ const (
 	FieldTimeoutSeconds = "timeout_seconds"
 	// FieldDegradedLatencyMs holds the string denoting the degraded_latency_ms field in the database.
 	FieldDegradedLatencyMs = "degraded_latency_ms"
+	// FieldDegradedOptimizeThreshold holds the string denoting the degraded_optimize_threshold field in the database.
+	FieldDegradedOptimizeThreshold = "degraded_optimize_threshold"
+	// FieldCostOptimizeEnabled holds the string denoting the cost_optimize_enabled field in the database.
+	FieldCostOptimizeEnabled = "cost_optimize_enabled"
+	// FieldCostOptimizeIntervalSeconds holds the string denoting the cost_optimize_interval_seconds field in the database.
+	FieldCostOptimizeIntervalSeconds = "cost_optimize_interval_seconds"
+	// FieldCostOptimizeHealthyThreshold holds the string denoting the cost_optimize_healthy_threshold field in the database.
+	FieldCostOptimizeHealthyThreshold = "cost_optimize_healthy_threshold"
+	// FieldLastCostOptimizeAt holds the string denoting the last_cost_optimize_at field in the database.
+	FieldLastCostOptimizeAt = "last_cost_optimize_at"
 	// FieldFailureThreshold holds the string denoting the failure_threshold field in the database.
 	FieldFailureThreshold = "failure_threshold"
 	// FieldRecoveryThreshold holds the string denoting the recovery_threshold field in the database.
@@ -98,6 +108,11 @@ var Columns = []string{
 	FieldAllowMediaProbe,
 	FieldTimeoutSeconds,
 	FieldDegradedLatencyMs,
+	FieldDegradedOptimizeThreshold,
+	FieldCostOptimizeEnabled,
+	FieldCostOptimizeIntervalSeconds,
+	FieldCostOptimizeHealthyThreshold,
+	FieldLastCostOptimizeAt,
 	FieldFailureThreshold,
 	FieldRecoveryThreshold,
 	FieldLastRunAt,
@@ -145,6 +160,20 @@ var (
 	DefaultDegradedLatencyMs int
 	// DegradedLatencyMsValidator is a validator for the "degraded_latency_ms" field. It is called by the builders before save.
 	DegradedLatencyMsValidator func(int) error
+	// DefaultDegradedOptimizeThreshold holds the default value on creation for the "degraded_optimize_threshold" field.
+	DefaultDegradedOptimizeThreshold int
+	// DegradedOptimizeThresholdValidator is a validator for the "degraded_optimize_threshold" field. It is called by the builders before save.
+	DegradedOptimizeThresholdValidator func(int) error
+	// DefaultCostOptimizeEnabled holds the default value on creation for the "cost_optimize_enabled" field.
+	DefaultCostOptimizeEnabled bool
+	// DefaultCostOptimizeIntervalSeconds holds the default value on creation for the "cost_optimize_interval_seconds" field.
+	DefaultCostOptimizeIntervalSeconds int
+	// CostOptimizeIntervalSecondsValidator is a validator for the "cost_optimize_interval_seconds" field. It is called by the builders before save.
+	CostOptimizeIntervalSecondsValidator func(int) error
+	// DefaultCostOptimizeHealthyThreshold holds the default value on creation for the "cost_optimize_healthy_threshold" field.
+	DefaultCostOptimizeHealthyThreshold int
+	// CostOptimizeHealthyThresholdValidator is a validator for the "cost_optimize_healthy_threshold" field. It is called by the builders before save.
+	CostOptimizeHealthyThresholdValidator func(int) error
 	// DefaultFailureThreshold holds the default value on creation for the "failure_threshold" field.
 	DefaultFailureThreshold int
 	// FailureThresholdValidator is a validator for the "failure_threshold" field. It is called by the builders before save.
@@ -231,6 +260,31 @@ func ByTimeoutSeconds(opts ...sql.OrderTermOption) OrderOption {
 // ByDegradedLatencyMs orders the results by the degraded_latency_ms field.
 func ByDegradedLatencyMs(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDegradedLatencyMs, opts...).ToFunc()
+}
+
+// ByDegradedOptimizeThreshold orders the results by the degraded_optimize_threshold field.
+func ByDegradedOptimizeThreshold(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDegradedOptimizeThreshold, opts...).ToFunc()
+}
+
+// ByCostOptimizeEnabled orders the results by the cost_optimize_enabled field.
+func ByCostOptimizeEnabled(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCostOptimizeEnabled, opts...).ToFunc()
+}
+
+// ByCostOptimizeIntervalSeconds orders the results by the cost_optimize_interval_seconds field.
+func ByCostOptimizeIntervalSeconds(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCostOptimizeIntervalSeconds, opts...).ToFunc()
+}
+
+// ByCostOptimizeHealthyThreshold orders the results by the cost_optimize_healthy_threshold field.
+func ByCostOptimizeHealthyThreshold(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCostOptimizeHealthyThreshold, opts...).ToFunc()
+}
+
+// ByLastCostOptimizeAt orders the results by the last_cost_optimize_at field.
+func ByLastCostOptimizeAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLastCostOptimizeAt, opts...).ToFunc()
 }
 
 // ByFailureThreshold orders the results by the failure_threshold field.

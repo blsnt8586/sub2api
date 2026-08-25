@@ -125,6 +125,31 @@ func DegradedLatencyMs(v int) predicate.Sub2APIProviderProbeTarget {
 	return predicate.Sub2APIProviderProbeTarget(sql.FieldEQ(FieldDegradedLatencyMs, v))
 }
 
+// DegradedOptimizeThreshold applies equality check predicate on the "degraded_optimize_threshold" field. It's identical to DegradedOptimizeThresholdEQ.
+func DegradedOptimizeThreshold(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldEQ(FieldDegradedOptimizeThreshold, v))
+}
+
+// CostOptimizeEnabled applies equality check predicate on the "cost_optimize_enabled" field. It's identical to CostOptimizeEnabledEQ.
+func CostOptimizeEnabled(v bool) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldEQ(FieldCostOptimizeEnabled, v))
+}
+
+// CostOptimizeIntervalSeconds applies equality check predicate on the "cost_optimize_interval_seconds" field. It's identical to CostOptimizeIntervalSecondsEQ.
+func CostOptimizeIntervalSeconds(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldEQ(FieldCostOptimizeIntervalSeconds, v))
+}
+
+// CostOptimizeHealthyThreshold applies equality check predicate on the "cost_optimize_healthy_threshold" field. It's identical to CostOptimizeHealthyThresholdEQ.
+func CostOptimizeHealthyThreshold(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldEQ(FieldCostOptimizeHealthyThreshold, v))
+}
+
+// LastCostOptimizeAt applies equality check predicate on the "last_cost_optimize_at" field. It's identical to LastCostOptimizeAtEQ.
+func LastCostOptimizeAt(v time.Time) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldEQ(FieldLastCostOptimizeAt, v))
+}
+
 // FailureThreshold applies equality check predicate on the "failure_threshold" field. It's identical to FailureThresholdEQ.
 func FailureThreshold(v int) predicate.Sub2APIProviderProbeTarget {
 	return predicate.Sub2APIProviderProbeTarget(sql.FieldEQ(FieldFailureThreshold, v))
@@ -718,6 +743,186 @@ func DegradedLatencyMsLT(v int) predicate.Sub2APIProviderProbeTarget {
 // DegradedLatencyMsLTE applies the LTE predicate on the "degraded_latency_ms" field.
 func DegradedLatencyMsLTE(v int) predicate.Sub2APIProviderProbeTarget {
 	return predicate.Sub2APIProviderProbeTarget(sql.FieldLTE(FieldDegradedLatencyMs, v))
+}
+
+// DegradedOptimizeThresholdEQ applies the EQ predicate on the "degraded_optimize_threshold" field.
+func DegradedOptimizeThresholdEQ(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldEQ(FieldDegradedOptimizeThreshold, v))
+}
+
+// DegradedOptimizeThresholdNEQ applies the NEQ predicate on the "degraded_optimize_threshold" field.
+func DegradedOptimizeThresholdNEQ(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldNEQ(FieldDegradedOptimizeThreshold, v))
+}
+
+// DegradedOptimizeThresholdIn applies the In predicate on the "degraded_optimize_threshold" field.
+func DegradedOptimizeThresholdIn(vs ...int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldIn(FieldDegradedOptimizeThreshold, vs...))
+}
+
+// DegradedOptimizeThresholdNotIn applies the NotIn predicate on the "degraded_optimize_threshold" field.
+func DegradedOptimizeThresholdNotIn(vs ...int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldNotIn(FieldDegradedOptimizeThreshold, vs...))
+}
+
+// DegradedOptimizeThresholdGT applies the GT predicate on the "degraded_optimize_threshold" field.
+func DegradedOptimizeThresholdGT(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldGT(FieldDegradedOptimizeThreshold, v))
+}
+
+// DegradedOptimizeThresholdGTE applies the GTE predicate on the "degraded_optimize_threshold" field.
+func DegradedOptimizeThresholdGTE(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldGTE(FieldDegradedOptimizeThreshold, v))
+}
+
+// DegradedOptimizeThresholdLT applies the LT predicate on the "degraded_optimize_threshold" field.
+func DegradedOptimizeThresholdLT(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldLT(FieldDegradedOptimizeThreshold, v))
+}
+
+// DegradedOptimizeThresholdLTE applies the LTE predicate on the "degraded_optimize_threshold" field.
+func DegradedOptimizeThresholdLTE(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldLTE(FieldDegradedOptimizeThreshold, v))
+}
+
+// CostOptimizeEnabledEQ applies the EQ predicate on the "cost_optimize_enabled" field.
+func CostOptimizeEnabledEQ(v bool) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldEQ(FieldCostOptimizeEnabled, v))
+}
+
+// CostOptimizeEnabledNEQ applies the NEQ predicate on the "cost_optimize_enabled" field.
+func CostOptimizeEnabledNEQ(v bool) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldNEQ(FieldCostOptimizeEnabled, v))
+}
+
+// CostOptimizeIntervalSecondsEQ applies the EQ predicate on the "cost_optimize_interval_seconds" field.
+func CostOptimizeIntervalSecondsEQ(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldEQ(FieldCostOptimizeIntervalSeconds, v))
+}
+
+// CostOptimizeIntervalSecondsNEQ applies the NEQ predicate on the "cost_optimize_interval_seconds" field.
+func CostOptimizeIntervalSecondsNEQ(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldNEQ(FieldCostOptimizeIntervalSeconds, v))
+}
+
+// CostOptimizeIntervalSecondsIn applies the In predicate on the "cost_optimize_interval_seconds" field.
+func CostOptimizeIntervalSecondsIn(vs ...int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldIn(FieldCostOptimizeIntervalSeconds, vs...))
+}
+
+// CostOptimizeIntervalSecondsNotIn applies the NotIn predicate on the "cost_optimize_interval_seconds" field.
+func CostOptimizeIntervalSecondsNotIn(vs ...int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldNotIn(FieldCostOptimizeIntervalSeconds, vs...))
+}
+
+// CostOptimizeIntervalSecondsGT applies the GT predicate on the "cost_optimize_interval_seconds" field.
+func CostOptimizeIntervalSecondsGT(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldGT(FieldCostOptimizeIntervalSeconds, v))
+}
+
+// CostOptimizeIntervalSecondsGTE applies the GTE predicate on the "cost_optimize_interval_seconds" field.
+func CostOptimizeIntervalSecondsGTE(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldGTE(FieldCostOptimizeIntervalSeconds, v))
+}
+
+// CostOptimizeIntervalSecondsLT applies the LT predicate on the "cost_optimize_interval_seconds" field.
+func CostOptimizeIntervalSecondsLT(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldLT(FieldCostOptimizeIntervalSeconds, v))
+}
+
+// CostOptimizeIntervalSecondsLTE applies the LTE predicate on the "cost_optimize_interval_seconds" field.
+func CostOptimizeIntervalSecondsLTE(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldLTE(FieldCostOptimizeIntervalSeconds, v))
+}
+
+// CostOptimizeHealthyThresholdEQ applies the EQ predicate on the "cost_optimize_healthy_threshold" field.
+func CostOptimizeHealthyThresholdEQ(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldEQ(FieldCostOptimizeHealthyThreshold, v))
+}
+
+// CostOptimizeHealthyThresholdNEQ applies the NEQ predicate on the "cost_optimize_healthy_threshold" field.
+func CostOptimizeHealthyThresholdNEQ(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldNEQ(FieldCostOptimizeHealthyThreshold, v))
+}
+
+// CostOptimizeHealthyThresholdIn applies the In predicate on the "cost_optimize_healthy_threshold" field.
+func CostOptimizeHealthyThresholdIn(vs ...int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldIn(FieldCostOptimizeHealthyThreshold, vs...))
+}
+
+// CostOptimizeHealthyThresholdNotIn applies the NotIn predicate on the "cost_optimize_healthy_threshold" field.
+func CostOptimizeHealthyThresholdNotIn(vs ...int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldNotIn(FieldCostOptimizeHealthyThreshold, vs...))
+}
+
+// CostOptimizeHealthyThresholdGT applies the GT predicate on the "cost_optimize_healthy_threshold" field.
+func CostOptimizeHealthyThresholdGT(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldGT(FieldCostOptimizeHealthyThreshold, v))
+}
+
+// CostOptimizeHealthyThresholdGTE applies the GTE predicate on the "cost_optimize_healthy_threshold" field.
+func CostOptimizeHealthyThresholdGTE(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldGTE(FieldCostOptimizeHealthyThreshold, v))
+}
+
+// CostOptimizeHealthyThresholdLT applies the LT predicate on the "cost_optimize_healthy_threshold" field.
+func CostOptimizeHealthyThresholdLT(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldLT(FieldCostOptimizeHealthyThreshold, v))
+}
+
+// CostOptimizeHealthyThresholdLTE applies the LTE predicate on the "cost_optimize_healthy_threshold" field.
+func CostOptimizeHealthyThresholdLTE(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldLTE(FieldCostOptimizeHealthyThreshold, v))
+}
+
+// LastCostOptimizeAtEQ applies the EQ predicate on the "last_cost_optimize_at" field.
+func LastCostOptimizeAtEQ(v time.Time) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldEQ(FieldLastCostOptimizeAt, v))
+}
+
+// LastCostOptimizeAtNEQ applies the NEQ predicate on the "last_cost_optimize_at" field.
+func LastCostOptimizeAtNEQ(v time.Time) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldNEQ(FieldLastCostOptimizeAt, v))
+}
+
+// LastCostOptimizeAtIn applies the In predicate on the "last_cost_optimize_at" field.
+func LastCostOptimizeAtIn(vs ...time.Time) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldIn(FieldLastCostOptimizeAt, vs...))
+}
+
+// LastCostOptimizeAtNotIn applies the NotIn predicate on the "last_cost_optimize_at" field.
+func LastCostOptimizeAtNotIn(vs ...time.Time) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldNotIn(FieldLastCostOptimizeAt, vs...))
+}
+
+// LastCostOptimizeAtGT applies the GT predicate on the "last_cost_optimize_at" field.
+func LastCostOptimizeAtGT(v time.Time) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldGT(FieldLastCostOptimizeAt, v))
+}
+
+// LastCostOptimizeAtGTE applies the GTE predicate on the "last_cost_optimize_at" field.
+func LastCostOptimizeAtGTE(v time.Time) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldGTE(FieldLastCostOptimizeAt, v))
+}
+
+// LastCostOptimizeAtLT applies the LT predicate on the "last_cost_optimize_at" field.
+func LastCostOptimizeAtLT(v time.Time) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldLT(FieldLastCostOptimizeAt, v))
+}
+
+// LastCostOptimizeAtLTE applies the LTE predicate on the "last_cost_optimize_at" field.
+func LastCostOptimizeAtLTE(v time.Time) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldLTE(FieldLastCostOptimizeAt, v))
+}
+
+// LastCostOptimizeAtIsNil applies the IsNil predicate on the "last_cost_optimize_at" field.
+func LastCostOptimizeAtIsNil() predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldIsNull(FieldLastCostOptimizeAt))
+}
+
+// LastCostOptimizeAtNotNil applies the NotNil predicate on the "last_cost_optimize_at" field.
+func LastCostOptimizeAtNotNil() predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldNotNull(FieldLastCostOptimizeAt))
 }
 
 // FailureThresholdEQ applies the EQ predicate on the "failure_threshold" field.

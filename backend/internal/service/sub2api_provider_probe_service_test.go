@@ -97,6 +97,15 @@ func TestProbeCadenceDefaultsSeparateControlAndAccountPlanes(t *testing.T) {
 	}
 }
 
+func TestProviderProbeSuppressesAccountTestStatusMutation(t *testing.T) {
+	if !accountTestStatusMutationAllowed(context.Background()) {
+		t.Fatal("ordinary account tests should retain existing status mutations")
+	}
+	if accountTestStatusMutationAllowed(suppressAccountTestStatusMutation(context.Background())) {
+		t.Fatal("provider probe account tests must leave status changes to the probe state machine")
+	}
+}
+
 func TestHasProbeTargetForAccountRequiresMatchingPersistedTarget(t *testing.T) {
 	targets := []*ent.Sub2APIProviderProbeTarget{
 		nil,
@@ -108,6 +117,19 @@ func TestHasProbeTargetForAccountRequiresMatchingPersistedTarget(t *testing.T) {
 	}
 	if hasProbeTargetForAccount(targets, 33) {
 		t.Fatal("an unrelated target must not hide a target-creation constraint failure")
+	}
+}
+
+func TestStaleProbeTargetIDsOnlyReturnsTargetsForMissingAccounts(t *testing.T) {
+	targets := []*ent.Sub2APIProviderProbeTarget{
+		nil,
+		{ID: 1, AccountID: 11},
+		{ID: 2, AccountID: 22},
+		{ID: 3, AccountID: 33},
+	}
+	got := staleProbeTargetIDs(targets, map[int64]struct{}{11: {}})
+	if len(got) != 2 || got[0] != 2 || got[1] != 3 {
+		t.Fatalf("staleProbeTargetIDs()=%v, want [2 3]", got)
 	}
 }
 
@@ -131,8 +153,11 @@ func TestDefaultProbeTargetCreateInputEnablesNewLinkedAccount(t *testing.T) {
 	if !input.Enabled {
 		t.Fatal("new linked account probe must not inherit the retired disabled provider data-plane switch")
 	}
-	if input.IntervalSeconds != 30 || input.TimeoutSeconds != 60 || input.DegradedLatencyMS != 5000 {
-		t.Fatalf("new target defaults=%d/%d/%d, want 30/60/5000", input.IntervalSeconds, input.TimeoutSeconds, input.DegradedLatencyMS)
+	if input.IntervalSeconds != 30 || input.TimeoutSeconds != 60 || input.DegradedLatencyMS != 5000 || input.CostOptimizeHealthyThreshold != 6 {
+		t.Fatalf("new target defaults=%d/%d/%d/%d, want 30/60/5000/6", input.IntervalSeconds, input.TimeoutSeconds, input.DegradedLatencyMS, input.CostOptimizeHealthyThreshold)
+	}
+	if input.FailureThreshold != 1 || input.RecoveryThreshold != 1 {
+		t.Fatalf("new target failure/recovery thresholds=%d/%d, want single-sample 1/1", input.FailureThreshold, input.RecoveryThreshold)
 	}
 	if input.ProviderID != providerID || input.AccountID != 11 || input.Platform != "openai" {
 		t.Fatalf("new target identity=%+v", input)
@@ -469,7 +494,7 @@ func TestTargetHealthKeepsUnavailableFailuresIndependentOfLatencyThreshold(t *te
 	}
 }
 
-func TestTargetHealthKeepsHysteresisFailureVisibleWhenLatencyIsBelowThreshold(t *testing.T) {
+func TestTargetHealthRecalculatesDegradedLatencyBelowCurrentThreshold(t *testing.T) {
 	now := time.Date(2026, 8, 15, 12, 0, 0, 0, time.UTC)
 	latency := 300
 	category := "network"
@@ -477,8 +502,34 @@ func TestTargetHealthKeepsHysteresisFailureVisibleWhenLatencyIsBelowThreshold(t 
 		TargetID: 7, AccountID: 9, Status: sub2apiproviderprobetargetrun.StatusDegraded, LatencyMs: &latency,
 		ErrorCategory: &category, CreatedAt: now.Add(-time.Minute), StartedAt: now.Add(-time.Minute), FinishedAt: now.Add(-time.Minute),
 	}, 5000)
-	if health.Status != "degraded" {
-		t.Fatalf("status=%q, want degraded for a hysteresis failure", health.Status)
+	if health.Status != "healthy" {
+		t.Fatalf("status=%q, want healthy when 300ms is below the current 5000ms threshold", health.Status)
+	}
+}
+
+func TestTargetHealth5461MsIsHealthyAt10000MsThreshold(t *testing.T) {
+	latency := 5461
+	health := targetHealthFromRun(&ent.Sub2APIProviderProbeTargetRun{
+		TargetID: 7, AccountID: 9, Status: sub2apiproviderprobetargetrun.StatusDegraded, LatencyMs: &latency,
+	}, 10000)
+	if health.Status != "healthy" {
+		t.Fatalf("status=%q, want healthy for 5461ms below 10000ms threshold", health.Status)
+	}
+}
+
+func TestTargetHealthIgnoresRealTrafficWhenClassifyingProbe(t *testing.T) {
+	latency := 3478
+	successRate := 90.0
+	p95 := 15000
+	health := targetHealthFromRun(&ent.Sub2APIProviderProbeTargetRun{
+		TargetID: 7, AccountID: 9, Status: sub2apiproviderprobetargetrun.StatusHealthy, LatencyMs: &latency,
+		TrafficRequestCount: 20, TrafficSuccessRate: &successRate, TrafficP95LatencyMs: &p95,
+	}, 10000)
+	if health.Status != "healthy" {
+		t.Fatalf("status=%q, want healthy when probe latency is below threshold despite degraded traffic diagnostics", health.Status)
+	}
+	if health.TrafficRequestCount != 20 || health.TrafficSuccessRate == nil || *health.TrafficSuccessRate != successRate || health.TrafficP95LatencyMS == nil || *health.TrafficP95LatencyMS != p95 {
+		t.Fatalf("traffic diagnostics were not preserved: %+v", health)
 	}
 }
 
@@ -587,17 +638,6 @@ func TestValidateEffectiveProbeConfigRequiresSixHoursForMedia(t *testing.T) {
 	}
 }
 
-func TestScheduledProbeDataIntervalClampsInvalidMediaConfig(t *testing.T) {
-	cfg := &ent.Sub2APIProviderProbeConfig{DataIntervalSeconds: 300, AllowMediaProbe: true}
-	if got := scheduledProbeDataIntervalSeconds(cfg); got != minMediaProbeIntervalSeconds {
-		t.Fatalf("scheduled media interval=%d, want %d", got, minMediaProbeIntervalSeconds)
-	}
-	cfg.AllowMediaProbe = false
-	if got := scheduledProbeDataIntervalSeconds(cfg); got != 300 {
-		t.Fatalf("scheduled text interval=%d, want 300", got)
-	}
-}
-
 func TestValidateRepresentativeProbeAccountsAllowsMultipleAccountsPerPlatform(t *testing.T) {
 	providerID := int64(9)
 	accounts := []*Account{
@@ -648,4 +688,245 @@ func TestHealthFromRunDecodesAccountProbeDetails(t *testing.T) {
 	if len(health.AccountProbes) != 1 || health.AccountProbes[0].AccountID != 11 || health.AccountProbes[0].LatencyMS == nil || *health.AccountProbes[0].LatencyMS != 428 {
 		t.Fatalf("decoded account probes=%+v", health.AccountProbes)
 	}
+}
+
+func TestProbeGroupsExhaustedStateIsIndependentFromScheduling(t *testing.T) {
+	account := &Account{Status: StatusActive, Schedulable: true, Extra: map[string]any{probeGroupsExhaustedExtraKey: true}}
+	if !probeGroupsExhausted(account) || account.Status != StatusActive || !account.Schedulable {
+		t.Fatal("display marker should be readable without changing an account snapshot")
+	}
+}
+
+func TestProbeManagedAccountErrorOnlyRecoversItsOwnError(t *testing.T) {
+	repo := &probeAccountStateRepoStub{account: &Account{Status: StatusActive, Schedulable: true}}
+	if err := markProbeManagedAccountError(context.Background(), repo, 7, "probe failed"); err != nil {
+		t.Fatalf("mark probe error: %v", err)
+	}
+	if repo.setErrorCalls != 1 || len(repo.updates) != 1 || repo.updates[0][probeManagedAccountStatusExtraKey] != true {
+		t.Fatalf("probe error state=%+v", repo)
+	}
+	repo.account.Status = StatusError
+	repo.account.Schedulable = false
+	repo.account.Extra = map[string]any{probeManagedAccountStatusExtraKey: true}
+	if err := clearProbeManagedAccountError(context.Background(), repo, 7); err != nil {
+		t.Fatalf("clear probe error: %v", err)
+	}
+	if repo.clearErrorCalls != 1 {
+		t.Fatalf("clear error calls=%d, want 1", repo.clearErrorCalls)
+	}
+
+	manual := &probeAccountStateRepoStub{account: &Account{Status: StatusError, Schedulable: false, Extra: map[string]any{}}}
+	if err := clearProbeManagedAccountError(context.Background(), manual, 8); err != nil {
+		t.Fatalf("clear manual error state: %v", err)
+	}
+	if manual.clearErrorCalls != 0 {
+		t.Fatal("manual account error must not be cleared by a healthy probe")
+	}
+
+	runtime := &probeAccountStateRepoStub{account: &Account{
+		Status:      StatusError,
+		Schedulable: false,
+		Extra: map[string]any{
+			probeRuntimeRecoverableAccountErrorExtraKey: true,
+		},
+	}}
+	if err := clearProbeManagedAccountError(context.Background(), runtime, 9); err != nil {
+		t.Fatalf("clear runtime recoverable error: %v", err)
+	}
+	if runtime.clearErrorCalls != 1 {
+		t.Fatalf("runtime recoverable error clear calls=%d, want 1", runtime.clearErrorCalls)
+	}
+
+	claimed := &probeAccountStateRepoStub{account: &Account{
+		Status:      StatusError,
+		Schedulable: false,
+		Extra: map[string]any{
+			probeRuntimeRecoverableAccountErrorExtraKey: true,
+		},
+	}}
+	if err := markProbeManagedAccountError(context.Background(), claimed, 10, "balance unavailable"); err != nil {
+		t.Fatalf("claim runtime recoverable error: %v", err)
+	}
+	if claimed.setErrorCalls != 0 || len(claimed.updates) != 1 || claimed.updates[0][probeManagedAccountStatusExtraKey] != true {
+		t.Fatalf("runtime claim state=%+v", claimed)
+	}
+
+	legacy := &probeAccountStateRepoStub{account: &Account{
+		Status:       StatusError,
+		Schedulable:  false,
+		ErrorMessage: "API returned 403: insufficient balance",
+		Extra:        map[string]any{},
+	}}
+	if err := clearProbeManagedAccountError(context.Background(), legacy, 11); err != nil {
+		t.Fatalf("clear legacy balance error: %v", err)
+	}
+	if legacy.clearErrorCalls != 1 {
+		t.Fatalf("legacy balance error clear calls=%d, want 1", legacy.clearErrorCalls)
+	}
+}
+
+func TestProbeHTTPStatusExtractsAccountPolicyCode(t *testing.T) {
+	cases := map[string]int{
+		"API returned 403: insufficient balance":                   403,
+		"Chat Completions API (/v1/chat/completions) returned 502": 502,
+		"HTTP 429 rate limited":                                    429,
+		"request timed out":                                        0,
+	}
+	for message, want := range cases {
+		if got := probeHTTPStatus(message); got != want {
+			t.Fatalf("probeHTTPStatus(%q)=%d, want %d", message, got, want)
+		}
+	}
+}
+
+func TestProjectAccountStatusFromProbeUsesThresholds(t *testing.T) {
+	repo := &probeAccountStateRepoStub{account: &Account{Status: StatusActive, Schedulable: true}}
+	svc := &Sub2APIProviderProbeService{accountRepo: repo}
+	cfg := &ent.Sub2APIProviderProbeConfig{AccountStatusFailureThreshold: 2, AccountStatusRecoveryThreshold: 2}
+	target := &ent.Sub2APIProviderProbeTarget{ID: 3, AccountID: 7}
+	message := "probe timed out"
+	latest := &ent.Sub2APIProviderProbeTargetRun{ID: 2, Status: sub2apiproviderprobetargetrun.StatusUnhealthy, ErrorMessage: &message}
+	previous := &ent.Sub2APIProviderProbeTargetRun{ID: 1, Status: sub2apiproviderprobetargetrun.StatusUnhealthy, ErrorMessage: &message}
+
+	if err := svc.projectAccountStatusFromProbe(context.Background(), cfg, target, latest, []*ent.Sub2APIProviderProbeTargetRun{latest}, false); err != nil {
+		t.Fatalf("project first failure: %v", err)
+	}
+	if repo.setErrorCalls != 0 {
+		t.Fatal("first failure must not cross the configured threshold")
+	}
+	if err := svc.projectAccountStatusFromProbe(context.Background(), cfg, target, latest, []*ent.Sub2APIProviderProbeTargetRun{latest, previous}, false); err != nil {
+		t.Fatalf("project second failure: %v", err)
+	}
+	if repo.setErrorCalls != 1 {
+		t.Fatalf("set error calls=%d, want 1 after threshold", repo.setErrorCalls)
+	}
+}
+
+func TestProjectAccountStatusFromProbeDoesNotRecoverOnDegradedRuns(t *testing.T) {
+	repo := &probeAccountStateRepoStub{account: &Account{
+		Status:      StatusError,
+		Schedulable: false,
+		Extra:       map[string]any{probeManagedAccountStatusExtraKey: true},
+	}}
+	svc := &Sub2APIProviderProbeService{accountRepo: repo}
+	cfg := &ent.Sub2APIProviderProbeConfig{AccountStatusFailureThreshold: 1, AccountStatusRecoveryThreshold: 1}
+	target := &ent.Sub2APIProviderProbeTarget{ID: 4, AccountID: 8}
+	run := &ent.Sub2APIProviderProbeTargetRun{ID: 1, Status: sub2apiproviderprobetargetrun.StatusDegraded}
+	if err := svc.projectAccountStatusFromProbe(context.Background(), cfg, target, run, []*ent.Sub2APIProviderProbeTargetRun{run}, false); err != nil {
+		t.Fatalf("project degraded recovery: %v", err)
+	}
+	if repo.clearErrorCalls != 0 || repo.account.Status != StatusError || repo.account.Schedulable {
+		t.Fatalf("degraded probe must not recover account state: clear=%d account=%+v", repo.clearErrorCalls, repo.account)
+	}
+}
+
+func TestProjectAccountStatusFromProbeRespectsCustomErrorCodes(t *testing.T) {
+	newService := func(customCode int) (*Sub2APIProviderProbeService, *probePolicyAccountRepo) {
+		base := &probePolicyAccountRepo{account: &Account{
+			ID:          7,
+			Status:      StatusActive,
+			Schedulable: true,
+			Type:        AccountTypeAPIKey,
+			Credentials: map[string]any{
+				"custom_error_codes_enabled": true,
+				"custom_error_codes":         []any{float64(customCode)},
+			},
+			Extra: map[string]any{},
+		}}
+		providerRepo := &probePolicySub2APIRepo{base: base}
+		return &Sub2APIProviderProbeService{
+			accountRepo:      providerRepo,
+			rateLimitService: &RateLimitService{accountRepo: base},
+		}, base
+	}
+	cfg := &ent.Sub2APIProviderProbeConfig{AccountStatusFailureThreshold: 1, AccountStatusRecoveryThreshold: 1}
+	target := &ent.Sub2APIProviderProbeTarget{ID: 3, AccountID: 7}
+
+	t.Run("selected code writes real account error", func(t *testing.T) {
+		svc, repo := newService(503)
+		message := "API returned 503: unavailable"
+		run := &ent.Sub2APIProviderProbeTargetRun{ID: 1, Status: sub2apiproviderprobetargetrun.StatusUnhealthy, ErrorMessage: &message}
+		if err := svc.projectAccountStatusFromProbe(context.Background(), cfg, target, run, []*ent.Sub2APIProviderProbeTargetRun{run}, false); err != nil {
+			t.Fatalf("project selected custom code: %v", err)
+		}
+		if repo.account.Status != StatusError || repo.account.Schedulable || repo.account.Extra[probeManagedAccountStatusExtraKey] != true {
+			t.Fatalf("account state=%+v", repo.account)
+		}
+	})
+
+	t.Run("unselected code remains observational", func(t *testing.T) {
+		svc, repo := newService(503)
+		message := "API returned 502: bad gateway"
+		run := &ent.Sub2APIProviderProbeTargetRun{ID: 1, Status: sub2apiproviderprobetargetrun.StatusUnhealthy, ErrorMessage: &message}
+		if err := svc.projectAccountStatusFromProbe(context.Background(), cfg, target, run, []*ent.Sub2APIProviderProbeTargetRun{run}, false); err != nil {
+			t.Fatalf("project unselected custom code: %v", err)
+		}
+		if repo.account.Status != StatusActive || !repo.account.Schedulable {
+			t.Fatalf("unselected code changed account state=%+v", repo.account)
+		}
+	})
+}
+
+type probeAccountStateRepoStub struct {
+	Sub2APIAccountRepository
+	account         *Account
+	setErrorCalls   int
+	clearErrorCalls int
+	updates         []map[string]any
+}
+
+type probePolicyAccountRepo struct {
+	AccountRepository
+	account *Account
+}
+
+func (r *probePolicyAccountRepo) GetByID(context.Context, int64) (*Account, error) {
+	return r.account, nil
+}
+func (r *probePolicyAccountRepo) SetError(_ context.Context, _ int64, message string) error {
+	r.account.Status = StatusError
+	r.account.Schedulable = false
+	r.account.ErrorMessage = message
+	return nil
+}
+func (r *probePolicyAccountRepo) UpdateExtra(_ context.Context, _ int64, updates map[string]any) error {
+	if r.account.Extra == nil {
+		r.account.Extra = map[string]any{}
+	}
+	for key, value := range updates {
+		r.account.Extra[key] = value
+	}
+	return nil
+}
+
+type probePolicySub2APIRepo struct {
+	Sub2APIAccountRepository
+	base *probePolicyAccountRepo
+}
+
+func (r *probePolicySub2APIRepo) GetByID(ctx context.Context, id int64) (*Account, error) {
+	return r.base.GetByID(ctx, id)
+}
+func (r *probePolicySub2APIRepo) SetError(ctx context.Context, id int64, message string) error {
+	return r.base.SetError(ctx, id, message)
+}
+func (r *probePolicySub2APIRepo) ClearError(context.Context, int64) error { return nil }
+func (r *probePolicySub2APIRepo) UpdateExtra(ctx context.Context, id int64, updates map[string]any) error {
+	return r.base.UpdateExtra(ctx, id, updates)
+}
+
+func (r *probeAccountStateRepoStub) GetByID(context.Context, int64) (*Account, error) {
+	return r.account, nil
+}
+func (r *probeAccountStateRepoStub) SetError(context.Context, int64, string) error {
+	r.setErrorCalls++
+	return nil
+}
+func (r *probeAccountStateRepoStub) ClearError(context.Context, int64) error {
+	r.clearErrorCalls++
+	return nil
+}
+func (r *probeAccountStateRepoStub) UpdateExtra(_ context.Context, _ int64, updates map[string]any) error {
+	r.updates = append(r.updates, updates)
+	return nil
 }

@@ -115,6 +115,21 @@ func RecoveryThreshold(v int) predicate.Sub2APIProviderProbeConfig {
 	return predicate.Sub2APIProviderProbeConfig(sql.FieldEQ(FieldRecoveryThreshold, v))
 }
 
+// AccountStatusSyncEnabled applies equality check predicate on the "account_status_sync_enabled" field. It's identical to AccountStatusSyncEnabledEQ.
+func AccountStatusSyncEnabled(v bool) predicate.Sub2APIProviderProbeConfig {
+	return predicate.Sub2APIProviderProbeConfig(sql.FieldEQ(FieldAccountStatusSyncEnabled, v))
+}
+
+// AccountStatusFailureThreshold applies equality check predicate on the "account_status_failure_threshold" field. It's identical to AccountStatusFailureThresholdEQ.
+func AccountStatusFailureThreshold(v int) predicate.Sub2APIProviderProbeConfig {
+	return predicate.Sub2APIProviderProbeConfig(sql.FieldEQ(FieldAccountStatusFailureThreshold, v))
+}
+
+// AccountStatusRecoveryThreshold applies equality check predicate on the "account_status_recovery_threshold" field. It's identical to AccountStatusRecoveryThresholdEQ.
+func AccountStatusRecoveryThreshold(v int) predicate.Sub2APIProviderProbeConfig {
+	return predicate.Sub2APIProviderProbeConfig(sql.FieldEQ(FieldAccountStatusRecoveryThreshold, v))
+}
+
 // LastControlRunAt applies equality check predicate on the "last_control_run_at" field. It's identical to LastControlRunAtEQ.
 func LastControlRunAt(v time.Time) predicate.Sub2APIProviderProbeConfig {
 	return predicate.Sub2APIProviderProbeConfig(sql.FieldEQ(FieldLastControlRunAt, v))
@@ -493,6 +508,96 @@ func RecoveryThresholdLT(v int) predicate.Sub2APIProviderProbeConfig {
 // RecoveryThresholdLTE applies the LTE predicate on the "recovery_threshold" field.
 func RecoveryThresholdLTE(v int) predicate.Sub2APIProviderProbeConfig {
 	return predicate.Sub2APIProviderProbeConfig(sql.FieldLTE(FieldRecoveryThreshold, v))
+}
+
+// AccountStatusSyncEnabledEQ applies the EQ predicate on the "account_status_sync_enabled" field.
+func AccountStatusSyncEnabledEQ(v bool) predicate.Sub2APIProviderProbeConfig {
+	return predicate.Sub2APIProviderProbeConfig(sql.FieldEQ(FieldAccountStatusSyncEnabled, v))
+}
+
+// AccountStatusSyncEnabledNEQ applies the NEQ predicate on the "account_status_sync_enabled" field.
+func AccountStatusSyncEnabledNEQ(v bool) predicate.Sub2APIProviderProbeConfig {
+	return predicate.Sub2APIProviderProbeConfig(sql.FieldNEQ(FieldAccountStatusSyncEnabled, v))
+}
+
+// AccountStatusFailureThresholdEQ applies the EQ predicate on the "account_status_failure_threshold" field.
+func AccountStatusFailureThresholdEQ(v int) predicate.Sub2APIProviderProbeConfig {
+	return predicate.Sub2APIProviderProbeConfig(sql.FieldEQ(FieldAccountStatusFailureThreshold, v))
+}
+
+// AccountStatusFailureThresholdNEQ applies the NEQ predicate on the "account_status_failure_threshold" field.
+func AccountStatusFailureThresholdNEQ(v int) predicate.Sub2APIProviderProbeConfig {
+	return predicate.Sub2APIProviderProbeConfig(sql.FieldNEQ(FieldAccountStatusFailureThreshold, v))
+}
+
+// AccountStatusFailureThresholdIn applies the In predicate on the "account_status_failure_threshold" field.
+func AccountStatusFailureThresholdIn(vs ...int) predicate.Sub2APIProviderProbeConfig {
+	return predicate.Sub2APIProviderProbeConfig(sql.FieldIn(FieldAccountStatusFailureThreshold, vs...))
+}
+
+// AccountStatusFailureThresholdNotIn applies the NotIn predicate on the "account_status_failure_threshold" field.
+func AccountStatusFailureThresholdNotIn(vs ...int) predicate.Sub2APIProviderProbeConfig {
+	return predicate.Sub2APIProviderProbeConfig(sql.FieldNotIn(FieldAccountStatusFailureThreshold, vs...))
+}
+
+// AccountStatusFailureThresholdGT applies the GT predicate on the "account_status_failure_threshold" field.
+func AccountStatusFailureThresholdGT(v int) predicate.Sub2APIProviderProbeConfig {
+	return predicate.Sub2APIProviderProbeConfig(sql.FieldGT(FieldAccountStatusFailureThreshold, v))
+}
+
+// AccountStatusFailureThresholdGTE applies the GTE predicate on the "account_status_failure_threshold" field.
+func AccountStatusFailureThresholdGTE(v int) predicate.Sub2APIProviderProbeConfig {
+	return predicate.Sub2APIProviderProbeConfig(sql.FieldGTE(FieldAccountStatusFailureThreshold, v))
+}
+
+// AccountStatusFailureThresholdLT applies the LT predicate on the "account_status_failure_threshold" field.
+func AccountStatusFailureThresholdLT(v int) predicate.Sub2APIProviderProbeConfig {
+	return predicate.Sub2APIProviderProbeConfig(sql.FieldLT(FieldAccountStatusFailureThreshold, v))
+}
+
+// AccountStatusFailureThresholdLTE applies the LTE predicate on the "account_status_failure_threshold" field.
+func AccountStatusFailureThresholdLTE(v int) predicate.Sub2APIProviderProbeConfig {
+	return predicate.Sub2APIProviderProbeConfig(sql.FieldLTE(FieldAccountStatusFailureThreshold, v))
+}
+
+// AccountStatusRecoveryThresholdEQ applies the EQ predicate on the "account_status_recovery_threshold" field.
+func AccountStatusRecoveryThresholdEQ(v int) predicate.Sub2APIProviderProbeConfig {
+	return predicate.Sub2APIProviderProbeConfig(sql.FieldEQ(FieldAccountStatusRecoveryThreshold, v))
+}
+
+// AccountStatusRecoveryThresholdNEQ applies the NEQ predicate on the "account_status_recovery_threshold" field.
+func AccountStatusRecoveryThresholdNEQ(v int) predicate.Sub2APIProviderProbeConfig {
+	return predicate.Sub2APIProviderProbeConfig(sql.FieldNEQ(FieldAccountStatusRecoveryThreshold, v))
+}
+
+// AccountStatusRecoveryThresholdIn applies the In predicate on the "account_status_recovery_threshold" field.
+func AccountStatusRecoveryThresholdIn(vs ...int) predicate.Sub2APIProviderProbeConfig {
+	return predicate.Sub2APIProviderProbeConfig(sql.FieldIn(FieldAccountStatusRecoveryThreshold, vs...))
+}
+
+// AccountStatusRecoveryThresholdNotIn applies the NotIn predicate on the "account_status_recovery_threshold" field.
+func AccountStatusRecoveryThresholdNotIn(vs ...int) predicate.Sub2APIProviderProbeConfig {
+	return predicate.Sub2APIProviderProbeConfig(sql.FieldNotIn(FieldAccountStatusRecoveryThreshold, vs...))
+}
+
+// AccountStatusRecoveryThresholdGT applies the GT predicate on the "account_status_recovery_threshold" field.
+func AccountStatusRecoveryThresholdGT(v int) predicate.Sub2APIProviderProbeConfig {
+	return predicate.Sub2APIProviderProbeConfig(sql.FieldGT(FieldAccountStatusRecoveryThreshold, v))
+}
+
+// AccountStatusRecoveryThresholdGTE applies the GTE predicate on the "account_status_recovery_threshold" field.
+func AccountStatusRecoveryThresholdGTE(v int) predicate.Sub2APIProviderProbeConfig {
+	return predicate.Sub2APIProviderProbeConfig(sql.FieldGTE(FieldAccountStatusRecoveryThreshold, v))
+}
+
+// AccountStatusRecoveryThresholdLT applies the LT predicate on the "account_status_recovery_threshold" field.
+func AccountStatusRecoveryThresholdLT(v int) predicate.Sub2APIProviderProbeConfig {
+	return predicate.Sub2APIProviderProbeConfig(sql.FieldLT(FieldAccountStatusRecoveryThreshold, v))
+}
+
+// AccountStatusRecoveryThresholdLTE applies the LTE predicate on the "account_status_recovery_threshold" field.
+func AccountStatusRecoveryThresholdLTE(v int) predicate.Sub2APIProviderProbeConfig {
+	return predicate.Sub2APIProviderProbeConfig(sql.FieldLTE(FieldAccountStatusRecoveryThreshold, v))
 }
 
 // LastControlRunAtEQ applies the EQ predicate on the "last_control_run_at" field.
