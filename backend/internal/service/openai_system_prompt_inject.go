@@ -6,6 +6,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"strings"
 	"sync/atomic"
@@ -54,12 +55,10 @@ func (s *SettingService) GetOpenAISystemPromptInjection(ctx context.Context) (en
 		}
 		dbCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), openAISystemPromptInjectionDBTimeout)
 		defer cancel()
-		values, err := s.settingRepo.GetMultiple(dbCtx, []string{
-			SettingKeyEnableOpenAISystemPromptInjection,
-			SettingKeyOpenAISystemPrompt,
-		})
-		if err != nil {
-			slog.Warn("failed to get openai system prompt injection settings", "error", err)
+		enabledValue, enabledErr := s.settingRepo.GetValue(dbCtx, SettingKeyEnableOpenAISystemPromptInjection)
+		promptValue, promptErr := s.settingRepo.GetValue(dbCtx, SettingKeyOpenAISystemPrompt)
+		if enabledErr != nil && !errors.Is(enabledErr, ErrSettingNotFound) {
+			slog.Warn("failed to get openai system prompt injection settings", "error", enabledErr)
 			entry := &cachedOpenAISystemPromptInjection{
 				enabled:   false,
 				prompt:    "",
@@ -69,8 +68,13 @@ func (s *SettingService) GetOpenAISystemPromptInjection(ctx context.Context) (en
 			return entry, nil
 		}
 		entry := &cachedOpenAISystemPromptInjection{
-			enabled:   values[SettingKeyEnableOpenAISystemPromptInjection] == "true",
-			prompt:    values[SettingKeyOpenAISystemPrompt],
+			enabled: enabledErr == nil && enabledValue == "true",
+			prompt: func() string {
+				if promptErr == nil {
+					return promptValue
+				}
+				return ""
+			}(),
 			expiresAt: time.Now().Add(openAISystemPromptInjectionCacheTTL).UnixNano(),
 		}
 		openAISystemPromptInjectionCache.Store(entry)

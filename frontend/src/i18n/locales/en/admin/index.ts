@@ -7,6 +7,7 @@ import settings from './settings'
 import sub2apiProviders from './sub2apiProviders'
 import audit from './audit'
 import promptAudit from './promptAudit'
+import plugins from './plugins'
 
 export default {
   ...overview,
@@ -18,4 +19,5 @@ export default {
   ...sub2apiProviders,
   ...audit,
   ...promptAudit,
+  ...plugins,
 }

@@ -59,6 +59,12 @@ export default {
           enabledHint: '开启后用户侧边栏显示入口，数据每小时从 codexradar.com 同步一次。',
           sourceLink: '打开原站 codexradar.com',
         },
+        pluginManagement: {
+          title: '插件管理',
+          description: '控制管理员侧边栏是否显示插件管理入口。此开关不控制插件运行状态。',
+          enabled: '显示插件管理菜单',
+          enabledHint: '关闭后仅隐藏侧边栏菜单；已加载或正在运行的插件不会因此停止。',
+        },
         riskControl: {
           title: '风控中心',
           description: '启用内容审计菜单和全端点请求审核入口。默认关闭。',

@@ -43,7 +43,7 @@ func registerVideoRoutes(
 	// Grok 走生成接口；即梦 POST /v1/videos 为固定创建接口。[CUSTOM: jimeng 分支]
 	videoGenerationHandler := func(c *gin.Context) {
 		switch getGroupPlatform(c) {
-		case service.PlatformGrok:
+		case service.PlatformGrok, service.PlatformComposite:
 			h.OpenAIGateway.GrokVideoGeneration(c)
 		case service.PlatformCanvas:
 			h.OpenAIGateway.CanvasVideoCreation(c)

@@ -257,7 +257,7 @@ func (h *OpenAIGatewayHandler) runCanvasAudioForwardLoop(
 		if err != nil {
 			var failoverErr *service.UpstreamFailoverError
 			if errors.As(err, &failoverErr) {
-				h.gatewayService.ReportOpenAIAccountScheduleResult(account.ID, requestModel, false, nil)
+				h.gatewayService.ReportOpenAIAccountScheduleResult(account, requestModel, false, nil)
 				if c.Writer.Size() != writerSizeBeforeForward {
 					h.handleFailoverExhausted(c, failoverErr, true)
 					return
@@ -289,7 +289,7 @@ func (h *OpenAIGatewayHandler) runCanvasAudioForwardLoop(
 				)
 				continue
 			}
-			h.gatewayService.ReportOpenAIAccountScheduleResult(account.ID, requestModel, false, nil)
+			h.gatewayService.ReportOpenAIAccountScheduleResult(account, requestModel, false, nil)
 			if c.Writer.Size() == writerSizeBeforeForward {
 				h.errorResponse(c, http.StatusBadGateway, "upstream_error", "Upstream request failed")
 			}
@@ -300,7 +300,7 @@ func (h *OpenAIGatewayHandler) runCanvasAudioForwardLoop(
 			return
 		}
 
-		h.gatewayService.ReportOpenAIAccountScheduleResult(account.ID, requestModel, true, nil)
+		h.gatewayService.ReportOpenAIAccountScheduleResult(account, requestModel, true, nil)
 		if isCreate && strings.TrimSpace(result.ResponseID) != "" {
 			if err := h.gatewayService.BindCanvasAudioTaskAccount(requestCtx, apiKey.GroupID, result.ResponseID, account.ID); err != nil {
 				reqLog.Warn("jimeng_audio.bind_task_account_failed",

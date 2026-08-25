@@ -139,6 +139,10 @@ docs/*
 !docs/SUB2API_PROVIDER_HEALTH_TIMELINE_PLAN.md
 !docs/SUB2API_TAMPERMONKEY_CREDENTIAL_IMPORT.md
 !docs/UPSTREAM_HUB_INTEGRATION_ANALYSIS.md
+!docs/BATCH_IMAGE_MVP.md
+!docs/COMPOSITE_GROUPS.md
+!docs/PLUGIN_DEVELOPMENT.md
+!docs/channel-monitor-v2-safe-defaults.md
 !docs/legal/
 !docs/legal/*.md
 .serena/
@@ -168,3 +172,4 @@ backend/.ace-tool/
 deploy/postgres_data*/
 deploy/*backup*/
 deploy/*.bak-*/
+/plugins/

@@ -99,7 +99,6 @@ func RegisterGatewayRoutes(
 	// 视频路由（Grok、Canvas canvas 等）由 registerVideoRoutes 统一管理，
 	// 上游内联的 videoGenerationHandler/videoStatusHandler 等已移入 gateway_video.go；
 	// 上游给 status/content 加的 composite 分支同步补在那里。
-
 	// /responses/*subpath 的子路径会被转发到上游同名端点之后，因此在入口就拒掉
 	// 不可转发的子路径，不让它进入调度与转发流程。可转发的判定见
 	// service.IsForwardableOpenAIResponsesRequestPath 及 upstream_path_guard.go。
