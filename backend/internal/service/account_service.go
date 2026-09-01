@@ -167,6 +167,10 @@ type AccountBulkUpdate struct {
 	Credentials    map[string]any
 	Extra          map[string]any
 	ProbeEnabled   *bool
+	// ReleaseProbeOwnershipOnNormalStop asks the repository to release Provider
+	// probe ownership only for rows that were active and explicitly stopped by
+	// this update. It is evaluated against each row's pre-update state.
+	ReleaseProbeOwnershipOnNormalStop bool
 	// EnsureCodexFingerprintSeed asks the repository to atomically preserve an
 	// existing valid Codex fingerprint seed or create one for eligible rows.
 	EnsureCodexFingerprintSeed bool

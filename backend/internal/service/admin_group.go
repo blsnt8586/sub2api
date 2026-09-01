@@ -311,9 +311,20 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 	}
 
 	platform := NormalizeGroupPlatform(input.Platform)
-	modelPricing, err := normalizeGroupModelPricing(platform, input.ModelPricing)
-	if err != nil {
-		return nil, err
+	var modelPricing []ChannelModelPricing
+	var err error
+	if platform != PlatformCanvas {
+		modelPricing, err = normalizeGroupModelPricing(platform, input.ModelPricing)
+		if err != nil {
+			return nil, err
+		}
+	}
+	modelsListConfig := normalizeGroupModelsListConfig(input.ModelsListConfig)
+	if platform == PlatformCanvas {
+		// Canvas exposes synced media models and stores pricing separately from
+		// token-platform model_pricing/models_list_config.
+		modelPricing = nil
+		modelsListConfig = GroupModelsListConfig{}
 	}
 	maxReasoningEffort, err := normalizeMaxReasoningEffortForPlatform(platform, input.MaxReasoningEffort)
 	if err != nil {
@@ -524,7 +535,7 @@ func (s *adminServiceImpl) CreateGroup(ctx context.Context, input *CreateGroupIn
 		RequirePrivacySet:               input.RequirePrivacySet,
 		DefaultMappedModel:              input.DefaultMappedModel,
 		MessagesDispatchModelConfig:     normalizeOpenAIMessagesDispatchModelConfig(input.MessagesDispatchModelConfig),
-		ModelsListConfig:                normalizeGroupModelsListConfig(input.ModelsListConfig),
+		ModelsListConfig:                modelsListConfig,
 		RPMLimit:                        input.RPMLimit,
 		MaxReasoningEffort:              maxReasoningEffort,
 		ReasoningEffortMappings:         reasoningEffortMappings,
@@ -793,12 +804,14 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 	if input.LongContextPricingEnabled != nil {
 		group.LongContextPricingEnabled = *input.LongContextPricingEnabled
 	}
-	if input.ModelPricing != nil {
+	if input.ModelPricing != nil && group.Platform != PlatformCanvas {
 		modelPricing, normalizeErr := normalizeGroupModelPricing(group.Platform, *input.ModelPricing)
 		if normalizeErr != nil {
 			return nil, normalizeErr
 		}
 		group.ModelPricing = modelPricing
+	} else if group.Platform == PlatformCanvas {
+		group.ModelPricing = nil
 	}
 
 	// 订阅相关字段
@@ -1026,6 +1039,12 @@ func (s *adminServiceImpl) UpdateGroup(ctx context.Context, id int64, input *Upd
 		group.ReasoningEffortMappings = reasoningEffortMappings
 	}
 	sanitizeGroupMessagesDispatchFields(group)
+	if group.Platform == PlatformCanvas {
+		// Canvas has its own media model catalog and pricing map; never retain
+		// generic token-platform model configuration on a Canvas group.
+		group.ModelPricing = nil
+		group.ModelsListConfig = GroupModelsListConfig{}
+	}
 	if group.Platform != PlatformOpenAI && group.Platform != PlatformComposite {
 		group.AllowLive = false
 	}

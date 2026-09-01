@@ -117,6 +117,27 @@ func (_u *Sub2APIProviderUpdate) SetNillableStatus(v *string) *Sub2APIProviderUp
 	return _u
 }
 
+// SetRemoteCostDivisor sets the "remote_cost_divisor" field.
+func (_u *Sub2APIProviderUpdate) SetRemoteCostDivisor(v float64) *Sub2APIProviderUpdate {
+	_u.mutation.ResetRemoteCostDivisor()
+	_u.mutation.SetRemoteCostDivisor(v)
+	return _u
+}
+
+// SetNillableRemoteCostDivisor sets the "remote_cost_divisor" field if the given value is not nil.
+func (_u *Sub2APIProviderUpdate) SetNillableRemoteCostDivisor(v *float64) *Sub2APIProviderUpdate {
+	if v != nil {
+		_u.SetRemoteCostDivisor(*v)
+	}
+	return _u
+}
+
+// AddRemoteCostDivisor adds value to the "remote_cost_divisor" field.
+func (_u *Sub2APIProviderUpdate) AddRemoteCostDivisor(v float64) *Sub2APIProviderUpdate {
+	_u.mutation.AddRemoteCostDivisor(v)
+	return _u
+}
+
 // SetNotes sets the "notes" field.
 func (_u *Sub2APIProviderUpdate) SetNotes(v string) *Sub2APIProviderUpdate {
 	_u.mutation.SetNotes(v)
@@ -734,6 +755,12 @@ func (_u *Sub2APIProviderUpdate) sqlSave(ctx context.Context) (_node int, err er
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(sub2apiprovider.FieldStatus, field.TypeString, value)
 	}
+	if value, ok := _u.mutation.RemoteCostDivisor(); ok {
+		_spec.SetField(sub2apiprovider.FieldRemoteCostDivisor, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedRemoteCostDivisor(); ok {
+		_spec.AddField(sub2apiprovider.FieldRemoteCostDivisor, field.TypeFloat64, value)
+	}
 	if value, ok := _u.mutation.Notes(); ok {
 		_spec.SetField(sub2apiprovider.FieldNotes, field.TypeString, value)
 	}
@@ -1175,6 +1202,27 @@ func (_u *Sub2APIProviderUpdateOne) SetNillableStatus(v *string) *Sub2APIProvide
 	if v != nil {
 		_u.SetStatus(*v)
 	}
+	return _u
+}
+
+// SetRemoteCostDivisor sets the "remote_cost_divisor" field.
+func (_u *Sub2APIProviderUpdateOne) SetRemoteCostDivisor(v float64) *Sub2APIProviderUpdateOne {
+	_u.mutation.ResetRemoteCostDivisor()
+	_u.mutation.SetRemoteCostDivisor(v)
+	return _u
+}
+
+// SetNillableRemoteCostDivisor sets the "remote_cost_divisor" field if the given value is not nil.
+func (_u *Sub2APIProviderUpdateOne) SetNillableRemoteCostDivisor(v *float64) *Sub2APIProviderUpdateOne {
+	if v != nil {
+		_u.SetRemoteCostDivisor(*v)
+	}
+	return _u
+}
+
+// AddRemoteCostDivisor adds value to the "remote_cost_divisor" field.
+func (_u *Sub2APIProviderUpdateOne) AddRemoteCostDivisor(v float64) *Sub2APIProviderUpdateOne {
+	_u.mutation.AddRemoteCostDivisor(v)
 	return _u
 }
 
@@ -1824,6 +1872,12 @@ func (_u *Sub2APIProviderUpdateOne) sqlSave(ctx context.Context) (_node *Sub2API
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(sub2apiprovider.FieldStatus, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.RemoteCostDivisor(); ok {
+		_spec.SetField(sub2apiprovider.FieldRemoteCostDivisor, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedRemoteCostDivisor(); ok {
+		_spec.AddField(sub2apiprovider.FieldRemoteCostDivisor, field.TypeFloat64, value)
 	}
 	if value, ok := _u.mutation.Notes(); ok {
 		_spec.SetField(sub2apiprovider.FieldNotes, field.TypeString, value)

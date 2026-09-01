@@ -2346,6 +2346,8 @@ type AccountMutation struct {
 	sub2api_min_multiplier       *float64
 	addsub2api_min_multiplier    *float64
 	sub2api_test_model           *string
+	sub2api_optimize_group_id    *int64
+	addsub2api_optimize_group_id *int64
 	quota_dimension              *account.QuotaDimension
 	clearedFields                map[string]struct{}
 	groups                       map[int64]struct{}
@@ -4405,6 +4407,76 @@ func (m *AccountMutation) ResetSub2apiTestModel() {
 	delete(m.clearedFields, account.FieldSub2apiTestModel)
 }
 
+// SetSub2apiOptimizeGroupID sets the "sub2api_optimize_group_id" field.
+func (m *AccountMutation) SetSub2apiOptimizeGroupID(i int64) {
+	m.sub2api_optimize_group_id = &i
+	m.addsub2api_optimize_group_id = nil
+}
+
+// Sub2apiOptimizeGroupID returns the value of the "sub2api_optimize_group_id" field in the mutation.
+func (m *AccountMutation) Sub2apiOptimizeGroupID() (r int64, exists bool) {
+	v := m.sub2api_optimize_group_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSub2apiOptimizeGroupID returns the old "sub2api_optimize_group_id" field's value of the Account entity.
+// If the Account object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AccountMutation) OldSub2apiOptimizeGroupID(ctx context.Context) (v *int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSub2apiOptimizeGroupID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSub2apiOptimizeGroupID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSub2apiOptimizeGroupID: %w", err)
+	}
+	return oldValue.Sub2apiOptimizeGroupID, nil
+}
+
+// AddSub2apiOptimizeGroupID adds i to the "sub2api_optimize_group_id" field.
+func (m *AccountMutation) AddSub2apiOptimizeGroupID(i int64) {
+	if m.addsub2api_optimize_group_id != nil {
+		*m.addsub2api_optimize_group_id += i
+	} else {
+		m.addsub2api_optimize_group_id = &i
+	}
+}
+
+// AddedSub2apiOptimizeGroupID returns the value that was added to the "sub2api_optimize_group_id" field in this mutation.
+func (m *AccountMutation) AddedSub2apiOptimizeGroupID() (r int64, exists bool) {
+	v := m.addsub2api_optimize_group_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearSub2apiOptimizeGroupID clears the value of the "sub2api_optimize_group_id" field.
+func (m *AccountMutation) ClearSub2apiOptimizeGroupID() {
+	m.sub2api_optimize_group_id = nil
+	m.addsub2api_optimize_group_id = nil
+	m.clearedFields[account.FieldSub2apiOptimizeGroupID] = struct{}{}
+}
+
+// Sub2apiOptimizeGroupIDCleared returns if the "sub2api_optimize_group_id" field was cleared in this mutation.
+func (m *AccountMutation) Sub2apiOptimizeGroupIDCleared() bool {
+	_, ok := m.clearedFields[account.FieldSub2apiOptimizeGroupID]
+	return ok
+}
+
+// ResetSub2apiOptimizeGroupID resets all changes to the "sub2api_optimize_group_id" field.
+func (m *AccountMutation) ResetSub2apiOptimizeGroupID() {
+	m.sub2api_optimize_group_id = nil
+	m.addsub2api_optimize_group_id = nil
+	delete(m.clearedFields, account.FieldSub2apiOptimizeGroupID)
+}
+
 // SetParentAccountID sets the "parent_account_id" field.
 func (m *AccountMutation) SetParentAccountID(i int64) {
 	m.parent = &i
@@ -4834,7 +4906,7 @@ func (m *AccountMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AccountMutation) Fields() []string {
-	fields := make([]string, 0, 41)
+	fields := make([]string, 0, 42)
 	if m.created_at != nil {
 		fields = append(fields, account.FieldCreatedAt)
 	}
@@ -4952,6 +5024,9 @@ func (m *AccountMutation) Fields() []string {
 	if m.sub2api_test_model != nil {
 		fields = append(fields, account.FieldSub2apiTestModel)
 	}
+	if m.sub2api_optimize_group_id != nil {
+		fields = append(fields, account.FieldSub2apiOptimizeGroupID)
+	}
 	if m.parent != nil {
 		fields = append(fields, account.FieldParentAccountID)
 	}
@@ -5044,6 +5119,8 @@ func (m *AccountMutation) Field(name string) (ent.Value, bool) {
 		return m.Sub2apiMinMultiplier()
 	case account.FieldSub2apiTestModel:
 		return m.Sub2apiTestModel()
+	case account.FieldSub2apiOptimizeGroupID:
+		return m.Sub2apiOptimizeGroupID()
 	case account.FieldParentAccountID:
 		return m.ParentAccountID()
 	case account.FieldQuotaDimension:
@@ -5135,6 +5212,8 @@ func (m *AccountMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldSub2apiMinMultiplier(ctx)
 	case account.FieldSub2apiTestModel:
 		return m.OldSub2apiTestModel(ctx)
+	case account.FieldSub2apiOptimizeGroupID:
+		return m.OldSub2apiOptimizeGroupID(ctx)
 	case account.FieldParentAccountID:
 		return m.OldParentAccountID(ctx)
 	case account.FieldQuotaDimension:
@@ -5421,6 +5500,13 @@ func (m *AccountMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetSub2apiTestModel(v)
 		return nil
+	case account.FieldSub2apiOptimizeGroupID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSub2apiOptimizeGroupID(v)
+		return nil
 	case account.FieldParentAccountID:
 		v, ok := value.(int64)
 		if !ok {
@@ -5473,6 +5559,9 @@ func (m *AccountMutation) AddedFields() []string {
 	if m.addsub2api_min_multiplier != nil {
 		fields = append(fields, account.FieldSub2apiMinMultiplier)
 	}
+	if m.addsub2api_optimize_group_id != nil {
+		fields = append(fields, account.FieldSub2apiOptimizeGroupID)
+	}
 	return fields
 }
 
@@ -5501,6 +5590,8 @@ func (m *AccountMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedSub2apiMaxMultiplier()
 	case account.FieldSub2apiMinMultiplier:
 		return m.AddedSub2apiMinMultiplier()
+	case account.FieldSub2apiOptimizeGroupID:
+		return m.AddedSub2apiOptimizeGroupID()
 	}
 	return nil, false
 }
@@ -5579,6 +5670,13 @@ func (m *AccountMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddSub2apiMinMultiplier(v)
+		return nil
+	case account.FieldSub2apiOptimizeGroupID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSub2apiOptimizeGroupID(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Account numeric field %s", name)
@@ -5662,6 +5760,9 @@ func (m *AccountMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(account.FieldSub2apiTestModel) {
 		fields = append(fields, account.FieldSub2apiTestModel)
+	}
+	if m.FieldCleared(account.FieldSub2apiOptimizeGroupID) {
+		fields = append(fields, account.FieldSub2apiOptimizeGroupID)
 	}
 	if m.FieldCleared(account.FieldParentAccountID) {
 		fields = append(fields, account.FieldParentAccountID)
@@ -5754,6 +5855,9 @@ func (m *AccountMutation) ClearField(name string) error {
 		return nil
 	case account.FieldSub2apiTestModel:
 		m.ClearSub2apiTestModel()
+		return nil
+	case account.FieldSub2apiOptimizeGroupID:
+		m.ClearSub2apiOptimizeGroupID()
 		return nil
 	case account.FieldParentAccountID:
 		m.ClearParentAccountID()
@@ -5882,6 +5986,9 @@ func (m *AccountMutation) ResetField(name string) error {
 		return nil
 	case account.FieldSub2apiTestModel:
 		m.ResetSub2apiTestModel()
+		return nil
+	case account.FieldSub2apiOptimizeGroupID:
+		m.ResetSub2apiOptimizeGroupID()
 		return nil
 	case account.FieldParentAccountID:
 		m.ResetParentAccountID()
@@ -44770,6 +44877,8 @@ type Sub2APIProviderMutation struct {
 	base_url                 *string
 	provider_type            *string
 	status                   *string
+	remote_cost_divisor      *float64
+	addremote_cost_divisor   *float64
 	notes                    *string
 	email                    *string
 	password_encrypted       *string
@@ -45169,6 +45278,62 @@ func (m *Sub2APIProviderMutation) OldStatus(ctx context.Context) (v string, err 
 // ResetStatus resets all changes to the "status" field.
 func (m *Sub2APIProviderMutation) ResetStatus() {
 	m.status = nil
+}
+
+// SetRemoteCostDivisor sets the "remote_cost_divisor" field.
+func (m *Sub2APIProviderMutation) SetRemoteCostDivisor(f float64) {
+	m.remote_cost_divisor = &f
+	m.addremote_cost_divisor = nil
+}
+
+// RemoteCostDivisor returns the value of the "remote_cost_divisor" field in the mutation.
+func (m *Sub2APIProviderMutation) RemoteCostDivisor() (r float64, exists bool) {
+	v := m.remote_cost_divisor
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRemoteCostDivisor returns the old "remote_cost_divisor" field's value of the Sub2APIProvider entity.
+// If the Sub2APIProvider object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderMutation) OldRemoteCostDivisor(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRemoteCostDivisor is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRemoteCostDivisor requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRemoteCostDivisor: %w", err)
+	}
+	return oldValue.RemoteCostDivisor, nil
+}
+
+// AddRemoteCostDivisor adds f to the "remote_cost_divisor" field.
+func (m *Sub2APIProviderMutation) AddRemoteCostDivisor(f float64) {
+	if m.addremote_cost_divisor != nil {
+		*m.addremote_cost_divisor += f
+	} else {
+		m.addremote_cost_divisor = &f
+	}
+}
+
+// AddedRemoteCostDivisor returns the value that was added to the "remote_cost_divisor" field in this mutation.
+func (m *Sub2APIProviderMutation) AddedRemoteCostDivisor() (r float64, exists bool) {
+	v := m.addremote_cost_divisor
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetRemoteCostDivisor resets all changes to the "remote_cost_divisor" field.
+func (m *Sub2APIProviderMutation) ResetRemoteCostDivisor() {
+	m.remote_cost_divisor = nil
+	m.addremote_cost_divisor = nil
 }
 
 // SetNotes sets the "notes" field.
@@ -46222,7 +46387,7 @@ func (m *Sub2APIProviderMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *Sub2APIProviderMutation) Fields() []string {
-	fields := make([]string, 0, 22)
+	fields := make([]string, 0, 23)
 	if m.created_at != nil {
 		fields = append(fields, sub2apiprovider.FieldCreatedAt)
 	}
@@ -46243,6 +46408,9 @@ func (m *Sub2APIProviderMutation) Fields() []string {
 	}
 	if m.status != nil {
 		fields = append(fields, sub2apiprovider.FieldStatus)
+	}
+	if m.remote_cost_divisor != nil {
+		fields = append(fields, sub2apiprovider.FieldRemoteCostDivisor)
 	}
 	if m.notes != nil {
 		fields = append(fields, sub2apiprovider.FieldNotes)
@@ -46311,6 +46479,8 @@ func (m *Sub2APIProviderMutation) Field(name string) (ent.Value, bool) {
 		return m.ProviderType()
 	case sub2apiprovider.FieldStatus:
 		return m.Status()
+	case sub2apiprovider.FieldRemoteCostDivisor:
+		return m.RemoteCostDivisor()
 	case sub2apiprovider.FieldNotes:
 		return m.Notes()
 	case sub2apiprovider.FieldProxyID:
@@ -46364,6 +46534,8 @@ func (m *Sub2APIProviderMutation) OldField(ctx context.Context, name string) (en
 		return m.OldProviderType(ctx)
 	case sub2apiprovider.FieldStatus:
 		return m.OldStatus(ctx)
+	case sub2apiprovider.FieldRemoteCostDivisor:
+		return m.OldRemoteCostDivisor(ctx)
 	case sub2apiprovider.FieldNotes:
 		return m.OldNotes(ctx)
 	case sub2apiprovider.FieldProxyID:
@@ -46451,6 +46623,13 @@ func (m *Sub2APIProviderMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetStatus(v)
+		return nil
+	case sub2apiprovider.FieldRemoteCostDivisor:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRemoteCostDivisor(v)
 		return nil
 	case sub2apiprovider.FieldNotes:
 		v, ok := value.(string)
@@ -46565,6 +46744,9 @@ func (m *Sub2APIProviderMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *Sub2APIProviderMutation) AddedFields() []string {
 	var fields []string
+	if m.addremote_cost_divisor != nil {
+		fields = append(fields, sub2apiprovider.FieldRemoteCostDivisor)
+	}
 	return fields
 }
 
@@ -46573,6 +46755,8 @@ func (m *Sub2APIProviderMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *Sub2APIProviderMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
+	case sub2apiprovider.FieldRemoteCostDivisor:
+		return m.AddedRemoteCostDivisor()
 	}
 	return nil, false
 }
@@ -46582,6 +46766,13 @@ func (m *Sub2APIProviderMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *Sub2APIProviderMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case sub2apiprovider.FieldRemoteCostDivisor:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddRemoteCostDivisor(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Sub2APIProvider numeric field %s", name)
 }
@@ -46710,6 +46901,9 @@ func (m *Sub2APIProviderMutation) ResetField(name string) error {
 		return nil
 	case sub2apiprovider.FieldStatus:
 		m.ResetStatus()
+		return nil
+	case sub2apiprovider.FieldRemoteCostDivisor:
+		m.ResetRemoteCostDivisor()
 		return nil
 	case sub2apiprovider.FieldNotes:
 		m.ResetNotes()
@@ -50569,6 +50763,17 @@ type Sub2APIProviderProbeTargetMutation struct {
 	enabled                            *bool
 	interval_seconds                   *int
 	addinterval_seconds                *int
+	adaptive_interval_enabled          *bool
+	healthy_interval_seconds           *int
+	addhealthy_interval_seconds        *int
+	healthy_interval_threshold         *int
+	addhealthy_interval_threshold      *int
+	stable_healthy_interval_seconds    *int
+	addstable_healthy_interval_seconds *int
+	stable_healthy_threshold           *int
+	addstable_healthy_threshold        *int
+	consecutive_healthy                *int
+	addconsecutive_healthy             *int
 	test_model                         *string
 	allow_media_probe                  *bool
 	timeout_seconds                    *int
@@ -51159,6 +51364,322 @@ func (m *Sub2APIProviderProbeTargetMutation) AddedIntervalSeconds() (r int, exis
 func (m *Sub2APIProviderProbeTargetMutation) ResetIntervalSeconds() {
 	m.interval_seconds = nil
 	m.addinterval_seconds = nil
+}
+
+// SetAdaptiveIntervalEnabled sets the "adaptive_interval_enabled" field.
+func (m *Sub2APIProviderProbeTargetMutation) SetAdaptiveIntervalEnabled(b bool) {
+	m.adaptive_interval_enabled = &b
+}
+
+// AdaptiveIntervalEnabled returns the value of the "adaptive_interval_enabled" field in the mutation.
+func (m *Sub2APIProviderProbeTargetMutation) AdaptiveIntervalEnabled() (r bool, exists bool) {
+	v := m.adaptive_interval_enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAdaptiveIntervalEnabled returns the old "adaptive_interval_enabled" field's value of the Sub2APIProviderProbeTarget entity.
+// If the Sub2APIProviderProbeTarget object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetMutation) OldAdaptiveIntervalEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAdaptiveIntervalEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAdaptiveIntervalEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAdaptiveIntervalEnabled: %w", err)
+	}
+	return oldValue.AdaptiveIntervalEnabled, nil
+}
+
+// ResetAdaptiveIntervalEnabled resets all changes to the "adaptive_interval_enabled" field.
+func (m *Sub2APIProviderProbeTargetMutation) ResetAdaptiveIntervalEnabled() {
+	m.adaptive_interval_enabled = nil
+}
+
+// SetHealthyIntervalSeconds sets the "healthy_interval_seconds" field.
+func (m *Sub2APIProviderProbeTargetMutation) SetHealthyIntervalSeconds(i int) {
+	m.healthy_interval_seconds = &i
+	m.addhealthy_interval_seconds = nil
+}
+
+// HealthyIntervalSeconds returns the value of the "healthy_interval_seconds" field in the mutation.
+func (m *Sub2APIProviderProbeTargetMutation) HealthyIntervalSeconds() (r int, exists bool) {
+	v := m.healthy_interval_seconds
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHealthyIntervalSeconds returns the old "healthy_interval_seconds" field's value of the Sub2APIProviderProbeTarget entity.
+// If the Sub2APIProviderProbeTarget object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetMutation) OldHealthyIntervalSeconds(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHealthyIntervalSeconds is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHealthyIntervalSeconds requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHealthyIntervalSeconds: %w", err)
+	}
+	return oldValue.HealthyIntervalSeconds, nil
+}
+
+// AddHealthyIntervalSeconds adds i to the "healthy_interval_seconds" field.
+func (m *Sub2APIProviderProbeTargetMutation) AddHealthyIntervalSeconds(i int) {
+	if m.addhealthy_interval_seconds != nil {
+		*m.addhealthy_interval_seconds += i
+	} else {
+		m.addhealthy_interval_seconds = &i
+	}
+}
+
+// AddedHealthyIntervalSeconds returns the value that was added to the "healthy_interval_seconds" field in this mutation.
+func (m *Sub2APIProviderProbeTargetMutation) AddedHealthyIntervalSeconds() (r int, exists bool) {
+	v := m.addhealthy_interval_seconds
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetHealthyIntervalSeconds resets all changes to the "healthy_interval_seconds" field.
+func (m *Sub2APIProviderProbeTargetMutation) ResetHealthyIntervalSeconds() {
+	m.healthy_interval_seconds = nil
+	m.addhealthy_interval_seconds = nil
+}
+
+// SetHealthyIntervalThreshold sets the "healthy_interval_threshold" field.
+func (m *Sub2APIProviderProbeTargetMutation) SetHealthyIntervalThreshold(i int) {
+	m.healthy_interval_threshold = &i
+	m.addhealthy_interval_threshold = nil
+}
+
+// HealthyIntervalThreshold returns the value of the "healthy_interval_threshold" field in the mutation.
+func (m *Sub2APIProviderProbeTargetMutation) HealthyIntervalThreshold() (r int, exists bool) {
+	v := m.healthy_interval_threshold
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHealthyIntervalThreshold returns the old "healthy_interval_threshold" field's value of the Sub2APIProviderProbeTarget entity.
+// If the Sub2APIProviderProbeTarget object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetMutation) OldHealthyIntervalThreshold(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHealthyIntervalThreshold is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHealthyIntervalThreshold requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHealthyIntervalThreshold: %w", err)
+	}
+	return oldValue.HealthyIntervalThreshold, nil
+}
+
+// AddHealthyIntervalThreshold adds i to the "healthy_interval_threshold" field.
+func (m *Sub2APIProviderProbeTargetMutation) AddHealthyIntervalThreshold(i int) {
+	if m.addhealthy_interval_threshold != nil {
+		*m.addhealthy_interval_threshold += i
+	} else {
+		m.addhealthy_interval_threshold = &i
+	}
+}
+
+// AddedHealthyIntervalThreshold returns the value that was added to the "healthy_interval_threshold" field in this mutation.
+func (m *Sub2APIProviderProbeTargetMutation) AddedHealthyIntervalThreshold() (r int, exists bool) {
+	v := m.addhealthy_interval_threshold
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetHealthyIntervalThreshold resets all changes to the "healthy_interval_threshold" field.
+func (m *Sub2APIProviderProbeTargetMutation) ResetHealthyIntervalThreshold() {
+	m.healthy_interval_threshold = nil
+	m.addhealthy_interval_threshold = nil
+}
+
+// SetStableHealthyIntervalSeconds sets the "stable_healthy_interval_seconds" field.
+func (m *Sub2APIProviderProbeTargetMutation) SetStableHealthyIntervalSeconds(i int) {
+	m.stable_healthy_interval_seconds = &i
+	m.addstable_healthy_interval_seconds = nil
+}
+
+// StableHealthyIntervalSeconds returns the value of the "stable_healthy_interval_seconds" field in the mutation.
+func (m *Sub2APIProviderProbeTargetMutation) StableHealthyIntervalSeconds() (r int, exists bool) {
+	v := m.stable_healthy_interval_seconds
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStableHealthyIntervalSeconds returns the old "stable_healthy_interval_seconds" field's value of the Sub2APIProviderProbeTarget entity.
+// If the Sub2APIProviderProbeTarget object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetMutation) OldStableHealthyIntervalSeconds(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStableHealthyIntervalSeconds is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStableHealthyIntervalSeconds requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStableHealthyIntervalSeconds: %w", err)
+	}
+	return oldValue.StableHealthyIntervalSeconds, nil
+}
+
+// AddStableHealthyIntervalSeconds adds i to the "stable_healthy_interval_seconds" field.
+func (m *Sub2APIProviderProbeTargetMutation) AddStableHealthyIntervalSeconds(i int) {
+	if m.addstable_healthy_interval_seconds != nil {
+		*m.addstable_healthy_interval_seconds += i
+	} else {
+		m.addstable_healthy_interval_seconds = &i
+	}
+}
+
+// AddedStableHealthyIntervalSeconds returns the value that was added to the "stable_healthy_interval_seconds" field in this mutation.
+func (m *Sub2APIProviderProbeTargetMutation) AddedStableHealthyIntervalSeconds() (r int, exists bool) {
+	v := m.addstable_healthy_interval_seconds
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetStableHealthyIntervalSeconds resets all changes to the "stable_healthy_interval_seconds" field.
+func (m *Sub2APIProviderProbeTargetMutation) ResetStableHealthyIntervalSeconds() {
+	m.stable_healthy_interval_seconds = nil
+	m.addstable_healthy_interval_seconds = nil
+}
+
+// SetStableHealthyThreshold sets the "stable_healthy_threshold" field.
+func (m *Sub2APIProviderProbeTargetMutation) SetStableHealthyThreshold(i int) {
+	m.stable_healthy_threshold = &i
+	m.addstable_healthy_threshold = nil
+}
+
+// StableHealthyThreshold returns the value of the "stable_healthy_threshold" field in the mutation.
+func (m *Sub2APIProviderProbeTargetMutation) StableHealthyThreshold() (r int, exists bool) {
+	v := m.stable_healthy_threshold
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStableHealthyThreshold returns the old "stable_healthy_threshold" field's value of the Sub2APIProviderProbeTarget entity.
+// If the Sub2APIProviderProbeTarget object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetMutation) OldStableHealthyThreshold(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStableHealthyThreshold is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStableHealthyThreshold requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStableHealthyThreshold: %w", err)
+	}
+	return oldValue.StableHealthyThreshold, nil
+}
+
+// AddStableHealthyThreshold adds i to the "stable_healthy_threshold" field.
+func (m *Sub2APIProviderProbeTargetMutation) AddStableHealthyThreshold(i int) {
+	if m.addstable_healthy_threshold != nil {
+		*m.addstable_healthy_threshold += i
+	} else {
+		m.addstable_healthy_threshold = &i
+	}
+}
+
+// AddedStableHealthyThreshold returns the value that was added to the "stable_healthy_threshold" field in this mutation.
+func (m *Sub2APIProviderProbeTargetMutation) AddedStableHealthyThreshold() (r int, exists bool) {
+	v := m.addstable_healthy_threshold
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetStableHealthyThreshold resets all changes to the "stable_healthy_threshold" field.
+func (m *Sub2APIProviderProbeTargetMutation) ResetStableHealthyThreshold() {
+	m.stable_healthy_threshold = nil
+	m.addstable_healthy_threshold = nil
+}
+
+// SetConsecutiveHealthy sets the "consecutive_healthy" field.
+func (m *Sub2APIProviderProbeTargetMutation) SetConsecutiveHealthy(i int) {
+	m.consecutive_healthy = &i
+	m.addconsecutive_healthy = nil
+}
+
+// ConsecutiveHealthy returns the value of the "consecutive_healthy" field in the mutation.
+func (m *Sub2APIProviderProbeTargetMutation) ConsecutiveHealthy() (r int, exists bool) {
+	v := m.consecutive_healthy
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldConsecutiveHealthy returns the old "consecutive_healthy" field's value of the Sub2APIProviderProbeTarget entity.
+// If the Sub2APIProviderProbeTarget object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetMutation) OldConsecutiveHealthy(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldConsecutiveHealthy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldConsecutiveHealthy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldConsecutiveHealthy: %w", err)
+	}
+	return oldValue.ConsecutiveHealthy, nil
+}
+
+// AddConsecutiveHealthy adds i to the "consecutive_healthy" field.
+func (m *Sub2APIProviderProbeTargetMutation) AddConsecutiveHealthy(i int) {
+	if m.addconsecutive_healthy != nil {
+		*m.addconsecutive_healthy += i
+	} else {
+		m.addconsecutive_healthy = &i
+	}
+}
+
+// AddedConsecutiveHealthy returns the value that was added to the "consecutive_healthy" field in this mutation.
+func (m *Sub2APIProviderProbeTargetMutation) AddedConsecutiveHealthy() (r int, exists bool) {
+	v := m.addconsecutive_healthy
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetConsecutiveHealthy resets all changes to the "consecutive_healthy" field.
+func (m *Sub2APIProviderProbeTargetMutation) ResetConsecutiveHealthy() {
+	m.consecutive_healthy = nil
+	m.addconsecutive_healthy = nil
 }
 
 // SetTestModel sets the "test_model" field.
@@ -51963,7 +52484,7 @@ func (m *Sub2APIProviderProbeTargetMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *Sub2APIProviderProbeTargetMutation) Fields() []string {
-	fields := make([]string, 0, 23)
+	fields := make([]string, 0, 29)
 	if m.created_at != nil {
 		fields = append(fields, sub2apiproviderprobetarget.FieldCreatedAt)
 	}
@@ -51993,6 +52514,24 @@ func (m *Sub2APIProviderProbeTargetMutation) Fields() []string {
 	}
 	if m.interval_seconds != nil {
 		fields = append(fields, sub2apiproviderprobetarget.FieldIntervalSeconds)
+	}
+	if m.adaptive_interval_enabled != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldAdaptiveIntervalEnabled)
+	}
+	if m.healthy_interval_seconds != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldHealthyIntervalSeconds)
+	}
+	if m.healthy_interval_threshold != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldHealthyIntervalThreshold)
+	}
+	if m.stable_healthy_interval_seconds != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldStableHealthyIntervalSeconds)
+	}
+	if m.stable_healthy_threshold != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldStableHealthyThreshold)
+	}
+	if m.consecutive_healthy != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldConsecutiveHealthy)
 	}
 	if m.test_model != nil {
 		fields = append(fields, sub2apiproviderprobetarget.FieldTestModel)
@@ -52061,6 +52600,18 @@ func (m *Sub2APIProviderProbeTargetMutation) Field(name string) (ent.Value, bool
 		return m.Enabled()
 	case sub2apiproviderprobetarget.FieldIntervalSeconds:
 		return m.IntervalSeconds()
+	case sub2apiproviderprobetarget.FieldAdaptiveIntervalEnabled:
+		return m.AdaptiveIntervalEnabled()
+	case sub2apiproviderprobetarget.FieldHealthyIntervalSeconds:
+		return m.HealthyIntervalSeconds()
+	case sub2apiproviderprobetarget.FieldHealthyIntervalThreshold:
+		return m.HealthyIntervalThreshold()
+	case sub2apiproviderprobetarget.FieldStableHealthyIntervalSeconds:
+		return m.StableHealthyIntervalSeconds()
+	case sub2apiproviderprobetarget.FieldStableHealthyThreshold:
+		return m.StableHealthyThreshold()
+	case sub2apiproviderprobetarget.FieldConsecutiveHealthy:
+		return m.ConsecutiveHealthy()
 	case sub2apiproviderprobetarget.FieldTestModel:
 		return m.TestModel()
 	case sub2apiproviderprobetarget.FieldAllowMediaProbe:
@@ -52116,6 +52667,18 @@ func (m *Sub2APIProviderProbeTargetMutation) OldField(ctx context.Context, name 
 		return m.OldEnabled(ctx)
 	case sub2apiproviderprobetarget.FieldIntervalSeconds:
 		return m.OldIntervalSeconds(ctx)
+	case sub2apiproviderprobetarget.FieldAdaptiveIntervalEnabled:
+		return m.OldAdaptiveIntervalEnabled(ctx)
+	case sub2apiproviderprobetarget.FieldHealthyIntervalSeconds:
+		return m.OldHealthyIntervalSeconds(ctx)
+	case sub2apiproviderprobetarget.FieldHealthyIntervalThreshold:
+		return m.OldHealthyIntervalThreshold(ctx)
+	case sub2apiproviderprobetarget.FieldStableHealthyIntervalSeconds:
+		return m.OldStableHealthyIntervalSeconds(ctx)
+	case sub2apiproviderprobetarget.FieldStableHealthyThreshold:
+		return m.OldStableHealthyThreshold(ctx)
+	case sub2apiproviderprobetarget.FieldConsecutiveHealthy:
+		return m.OldConsecutiveHealthy(ctx)
 	case sub2apiproviderprobetarget.FieldTestModel:
 		return m.OldTestModel(ctx)
 	case sub2apiproviderprobetarget.FieldAllowMediaProbe:
@@ -52220,6 +52783,48 @@ func (m *Sub2APIProviderProbeTargetMutation) SetField(name string, value ent.Val
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetIntervalSeconds(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldAdaptiveIntervalEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAdaptiveIntervalEnabled(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldHealthyIntervalSeconds:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHealthyIntervalSeconds(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldHealthyIntervalThreshold:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHealthyIntervalThreshold(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldStableHealthyIntervalSeconds:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStableHealthyIntervalSeconds(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldStableHealthyThreshold:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStableHealthyThreshold(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldConsecutiveHealthy:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetConsecutiveHealthy(v)
 		return nil
 	case sub2apiproviderprobetarget.FieldTestModel:
 		v, ok := value.(string)
@@ -52329,6 +52934,21 @@ func (m *Sub2APIProviderProbeTargetMutation) AddedFields() []string {
 	if m.addinterval_seconds != nil {
 		fields = append(fields, sub2apiproviderprobetarget.FieldIntervalSeconds)
 	}
+	if m.addhealthy_interval_seconds != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldHealthyIntervalSeconds)
+	}
+	if m.addhealthy_interval_threshold != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldHealthyIntervalThreshold)
+	}
+	if m.addstable_healthy_interval_seconds != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldStableHealthyIntervalSeconds)
+	}
+	if m.addstable_healthy_threshold != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldStableHealthyThreshold)
+	}
+	if m.addconsecutive_healthy != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldConsecutiveHealthy)
+	}
 	if m.addtimeout_seconds != nil {
 		fields = append(fields, sub2apiproviderprobetarget.FieldTimeoutSeconds)
 	}
@@ -52364,6 +52984,16 @@ func (m *Sub2APIProviderProbeTargetMutation) AddedField(name string) (ent.Value,
 		return m.AddedRemoteGroupID()
 	case sub2apiproviderprobetarget.FieldIntervalSeconds:
 		return m.AddedIntervalSeconds()
+	case sub2apiproviderprobetarget.FieldHealthyIntervalSeconds:
+		return m.AddedHealthyIntervalSeconds()
+	case sub2apiproviderprobetarget.FieldHealthyIntervalThreshold:
+		return m.AddedHealthyIntervalThreshold()
+	case sub2apiproviderprobetarget.FieldStableHealthyIntervalSeconds:
+		return m.AddedStableHealthyIntervalSeconds()
+	case sub2apiproviderprobetarget.FieldStableHealthyThreshold:
+		return m.AddedStableHealthyThreshold()
+	case sub2apiproviderprobetarget.FieldConsecutiveHealthy:
+		return m.AddedConsecutiveHealthy()
 	case sub2apiproviderprobetarget.FieldTimeoutSeconds:
 		return m.AddedTimeoutSeconds()
 	case sub2apiproviderprobetarget.FieldDegradedLatencyMs:
@@ -52407,6 +53037,41 @@ func (m *Sub2APIProviderProbeTargetMutation) AddField(name string, value ent.Val
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddIntervalSeconds(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldHealthyIntervalSeconds:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddHealthyIntervalSeconds(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldHealthyIntervalThreshold:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddHealthyIntervalThreshold(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldStableHealthyIntervalSeconds:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddStableHealthyIntervalSeconds(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldStableHealthyThreshold:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddStableHealthyThreshold(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldConsecutiveHealthy:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddConsecutiveHealthy(v)
 		return nil
 	case sub2apiproviderprobetarget.FieldTimeoutSeconds:
 		v, ok := value.(int)
@@ -52558,6 +53223,24 @@ func (m *Sub2APIProviderProbeTargetMutation) ResetField(name string) error {
 		return nil
 	case sub2apiproviderprobetarget.FieldIntervalSeconds:
 		m.ResetIntervalSeconds()
+		return nil
+	case sub2apiproviderprobetarget.FieldAdaptiveIntervalEnabled:
+		m.ResetAdaptiveIntervalEnabled()
+		return nil
+	case sub2apiproviderprobetarget.FieldHealthyIntervalSeconds:
+		m.ResetHealthyIntervalSeconds()
+		return nil
+	case sub2apiproviderprobetarget.FieldHealthyIntervalThreshold:
+		m.ResetHealthyIntervalThreshold()
+		return nil
+	case sub2apiproviderprobetarget.FieldStableHealthyIntervalSeconds:
+		m.ResetStableHealthyIntervalSeconds()
+		return nil
+	case sub2apiproviderprobetarget.FieldStableHealthyThreshold:
+		m.ResetStableHealthyThreshold()
+		return nil
+	case sub2apiproviderprobetarget.FieldConsecutiveHealthy:
+		m.ResetConsecutiveHealthy()
 		return nil
 	case sub2apiproviderprobetarget.FieldTestModel:
 		m.ResetTestModel()

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -80,7 +81,7 @@ type Sub2APIProviderProbeRepository interface {
 	CreateTarget(context.Context, *Sub2APIProviderProbeTargetCreateInput) (*ent.Sub2APIProviderProbeTarget, error)
 	UpdateTarget(context.Context, int64, int64, *Sub2APIProviderProbeTargetInput) (*ent.Sub2APIProviderProbeTarget, error)
 	UpdateTargetBinding(context.Context, int64, *int64, *int64, *string, string) (*ent.Sub2APIProviderProbeTarget, error)
-	MarkTargetRun(context.Context, int64, time.Time) error
+	MarkTargetRun(context.Context, int64, time.Time, string) error
 	MarkTargetsCostOptimize(context.Context, []int64, time.Time) error
 	CreateTargetRun(context.Context, *Sub2APIProviderProbeTargetRunInput) (*ent.Sub2APIProviderProbeTargetRun, error)
 	ListTargetRunsSince(context.Context, []int64, time.Time) ([]*ent.Sub2APIProviderProbeTargetRun, error)
@@ -258,6 +259,7 @@ type Sub2APIProviderProbeService struct {
 	rateLimitService    *RateLimitService
 	tokenCache          *sub2api.TokenCache
 	encryptor           ProviderTokenEncryptor
+	usageRepo           UsageLogRepository
 	autoOptimizeTrigger Sub2APIProbeAutoOptimizeTrigger
 	remoteOverviewCache Sub2APIProviderRemoteOverviewCache
 	operationGate       *Sub2APIProviderOperationGate
@@ -285,6 +287,14 @@ func (s *Sub2APIProviderProbeService) SetAutoOptimizeTrigger(trigger Sub2APIProb
 func (s *Sub2APIProviderProbeService) SetRemoteOverviewCache(cache Sub2APIProviderRemoteOverviewCache) {
 	if s != nil {
 		s.remoteOverviewCache = cache
+	}
+}
+
+// SetUsageLogRepository wires the optional local revenue reader used when the
+// control probe refreshes per-account profit snapshots.
+func (s *Sub2APIProviderProbeService) SetUsageLogRepository(repo UsageLogRepository) {
+	if s != nil {
+		s.usageRepo = repo
 	}
 }
 
@@ -625,18 +635,20 @@ func (s *Sub2APIProviderProbeService) run(ctx context.Context, providerID int64,
 	}
 	var targetRunErr error
 	type completedTargetProbe struct {
-		target *ent.Sub2APIProviderProbeTarget
-		run    *ent.Sub2APIProviderProbeTargetRun
+		target               *ent.Sub2APIProviderProbeTarget
+		run                  *ent.Sub2APIProviderProbeTargetRun
+		adminStateGeneration string
 	}
 	completedTargetProbes := make([]completedTargetProbe, 0, len(targets))
+	minimumHealthyStreak := probeAdaptiveMinimumHealthyStreak(cfg)
 	for _, target := range targets {
-		if !shouldRunProviderProbeTarget(target, scheduled, includeTargets, time.Now()) {
+		if !shouldRunProviderProbeTargetWithRecovery(target, scheduled, includeTargets, time.Now(), minimumHealthyStreak) {
 			continue
 		}
 		// Persist the probe first. Account state is projected below from persisted
 		// history so failure/recovery thresholds and optimization ordering can be
 		// applied consistently across all routes in this scheduler cycle.
-		targetRun, acquired, err := s.runTargetIfProviderAvailable(ctx, target)
+		targetRun, adminStateGeneration, acquired, err := s.runTargetIfProviderAvailable(ctx, target)
 		if !acquired {
 			// An optimizer or remote binding refresh currently owns this Provider.
 			// Do not manufacture an unhealthy sample or advance last_run_at; the
@@ -648,7 +660,11 @@ func (s *Sub2APIProviderProbeService) run(ctx context.Context, providerID int64,
 			continue
 		}
 		if scheduled && targetRun != nil {
-			completedTargetProbes = append(completedTargetProbes, completedTargetProbe{target: target, run: targetRun})
+			completedTargetProbes = append(completedTargetProbes, completedTargetProbe{
+				target:               target,
+				run:                  targetRun,
+				adminStateGeneration: adminStateGeneration,
+			})
 		}
 	}
 	autoOptimizeInputs := make([]Sub2APIProbeAutoOptimizeInput, 0, len(completedTargetProbes))
@@ -684,6 +700,12 @@ func (s *Sub2APIProviderProbeService) run(ctx context.Context, providerID int64,
 			historyByTarget[completed.target.ID] = history
 			if input, ok := probeAutoOptimizeInputWithHistory(completed.target, completed.run, history, now); ok {
 				input.AccountStatusSyncEnabled = cfg.AccountStatusSyncEnabled
+				input.AdminStateGeneration = completed.adminStateGeneration
+				failureThreshold := cfg.AccountStatusFailureThreshold
+				if failureThreshold < 1 {
+					failureThreshold = defaultProbeFailureThreshold
+				}
+				input.AccountFailureThresholdMet = consecutiveTargetProbeStatus(history, "unhealthy") >= failureThreshold
 				autoOptimizeInputs = append(autoOptimizeInputs, input)
 			}
 		}
@@ -717,7 +739,7 @@ func (s *Sub2APIProviderProbeService) run(ctx context.Context, providerID int64,
 		for _, completed := range completedTargetProbes {
 			history := historyByTarget[completed.target.ID]
 			_, optimizerAdmitted := admittedTargets[completed.target.ID]
-			if err := s.projectAccountStatusFromProbe(ctx, cfg, completed.target, completed.run, history, optimizerAdmitted); err != nil {
+			if err := s.projectAccountStatusFromProbe(ctx, cfg, completed.target, completed.run, history, completed.adminStateGeneration, optimizerAdmitted); err != nil {
 				logger.LegacyPrintf("service.sub2api_provider_probe", "[Sub2APIProviderProbe] provider=%d account=%d target=%d project account status failed: %v", providerID, completed.target.AccountID, completed.target.ID, err)
 			}
 		}
@@ -822,6 +844,19 @@ func (s *Sub2APIProviderProbeService) runControl(ctx context.Context, provider *
 	} else {
 		result.Details["health_error"] = trimProbeError(healthErr)
 	}
+	// A stable Key-to-group snapshot is route state, so it shares the same gate
+	// as account probes and optimization. If another route operation is active,
+	// keep checking platform availability but skip persistence for this cycle.
+	var bindingRelease func()
+	bindingAcquired := false
+	if s.accountRepo != nil && s.probeRepo != nil {
+		bindingRelease, bindingAcquired = s.operationGate.TryAcquire(ctx, provider.ID, sub2APIProviderProbeOperationTTL)
+		if bindingAcquired {
+			defer bindingRelease()
+		} else {
+			result.Details["binding_sync_status"] = "skipped_busy"
+		}
+	}
 	keysPath := "/api/v1/keys"
 	if provider.APIPathKeys != nil && *provider.APIPathKeys != "" {
 		keysPath = *provider.APIPathKeys
@@ -851,8 +886,10 @@ func (s *Sub2APIProviderProbeService) runControl(ctx context.Context, provider *
 		result.Details["groups_error"] = trimProbeError(groupsErr)
 	}
 	// Asset collection follows the control-plane cadence and reuses the same
-	// authenticated client and Groups response. It does not depend on the API
-	// keys endpoint. Failures remain best-effort and never affect availability.
+	// authenticated client and Groups response. It also samples account profit
+	// from the linked local accounts and their remote API keys. Profit failures
+	// remain best-effort and never affect Provider availability.
+	var remoteOverview *Sub2APIProviderRemoteOverview
 	if groupsErr == nil && s.remoteOverviewCache != nil {
 		assetCtx, assetCancel := newStageContext()
 		overview, assetErr := collectSub2APIProviderRemoteOverview(
@@ -860,6 +897,7 @@ func (s *Sub2APIProviderProbeService) runControl(ctx context.Context, provider *
 			provider.ID,
 			client,
 			groups,
+			provider.RemoteCostDivisor,
 			Sub2APIProviderRemoteOverviewSourceControlProbe,
 			assetAttemptedAt,
 		)
@@ -867,12 +905,62 @@ func (s *Sub2APIProviderProbeService) runControl(ctx context.Context, provider *
 		if assetErr != nil {
 			recordAssetFailure(assetErr)
 		} else {
+			remoteOverview = overview
+			if s.accountRepo != nil {
+				accounts, accountsErr := s.accountRepo.ListByProviderID(ctx, provider.ID)
+				if accountsErr != nil {
+					message := trimProbeError(accountsErr)
+					remoteOverview.Profit = &Sub2APIProviderProfitSummary{Available: false, SampledAt: assetAttemptedAt, Error: &message}
+				} else {
+					remoteOverview.Profit = collectProviderProfitSnapshot(ctx, client, accounts, keys, s.usageRepo, provider.RemoteCostDivisor, assetAttemptedAt)
+					if keysErr != nil && remoteOverview.Profit != nil {
+						message := fmt.Sprintf("read remote API key inventory failed: %s", keysErr)
+						remoteOverview.Profit.Available = false
+						remoteOverview.Profit.Error = &message
+					}
+				}
+			}
 			storeRemoteOverviewSuccess(ctx, s.remoteOverviewCache, overview)
 			result.Details["asset_snapshot_status"] = "updated"
 			result.Details["asset_group_count"] = len(overview.Groups)
 		}
 	} else if groupsErr != nil {
 		recordAssetFailure(groupsErr)
+	}
+	if keysErr == nil && groupsErr == nil && bindingAcquired {
+		effectiveRates := make(map[int64]float64)
+		if remoteOverview != nil {
+			for _, group := range remoteOverview.Groups {
+				effectiveRates[group.ID] = group.EffectiveMultiplier
+			}
+		} else {
+			// Balance collection and custom group rates are independent upstream
+			// surfaces. A temporary /auth/me failure must not make binding sync
+			// overwrite a valid custom rate with the catalog default.
+			ratesCtx, ratesCancel := newStageContext()
+			overrides, ratesErr := client.GetGroupRates(ratesCtx)
+			ratesCancel()
+			if ratesErr != nil {
+				result.Details["binding_sync_rates_error"] = trimProbeError(ratesErr)
+			} else {
+				for _, group := range groups {
+					if rate, ok := overrides[strconv.FormatInt(group.ID, 10)]; ok {
+						effectiveRates[group.ID] = rate
+					}
+				}
+			}
+		}
+		syncResult, syncErr := s.syncControlProbeBindingsLocked(ctx, provider.ID, keys, groups, effectiveRates)
+		result.Details["binding_sync_accounts_updated"] = syncResult.AccountsUpdated
+		result.Details["binding_sync_accounts_cleared"] = syncResult.AccountsCleared
+		result.Details["binding_sync_targets_updated"] = syncResult.TargetsUpdated
+		if syncErr != nil {
+			result.Details["binding_sync_status"] = "failed"
+			result.Details["binding_sync_error"] = trimProbeError(syncErr)
+			logger.LegacyPrintf("service.sub2api_provider_probe", "[Sub2APIProviderProbe] provider=%d sync control bindings failed: %v", provider.ID, syncErr)
+		} else {
+			result.Details["binding_sync_status"] = "updated"
+		}
 	}
 	availabilityStatus, probeErr := controlProbeAvailabilityStatus(healthErr, keysErr, groupsErr)
 	if availabilityStatus != "healthy" {
@@ -1237,11 +1325,42 @@ func probeIntervalJitterSeconds(last *time.Time, intervalSeconds int, targetID i
 	return int64(h.Sum32()) % int64(maxJitter+1)
 }
 
+func effectiveProbeTargetIntervalSeconds(target *ent.Sub2APIProviderProbeTarget) int {
+	return effectiveProbeTargetIntervalSecondsWithRecovery(target, 0)
+}
+
+func effectiveProbeTargetIntervalSecondsWithRecovery(target *ent.Sub2APIProviderProbeTarget, minimumHealthyStreak int) int {
+	if target == nil || target.IntervalSeconds <= 0 {
+		return defaultProbeTargetIntervalSeconds
+	}
+	base := target.IntervalSeconds
+	healthyThreshold := max(target.HealthyIntervalThreshold, minimumHealthyStreak)
+	stableThreshold := max(target.StableHealthyThreshold, minimumHealthyStreak)
+	if !target.AdaptiveIntervalEnabled || target.ConsecutiveHealthy < healthyThreshold {
+		return base
+	}
+	if target.ConsecutiveHealthy >= stableThreshold {
+		return max(base, target.StableHealthyIntervalSeconds)
+	}
+	return max(base, target.HealthyIntervalSeconds)
+}
+
+func probeAdaptiveMinimumHealthyStreak(cfg *ent.Sub2APIProviderProbeConfig) int {
+	if cfg == nil || !cfg.AccountStatusSyncEnabled {
+		return 0
+	}
+	return max(cfg.AccountStatusRecoveryThreshold, 0)
+}
+
 func shouldRunProviderProbeTarget(target *ent.Sub2APIProviderProbeTarget, scheduled, includeTargets bool, now time.Time) bool {
+	return shouldRunProviderProbeTargetWithRecovery(target, scheduled, includeTargets, now, 0)
+}
+
+func shouldRunProviderProbeTargetWithRecovery(target *ent.Sub2APIProviderProbeTarget, scheduled, includeTargets bool, now time.Time, minimumHealthyStreak int) bool {
 	if !includeTargets || target == nil || !target.Enabled {
 		return false
 	}
-	return !scheduled || probeIntervalDueWithJitterAt(target.LastRunAt, target.IntervalSeconds, target.ID, now)
+	return !scheduled || probeIntervalDueWithJitterAt(target.LastRunAt, effectiveProbeTargetIntervalSecondsWithRecovery(target, minimumHealthyStreak), target.ID, now)
 }
 
 func providerProbeStringPtr(v string) *string     { return &v }
@@ -1304,8 +1423,9 @@ func (r *Sub2APIProviderProbeRunner) runDue() {
 			continue
 		}
 		targetDue := false
+		minimumHealthyStreak := probeAdaptiveMinimumHealthyStreak(cfg)
 		for _, target := range targets {
-			if target.Enabled && probeIntervalDueWithJitterAt(target.LastRunAt, target.IntervalSeconds, target.ID, time.Now()) {
+			if target.Enabled && probeIntervalDueWithJitterAt(target.LastRunAt, effectiveProbeTargetIntervalSecondsWithRecovery(target, minimumHealthyStreak), target.ID, time.Now()) {
 				targetDue = true
 				break
 			}

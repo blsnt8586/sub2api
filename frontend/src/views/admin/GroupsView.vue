@@ -826,7 +826,7 @@
           </div>
         </div>
 
-        <div class="border-t pt-4">
+        <div v-if="createForm.platform !== 'canvas'" class="border-t pt-4">
           <div class="mb-3 flex items-center justify-between gap-3">
             <div>
               <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -1560,7 +1560,7 @@
         </div>
 
 
-        <div class="border-t border-gray-200 pt-4 mt-4 dark:border-dark-400">
+        <div v-if="createForm.platform !== 'canvas'" class="border-t border-gray-200 pt-4 mt-4 dark:border-dark-400">
           <div class="flex items-start justify-between gap-4">
             <div>
               <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t("admin.groups.modelPricing.title") }}</h4>
@@ -2633,7 +2633,7 @@
           </div>
         </div>
 
-        <div class="border-t pt-4">
+        <div v-if="editForm.platform !== 'canvas'" class="border-t pt-4">
           <div class="mb-3 flex items-center justify-between gap-3">
             <div>
               <label class="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -3363,7 +3363,7 @@
         </div>
 
 
-        <div class="border-t border-gray-200 pt-4 mt-4 dark:border-dark-400">
+        <div v-if="editForm.platform !== 'canvas'" class="border-t border-gray-200 pt-4 mt-4 dark:border-dark-400">
           <div class="flex items-start justify-between gap-4">
             <div>
               <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t("admin.groups.modelPricing.title") }}</h4>
@@ -5515,6 +5515,11 @@ const loadModelsListCandidates = async (
   const requestID = modelsListCandidatesTracker.next(request);
   const state = mode === "create" ? createModelsListState : editModelsListState;
   const loadingRef = mode === "create" ? createModelsListLoading : editModelsListLoading;
+  if (platform === "canvas") {
+    resetModelsListState(state);
+    loadingRef.value = false;
+    return;
+  }
   loadingRef.value = true;
   try {
     const models = await adminAPI.groups.getModelsListCandidates(groupID, platform);
@@ -6229,10 +6234,12 @@ const handleCreateGroup = async () => {
     // 构建请求数据，包含模型路由配置
     const requestData = {
       ...createGroupForm,
-      model_pricing: groupPricingToAPI(
-        createForm.model_pricing,
-        createForm.platform,
-      ),
+      // Canvas uses canvas_model_pricing exclusively; never mix in the
+      // token-platform model pricing config.
+      model_pricing:
+        createForm.platform === "canvas"
+          ? []
+          : groupPricingToAPI(createForm.model_pricing, createForm.platform),
       daily_limit_usd: normalizeOptionalLimit(
         createForm.daily_limit_usd as number | string | null,
       ),
@@ -6248,7 +6255,12 @@ const handleCreateGroup = async () => {
       model_routing: convertRoutingRulesToApiFormat(
         createModelRoutingRules.value,
       ),
-      models_list_config: buildModelsListConfig(createModelsListState),
+      // Canvas /v1/models is sourced from synced account mappings and has no
+      // custom whitelist editor.
+      models_list_config:
+        createForm.platform === "canvas"
+          ? { enabled: false, models: [] }
+          : buildModelsListConfig(createModelsListState),
       supported_model_scopes: normalizeSupportedModelScopesForPlatform(
         createForm.platform,
         createForm.supported_model_scopes,
@@ -6549,10 +6561,12 @@ const handleUpdateGroup = async () => {
         ? undefined
         : editForm.manual_rate_multiplier,
       manual_rate_multiplier: editForm.manual_rate_multiplier,
-      model_pricing: groupPricingToAPI(
-        editForm.model_pricing,
-        editForm.platform,
-      ),
+      // Canvas uses canvas_model_pricing exclusively; clear any legacy
+      // token-platform pricing when saving a Canvas group.
+      model_pricing:
+        editForm.platform === "canvas"
+          ? []
+          : groupPricingToAPI(editForm.model_pricing, editForm.platform),
       daily_limit_usd: normalizeOptionalLimit(
         editForm.daily_limit_usd as number | string | null,
       ),
@@ -6574,7 +6588,12 @@ const handleUpdateGroup = async () => {
       model_routing: convertRoutingRulesToApiFormat(
         editModelRoutingRules.value,
       ),
-      models_list_config: buildModelsListConfig(editModelsListState),
+      // Canvas /v1/models is sourced from synced account mappings and has no
+      // custom whitelist editor.
+      models_list_config:
+        editForm.platform === "canvas"
+          ? { enabled: false, models: [] }
+          : buildModelsListConfig(editModelsListState),
       supported_model_scopes: normalizeSupportedModelScopesForPlatform(
         editForm.platform,
         editForm.supported_model_scopes,

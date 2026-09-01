@@ -58,6 +58,17 @@ func (r *upstreamBillingProbeAccountRepo) Update(_ context.Context, account *Acc
 	return nil
 }
 
+func (r *upstreamBillingProbeAccountRepo) SetSchedulable(_ context.Context, id int64, schedulable bool) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	account := r.accounts[id]
+	if account == nil {
+		return ErrAccountNotFound
+	}
+	account.Schedulable = schedulable
+	return nil
+}
+
 func (r *upstreamBillingProbeAccountRepo) BulkUpdate(_ context.Context, ids []int64, updates AccountBulkUpdate) (int64, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()

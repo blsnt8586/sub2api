@@ -16,6 +16,59 @@ import (
 	"github.com/lib/pq"
 )
 
+// GetProviderAccountRevenue aggregates local customer charges for a bounded
+// set of accounts in one query. It is intentionally an optional repository
+// capability so older UsageLogRepository test doubles remain source-compatible.
+func (r *usageLogRepository) GetProviderAccountRevenue(ctx context.Context, accountIDs []int64, startTime, endTime time.Time) (map[int64]service.ProviderAccountRevenue, error) {
+	result := make(map[int64]service.ProviderAccountRevenue)
+	ids := make([]int64, 0, len(accountIDs))
+	seen := make(map[int64]struct{}, len(accountIDs))
+	for _, id := range accountIDs {
+		if id <= 0 {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		ids = append(ids, id)
+		result[id] = service.ProviderAccountRevenue{AccountID: id}
+	}
+	if len(ids) == 0 {
+		return result, nil
+	}
+	if startTime.IsZero() {
+		startTime = time.Now().AddDate(0, 0, -30)
+	}
+	if endTime.IsZero() {
+		endTime = time.Now()
+	}
+	today := timezone.Today()
+	rows, err := r.sql.QueryContext(ctx, `
+		SELECT account_id,
+		       COALESCE(SUM(actual_cost) FILTER (WHERE created_at >= $2 AND created_at < $3), 0),
+		       COALESCE(SUM(actual_cost) FILTER (WHERE created_at >= $4), 0)
+		  FROM usage_logs
+		 WHERE account_id = ANY($1)
+		   AND created_at >= LEAST($2, $4)
+		 GROUP BY account_id`, pq.Array(ids), startTime, endTime, today)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var item service.ProviderAccountRevenue
+		if err := rows.Scan(&item.AccountID, &item.TotalActualCost, &item.TodayActualCost); err != nil {
+			return nil, err
+		}
+		result[item.AccountID] = item
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
 // GetUserStatsAggregated returns aggregated usage statistics for a user using database-level aggregation
 func (r *usageLogRepository) GetUserStatsAggregated(ctx context.Context, userID int64, startTime, endTime time.Time) (*usagestats.UsageStats, error) {
 	query := `

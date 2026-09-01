@@ -2893,7 +2893,14 @@ func (r *accountRepository) BulkUpdate(ctx context.Context, ids []int64, updates
 		}
 	}
 	if updates.Status != nil {
-		setClauses = append(setClauses, "status = $"+itoa(idx))
+		statusValue := "$" + itoa(idx)
+		// Provider-owned error states remain error until the probe or the
+		// dedicated admin clear-error endpoint changes ownership. This guard is
+		// evaluated against each row's pre-update JSONB state.
+		setClauses = append(setClauses,
+			"status = CASE WHEN status = 'error' AND (COALESCE(extra, '{}'::jsonb) ->> '"+
+				service.Sub2APIProbeManagedAccountStatusExtraKey+"' = 'true' OR COALESCE(extra, '{}'::jsonb) ->> '"+
+				service.Sub2APIRuntimeRecoverableAccountErrorExtraKey+"' = 'true') THEN status ELSE "+statusValue+" END")
 		args = append(args, *updates.Status)
 		idx++
 	}
@@ -2931,7 +2938,7 @@ func (r *accountRepository) BulkUpdate(ctx context.Context, ids []int64, updates
 				" AND "+ollamaCloudBaseURLMatchesSQL(credentialPlaceholder+"::jsonb ->> 'base_url'")+")")
 	}
 
-	if len(updates.Extra) > 0 || len(ollamaGroupIdentityChanges) > 0 || ollamaProxyIdentityChanged != "" || updates.EnsureCodexFingerprintSeed {
+	if len(updates.Extra) > 0 || len(ollamaGroupIdentityChanges) > 0 || ollamaProxyIdentityChanged != "" || updates.EnsureCodexFingerprintSeed || updates.ReleaseProbeOwnershipOnNormalStop {
 		extraExpression := "COALESCE(extra, '{}'::jsonb)"
 		if len(updates.Extra) > 0 {
 			payload, err := json.Marshal(updates.Extra)
@@ -2972,6 +2979,27 @@ func (r *accountRepository) BulkUpdate(ctx context.Context, ids []int64, updates
 		}
 		if updates.EnsureCodexFingerprintSeed {
 			extraExpression = ensureCodexFingerprintSeedSQL(extraExpression)
+		}
+		if updates.ReleaseProbeOwnershipOnNormalStop {
+			releaseConditions := make([]string, 0, 2)
+			if updates.Status != nil && (*updates.Status == service.StatusDisabled || *updates.Status == "inactive") {
+				releaseConditions = append(releaseConditions, "status = 'active'")
+			}
+			if updates.Schedulable != nil && !*updates.Schedulable &&
+				(updates.Status == nil || *updates.Status == service.StatusActive) {
+				releaseConditions = append(releaseConditions, "status = 'active' AND schedulable IS TRUE")
+			}
+			if len(releaseConditions) > 0 {
+				payload, err := adminProbeOwnershipReleasePayload()
+				if err != nil {
+					return 0, err
+				}
+				releasePlaceholder := "$" + itoa(idx)
+				args = append(args, payload)
+				idx++
+				releaseExpression := "(" + extraExpression + " || " + releasePlaceholder + "::jsonb)"
+				extraExpression = "CASE WHEN (" + joinClauses(releaseConditions, " OR ") + ") THEN " + releaseExpression + " ELSE " + extraExpression + " END"
+			}
 		}
 		setClauses = append(setClauses, "extra = "+extraExpression)
 	}
@@ -3421,12 +3449,14 @@ func accountEntityToService(m *dbent.Account) *service.Account {
 		// Sub2API optimization settings are also consumed by account probes.
 		// Keep the shared Ent -> service conversion complete so GetByID and
 		// GetByIDs behave the same as ListByProviderID.
-		Sub2APIOptimizeEnabled: m.Sub2apiOptimizeEnabled,
-		Sub2APIMinMultiplier:   m.Sub2apiMinMultiplier,
-		Sub2APIMaxMultiplier:   m.Sub2apiMaxMultiplier,
-		Sub2APITestModel:       m.Sub2apiTestModel,
-		ParentAccountID:        m.ParentAccountID,
-		QuotaDimension:         string(m.QuotaDimension),
+		Sub2APIOptimizeEnabled:  m.Sub2apiOptimizeEnabled,
+		Sub2APIMinMultiplier:    m.Sub2apiMinMultiplier,
+		Sub2APIMaxMultiplier:    m.Sub2apiMaxMultiplier,
+		Sub2APITestModel:        m.Sub2apiTestModel,
+		Sub2APIOptimizeGroupID:  m.Sub2apiOptimizeGroupID,
+		Sub2APIOptimizeGroupIDs: service.ParseSub2APIOptimizeGroupIDs(m.Extra),
+		ParentAccountID:         m.ParentAccountID,
+		QuotaDimension:          string(m.QuotaDimension),
 	}
 }
 

@@ -226,10 +226,27 @@ func (s *OpenAIGatewayService) handleCanvasVideoErrorResponse(
 // 已知模型会按各自的 duration/size/resolution 约束和参考模式规则做本地校验；
 // 未知模型直接放行，让上游返回错误（保持前向兼容）。
 func ValidateCanvasVideoRequest(contentType string, body []byte) *avi2api.ValidationError {
-	return avi2api.ValidateVideoRequest(contentType, body)
+	validationBody, err := CanvasValidationBody(contentType, body)
+	if err != nil {
+		return &avi2api.ValidationError{Field: "model", Message: err.Error()}
+	}
+	// Accounts synchronize the live Canvas catalog.  New upstream models may
+	// appear before the local capability registry is updated, so unknown slugs
+	// must reach AVI2API for authoritative validation.
+	if model := CanvasUpstreamModel(ExtractCanvasVideoModel(contentType, body)); model != "" && avi2api.LookupVideoModel(model) == nil {
+		return nil
+	}
+	return avi2api.ValidateVideoRequest(contentType, validationBody)
 }
 
 // ValidateCanvasAudioRequest 在转发前校验音频请求参数。
 func ValidateCanvasAudioRequest(body []byte) *avi2api.ValidationError {
-	return avi2api.ValidateAudioRequest(body)
+	validationBody, err := CanvasValidationBody("application/json", body)
+	if err != nil {
+		return &avi2api.ValidationError{Field: "model", Message: err.Error()}
+	}
+	if model := CanvasUpstreamModel(ExtractCanvasAudioModel(body)); model != "" && avi2api.LookupAudioModel(model) == nil {
+		return nil
+	}
+	return avi2api.ValidateAudioRequest(validationBody)
 }

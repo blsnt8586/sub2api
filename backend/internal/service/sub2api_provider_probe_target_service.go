@@ -3,9 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"net/http"
-	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -14,16 +11,14 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/pkg/sub2api"
 )
 
-var probeHTTPStatusPattern = regexp.MustCompile(`\b([1-5][0-9]{2})\b`)
-
 const (
-	probeManagedAccountStatusExtraKey = "sub2api_probe_managed_account_status"
+	probeManagedAccountStatusExtraKey = Sub2APIProbeManagedAccountStatusExtraKey
 	// probeRuntimeRecoverableAccountErrorExtraKey is written by request-time
 	// error handling, never by admin status edits. A healthy provider probe may
 	// clear this kind of transient upstream failure after the account recovers.
-	probeRuntimeRecoverableAccountErrorExtraKey = "sub2api_runtime_recoverable_account_error"
-	probeGroupsExhaustedExtraKey                = "sub2api_probe_groups_exhausted"
-	probeGroupsExhaustedMessageKey              = "sub2api_probe_groups_exhausted_message"
+	probeRuntimeRecoverableAccountErrorExtraKey = Sub2APIRuntimeRecoverableAccountErrorExtraKey
+	probeGroupsExhaustedExtraKey                = Sub2APIProbeGroupsExhaustedExtraKey
+	probeGroupsExhaustedMessageKey              = Sub2APIProbeGroupsExhaustedMessageExtraKey
 )
 
 // Sub2APIProviderProbeTargetInput changes one independently scheduled business
@@ -31,6 +26,11 @@ const (
 type Sub2APIProviderProbeTargetInput struct {
 	Enabled                      *bool   `json:"enabled"`
 	IntervalSeconds              *int    `json:"interval_seconds"`
+	AdaptiveIntervalEnabled      *bool   `json:"adaptive_interval_enabled"`
+	HealthyIntervalSeconds       *int    `json:"healthy_interval_seconds"`
+	HealthyIntervalThreshold     *int    `json:"healthy_interval_threshold"`
+	StableHealthyIntervalSeconds *int    `json:"stable_healthy_interval_seconds"`
+	StableHealthyThreshold       *int    `json:"stable_healthy_threshold"`
 	TestModel                    *string `json:"test_model"`
 	AllowMediaProbe              *bool   `json:"allow_media_probe"`
 	TimeoutSeconds               *int    `json:"timeout_seconds"`
@@ -52,6 +52,11 @@ type Sub2APIProviderProbeTargetCreateInput struct {
 	Platform                     string
 	Enabled                      bool
 	IntervalSeconds              int
+	AdaptiveIntervalEnabled      bool
+	HealthyIntervalSeconds       int
+	HealthyIntervalThreshold     int
+	StableHealthyIntervalSeconds int
+	StableHealthyThreshold       int
 	AllowMediaProbe              bool
 	TimeoutSeconds               int
 	DegradedLatencyMS            int
@@ -103,9 +108,18 @@ type Sub2APIProviderProbeTargetHealth struct {
 	Sub2APIOptimizeEnabled       bool                          `json:"sub2api_optimize_enabled"`
 	Sub2APIMinMultiplier         *float64                      `json:"sub2api_min_multiplier,omitempty"`
 	Sub2APIMaxMultiplier         *float64                      `json:"sub2api_max_multiplier,omitempty"`
+	Sub2APIOptimizeGroupID       *int64                        `json:"sub2api_optimize_group_id,omitempty"`
+	Sub2APIOptimizeGroupIDs      []int64                       `json:"sub2api_optimize_group_ids,omitempty"`
 	Platform                     string                        `json:"platform"`
 	Enabled                      bool                          `json:"enabled"`
 	IntervalSeconds              int                           `json:"interval_seconds"`
+	AdaptiveIntervalEnabled      bool                          `json:"adaptive_interval_enabled"`
+	HealthyIntervalSeconds       int                           `json:"healthy_interval_seconds"`
+	HealthyIntervalThreshold     int                           `json:"healthy_interval_threshold"`
+	StableHealthyIntervalSeconds int                           `json:"stable_healthy_interval_seconds"`
+	StableHealthyThreshold       int                           `json:"stable_healthy_threshold"`
+	ConsecutiveHealthy           int                           `json:"consecutive_healthy"`
+	CurrentIntervalSeconds       int                           `json:"current_interval_seconds"`
 	TestModel                    *string                       `json:"test_model,omitempty"`
 	AllowMediaProbe              bool                          `json:"allow_media_probe"`
 	TimeoutSeconds               int                           `json:"timeout_seconds"`
@@ -212,7 +226,7 @@ func (s *Sub2APIProviderProbeService) RunTargetNow(ctx context.Context, provider
 	if refreshed, refreshErr := s.refreshTargetBindings(ctx, provider, []*ent.Sub2APIProviderProbeTarget{target}); refreshErr == nil && len(refreshed) == 1 {
 		target = refreshed[0]
 	}
-	run, err := s.runTarget(ctx, target)
+	run, adminStateGeneration, err := s.runTarget(ctx, target)
 	if err != nil {
 		return nil, err
 	}
@@ -226,10 +240,16 @@ func (s *Sub2APIProviderProbeService) RunTargetNow(ctx context.Context, provider
 			if historyErr != nil {
 				history = []*ent.Sub2APIProviderProbeTargetRun{run}
 			}
-			if err := s.projectAccountStatusFromProbe(ctx, cfg, target, run, history, false); err != nil {
+			if err := s.projectAccountStatusFromProbe(ctx, cfg, target, run, history, adminStateGeneration, false); err != nil {
 				return nil, err
 			}
 		}
+	}
+	// runTarget atomically advances last_run_at and the healthy streak. Reload
+	// the target so the manual-run response immediately reports the effective
+	// adaptive cadence instead of the pre-run values.
+	if refreshed, refreshErr := s.probeRepo.GetTarget(ctx, providerID, targetID); refreshErr == nil {
+		target = refreshed
 	}
 	healths, err := s.targetHealths(ctx, []*ent.Sub2APIProviderProbeTarget{target}, time.Now().UTC())
 	if err != nil || len(healths) == 0 {
@@ -340,6 +360,16 @@ func staleProbeTargetIDs(targets []*ent.Sub2APIProviderProbeTarget, validAccount
 }
 
 func defaultProbeTargetCreateInput(providerID int64, cfg *ent.Sub2APIProviderProbeConfig, account Account) *Sub2APIProviderProbeTargetCreateInput {
+	interval := defaultProbeTargetIntervalSeconds
+	adaptive := true
+	healthyInterval := 2 * 60
+	stableInterval := 5 * 60
+	if cfg.AllowMediaProbe {
+		interval = minMediaProbeIntervalSeconds
+		healthyInterval = minMediaProbeIntervalSeconds
+		stableInterval = minMediaProbeIntervalSeconds
+		adaptive = false
+	}
 	return &Sub2APIProviderProbeTargetCreateInput{
 		ProviderID:                   providerID,
 		AccountID:                    account.ID,
@@ -348,7 +378,12 @@ func defaultProbeTargetCreateInput(providerID int64, cfg *ent.Sub2APIProviderPro
 		RemoteGroupName:              account.RemoteGroupName,
 		Platform:                     strings.TrimSpace(account.Platform),
 		Enabled:                      true,
-		IntervalSeconds:              defaultProbeTargetIntervalSeconds,
+		IntervalSeconds:              interval,
+		AdaptiveIntervalEnabled:      adaptive,
+		HealthyIntervalSeconds:       healthyInterval,
+		HealthyIntervalThreshold:     2,
+		StableHealthyIntervalSeconds: stableInterval,
+		StableHealthyThreshold:       6,
 		AllowMediaProbe:              cfg.AllowMediaProbe,
 		TimeoutSeconds:               defaultProbeTimeoutSeconds,
 		DegradedLatencyMS:            defaultProbeDegradedLatencyMS,
@@ -485,17 +520,20 @@ func (s *Sub2APIProviderProbeService) MarkProbeTargetsCostOptimize(ctx context.C
 	return s.probeRepo.MarkTargetsCostOptimize(ctx, targetIDs, at)
 }
 
-func (s *Sub2APIProviderProbeService) runTarget(ctx context.Context, target *ent.Sub2APIProviderProbeTarget) (*ent.Sub2APIProviderProbeTargetRun, error) {
+func (s *Sub2APIProviderProbeService) runTarget(ctx context.Context, target *ent.Sub2APIProviderProbeTarget) (*ent.Sub2APIProviderProbeTargetRun, string, error) {
 	if target == nil {
-		return nil, fmt.Errorf("probe target is required")
+		return nil, "", fmt.Errorf("probe target is required")
 	}
 	started := time.Now()
 	account, err := s.accountRepo.GetByID(ctx, target.AccountID)
 	if err != nil {
-		return s.writeTargetFailure(ctx, target, started, "unhealthy", fmt.Errorf("load account %d: %w", target.AccountID, err))
+		run, writeErr := s.writeTargetFailure(ctx, target, started, "unhealthy", fmt.Errorf("load account %d: %w", target.AccountID, err))
+		return run, "", writeErr
 	}
+	adminStateGeneration := sub2APIAdminAccountStateGeneration(account)
 	if account.ProviderID == nil || *account.ProviderID != target.ProviderID {
-		return s.writeTargetFailure(ctx, target, started, "unhealthy", fmt.Errorf("account is no longer linked to provider"))
+		run, writeErr := s.writeTargetFailure(ctx, target, started, "unhealthy", fmt.Errorf("account is no longer linked to provider"))
+		return run, adminStateGeneration, writeErr
 	}
 	modelID := ""
 	if configuredModel := configuredAccountTestModel(account); configuredModel != nil {
@@ -503,10 +541,10 @@ func (s *Sub2APIProviderProbeService) runTarget(ctx context.Context, target *ent
 	}
 	if (account.IsCanvas() || isProviderProbeMediaModel(modelID)) && !target.AllowMediaProbe {
 		now := time.Now()
-		if err := s.probeRepo.MarkTargetRun(ctx, target.ID, now); err != nil {
-			return nil, err
+		if err := s.probeRepo.MarkTargetRun(ctx, target.ID, now, ""); err != nil {
+			return nil, adminStateGeneration, err
 		}
-		return nil, nil
+		return nil, adminStateGeneration, nil
 	}
 
 	probeCtx, cancel := context.WithTimeout(ctx, time.Duration(target.TimeoutSeconds)*time.Second)
@@ -570,12 +608,12 @@ func (s *Sub2APIProviderProbeService) runTarget(ctx context.Context, target *ent
 	}
 	run, err := s.probeRepo.CreateTargetRun(ctx, input)
 	if err != nil {
-		return nil, err
+		return nil, adminStateGeneration, err
 	}
-	if err := s.probeRepo.MarkTargetRun(ctx, target.ID, finished); err != nil {
-		return nil, err
+	if err := s.probeRepo.MarkTargetRun(ctx, target.ID, finished, status); err != nil {
+		return nil, adminStateGeneration, err
 	}
-	return run, nil
+	return run, adminStateGeneration, nil
 }
 
 func latestProbeErrorMessage(run *ent.Sub2APIProviderProbeTargetRun) string {
@@ -585,23 +623,13 @@ func latestProbeErrorMessage(run *ent.Sub2APIProviderProbeTargetRun) string {
 	return "账号探针请求失败，当前分组不可用"
 }
 
-func probeHTTPStatus(message string) int {
-	match := probeHTTPStatusPattern.FindStringSubmatch(message)
-	if len(match) != 2 {
-		return 0
-	}
-	status, _ := strconv.Atoi(match[1])
-	return status
-}
-
-func consecutiveTargetProbeStatuses(runs []*ent.Sub2APIProviderProbeTargetRun, unhealthy bool) int {
+func consecutiveTargetProbeStatus(runs []*ent.Sub2APIProviderProbeTargetRun, status string) int {
 	count := 0
 	for _, run := range runs {
 		if run == nil {
 			continue
 		}
-		isUnhealthy := string(run.Status) == "unhealthy"
-		if isUnhealthy != unhealthy {
+		if string(run.Status) != status {
 			break
 		}
 		count++
@@ -609,16 +637,37 @@ func consecutiveTargetProbeStatuses(runs []*ent.Sub2APIProviderProbeTargetRun, u
 	return count
 }
 
+// consecutiveTargetProbeRecoveryStatus counts consecutive responsive probe
+// results. Both healthy (green) and degraded (yellow) prove that the route
+// responded; only unhealthy (red) or an unknown state breaks recovery.
+func consecutiveTargetProbeRecoveryStatus(runs []*ent.Sub2APIProviderProbeTargetRun) int {
+	count := 0
+	for _, run := range runs {
+		if run == nil {
+			continue
+		}
+		switch string(run.Status) {
+		case "healthy", "degraded":
+			count++
+		default:
+			return count
+		}
+	}
+	return count
+}
+
 // projectAccountStatusFromProbe is the only path where a Provider probe
-// writes the real Account row shown in Account Management. It reuses the
-// account error policy for HTTP failures so custom error codes, pool mode,
-// 429, 529 and temporary-unschedulable rules keep their existing semantics.
+// writes the real Account row shown in Account Management. Once the configured
+// streak is reached, probe status synchronization is the
+// final safety boundary: request-time pool/custom-code policies cannot leave a
+// repeatedly failing account schedulable.
 func (s *Sub2APIProviderProbeService) projectAccountStatusFromProbe(
 	ctx context.Context,
 	cfg *ent.Sub2APIProviderProbeConfig,
 	target *ent.Sub2APIProviderProbeTarget,
 	run *ent.Sub2APIProviderProbeTargetRun,
 	history []*ent.Sub2APIProviderProbeTargetRun,
+	expectedAdminGeneration string,
 	deferFailureToOptimizer bool,
 ) error {
 	if cfg == nil || target == nil || run == nil {
@@ -637,7 +686,7 @@ func (s *Sub2APIProviderProbeService) projectAccountStatusFromProbe(
 	}
 	status := string(run.Status)
 	if status == "unhealthy" {
-		if consecutiveTargetProbeStatuses(history, true) < failureThreshold {
+		if consecutiveTargetProbeStatus(history, "unhealthy") < failureThreshold {
 			return nil
 		}
 		message := latestProbeErrorMessage(run)
@@ -659,66 +708,43 @@ func (s *Sub2APIProviderProbeService) projectAccountStatusFromProbe(
 		}
 		if deferFailureToOptimizer && s.autoOptimizeTrigger != nil && account.Sub2APIOptimizeEnabled && optimizeAccountConfigError(account) == "" && probeErrorAllowsAutoOptimize(category) {
 			// The optimizer gets the first chance to move the remote key. Its
-			// completion path writes a real account error only after all eligible
-			// groups have been tested and exhausted.
+			// completion path quarantines a still-unavailable account; only a fully
+			// tested candidate set receives the stronger exhausted marker.
 			return nil
 		}
-		statusCode := probeHTTPStatus(message)
-		if statusCode > 0 && s.rateLimitService != nil {
-			if run.ModelID != nil && strings.TrimSpace(*run.ModelID) != "" {
-				s.rateLimitService.HandleUpstreamError(ctx, account, statusCode, http.Header{}, []byte(message), strings.TrimSpace(*run.ModelID))
-			} else {
-				s.rateLimitService.HandleUpstreamError(ctx, account, statusCode, http.Header{}, []byte(message))
-			}
-			updated, getErr := s.accountRepo.GetByID(ctx, target.AccountID)
-			if getErr != nil {
-				return getErr
-			}
-			if accountHasActiveSchedulingBlock(updated, time.Now()) {
-				return s.accountRepo.UpdateExtra(ctx, target.AccountID, map[string]any{probeManagedAccountStatusExtraKey: true})
-			}
-			return nil
-		}
-		// Without an HTTP status there is no account-level policy to evaluate.
-		// Respect API-key custom-code and pool-mode settings instead of turning a
-		// timeout/network/protocol observation into an unconditional hard error.
-		if account.IsCustomErrorCodesEnabled() || account.IsPoolMode() {
-			return nil
-		}
-		return s.markProbeManagedAccountError(ctx, target.AccountID, message)
+		return s.markProbeManagedAccountError(ctx, target.AccountID, message, expectedAdminGeneration)
 	}
-	// A degraded probe proves that the route responds, but it still violates
-	// the configured latency/error quality bar. Do not clear a real account
-	// error until the route is fully healthy for the recovery streak.
-	if status != "healthy" {
+	// A degraded probe proves that the route responds, although it violates the
+	// configured latency quality bar. Yellow and green results both count toward
+	// recovery; red or unknown results break the consecutive recovery streak.
+	if status != "healthy" && status != "degraded" {
 		return nil
 	}
-	if consecutiveTargetProbeStatuses(history, false) < recoveryThreshold {
+	if consecutiveTargetProbeRecoveryStatus(history) < recoveryThreshold {
 		return nil
 	}
-	return s.clearProbeManagedAccountError(ctx, target.AccountID)
+	return s.clearProbeManagedAccountError(ctx, target.AccountID, expectedAdminGeneration)
 }
 
-func accountHasActiveSchedulingBlock(account *Account, now time.Time) bool {
-	if account == nil {
-		return false
+func (s *Sub2APIProviderProbeService) markProbeManagedAccountError(ctx context.Context, accountID int64, message, expectedAdminGeneration string) error {
+	return markProbeManagedAccountError(ctx, s.accountRepo, accountID, message, expectedAdminGeneration)
+}
+
+func markProbeManagedAccountError(ctx context.Context, repo Sub2APIAccountRepository, accountID int64, message string, expectedAdminGeneration ...string) error {
+	generation := ""
+	if len(expectedAdminGeneration) > 0 {
+		generation = expectedAdminGeneration[0]
 	}
-	if account.Status == StatusError || !account.Schedulable {
-		return true
+	if atomicRepo, ok := repo.(ProbeManagedAccountStateRepository); ok {
+		_, err := atomicRepo.SetProbeManagedError(ctx, accountID, message, false, generation)
+		return err
 	}
-	return (account.TempUnschedulableUntil != nil && now.Before(*account.TempUnschedulableUntil)) ||
-		(account.RateLimitResetAt != nil && now.Before(*account.RateLimitResetAt)) ||
-		(account.OverloadUntil != nil && now.Before(*account.OverloadUntil))
-}
-
-func (s *Sub2APIProviderProbeService) markProbeManagedAccountError(ctx context.Context, accountID int64, message string) error {
-	return markProbeManagedAccountError(ctx, s.accountRepo, accountID, message)
-}
-
-func markProbeManagedAccountError(ctx context.Context, repo Sub2APIAccountRepository, accountID int64, message string) error {
 	account, err := repo.GetByID(ctx, accountID)
 	if err != nil {
 		return fmt.Errorf("load account before probe quarantine: %w", err)
+	}
+	if sub2APIAdminAccountStateGeneration(account) != generation {
+		return nil
 	}
 	// Never take over an account that was already disabled or errored by an
 	// administrator/another state machine. An active, schedulable account can
@@ -753,13 +779,27 @@ func markProbeManagedAccountError(ctx context.Context, repo Sub2APIAccountReposi
 	return nil
 }
 
+func markProbeManagedAccountExhaustedError(ctx context.Context, repo Sub2APIAccountRepository, accountID int64, message, expectedAdminGeneration string) error {
+	if atomicRepo, ok := repo.(ProbeManagedAccountStateRepository); ok {
+		_, err := atomicRepo.SetProbeManagedError(ctx, accountID, message, true, expectedAdminGeneration)
+		return err
+	}
+	if err := markProbeManagedAccountError(ctx, repo, accountID, message, expectedAdminGeneration); err != nil {
+		return err
+	}
+	return markProbeGroupsExhausted(ctx, repo, accountID, message, expectedAdminGeneration)
+}
+
 // markProbeGroupsExhausted records the display marker only while the account
 // still belongs to the probe-owned state machine. An administrator may take
 // ownership back while candidate groups are being tested.
-func markProbeGroupsExhausted(ctx context.Context, repo Sub2APIAccountRepository, accountID int64, message string) error {
+func markProbeGroupsExhausted(ctx context.Context, repo Sub2APIAccountRepository, accountID int64, message string, expectedAdminGeneration ...string) error {
 	account, err := repo.GetByID(ctx, accountID)
 	if err != nil {
 		return fmt.Errorf("load account before marking probe groups exhausted: %w", err)
+	}
+	if len(expectedAdminGeneration) > 0 && sub2APIAdminAccountStateGeneration(account) != expectedAdminGeneration[0] {
+		return nil
 	}
 	managed, managedPresent := probeManagedAccountStatus(account)
 	if !managedPresent || !managed {
@@ -772,58 +812,51 @@ func markProbeGroupsExhausted(ctx context.Context, repo Sub2APIAccountRepository
 	})
 }
 
-func (s *Sub2APIProviderProbeService) clearProbeManagedAccountError(ctx context.Context, accountID int64) error {
-	if err := clearProbeManagedAccountError(ctx, s.accountRepo, accountID); err != nil {
+func (s *Sub2APIProviderProbeService) clearProbeManagedAccountError(ctx context.Context, accountID int64, expectedAdminGeneration string) error {
+	recovered, err := clearProbeManagedAccountError(ctx, s.accountRepo, accountID, expectedAdminGeneration)
+	if err != nil {
 		return err
 	}
-	if s.rateLimitService != nil {
+	if recovered && s.rateLimitService != nil {
 		s.rateLimitService.ResetOpenAI403Counter(ctx, accountID)
-		s.rateLimitService.notifyAccountSchedulingBlockCleared(accountID)
 	}
 	return nil
 }
 
-func clearProbeManagedAccountError(ctx context.Context, repo Sub2APIAccountRepository, accountID int64) error {
+func clearProbeManagedAccountError(ctx context.Context, repo Sub2APIAccountRepository, accountID int64, expectedAdminGeneration ...string) (bool, error) {
+	generation := ""
+	if len(expectedAdminGeneration) > 0 {
+		generation = expectedAdminGeneration[0]
+	}
+	if atomicRepo, ok := repo.(ProbeManagedAccountStateRepository); ok {
+		return atomicRepo.RecoverProbeManagedAccount(ctx, accountID, generation)
+	}
 	account, err := repo.GetByID(ctx, accountID)
 	if err != nil {
-		return fmt.Errorf("load account for probe-state recovery: %w", err)
+		return false, fmt.Errorf("load account for probe-state recovery: %w", err)
 	}
 	managed, managedPresent := probeManagedAccountStatus(account)
 	runtimeRecoverable, runtimePresent := probeRuntimeRecoverableAccountError(account)
-	// Backward compatibility for accounts disabled before the ownership marker
-	// was introduced: a persisted balance/credit/quota error is still clearly a
-	// runtime upstream failure and may be recovered by a successful probe.
-	legacyRecoverable := account.Status == StatusError && isRecoverableUpstreamError(account.ErrorMessage)
-	shouldRecover := (managedPresent && managed) || (runtimePresent && runtimeRecoverable) || legacyRecoverable
+	shouldRecover := (managedPresent && managed) || (runtimePresent && runtimeRecoverable)
+	if !shouldRecover || sub2APIAdminAccountStateGeneration(account) != generation {
+		return false, nil
+	}
 	if shouldRecover {
 		if account.Status == StatusError {
 			if err := repo.ClearError(ctx, accountID); err != nil {
-				return fmt.Errorf("clear probe-managed account error: %w", err)
+				return false, fmt.Errorf("clear probe-managed account error: %w", err)
 			}
 		}
 	}
-	// Some request-time providers use a temporary unschedulable window rather
-	// than status=error. The optional methods are implemented by the production
-	// Provider account adapter; old/narrow test doubles can safely omit them.
-	if shouldRecover {
-		if runtimeRepo, ok := repo.(interface {
-			ClearTempUnschedulable(context.Context, int64) error
-			ClearRateLimit(context.Context, int64) error
-		}); ok {
-			if err := runtimeRepo.ClearTempUnschedulable(ctx, accountID); err != nil {
-				return fmt.Errorf("clear probe-managed temporary scheduling block: %w", err)
-			}
-			if err := runtimeRepo.ClearRateLimit(ctx, accountID); err != nil {
-				return fmt.Errorf("clear probe-managed rate limit: %w", err)
-			}
-		}
-	}
-	return repo.UpdateExtra(ctx, accountID, map[string]any{
+	if err := repo.UpdateExtra(ctx, accountID, map[string]any{
 		probeManagedAccountStatusExtraKey:           false,
 		probeRuntimeRecoverableAccountErrorExtraKey: false,
 		probeGroupsExhaustedExtraKey:                false,
 		probeGroupsExhaustedMessageKey:              "",
-	})
+	}); err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 func probeManagedAccountStatus(account *Account) (bool, bool) {
@@ -852,17 +885,17 @@ func probeGroupsExhausted(account *Account) bool {
 	return exhausted
 }
 
-func (s *Sub2APIProviderProbeService) runTargetIfProviderAvailable(ctx context.Context, target *ent.Sub2APIProviderProbeTarget) (*ent.Sub2APIProviderProbeTargetRun, bool, error) {
+func (s *Sub2APIProviderProbeService) runTargetIfProviderAvailable(ctx context.Context, target *ent.Sub2APIProviderProbeTarget) (*ent.Sub2APIProviderProbeTargetRun, string, bool, error) {
 	if target == nil {
-		return nil, true, fmt.Errorf("probe target is required")
+		return nil, "", true, fmt.Errorf("probe target is required")
 	}
 	release, acquired := s.operationGate.TryAcquire(ctx, target.ProviderID, sub2APIProviderProbeOperationTTL)
 	if !acquired {
-		return nil, false, nil
+		return nil, "", false, nil
 	}
 	defer release()
-	run, err := s.runTarget(ctx, target)
-	return run, true, err
+	run, generation, err := s.runTarget(ctx, target)
+	return run, generation, true, err
 }
 
 func (s *Sub2APIProviderProbeService) writeTargetFailure(ctx context.Context, target *ent.Sub2APIProviderProbeTarget, started time.Time, status string, err error) (*ent.Sub2APIProviderProbeTargetRun, error) {
@@ -882,7 +915,7 @@ func (s *Sub2APIProviderProbeService) writeTargetFailure(ctx context.Context, ta
 	if writeErr != nil {
 		return nil, writeErr
 	}
-	if markErr := s.probeRepo.MarkTargetRun(ctx, target.ID, finished); markErr != nil {
+	if markErr := s.probeRepo.MarkTargetRun(ctx, target.ID, finished, status); markErr != nil {
 		return nil, markErr
 	}
 	return run, nil
@@ -919,9 +952,17 @@ func (s *Sub2APIProviderProbeService) targetHealths(ctx context.Context, targets
 	for _, run := range runs {
 		runsByTarget[run.TargetID] = append(runsByTarget[run.TargetID], run)
 	}
+	minimumHealthyStreak := 0
+	if len(targets) > 0 {
+		if cfg, cfgErr := s.ensureConfig(ctx, targets[0].ProviderID); cfgErr == nil {
+			minimumHealthyStreak = probeAdaptiveMinimumHealthyStreak(cfg)
+		}
+	}
 	out := make([]*Sub2APIProviderProbeTargetHealth, 0, len(targets))
 	for _, target := range targets {
-		out = append(out, targetHealthFromTarget(target, accountsByID[target.AccountID], runsByTarget[target.ID], now))
+		health := targetHealthFromTarget(target, accountsByID[target.AccountID], runsByTarget[target.ID], now)
+		health.CurrentIntervalSeconds = effectiveProbeTargetIntervalSecondsWithRecovery(target, minimumHealthyStreak)
+		out = append(out, health)
 	}
 	return out, nil
 }
@@ -931,6 +972,10 @@ func targetHealthFromTarget(target *ent.Sub2APIProviderProbeTarget, account *Acc
 		ID: target.ID, ProviderID: target.ProviderID, AccountID: target.AccountID, ProviderAPIKeyID: target.ProviderAPIKeyID,
 		RemoteGroupID: target.RemoteGroupID, RemoteGroupName: target.RemoteGroupName, Platform: target.Platform,
 		Enabled: target.Enabled, IntervalSeconds: target.IntervalSeconds,
+		AdaptiveIntervalEnabled: target.AdaptiveIntervalEnabled,
+		HealthyIntervalSeconds:  target.HealthyIntervalSeconds, HealthyIntervalThreshold: target.HealthyIntervalThreshold,
+		StableHealthyIntervalSeconds: target.StableHealthyIntervalSeconds, StableHealthyThreshold: target.StableHealthyThreshold,
+		ConsecutiveHealthy: target.ConsecutiveHealthy, CurrentIntervalSeconds: effectiveProbeTargetIntervalSeconds(target),
 		AllowMediaProbe: target.AllowMediaProbe, TimeoutSeconds: target.TimeoutSeconds, DegradedLatencyMS: target.DegradedLatencyMs,
 		DegradedOptimizeThreshold: target.DegradedOptimizeThreshold, CostOptimizeEnabled: target.CostOptimizeEnabled,
 		CostOptimizeIntervalSeconds: target.CostOptimizeIntervalSeconds, CostOptimizeHealthyThreshold: target.CostOptimizeHealthyThreshold,
@@ -944,6 +989,8 @@ func targetHealthFromTarget(target *ent.Sub2APIProviderProbeTarget, account *Acc
 		health.Sub2APIOptimizeEnabled = account.Sub2APIOptimizeEnabled
 		health.Sub2APIMinMultiplier = account.Sub2APIMinMultiplier
 		health.Sub2APIMaxMultiplier = account.Sub2APIMaxMultiplier
+		health.Sub2APIOptimizeGroupID = account.Sub2APIOptimizeGroupID
+		health.Sub2APIOptimizeGroupIDs = normalizeSub2APIOptimizeGroupIDs(account.Sub2APIOptimizeGroupIDs)
 		if health.Platform == "" {
 			health.Platform = account.Platform
 		}
@@ -1097,6 +1144,18 @@ func validateProbeTargetInput(input *Sub2APIProviderProbeTargetInput) error {
 	if input.IntervalSeconds != nil && (*input.IntervalSeconds < 30 || *input.IntervalSeconds > 86400) {
 		return invalidProviderProbeConfig("interval_seconds must be between 30 and 86400")
 	}
+	if input.HealthyIntervalSeconds != nil && (*input.HealthyIntervalSeconds < 30 || *input.HealthyIntervalSeconds > 86400) {
+		return invalidProviderProbeConfig("healthy_interval_seconds must be between 30 and 86400")
+	}
+	if input.StableHealthyIntervalSeconds != nil && (*input.StableHealthyIntervalSeconds < 30 || *input.StableHealthyIntervalSeconds > 86400) {
+		return invalidProviderProbeConfig("stable_healthy_interval_seconds must be between 30 and 86400")
+	}
+	if input.HealthyIntervalThreshold != nil && (*input.HealthyIntervalThreshold < 1 || *input.HealthyIntervalThreshold > 100) {
+		return invalidProviderProbeConfig("healthy_interval_threshold must be between 1 and 100")
+	}
+	if input.StableHealthyThreshold != nil && (*input.StableHealthyThreshold < 1 || *input.StableHealthyThreshold > 100) {
+		return invalidProviderProbeConfig("stable_healthy_threshold must be between 1 and 100")
+	}
 	if input.TimeoutSeconds != nil && (*input.TimeoutSeconds < 3 || *input.TimeoutSeconds > 120) {
 		return invalidProviderProbeConfig("timeout_seconds must be between 3 and 120")
 	}
@@ -1130,8 +1189,40 @@ func validateEffectiveProbeTarget(target *ent.Sub2APIProviderProbeTarget, input 
 	if input.IntervalSeconds != nil {
 		interval = *input.IntervalSeconds
 	}
+	adaptive := target.AdaptiveIntervalEnabled
+	if input.AdaptiveIntervalEnabled != nil {
+		adaptive = *input.AdaptiveIntervalEnabled
+	}
+	healthyInterval := target.HealthyIntervalSeconds
+	if input.HealthyIntervalSeconds != nil {
+		healthyInterval = *input.HealthyIntervalSeconds
+	}
+	stableInterval := target.StableHealthyIntervalSeconds
+	if input.StableHealthyIntervalSeconds != nil {
+		stableInterval = *input.StableHealthyIntervalSeconds
+	}
+	healthyThreshold := target.HealthyIntervalThreshold
+	if input.HealthyIntervalThreshold != nil {
+		healthyThreshold = *input.HealthyIntervalThreshold
+	}
+	stableThreshold := target.StableHealthyThreshold
+	if input.StableHealthyThreshold != nil {
+		stableThreshold = *input.StableHealthyThreshold
+	}
+	if adaptive && healthyInterval < interval {
+		return invalidProviderProbeConfig("healthy_interval_seconds must be greater than or equal to interval_seconds")
+	}
+	if adaptive && stableInterval < healthyInterval {
+		return invalidProviderProbeConfig("stable_healthy_interval_seconds must be greater than or equal to healthy_interval_seconds")
+	}
+	if adaptive && stableThreshold <= healthyThreshold {
+		return invalidProviderProbeConfig("stable_healthy_threshold must be greater than healthy_interval_threshold")
+	}
 	if allowMedia && interval < minMediaProbeIntervalSeconds {
 		return invalidProviderProbeConfig(fmt.Sprintf("interval_seconds must be at least %d when media probes are allowed", minMediaProbeIntervalSeconds))
+	}
+	if allowMedia && adaptive && (healthyInterval < minMediaProbeIntervalSeconds || stableInterval < minMediaProbeIntervalSeconds) {
+		return invalidProviderProbeConfig(fmt.Sprintf("adaptive probe intervals must be at least %d when media probes are allowed", minMediaProbeIntervalSeconds))
 	}
 	return nil
 }

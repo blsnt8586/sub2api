@@ -49,7 +49,8 @@ func (e CanvasVideoEndpoint) isGeneration() bool {
 // ForwardCanvasVideo 将视频请求转发到 AIV2API 上游。
 //
 //   - 仅支持 api_key 账号（base_url + api_key）；
-//   - body 原样透传（JSON 或 multipart），不做字段改写；
+//   - body 除了按账号 model_mapping 选择 AVI2API 模型 ID 外原样透传（JSON 或
+//     multipart）；
 //   - Content-Type 透传（multipart 需携带 boundary）；
 //   - Idempotency-Key 透传，防止 failover 重试重复扣费。
 func (s *OpenAIGatewayService) ForwardCanvasVideo(
@@ -82,9 +83,22 @@ func (s *OpenAIGatewayService) ForwardCanvasVideo(
 		return nil, err
 	}
 
+	requestInfo := avi2api.ParseVideoRequest(contentType, body)
+	requestModel := requestInfo.Model
+	forwardBody := body
+	upstreamModel := requestModel
+	if endpoint == CanvasVideoEndpointCreate {
+		upstreamModel = CanvasMappedUpstreamModel(account, requestModel)
+		forwardBody, err = RewriteCanvasModel(contentType, body, upstreamModel)
+		if err != nil {
+			return nil, err
+		}
+	}
+	SetOpsUpstreamModel(c, upstreamModel)
+
 	var bodyReader io.Reader
 	if endpoint.requiresRequestBody() {
-		bodyReader = bytes.NewReader(body)
+		bodyReader = bytes.NewReader(forwardBody)
 	}
 
 	upstreamCtx, releaseUpstreamCtx := detachUpstreamContext(ctx)
@@ -122,9 +136,6 @@ func (s *OpenAIGatewayService) ForwardCanvasVideo(
 	defer func() { _ = resp.Body.Close() }()
 
 	requestIDHeader := firstNonEmpty(resp.Header.Get("x-request-id"), resp.Header.Get("request-id"))
-	requestInfo := avi2api.ParseVideoRequest(contentType, body)
-	requestModel := requestInfo.Model
-
 	if resp.StatusCode >= 400 {
 		return s.handleCanvasVideoErrorResponse(ctx, resp, c, account, requestIDHeader, requestModel)
 	}
@@ -139,7 +150,7 @@ func (s *OpenAIGatewayService) ForwardCanvasVideo(
 		RequestID:       requestIDHeader,
 		Model:           requestModel,
 		BillingModel:    requestModel,
-		UpstreamModel:   requestModel,
+		UpstreamModel:   upstreamModel,
 		ResponseHeaders: resp.Header.Clone(),
 		Duration:        time.Since(startTime),
 	}
@@ -161,6 +172,7 @@ func (s *OpenAIGatewayService) ForwardCanvasVideo(
 	}
 	usage, _ := extractOpenAIUsageFromJSONBytes(respBody)
 	result.Usage = usage
+	SetOpsUpstreamModel(c, result.UpstreamModel)
 	return result, nil
 }
 

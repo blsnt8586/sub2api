@@ -480,9 +480,9 @@ func updatedAccountRows(id int64, extra string) *sqlmock.Rows {
 		service.StatusActive, nil, nil, nil, false, true, nil, nil, nil, nil, nil, nil,
 		nil, nil,
 		// Fork-added Sub2API provider columns (provider_id through
-		// sub2api_test_model). The order must match dbaccount.Columns;
+		// sub2api_optimize_group_id). The order must match dbaccount.Columns;
 		// sub2api_optimize_enabled is non-nullable, so use false.
-		nil, nil, nil, nil, nil, nil, false, nil, nil, nil,
+		nil, nil, nil, nil, nil, nil, false, nil, nil, nil, nil,
 		nil, service.QuotaDimensionGlobal,
 	)
 }

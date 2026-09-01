@@ -133,6 +133,7 @@ var (
 		{Name: "sub2api_max_multiplier", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(10,4)"}},
 		{Name: "sub2api_min_multiplier", Type: field.TypeFloat64, Nullable: true, SchemaType: map[string]string{"postgres": "decimal(10,4)"}},
 		{Name: "sub2api_test_model", Type: field.TypeString, Nullable: true, Size: 100},
+		{Name: "sub2api_optimize_group_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "quota_dimension", Type: field.TypeEnum, Enums: []string{"global", "spark"}, Default: "global"},
 		{Name: "proxy_id", Type: field.TypeInt64, Nullable: true},
 		{Name: "parent_account_id", Type: field.TypeInt64, Nullable: true},
@@ -146,19 +147,19 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "accounts_proxies_proxy",
-				Columns:    []*schema.Column{AccountsColumns[39]},
+				Columns:    []*schema.Column{AccountsColumns[40]},
 				RefColumns: []*schema.Column{ProxiesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "accounts_accounts_children",
-				Columns:    []*schema.Column{AccountsColumns[40]},
+				Columns:    []*schema.Column{AccountsColumns[41]},
 				RefColumns: []*schema.Column{AccountsColumns[0]},
 				OnDelete:   schema.Restrict,
 			},
 			{
 				Symbol:     "accounts_sub2api_providers_accounts",
-				Columns:    []*schema.Column{AccountsColumns[41]},
+				Columns:    []*schema.Column{AccountsColumns[42]},
 				RefColumns: []*schema.Column{Sub2apiProvidersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -182,7 +183,7 @@ var (
 			{
 				Name:    "account_proxy_id",
 				Unique:  false,
-				Columns: []*schema.Column{AccountsColumns[39]},
+				Columns: []*schema.Column{AccountsColumns[40]},
 			},
 			{
 				Name:    "account_priority",
@@ -232,7 +233,7 @@ var (
 			{
 				Name:    "account_parent_account_id",
 				Unique:  false,
-				Columns: []*schema.Column{AccountsColumns[40]},
+				Columns: []*schema.Column{AccountsColumns[41]},
 			},
 		},
 	}
@@ -1659,6 +1660,7 @@ var (
 		{Name: "base_url", Type: field.TypeString, Size: 500},
 		{Name: "provider_type", Type: field.TypeString, Size: 50, Default: "sub2api"},
 		{Name: "status", Type: field.TypeString, Size: 20, Default: "active"},
+		{Name: "remote_cost_divisor", Type: field.TypeFloat64, Default: 1, SchemaType: map[string]string{"postgres": "decimal(20,8)"}},
 		{Name: "notes", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
 		{Name: "email", Type: field.TypeString, Size: 200},
 		{Name: "password_encrypted", Type: field.TypeString, Default: "", SchemaType: map[string]string{"postgres": "text"}},
@@ -1683,7 +1685,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "sub2api_providers_proxies_proxy",
-				Columns:    []*schema.Column{Sub2apiProvidersColumns[22]},
+				Columns:    []*schema.Column{Sub2apiProvidersColumns[23]},
 				RefColumns: []*schema.Column{ProxiesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -1697,7 +1699,7 @@ var (
 			{
 				Name:    "sub2apiprovider_proxy_id",
 				Unique:  false,
-				Columns: []*schema.Column{Sub2apiProvidersColumns[22]},
+				Columns: []*schema.Column{Sub2apiProvidersColumns[23]},
 			},
 			{
 				Name:    "sub2apiprovider_deleted_at",
@@ -1707,7 +1709,7 @@ var (
 			{
 				Name:    "sub2apiprovider_base_url_email",
 				Unique:  true,
-				Columns: []*schema.Column{Sub2apiProvidersColumns[5], Sub2apiProvidersColumns[9]},
+				Columns: []*schema.Column{Sub2apiProvidersColumns[5], Sub2apiProvidersColumns[10]},
 				Annotation: &entsql.IndexAnnotation{
 					Where: "deleted_at IS NULL",
 				},
@@ -1819,6 +1821,12 @@ var (
 		{Name: "platform", Type: field.TypeString, Size: 50, Default: ""},
 		{Name: "enabled", Type: field.TypeBool, Default: false},
 		{Name: "interval_seconds", Type: field.TypeInt, Default: 30},
+		{Name: "adaptive_interval_enabled", Type: field.TypeBool, Default: true},
+		{Name: "healthy_interval_seconds", Type: field.TypeInt, Default: 120},
+		{Name: "healthy_interval_threshold", Type: field.TypeInt, Default: 2},
+		{Name: "stable_healthy_interval_seconds", Type: field.TypeInt, Default: 300},
+		{Name: "stable_healthy_threshold", Type: field.TypeInt, Default: 6},
+		{Name: "consecutive_healthy", Type: field.TypeInt, Default: 0},
 		{Name: "test_model", Type: field.TypeString, Nullable: true, Size: 160},
 		{Name: "allow_media_probe", Type: field.TypeBool, Default: false},
 		{Name: "timeout_seconds", Type: field.TypeInt, Default: 60},
@@ -1843,13 +1851,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "sub2api_provider_probe_targets_accounts_sub2api_probe_targets",
-				Columns:    []*schema.Column{Sub2apiProviderProbeTargetsColumns[22]},
+				Columns:    []*schema.Column{Sub2apiProviderProbeTargetsColumns[28]},
 				RefColumns: []*schema.Column{AccountsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "sub2api_provider_probe_targets_sub2api_providers_probe_targets",
-				Columns:    []*schema.Column{Sub2apiProviderProbeTargetsColumns[23]},
+				Columns:    []*schema.Column{Sub2apiProviderProbeTargetsColumns[29]},
 				RefColumns: []*schema.Column{Sub2apiProvidersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1858,17 +1866,17 @@ var (
 			{
 				Name:    "sub2apiproviderprobetarget_provider_id_account_id",
 				Unique:  true,
-				Columns: []*schema.Column{Sub2apiProviderProbeTargetsColumns[23], Sub2apiProviderProbeTargetsColumns[22]},
+				Columns: []*schema.Column{Sub2apiProviderProbeTargetsColumns[29], Sub2apiProviderProbeTargetsColumns[28]},
 			},
 			{
 				Name:    "sub2apiproviderprobetarget_provider_id_enabled_last_run_at",
 				Unique:  false,
-				Columns: []*schema.Column{Sub2apiProviderProbeTargetsColumns[23], Sub2apiProviderProbeTargetsColumns[7], Sub2apiProviderProbeTargetsColumns[20]},
+				Columns: []*schema.Column{Sub2apiProviderProbeTargetsColumns[29], Sub2apiProviderProbeTargetsColumns[7], Sub2apiProviderProbeTargetsColumns[26]},
 			},
 			{
 				Name:    "sub2apiproviderprobetarget_account_id",
 				Unique:  false,
-				Columns: []*schema.Column{Sub2apiProviderProbeTargetsColumns[22]},
+				Columns: []*schema.Column{Sub2apiProviderProbeTargetsColumns[28]},
 			},
 		},
 	}

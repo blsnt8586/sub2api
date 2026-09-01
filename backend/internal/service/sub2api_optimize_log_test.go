@@ -25,6 +25,24 @@ type exhaustedStateAccountRepoStub struct {
 	clearErrorCalls int
 }
 
+func (r *exhaustedStateAccountRepoStub) SetProbeManagedError(_ context.Context, _ int64, _ string, groupsExhausted bool, expectedAdminGeneration string) (bool, error) {
+	account, _ := r.GetByID(context.Background(), 0)
+	managed, _ := probeManagedAccountStatus(account)
+	runtimeRecoverable, _ := probeRuntimeRecoverableAccountError(account)
+	if sub2APIAdminAccountStateGeneration(account) != expectedAdminGeneration || ((account.Status != StatusActive || !account.Schedulable) && !managed && !runtimeRecoverable) {
+		return false, nil
+	}
+	r.updates = append(r.updates, map[string]any{
+		probeManagedAccountStatusExtraKey: true,
+		probeGroupsExhaustedExtraKey:      groupsExhausted,
+	})
+	return true, nil
+}
+
+func (r *exhaustedStateAccountRepoStub) RecoverProbeManagedAccount(context.Context, int64, string) (bool, error) {
+	return false, nil
+}
+
 func (r *exhaustedStateAccountRepoStub) GetByID(context.Context, int64) (*Account, error) {
 	if r.account != nil {
 		return r.account, nil
@@ -52,7 +70,12 @@ func TestFinishProbeAutoOptimizeDoesNotRestoreProbeOwnershipAfterAdminOverride(t
 		ProbeExhausted: true,
 		Reason:         "all candidates failed",
 	}}, map[int64]Sub2APIProbeAutoOptimizeInput{
-		42: {AccountID: 42, Trigger: OptimizeLogTriggerProbeUnhealthy},
+		42: {
+			AccountID:                  42,
+			Trigger:                    OptimizeLogTriggerProbeUnhealthy,
+			AccountStatusSyncEnabled:   true,
+			AccountFailureThresholdMet: true,
+		},
 	})
 	if len(accountRepo.updates) != 0 {
 		t.Fatalf("admin-owned account must not receive exhausted marker: %+v", accountRepo.updates)
@@ -301,7 +324,7 @@ func TestProbeOptimizeLogDoesNotRequireSchedule(t *testing.T) {
 	}
 }
 
-func TestFinishProbeAutoOptimizePublishesOnlyExhaustedProbeErrors(t *testing.T) {
+func TestFinishProbeAutoOptimizePublishesFailedProbeErrorsWithAccurateExhaustion(t *testing.T) {
 	tests := []struct {
 		name       string
 		detail     OptimizeAccountDetail
@@ -312,16 +335,28 @@ func TestFinishProbeAutoOptimizePublishesOnlyExhaustedProbeErrors(t *testing.T) 
 		{
 			name:       "all candidate groups failed",
 			detail:     OptimizeAccountDetail{AccountID: 42, Status: "failed", ProbeExhausted: true, Reason: "all candidates failed"},
-			trigger:    Sub2APIProbeAutoOptimizeInput{AccountID: 42, Trigger: OptimizeLogTriggerProbeUnhealthy, AccountStatusSyncEnabled: true},
+			trigger:    Sub2APIProbeAutoOptimizeInput{AccountID: 42, Trigger: OptimizeLogTriggerProbeUnhealthy, AccountStatusSyncEnabled: true, AccountFailureThresholdMet: true},
 			wantUpdate: true,
 			wantValue:  true,
 		},
 		{
-			name:       "successful group switch clears prior marker",
-			detail:     OptimizeAccountDetail{AccountID: 42, Status: "optimized"},
-			trigger:    Sub2APIProbeAutoOptimizeInput{AccountID: 42, Trigger: OptimizeLogTriggerProbeUnhealthy, AccountStatusSyncEnabled: true},
+			name:       "optimizer operation failure still quarantines without exhausted marker",
+			detail:     OptimizeAccountDetail{AccountID: 42, Status: "failed", Reason: "rollback failed"},
+			trigger:    Sub2APIProbeAutoOptimizeInput{AccountID: 42, Trigger: OptimizeLogTriggerProbeUnhealthy, AccountStatusSyncEnabled: true, AccountFailureThresholdMet: true},
 			wantUpdate: true,
 			wantValue:  false,
+		},
+		{
+			name:       "successful group switch waits for responsive recovery streak",
+			detail:     OptimizeAccountDetail{AccountID: 42, Status: "optimized"},
+			trigger:    Sub2APIProbeAutoOptimizeInput{AccountID: 42, Trigger: OptimizeLogTriggerProbeUnhealthy, AccountStatusSyncEnabled: true, AccountFailureThresholdMet: true},
+			wantUpdate: false,
+		},
+		{
+			name:       "candidate exhaustion before failure threshold does not quarantine",
+			detail:     OptimizeAccountDetail{AccountID: 42, Status: "failed", ProbeExhausted: true, Reason: "all candidates failed"},
+			trigger:    Sub2APIProbeAutoOptimizeInput{AccountID: 42, Trigger: OptimizeLogTriggerProbeUnhealthy, AccountStatusSyncEnabled: true},
+			wantUpdate: false,
 		},
 		{
 			name:       "cost check does not publish error",

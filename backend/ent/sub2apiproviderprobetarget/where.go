@@ -105,6 +105,36 @@ func IntervalSeconds(v int) predicate.Sub2APIProviderProbeTarget {
 	return predicate.Sub2APIProviderProbeTarget(sql.FieldEQ(FieldIntervalSeconds, v))
 }
 
+// AdaptiveIntervalEnabled applies equality check predicate on the "adaptive_interval_enabled" field. It's identical to AdaptiveIntervalEnabledEQ.
+func AdaptiveIntervalEnabled(v bool) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldEQ(FieldAdaptiveIntervalEnabled, v))
+}
+
+// HealthyIntervalSeconds applies equality check predicate on the "healthy_interval_seconds" field. It's identical to HealthyIntervalSecondsEQ.
+func HealthyIntervalSeconds(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldEQ(FieldHealthyIntervalSeconds, v))
+}
+
+// HealthyIntervalThreshold applies equality check predicate on the "healthy_interval_threshold" field. It's identical to HealthyIntervalThresholdEQ.
+func HealthyIntervalThreshold(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldEQ(FieldHealthyIntervalThreshold, v))
+}
+
+// StableHealthyIntervalSeconds applies equality check predicate on the "stable_healthy_interval_seconds" field. It's identical to StableHealthyIntervalSecondsEQ.
+func StableHealthyIntervalSeconds(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldEQ(FieldStableHealthyIntervalSeconds, v))
+}
+
+// StableHealthyThreshold applies equality check predicate on the "stable_healthy_threshold" field. It's identical to StableHealthyThresholdEQ.
+func StableHealthyThreshold(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldEQ(FieldStableHealthyThreshold, v))
+}
+
+// ConsecutiveHealthy applies equality check predicate on the "consecutive_healthy" field. It's identical to ConsecutiveHealthyEQ.
+func ConsecutiveHealthy(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldEQ(FieldConsecutiveHealthy, v))
+}
+
 // TestModel applies equality check predicate on the "test_model" field. It's identical to TestModelEQ.
 func TestModel(v string) predicate.Sub2APIProviderProbeTarget {
 	return predicate.Sub2APIProviderProbeTarget(sql.FieldEQ(FieldTestModel, v))
@@ -578,6 +608,216 @@ func IntervalSecondsLT(v int) predicate.Sub2APIProviderProbeTarget {
 // IntervalSecondsLTE applies the LTE predicate on the "interval_seconds" field.
 func IntervalSecondsLTE(v int) predicate.Sub2APIProviderProbeTarget {
 	return predicate.Sub2APIProviderProbeTarget(sql.FieldLTE(FieldIntervalSeconds, v))
+}
+
+// AdaptiveIntervalEnabledEQ applies the EQ predicate on the "adaptive_interval_enabled" field.
+func AdaptiveIntervalEnabledEQ(v bool) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldEQ(FieldAdaptiveIntervalEnabled, v))
+}
+
+// AdaptiveIntervalEnabledNEQ applies the NEQ predicate on the "adaptive_interval_enabled" field.
+func AdaptiveIntervalEnabledNEQ(v bool) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldNEQ(FieldAdaptiveIntervalEnabled, v))
+}
+
+// HealthyIntervalSecondsEQ applies the EQ predicate on the "healthy_interval_seconds" field.
+func HealthyIntervalSecondsEQ(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldEQ(FieldHealthyIntervalSeconds, v))
+}
+
+// HealthyIntervalSecondsNEQ applies the NEQ predicate on the "healthy_interval_seconds" field.
+func HealthyIntervalSecondsNEQ(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldNEQ(FieldHealthyIntervalSeconds, v))
+}
+
+// HealthyIntervalSecondsIn applies the In predicate on the "healthy_interval_seconds" field.
+func HealthyIntervalSecondsIn(vs ...int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldIn(FieldHealthyIntervalSeconds, vs...))
+}
+
+// HealthyIntervalSecondsNotIn applies the NotIn predicate on the "healthy_interval_seconds" field.
+func HealthyIntervalSecondsNotIn(vs ...int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldNotIn(FieldHealthyIntervalSeconds, vs...))
+}
+
+// HealthyIntervalSecondsGT applies the GT predicate on the "healthy_interval_seconds" field.
+func HealthyIntervalSecondsGT(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldGT(FieldHealthyIntervalSeconds, v))
+}
+
+// HealthyIntervalSecondsGTE applies the GTE predicate on the "healthy_interval_seconds" field.
+func HealthyIntervalSecondsGTE(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldGTE(FieldHealthyIntervalSeconds, v))
+}
+
+// HealthyIntervalSecondsLT applies the LT predicate on the "healthy_interval_seconds" field.
+func HealthyIntervalSecondsLT(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldLT(FieldHealthyIntervalSeconds, v))
+}
+
+// HealthyIntervalSecondsLTE applies the LTE predicate on the "healthy_interval_seconds" field.
+func HealthyIntervalSecondsLTE(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldLTE(FieldHealthyIntervalSeconds, v))
+}
+
+// HealthyIntervalThresholdEQ applies the EQ predicate on the "healthy_interval_threshold" field.
+func HealthyIntervalThresholdEQ(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldEQ(FieldHealthyIntervalThreshold, v))
+}
+
+// HealthyIntervalThresholdNEQ applies the NEQ predicate on the "healthy_interval_threshold" field.
+func HealthyIntervalThresholdNEQ(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldNEQ(FieldHealthyIntervalThreshold, v))
+}
+
+// HealthyIntervalThresholdIn applies the In predicate on the "healthy_interval_threshold" field.
+func HealthyIntervalThresholdIn(vs ...int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldIn(FieldHealthyIntervalThreshold, vs...))
+}
+
+// HealthyIntervalThresholdNotIn applies the NotIn predicate on the "healthy_interval_threshold" field.
+func HealthyIntervalThresholdNotIn(vs ...int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldNotIn(FieldHealthyIntervalThreshold, vs...))
+}
+
+// HealthyIntervalThresholdGT applies the GT predicate on the "healthy_interval_threshold" field.
+func HealthyIntervalThresholdGT(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldGT(FieldHealthyIntervalThreshold, v))
+}
+
+// HealthyIntervalThresholdGTE applies the GTE predicate on the "healthy_interval_threshold" field.
+func HealthyIntervalThresholdGTE(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldGTE(FieldHealthyIntervalThreshold, v))
+}
+
+// HealthyIntervalThresholdLT applies the LT predicate on the "healthy_interval_threshold" field.
+func HealthyIntervalThresholdLT(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldLT(FieldHealthyIntervalThreshold, v))
+}
+
+// HealthyIntervalThresholdLTE applies the LTE predicate on the "healthy_interval_threshold" field.
+func HealthyIntervalThresholdLTE(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldLTE(FieldHealthyIntervalThreshold, v))
+}
+
+// StableHealthyIntervalSecondsEQ applies the EQ predicate on the "stable_healthy_interval_seconds" field.
+func StableHealthyIntervalSecondsEQ(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldEQ(FieldStableHealthyIntervalSeconds, v))
+}
+
+// StableHealthyIntervalSecondsNEQ applies the NEQ predicate on the "stable_healthy_interval_seconds" field.
+func StableHealthyIntervalSecondsNEQ(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldNEQ(FieldStableHealthyIntervalSeconds, v))
+}
+
+// StableHealthyIntervalSecondsIn applies the In predicate on the "stable_healthy_interval_seconds" field.
+func StableHealthyIntervalSecondsIn(vs ...int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldIn(FieldStableHealthyIntervalSeconds, vs...))
+}
+
+// StableHealthyIntervalSecondsNotIn applies the NotIn predicate on the "stable_healthy_interval_seconds" field.
+func StableHealthyIntervalSecondsNotIn(vs ...int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldNotIn(FieldStableHealthyIntervalSeconds, vs...))
+}
+
+// StableHealthyIntervalSecondsGT applies the GT predicate on the "stable_healthy_interval_seconds" field.
+func StableHealthyIntervalSecondsGT(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldGT(FieldStableHealthyIntervalSeconds, v))
+}
+
+// StableHealthyIntervalSecondsGTE applies the GTE predicate on the "stable_healthy_interval_seconds" field.
+func StableHealthyIntervalSecondsGTE(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldGTE(FieldStableHealthyIntervalSeconds, v))
+}
+
+// StableHealthyIntervalSecondsLT applies the LT predicate on the "stable_healthy_interval_seconds" field.
+func StableHealthyIntervalSecondsLT(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldLT(FieldStableHealthyIntervalSeconds, v))
+}
+
+// StableHealthyIntervalSecondsLTE applies the LTE predicate on the "stable_healthy_interval_seconds" field.
+func StableHealthyIntervalSecondsLTE(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldLTE(FieldStableHealthyIntervalSeconds, v))
+}
+
+// StableHealthyThresholdEQ applies the EQ predicate on the "stable_healthy_threshold" field.
+func StableHealthyThresholdEQ(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldEQ(FieldStableHealthyThreshold, v))
+}
+
+// StableHealthyThresholdNEQ applies the NEQ predicate on the "stable_healthy_threshold" field.
+func StableHealthyThresholdNEQ(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldNEQ(FieldStableHealthyThreshold, v))
+}
+
+// StableHealthyThresholdIn applies the In predicate on the "stable_healthy_threshold" field.
+func StableHealthyThresholdIn(vs ...int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldIn(FieldStableHealthyThreshold, vs...))
+}
+
+// StableHealthyThresholdNotIn applies the NotIn predicate on the "stable_healthy_threshold" field.
+func StableHealthyThresholdNotIn(vs ...int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldNotIn(FieldStableHealthyThreshold, vs...))
+}
+
+// StableHealthyThresholdGT applies the GT predicate on the "stable_healthy_threshold" field.
+func StableHealthyThresholdGT(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldGT(FieldStableHealthyThreshold, v))
+}
+
+// StableHealthyThresholdGTE applies the GTE predicate on the "stable_healthy_threshold" field.
+func StableHealthyThresholdGTE(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldGTE(FieldStableHealthyThreshold, v))
+}
+
+// StableHealthyThresholdLT applies the LT predicate on the "stable_healthy_threshold" field.
+func StableHealthyThresholdLT(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldLT(FieldStableHealthyThreshold, v))
+}
+
+// StableHealthyThresholdLTE applies the LTE predicate on the "stable_healthy_threshold" field.
+func StableHealthyThresholdLTE(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldLTE(FieldStableHealthyThreshold, v))
+}
+
+// ConsecutiveHealthyEQ applies the EQ predicate on the "consecutive_healthy" field.
+func ConsecutiveHealthyEQ(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldEQ(FieldConsecutiveHealthy, v))
+}
+
+// ConsecutiveHealthyNEQ applies the NEQ predicate on the "consecutive_healthy" field.
+func ConsecutiveHealthyNEQ(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldNEQ(FieldConsecutiveHealthy, v))
+}
+
+// ConsecutiveHealthyIn applies the In predicate on the "consecutive_healthy" field.
+func ConsecutiveHealthyIn(vs ...int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldIn(FieldConsecutiveHealthy, vs...))
+}
+
+// ConsecutiveHealthyNotIn applies the NotIn predicate on the "consecutive_healthy" field.
+func ConsecutiveHealthyNotIn(vs ...int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldNotIn(FieldConsecutiveHealthy, vs...))
+}
+
+// ConsecutiveHealthyGT applies the GT predicate on the "consecutive_healthy" field.
+func ConsecutiveHealthyGT(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldGT(FieldConsecutiveHealthy, v))
+}
+
+// ConsecutiveHealthyGTE applies the GTE predicate on the "consecutive_healthy" field.
+func ConsecutiveHealthyGTE(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldGTE(FieldConsecutiveHealthy, v))
+}
+
+// ConsecutiveHealthyLT applies the LT predicate on the "consecutive_healthy" field.
+func ConsecutiveHealthyLT(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldLT(FieldConsecutiveHealthy, v))
+}
+
+// ConsecutiveHealthyLTE applies the LTE predicate on the "consecutive_healthy" field.
+func ConsecutiveHealthyLTE(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldLTE(FieldConsecutiveHealthy, v))
 }
 
 // TestModelEQ applies the EQ predicate on the "test_model" field.

@@ -94,6 +94,8 @@ const (
 	FieldSub2apiMinMultiplier = "sub2api_min_multiplier"
 	// FieldSub2apiTestModel holds the string denoting the sub2api_test_model field in the database.
 	FieldSub2apiTestModel = "sub2api_test_model"
+	// FieldSub2apiOptimizeGroupID holds the string denoting the sub2api_optimize_group_id field in the database.
+	FieldSub2apiOptimizeGroupID = "sub2api_optimize_group_id"
 	// FieldParentAccountID holds the string denoting the parent_account_id field in the database.
 	FieldParentAccountID = "parent_account_id"
 	// FieldQuotaDimension holds the string denoting the quota_dimension field in the database.
@@ -208,6 +210,7 @@ var Columns = []string{
 	FieldSub2apiMaxMultiplier,
 	FieldSub2apiMinMultiplier,
 	FieldSub2apiTestModel,
+	FieldSub2apiOptimizeGroupID,
 	FieldParentAccountID,
 	FieldQuotaDimension,
 }
@@ -493,6 +496,11 @@ func BySub2apiMinMultiplier(opts ...sql.OrderTermOption) OrderOption {
 // BySub2apiTestModel orders the results by the sub2api_test_model field.
 func BySub2apiTestModel(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSub2apiTestModel, opts...).ToFunc()
+}
+
+// BySub2apiOptimizeGroupID orders the results by the sub2api_optimize_group_id field.
+func BySub2apiOptimizeGroupID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSub2apiOptimizeGroupID, opts...).ToFunc()
 }
 
 // ByParentAccountID orders the results by the parent_account_id field.

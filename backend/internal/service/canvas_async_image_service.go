@@ -7,8 +7,9 @@ package service
 //   GET  /v1/images/{id}          查询图像任务
 //   POST /v1/images/{id}/cancel   取消排队中的图像任务
 //
-// 图生图与文生图共用创建路径，由 Content-Type 区分请求 DTO。转发层不解析或
-// 重写 body，multipart boundary 与文件内容原样透传。
+// 图生图与文生图共用创建路径，由 Content-Type 区分请求 DTO。转发层只在
+// 出站边界按账号 model_mapping 选择 AVI2API 模型 ID，multipart boundary
+// 与文件内容保持透传。
 
 import (
 	"bytes"
@@ -88,9 +89,21 @@ func (s *OpenAIGatewayService) ForwardCanvasAsyncImage(
 		return nil, err
 	}
 
+	requestModel := extractAsyncImageModel(contentType, body)
+	forwardBody := body
+	upstreamModel := requestModel
+	if endpoint.requiresRequestBody() {
+		upstreamModel = CanvasMappedUpstreamModel(account, requestModel)
+		forwardBody, err = RewriteCanvasModel(contentType, body, upstreamModel)
+		if err != nil {
+			return nil, err
+		}
+	}
+	SetOpsUpstreamModel(c, upstreamModel)
+
 	var bodyReader *bytes.Reader
 	if endpoint.requiresRequestBody() {
-		bodyReader = bytes.NewReader(body)
+		bodyReader = bytes.NewReader(forwardBody)
 	} else {
 		bodyReader = bytes.NewReader(nil)
 	}
@@ -130,7 +143,6 @@ func (s *OpenAIGatewayService) ForwardCanvasAsyncImage(
 	defer func() { _ = resp.Body.Close() }()
 
 	requestIDHeader := firstNonEmpty(resp.Header.Get("x-request-id"), resp.Header.Get("request-id"))
-	requestModel := extractAsyncImageModel(contentType, body)
 
 	if resp.StatusCode >= 400 {
 		return s.handleCanvasImageErrorResponse(ctx, resp, c, account, requestIDHeader, requestModel)
@@ -146,7 +158,7 @@ func (s *OpenAIGatewayService) ForwardCanvasAsyncImage(
 		RequestID:       requestIDHeader,
 		Model:           requestModel,
 		BillingModel:    requestModel,
-		UpstreamModel:   requestModel,
+		UpstreamModel:   upstreamModel,
 		ResponseHeaders: resp.Header.Clone(),
 		Duration:        time.Since(startTime),
 	}
@@ -159,6 +171,7 @@ func (s *OpenAIGatewayService) ForwardCanvasAsyncImage(
 		// 图像按次计费，无产物时长维度，withSeconds=false。
 		applyCanvasAsyncCompletionBilling(result, respBody, taskID, "image")
 	}
+	SetOpsUpstreamModel(c, result.UpstreamModel)
 	return result, nil
 }
 
@@ -285,7 +298,18 @@ func ExtractCanvasAsyncImageModel(contentType string, body []byte) string {
 // JSON means text-only generation, but both use the same AIV2API 2.0 path.
 func ValidateCanvasAsyncImageRequest(contentType string, body []byte) *avi2api.ValidationError {
 	isReferenceRequest := strings.HasPrefix(strings.ToLower(strings.TrimSpace(contentType)), "multipart/form-data")
-	return avi2api.ValidateImageRequest(isReferenceRequest, contentType, body)
+	validationBody, err := CanvasValidationBody(contentType, body)
+	if err != nil {
+		return &avi2api.ValidationError{Field: "model", Message: err.Error()}
+	}
+	// The Canvas model catalog is synchronized from each account and can move
+	// ahead of this gateway's optional capability registry.  Let AVI2API be the
+	// authority for an unknown slug instead of rejecting a newly synchronized
+	// model locally; known slugs still receive the fast parameter checks below.
+	if model := CanvasUpstreamModel(extractAsyncImageModel(contentType, body)); model != "" && avi2api.LookupImageModel(model) == nil {
+		return nil
+	}
+	return avi2api.ValidateImageRequest(isReferenceRequest, contentType, validationBody)
 }
 
 // CanvasAsyncImageModerationBody converts either JSON or multipart image input

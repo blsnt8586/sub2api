@@ -53,3 +53,10 @@ describe('AppSidebar header styles', () => {
     expect(sidebarBrandBlockMatch?.[0]).not.toContain('overflow: hidden;')
   })
 })
+
+describe('AppSidebar studio navigation', () => {
+  it('exposes the authenticated studio route in the shared self-navigation', () => {
+    expect(componentSource).toContain("{ path: '/studio', label: t('nav.studio'), icon: StudioIcon }")
+    expect(componentSource).toContain("const StudioIcon = {")
+  })
+})

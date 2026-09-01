@@ -545,6 +545,219 @@ func TestGetCurrentUserBalanceUsesAuthenticatedEnvelope(t *testing.T) {
 	}
 }
 
+func TestGetCurrentUserProfileIncludesTotalRecharged(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/v1/auth/me" {
+			http.NotFound(w, r)
+			return
+		}
+		writeSub2APIResponse(t, w, map[string]any{"balance": 12.5, "total_recharged": 80.25})
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL, "", "")
+	client.Token = "access"
+	profile, err := client.GetCurrentUserProfile(context.Background())
+	if err != nil {
+		t.Fatalf("GetCurrentUserProfile: %v", err)
+	}
+	if profile.Balance != 12.5 || profile.TotalRecharged != 80.25 {
+		t.Fatalf("profile=%+v, want balance=12.5 total_recharged=80.25", profile)
+	}
+}
+
+func TestGetUserDashboardStatsReadsRemoteUsageSummary(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/v1/usage/dashboard/stats" {
+			http.NotFound(w, r)
+			return
+		}
+		writeSub2APIResponse(t, w, map[string]any{
+			"total_requests":              4,
+			"total_input_tokens":          100,
+			"total_cache_read_tokens":     40,
+			"total_cache_creation_tokens": 10,
+			"total_tokens":                150,
+			"total_actual_cost":           2.5,
+			"today_requests":              1,
+			"today_actual_cost":           0.5,
+			"average_duration_ms":         321.5,
+		})
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL, "", "")
+	client.Token = "access"
+	stats, err := client.GetUserDashboardStats(context.Background())
+	if err != nil {
+		t.Fatalf("GetUserDashboardStats: %v", err)
+	}
+	if stats.TotalRequests != 4 || stats.TotalCacheReadTokens != 40 || stats.AverageDurationMS != 321.5 {
+		t.Fatalf("stats=%+v", stats)
+	}
+}
+
+func TestGetAPIKeysUsageReadsBatchStats(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/v1/usage/dashboard/api-keys-usage" || r.Method != http.MethodPost {
+			t.Fatalf("request=%s %s", r.Method, r.URL.Path)
+		}
+		var payload struct {
+			APIKeyIDs []int64 `json:"api_key_ids"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			t.Fatalf("decode payload: %v", err)
+		}
+		if len(payload.APIKeyIDs) != 2 || payload.APIKeyIDs[0] != 11 || payload.APIKeyIDs[1] != 12 {
+			t.Fatalf("api_key_ids=%v", payload.APIKeyIDs)
+		}
+		writeSub2APIResponse(t, w, map[string]any{"stats": map[string]any{
+			"11": map[string]any{"today_actual_cost": 1.25, "total_actual_cost": 9.5},
+			"12": map[string]any{"today_actual_cost": 0.5, "total_actual_cost": 4.25},
+		}})
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL, "", "")
+	client.Token = "access"
+	stats, err := client.GetAPIKeysUsage(context.Background(), []int64{11, 12, 11})
+	if err != nil {
+		t.Fatalf("GetAPIKeysUsage: %v", err)
+	}
+	if stats[11].TotalActualCost != 9.5 || stats[11].TodayActualCost != 1.25 || stats[12].TotalActualCost != 4.25 {
+		t.Fatalf("stats=%+v", stats)
+	}
+}
+
+func TestGetUserDashboardTrendReadsHourlyPoints(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/v1/usage/dashboard/trend" {
+			http.NotFound(w, r)
+			return
+		}
+		if got := r.URL.Query().Get("granularity"); got != "hour" {
+			t.Fatalf("granularity=%q, want hour", got)
+		}
+		if got := r.URL.Query().Get("start_date"); got != "2026-08-28" {
+			t.Fatalf("start_date=%q, want 2026-08-28", got)
+		}
+		if got := r.URL.Query().Get("end_date"); got != "2026-08-29" {
+			t.Fatalf("end_date=%q, want 2026-08-29", got)
+		}
+		writeSub2APIResponse(t, w, map[string]any{
+			"trend": []map[string]any{
+				{"date": "2026-08-29 19:00", "input_tokens": 100, "cache_creation_tokens": 20, "cache_read_tokens": 30},
+				{"date": "2026-08-29 20:00", "input_tokens": 100, "cache_creation_tokens": 10, "cache_read_tokens": 40},
+			},
+		})
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL, "", "")
+	client.Token = "access"
+	trend, err := client.GetUserDashboardTrend(context.Background(), "2026-08-28", "2026-08-29", "hour")
+	if err != nil {
+		t.Fatalf("GetUserDashboardTrend: %v", err)
+	}
+	if len(trend) != 2 || trend[1].Date != "2026-08-29 20:00" || trend[1].CacheReadTokens != 40 {
+		t.Fatalf("trend=%+v", trend)
+	}
+}
+
+func TestGetUserFundingSummaryReadsOrderAndRedeemTotals(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/v1/payment/funding-summary" {
+			http.NotFound(w, r)
+			return
+		}
+		writeSub2APIResponse(t, w, map[string]any{
+			"order_recharged":  800,
+			"redeem_recharged": 75,
+			"total_recharged":  875,
+		})
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL, "", "")
+	client.Token = "access"
+	summary, err := client.GetUserFundingSummary(context.Background())
+	if err != nil {
+		t.Fatalf("GetUserFundingSummary: %v", err)
+	}
+	if summary.OrderRecharged != 800 || summary.RedeemRecharged != 75 || summary.TotalRecharged != 875 {
+		t.Fatalf("summary=%+v", summary)
+	}
+}
+
+func TestGetUserFundingSummaryWithFallbackRecoversLegacyOrders(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v1/payment/funding-summary" {
+			http.NotFound(w, r)
+			return
+		}
+		if r.URL.Path != "/api/v1/payment/orders/my" {
+			if r.URL.Path == "/api/v1/redeem/history" {
+				writeSub2APIResponse(t, w, []map[string]any{
+					{"value": 800, "type": "balance", "status": "used"},
+					{"value": 75, "type": "admin_balance", "status": "used"},
+				})
+				return
+			}
+			http.NotFound(w, r)
+			return
+		}
+		if got := r.URL.Query().Get("order_type"); got != "balance" {
+			t.Fatalf("order_type=%q, want balance", got)
+		}
+		writeSub2APIResponse(t, w, map[string]any{
+			"items": []map[string]any{
+				{"amount": 800, "status": "COMPLETED", "order_type": "balance"},
+				{"amount": 12, "status": "PENDING", "order_type": "balance"},
+				{"amount": 100, "status": "REFUNDED", "refund_amount": 100, "order_type": "balance"},
+			},
+			"total":     3,
+			"page":      1,
+			"page_size": 1000,
+			"pages":     1,
+		})
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL, "", "")
+	client.Token = "access"
+	summary, source, err := client.GetUserFundingSummaryWithFallback(context.Background(), 75)
+	if err != nil {
+		t.Fatalf("GetUserFundingSummaryWithFallback: %v", err)
+	}
+	if source != "orders_plus_profile" {
+		t.Fatalf("source=%q, want orders_plus_profile", source)
+	}
+	if summary.OrderRecharged != 800 || summary.RedeemRecharged != 75 || summary.TotalRecharged != 875 {
+		t.Fatalf("summary=%+v, want order=800 redeem=75 total=875", summary)
+	}
+
+	// If the legacy profile total was never maintained, redemption history
+	// still recovers standalone admin/balance credits without double-counting
+	// the order-generated redemption mirror.
+	summary, source, err = client.GetUserFundingSummaryWithFallback(context.Background(), 0)
+	if err != nil {
+		t.Fatalf("GetUserFundingSummaryWithFallback (zero profile): %v", err)
+	}
+	if source != "orders_plus_profile" || summary.OrderRecharged != 800 || summary.RedeemRecharged != 75 || summary.TotalRecharged != 875 {
+		t.Fatalf("zero profile summary=%+v, source=%q", summary, source)
+	}
+
+	// A newer profile already includes its paid orders; the same fallback must
+	// not add the order subtotal for a second time.
+	summary, source, err = client.GetUserFundingSummaryWithFallback(context.Background(), 875)
+	if err != nil {
+		t.Fatalf("GetUserFundingSummaryWithFallback (combined profile): %v", err)
+	}
+	if source != "orders_plus_profile" || summary.OrderRecharged != 800 || summary.RedeemRecharged != 75 || summary.TotalRecharged != 875 {
+		t.Fatalf("combined profile summary=%+v, source=%q", summary, source)
+	}
+}
+
 func TestGetGroupRatesNormalizesNullAndReadsStringKeys(t *testing.T) {
 	responses := []string{
 		`{"code":0,"data":{"7":0.35,"9":1.2}}`,

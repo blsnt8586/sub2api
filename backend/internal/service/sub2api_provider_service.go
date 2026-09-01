@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"math"
 	"sort"
 	"strconv"
 	"strings"
@@ -19,12 +20,13 @@ import (
 )
 
 var (
-	ErrProviderNotFound       = infraerrors.NotFound("PROVIDER_NOT_FOUND", "provider not found")
-	ErrProviderExists         = infraerrors.Conflict("PROVIDER_EXISTS", "provider with same base_url and email already exists")
-	ErrInvalidProviderType    = infraerrors.BadRequest("INVALID_PROVIDER_TYPE", "unsupported provider type")
-	ErrInvalidProviderAuth    = infraerrors.BadRequest("INVALID_PROVIDER_AUTH", "invalid provider authentication configuration")
-	ErrInvalidProviderBaseURL = infraerrors.BadRequest("INVALID_PROVIDER_BASE_URL", "enter the Sub2API site root, not a page or API path")
-	ErrInvalidProviderProxy   = infraerrors.BadRequest("INVALID_PROVIDER_PROXY", "provider proxy must be active and not expired")
+	ErrProviderNotFound           = infraerrors.NotFound("PROVIDER_NOT_FOUND", "provider not found")
+	ErrProviderExists             = infraerrors.Conflict("PROVIDER_EXISTS", "provider with same base_url and email already exists")
+	ErrInvalidProviderType        = infraerrors.BadRequest("INVALID_PROVIDER_TYPE", "unsupported provider type")
+	ErrInvalidProviderAuth        = infraerrors.BadRequest("INVALID_PROVIDER_AUTH", "invalid provider authentication configuration")
+	ErrInvalidProviderBaseURL     = infraerrors.BadRequest("INVALID_PROVIDER_BASE_URL", "enter the Sub2API site root, not a page or API path")
+	ErrInvalidProviderProxy       = infraerrors.BadRequest("INVALID_PROVIDER_PROXY", "provider proxy must be active and not expired")
+	ErrInvalidProviderCostDivisor = infraerrors.BadRequest("INVALID_PROVIDER_COST_DIVISOR", "remote cost divisor must be greater than zero")
 )
 
 // Sub2APIProviderRepository 定义 Provider 数据访问接口
@@ -52,23 +54,40 @@ type Sub2APIProviderRemoteOverviewCache interface {
 	StoreFailure(ctx context.Context, providerID int64, source string, attemptedAt time.Time, errorMessage string) error
 }
 
+// ProviderAccountRevenue is the immutable customer charge total recorded for
+// a linked local account. It is kept separate from the remote API-key cost
+// projection because the two systems may use different billing multipliers.
+type ProviderAccountRevenue struct {
+	AccountID       int64
+	TodayActualCost float64
+	TotalActualCost float64
+}
+
+// ProviderAccountRevenueReader is an optional UsageLogRepository capability.
+// Keeping it narrow avoids expanding the large repository interface and keeps
+// older test doubles/source-compatible.
+type ProviderAccountRevenueReader interface {
+	GetProviderAccountRevenue(context.Context, []int64, time.Time, time.Time) (map[int64]ProviderAccountRevenue, error)
+}
+
 type Sub2APIProviderProxyRepository interface {
 	GetByID(ctx context.Context, id int64) (*Proxy, error)
 }
 
 // Repository Input/Filter Types
 type CreateSub2APIProviderInput struct {
-	Name         string
-	BaseURL      string
-	ProviderType string
-	Email        string
-	Password     string
-	AuthMode     string
-	AccessToken  *string
-	RefreshToken *string
-	TokenExpires *time.Time
-	Notes        *string
-	ProxyID      *int64
+	Name              string
+	BaseURL           string
+	ProviderType      string
+	Email             string
+	Password          string
+	AuthMode          string
+	AccessToken       *string
+	RefreshToken      *string
+	TokenExpires      *time.Time
+	Notes             *string
+	ProxyID           *int64
+	RemoteCostDivisor float64
 }
 
 // OptionalProviderProxyID preserves update semantics: Set=false keeps the
@@ -92,6 +111,7 @@ type UpdateSub2APIProviderInput struct {
 	Status                *string
 	Notes                 *string
 	ProxyID               OptionalProviderProxyID
+	RemoteCostDivisor     *float64
 }
 
 type Sub2APIProviderFilters struct {
@@ -107,6 +127,7 @@ type Sub2APIProviderService struct {
 	tokenCache                 *sub2api.TokenCache // 复用各上游的登录 token，避免每次重新登录
 	encryptor                  ProviderTokenEncryptor
 	remoteOverviewCache        Sub2APIProviderRemoteOverviewCache
+	usageRepo                  UsageLogRepository
 	operationGate              *Sub2APIProviderOperationGate
 	providerTokenKeyConfigured bool
 }
@@ -116,6 +137,15 @@ func NewSub2APIProviderService(repo Sub2APIProviderRepository, accountRepo Sub2A
 	return &Sub2APIProviderService{
 		repo: repo, accountRepo: accountRepo, proxyRepo: proxyRepo, tokenCache: tokenCache, encryptor: encryptor, remoteOverviewCache: remoteOverviewCache, operationGate: operationGate,
 		providerTokenKeyConfigured: encryptor != nil && cfg != nil && strings.TrimSpace(cfg.Security.ProviderTokenKey) != "",
+	}
+}
+
+// SetUsageLogRepository wires the optional local revenue reader used by the
+// Provider profit snapshot. Provider health and remote asset collection do not
+// depend on this capability.
+func (s *Sub2APIProviderService) SetUsageLogRepository(repo UsageLogRepository) {
+	if s != nil {
+		s.usageRepo = repo
 	}
 }
 
@@ -269,20 +299,25 @@ func (s *Sub2APIProviderService) CreateProvider(ctx context.Context, input *Crea
 	if err := s.validateProviderProxy(ctx, input.ProxyID); err != nil {
 		return nil, err
 	}
+	costDivisor, err := normalizeRemoteCostDivisor(input.RemoteCostDivisor)
+	if err != nil {
+		return nil, err
+	}
 
 	// 调用 Repository
 	provider, err := s.repo.Create(ctx, &CreateSub2APIProviderInput{
-		Name:         input.Name,
-		BaseURL:      baseURL,
-		ProviderType: providerType,
-		Email:        input.Email,
-		Password:     input.Password, // 兼容旧 password 模式
-		AuthMode:     auth.mode,
-		AccessToken:  auth.accessEncrypted,
-		RefreshToken: auth.refreshEncrypted,
-		TokenExpires: auth.expiresAt,
-		Notes:        input.Notes,
-		ProxyID:      input.ProxyID,
+		Name:              input.Name,
+		BaseURL:           baseURL,
+		ProviderType:      providerType,
+		Email:             input.Email,
+		Password:          input.Password, // 兼容旧 password 模式
+		AuthMode:          auth.mode,
+		AccessToken:       auth.accessEncrypted,
+		RefreshToken:      auth.refreshEncrypted,
+		TokenExpires:      auth.expiresAt,
+		Notes:             input.Notes,
+		ProxyID:           input.ProxyID,
+		RemoteCostDivisor: costDivisor,
 	})
 
 	if err != nil {
@@ -410,6 +445,9 @@ func (s *Sub2APIProviderService) UpdateProvider(ctx context.Context, id int64, i
 		}
 		return nil, err
 	}
+	if _, err := normalizeRemoteCostDivisor(input.RemoteCostDivisor); err != nil {
+		return nil, err
+	}
 
 	authUpdate, err := s.prepareUpdateProviderAuth(existing, input)
 	if err != nil {
@@ -443,6 +481,7 @@ func (s *Sub2APIProviderService) UpdateProvider(ctx context.Context, id int64, i
 		Status:                input.Status,
 		Notes:                 input.Notes,
 		ProxyID:               input.ProxyID,
+		RemoteCostDivisor:     input.RemoteCostDivisor,
 	})
 
 	if err != nil {
@@ -486,6 +525,23 @@ func (s *Sub2APIProviderService) validateProviderProxy(ctx context.Context, prox
 		return ErrInvalidProviderProxy
 	}
 	return nil
+}
+
+func normalizeRemoteCostDivisor(value *float64) (float64, error) {
+	if value == nil {
+		return 1, nil
+	}
+	if math.IsNaN(*value) || math.IsInf(*value, 0) || *value <= 0 {
+		return 0, ErrInvalidProviderCostDivisor
+	}
+	return *value, nil
+}
+
+func effectiveRemoteCostDivisor(value float64) float64 {
+	if math.IsNaN(value) || math.IsInf(value, 0) || value <= 0 {
+		return 1
+	}
+	return value
 }
 
 func (s *Sub2APIProviderService) prepareUpdateProviderAuth(existing *ent.Sub2APIProvider, input *UpdateProviderInput) (*UpdateSub2APIProviderInput, error) {
@@ -598,6 +654,7 @@ func providerFromEnt(e *ent.Sub2APIProvider) *Provider {
 		BaseURL:              e.BaseURL,
 		ProviderType:         e.ProviderType,
 		Status:               e.Status,
+		RemoteCostDivisor:    effectiveRemoteCostDivisor(e.RemoteCostDivisor),
 		Notes:                e.Notes,
 		ProxyID:              e.ProxyID,
 		ProxyName:            providerProxyName(e),
@@ -645,6 +702,7 @@ type Provider struct {
 	BaseURL              string  `json:"base_url"`
 	ProviderType         string  `json:"provider_type"`
 	Status               string  `json:"status"`
+	RemoteCostDivisor    float64 `json:"remote_cost_divisor"`
 	Notes                *string `json:"notes,omitempty"`
 	ProxyID              *int64  `json:"proxy_id"`
 	ProxyName            *string `json:"proxy_name,omitempty"`
@@ -674,30 +732,32 @@ type ProviderWithAccounts struct {
 
 // CreateProviderInput 创建 Provider 的输入
 type CreateProviderInput struct {
-	Name         string  `json:"name"`
-	BaseURL      string  `json:"base_url"`
-	ProviderType string  `json:"provider_type,omitempty"`
-	Email        string  `json:"email"`
-	Password     string  `json:"password"`
-	AuthMode     string  `json:"auth_mode,omitempty"`
-	AccessToken  *string `json:"access_token,omitempty"`
-	RefreshToken *string `json:"refresh_token,omitempty"`
-	Notes        *string `json:"notes,omitempty"`
-	ProxyID      *int64  `json:"proxy_id,omitempty"`
+	Name              string   `json:"name"`
+	BaseURL           string   `json:"base_url"`
+	ProviderType      string   `json:"provider_type,omitempty"`
+	Email             string   `json:"email"`
+	Password          string   `json:"password"`
+	AuthMode          string   `json:"auth_mode,omitempty"`
+	AccessToken       *string  `json:"access_token,omitempty"`
+	RefreshToken      *string  `json:"refresh_token,omitempty"`
+	Notes             *string  `json:"notes,omitempty"`
+	ProxyID           *int64   `json:"proxy_id,omitempty"`
+	RemoteCostDivisor *float64 `json:"remote_cost_divisor,omitempty"`
 }
 
 // UpdateProviderInput 更新 Provider 的输入
 type UpdateProviderInput struct {
-	Name         *string                 `json:"name,omitempty"`
-	BaseURL      *string                 `json:"base_url,omitempty"`
-	Email        *string                 `json:"email,omitempty"`
-	Password     *string                 `json:"password,omitempty"`
-	AuthMode     *string                 `json:"auth_mode,omitempty"`
-	AccessToken  *string                 `json:"access_token,omitempty"`
-	RefreshToken *string                 `json:"refresh_token,omitempty"`
-	Status       *string                 `json:"status,omitempty"`
-	Notes        *string                 `json:"notes,omitempty"`
-	ProxyID      OptionalProviderProxyID `json:"-"`
+	Name              *string                 `json:"name,omitempty"`
+	BaseURL           *string                 `json:"base_url,omitempty"`
+	Email             *string                 `json:"email,omitempty"`
+	Password          *string                 `json:"password,omitempty"`
+	AuthMode          *string                 `json:"auth_mode,omitempty"`
+	AccessToken       *string                 `json:"access_token,omitempty"`
+	RefreshToken      *string                 `json:"refresh_token,omitempty"`
+	Status            *string                 `json:"status,omitempty"`
+	Notes             *string                 `json:"notes,omitempty"`
+	ProxyID           OptionalProviderProxyID `json:"-"`
+	RemoteCostDivisor *float64                `json:"remote_cost_divisor,omitempty"`
 }
 
 // DetectAndUpdateAPIPaths 探测并更新 API 路径
@@ -801,10 +861,11 @@ type Sub2APIProviderRemoteGroupRate struct {
 	HasCustomRate       bool    `json:"has_custom_rate"`
 }
 
-// Sub2APIProviderRemoteOverview is a live, non-persisted snapshot of the
-// Provider account's wallet and visible group rates. It deliberately remains
-// separate from account route probes: this is control-plane commercial data,
-// not evidence that an individual model route can serve traffic.
+// Sub2APIProviderRemoteOverview is the latest control-plane snapshot of the
+// Provider account's wallet, usage, remote rates, and optional account profit.
+// It deliberately remains separate from account route probes: this is
+// commercial data, not evidence that an individual model route can serve
+// traffic.
 type Sub2APIProviderRemoteOverview struct {
 	ProviderID             int64                            `json:"provider_id"`
 	Available              bool                             `json:"available"`
@@ -817,6 +878,81 @@ type Sub2APIProviderRemoteOverview struct {
 	LastAttemptSource      string                           `json:"last_attempt_source"`
 	LastError              *string                          `json:"last_error,omitempty"`
 	LastErrorAt            *time.Time                       `json:"last_error_at,omitempty"`
+	Usage                  *Sub2APIProviderRemoteUsageStats `json:"usage,omitempty"`
+	Profit                 *Sub2APIProviderProfitSummary    `json:"profit,omitempty"`
+}
+
+// Sub2APIProviderProfitSummary compares local customer charges with the
+// corresponding remote API-key actual cost for today and the rolling 30-day
+// window. Values are snapshots sampled together with the remote overview.
+type Sub2APIProviderProfitSummary struct {
+	Available        bool                           `json:"available"`
+	RangeStart       time.Time                      `json:"range_start"`
+	RangeEnd         time.Time                      `json:"range_end"`
+	SampledAt        time.Time                      `json:"sampled_at"`
+	TotalRevenue     float64                        `json:"total_revenue"`
+	TotalRemoteCost  float64                        `json:"total_remote_cost"`
+	TotalGrossProfit float64                        `json:"total_gross_profit"`
+	TotalGrossMargin float64                        `json:"total_gross_margin"`
+	TodayRevenue     float64                        `json:"today_revenue"`
+	TodayRemoteCost  float64                        `json:"today_remote_cost"`
+	TodayGrossProfit float64                        `json:"today_gross_profit"`
+	TodayGrossMargin float64                        `json:"today_gross_margin"`
+	Accounts         []Sub2APIProviderAccountProfit `json:"accounts"`
+	Error            *string                        `json:"error,omitempty"`
+}
+
+type Sub2APIProviderAccountProfit struct {
+	AccountID           int64   `json:"account_id"`
+	AccountName         string  `json:"account_name"`
+	ProviderAPIKeyID    *int64  `json:"provider_api_key_id,omitempty"`
+	Revenue             float64 `json:"revenue"`
+	RemoteCost          float64 `json:"remote_cost"`
+	GrossProfit         float64 `json:"gross_profit"`
+	GrossMargin         float64 `json:"gross_margin"`
+	TodayRevenue        float64 `json:"today_revenue"`
+	TodayRemoteCost     float64 `json:"today_remote_cost"`
+	TodayGrossProfit    float64 `json:"today_gross_profit"`
+	TodayGrossMargin    float64 `json:"today_gross_margin"`
+	RemoteCostAvailable bool    `json:"remote_cost_available"`
+	Error               *string `json:"error,omitempty"`
+}
+
+// Sub2APIProviderRemoteUsageStats is the optional user-dashboard projection
+// shown in the Provider card. CacheHitRate is calculated from the newest
+// hourly trend point rather than from a cumulative average.
+type Sub2APIProviderRemoteUsageStats struct {
+	TotalRecharged  float64 `json:"total_recharged"`
+	OrderRecharged  float64 `json:"order_recharged"`
+	RedeemRecharged float64 `json:"redeem_recharged"`
+	// TotalConsumed is derived from lifetime funding minus the current balance;
+	// it intentionally does not use the retention-limited usage dashboard cost.
+	TotalConsumed            float64 `json:"total_consumed"`
+	TotalRequests            int64   `json:"total_requests"`
+	TotalInputTokens         int64   `json:"total_input_tokens"`
+	TotalOutputTokens        int64   `json:"total_output_tokens"`
+	TotalCacheCreationTokens int64   `json:"total_cache_creation_tokens"`
+	TotalCacheReadTokens     int64   `json:"total_cache_read_tokens"`
+	TotalTokens              int64   `json:"total_tokens"`
+	TotalCost                float64 `json:"total_cost"`
+	TotalActualCost          float64 `json:"total_actual_cost"`
+	TodayRequests            int64   `json:"today_requests"`
+	TodayInputTokens         int64   `json:"today_input_tokens"`
+	TodayOutputTokens        int64   `json:"today_output_tokens"`
+	TodayCacheCreationTokens int64   `json:"today_cache_creation_tokens"`
+	TodayCacheReadTokens     int64   `json:"today_cache_read_tokens"`
+	TodayTokens              int64   `json:"today_tokens"`
+	TodayCost                float64 `json:"today_cost"`
+	TodayActualCost          float64 `json:"today_actual_cost"`
+	AverageDurationMS        float64 `json:"average_duration_ms"`
+	CacheHitRate             float64 `json:"cache_hit_rate"`
+	CacheHitRateAvailable    bool    `json:"cache_hit_rate_available"`
+	CacheHitRateError        *string `json:"cache_hit_rate_error,omitempty"`
+	FundingSummaryAvailable  bool    `json:"funding_summary_available"`
+	FundingSummarySource     string  `json:"funding_summary_source"`
+	FundingSummaryError      *string `json:"funding_summary_error,omitempty"`
+	DashboardAvailable       bool    `json:"dashboard_available"`
+	DashboardError           *string `json:"dashboard_error,omitempty"`
 }
 
 const (
@@ -859,7 +995,7 @@ func (s *Sub2APIProviderService) GetRemoteOverview(ctx context.Context, id int64
 			fmt.Sprintf("read remote groups failed: %s", err.Error()),
 		)
 	}
-	overview, err := collectSub2APIProviderRemoteOverview(ctx, id, client, groups, Sub2APIProviderRemoteOverviewSourceManual, attemptedAt)
+	overview, err := collectSub2APIProviderRemoteOverview(ctx, id, client, groups, provider.RemoteCostDivisor, Sub2APIProviderRemoteOverviewSourceManual, attemptedAt)
 	if err != nil {
 		storeRemoteOverviewFailure(ctx, s.remoteOverviewCache, id, Sub2APIProviderRemoteOverviewSourceManual, attemptedAt, err)
 		return nil, infraerrors.ServiceUnavailable(
@@ -867,20 +1003,40 @@ func (s *Sub2APIProviderService) GetRemoteOverview(ctx context.Context, id int64
 			fmt.Sprintf("read remote balance failed: %s", err.Error()),
 		)
 	}
+	if s.accountRepo != nil {
+		accounts, accountsErr := s.accountRepo.ListByProviderID(ctx, id)
+		keysPath := "/api/v1/keys"
+		if provider.APIPathKeys != nil && strings.TrimSpace(*provider.APIPathKeys) != "" {
+			keysPath = strings.TrimSpace(*provider.APIPathKeys)
+		}
+		keys, keysErr := client.GetAPIKeys(ctx, keysPath)
+		if accountsErr != nil {
+			message := fmt.Sprintf("list linked accounts for profit failed: %s", accountsErr)
+			overview.Profit = &Sub2APIProviderProfitSummary{Available: false, SampledAt: attemptedAt, Error: &message}
+		} else {
+			overview.Profit = collectProviderProfitSnapshot(ctx, client, accounts, keys, s.usageRepo, provider.RemoteCostDivisor, attemptedAt)
+			if keysErr != nil && overview.Profit != nil {
+				message := fmt.Sprintf("read remote API key inventory failed: %s", keysErr)
+				overview.Profit.Available = false
+				overview.Profit.Error = &message
+			}
+		}
+	}
 	storeRemoteOverviewSuccess(ctx, s.remoteOverviewCache, overview)
 	return overview, nil
 }
 
-func collectSub2APIProviderRemoteOverview(ctx context.Context, providerID int64, client *sub2api.Client, groups []sub2api.Group, source string, attemptedAt time.Time) (*Sub2APIProviderRemoteOverview, error) {
-	balance, err := client.GetCurrentUserBalance(ctx)
+func collectSub2APIProviderRemoteOverview(ctx context.Context, providerID int64, client *sub2api.Client, groups []sub2api.Group, remoteCostDivisor float64, source string, attemptedAt time.Time) (*Sub2APIProviderRemoteOverview, error) {
+	profile, err := client.GetCurrentUserProfile(ctx)
 	if err != nil {
 		return nil, err
 	}
+	remoteCostDivisor = effectiveRemoteCostDivisor(remoteCostDivisor)
 	rateOverrides, ratesErr := client.GetGroupRates(ctx)
 	result := &Sub2APIProviderRemoteOverview{
 		ProviderID:             providerID,
 		Available:              true,
-		Balance:                balance,
+		Balance:                profile.Balance / remoteCostDivisor,
 		Groups:                 make([]Sub2APIProviderRemoteGroupRate, 0, len(groups)),
 		RateOverridesAvailable: ratesErr == nil,
 		SampledAt:              attemptedAt,
@@ -888,6 +1044,72 @@ func collectSub2APIProviderRemoteOverview(ctx context.Context, providerID int64,
 		LastAttemptedAt:        attemptedAt,
 		LastAttemptSource:      source,
 	}
+	// The dashboard route is optional for older upstreams. Keep the wallet and
+	// group snapshot usable if that route is unavailable, while exposing the
+	// reason so the UI can distinguish "no usage yet" from "not supported".
+	funding, fundingSource, fundingErr := client.GetUserFundingSummaryWithFallback(ctx, profile.TotalRecharged)
+	stats, statsErr := client.GetUserDashboardStats(ctx)
+	now := attemptedAt.In(time.Local)
+	trendStartDate := now.Add(-24 * time.Hour).Format("2006-01-02")
+	trendEndDate := now.Format("2006-01-02")
+	trend, trendErr := client.GetUserDashboardTrend(ctx, trendStartDate, trendEndDate, "hour")
+	usage := &Sub2APIProviderRemoteUsageStats{
+		TotalRecharged:          profile.TotalRecharged / remoteCostDivisor,
+		FundingSummaryAvailable: fundingErr == nil,
+		FundingSummarySource:    fundingSource,
+		DashboardAvailable:      statsErr == nil,
+	}
+	if trendErr != nil {
+		message := trendErr.Error()
+		usage.CacheHitRateError = &message
+	} else if len(trend) > 0 {
+		latest := trend[0]
+		for _, point := range trend[1:] {
+			if point.Date >= latest.Date {
+				latest = point
+			}
+		}
+		usage.CacheHitRateAvailable = true
+		promptTokens := latest.InputTokens + latest.CacheCreationTokens + latest.CacheReadTokens
+		if promptTokens > 0 {
+			usage.CacheHitRate = float64(latest.CacheReadTokens) / float64(promptTokens)
+		}
+	}
+	if fundingErr != nil {
+		message := fundingErr.Error()
+		usage.FundingSummaryError = &message
+		usage.FundingSummarySource = "profile_fallback"
+	} else {
+		usage.TotalRecharged = funding.TotalRecharged / remoteCostDivisor
+		usage.OrderRecharged = funding.OrderRecharged / remoteCostDivisor
+		usage.RedeemRecharged = funding.RedeemRecharged / remoteCostDivisor
+	}
+	if usage.TotalRecharged > result.Balance {
+		usage.TotalConsumed = usage.TotalRecharged - result.Balance
+	}
+	if statsErr != nil {
+		message := statsErr.Error()
+		usage.DashboardError = &message
+	} else {
+		usage.TotalRequests = stats.TotalRequests
+		usage.TotalInputTokens = stats.TotalInputTokens
+		usage.TotalOutputTokens = stats.TotalOutputTokens
+		usage.TotalCacheCreationTokens = stats.TotalCacheCreationTokens
+		usage.TotalCacheReadTokens = stats.TotalCacheReadTokens
+		usage.TotalTokens = stats.TotalTokens
+		usage.TotalCost = stats.TotalCost / remoteCostDivisor
+		usage.TotalActualCost = stats.TotalActualCost / remoteCostDivisor
+		usage.TodayRequests = stats.TodayRequests
+		usage.TodayInputTokens = stats.TodayInputTokens
+		usage.TodayOutputTokens = stats.TodayOutputTokens
+		usage.TodayCacheCreationTokens = stats.TodayCacheCreationTokens
+		usage.TodayCacheReadTokens = stats.TodayCacheReadTokens
+		usage.TodayTokens = stats.TodayTokens
+		usage.TodayCost = stats.TodayCost / remoteCostDivisor
+		usage.TodayActualCost = stats.TodayActualCost / remoteCostDivisor
+		usage.AverageDurationMS = stats.AverageDurationMS
+	}
+	result.Usage = usage
 	for _, group := range groups {
 		effective := group.RateMultiplier
 		override, overridden := rateOverrides[strconv.FormatInt(group.ID, 10)]
@@ -1227,20 +1449,22 @@ func (s *Sub2APIProviderService) UnlinkAccount(
 
 // LinkedAccountInfo 关联账号的详细信息（含远端分组缓存）
 type LinkedAccountInfo struct {
-	ID                     int64    `json:"id"`
-	Name                   string   `json:"name"`
-	Platform               string   `json:"platform"`
-	Status                 string   `json:"status"`
-	ProviderID             int64    `json:"provider_id"`
-	ProviderAPIKeyID       *int64   `json:"provider_api_key_id,omitempty"`
-	RemoteGroupID          *int64   `json:"remote_group_id,omitempty"`
-	RemoteGroupName        *string  `json:"remote_group_name,omitempty"`
-	RemoteGroupMultiplier  *float64 `json:"remote_group_multiplier,omitempty"`
-	RemoteGroupSyncedAt    *string  `json:"remote_group_synced_at,omitempty"`
-	Sub2APIOptimizeEnabled bool     `json:"sub2api_optimize_enabled"`
-	Sub2APIMinMultiplier   *float64 `json:"sub2api_min_multiplier,omitempty"`
-	Sub2APIMaxMultiplier   *float64 `json:"sub2api_max_multiplier,omitempty"`
-	Sub2APITestModel       *string  `json:"sub2api_test_model,omitempty"`
+	ID                      int64    `json:"id"`
+	Name                    string   `json:"name"`
+	Platform                string   `json:"platform"`
+	Status                  string   `json:"status"`
+	ProviderID              int64    `json:"provider_id"`
+	ProviderAPIKeyID        *int64   `json:"provider_api_key_id,omitempty"`
+	RemoteGroupID           *int64   `json:"remote_group_id,omitempty"`
+	RemoteGroupName         *string  `json:"remote_group_name,omitempty"`
+	RemoteGroupMultiplier   *float64 `json:"remote_group_multiplier,omitempty"`
+	RemoteGroupSyncedAt     *string  `json:"remote_group_synced_at,omitempty"`
+	Sub2APIOptimizeEnabled  bool     `json:"sub2api_optimize_enabled"`
+	Sub2APIMinMultiplier    *float64 `json:"sub2api_min_multiplier,omitempty"`
+	Sub2APIMaxMultiplier    *float64 `json:"sub2api_max_multiplier,omitempty"`
+	Sub2APITestModel        *string  `json:"sub2api_test_model,omitempty"`
+	Sub2APIOptimizeGroupID  *int64   `json:"sub2api_optimize_group_id,omitempty"`
+	Sub2APIOptimizeGroupIDs []int64  `json:"sub2api_optimize_group_ids,omitempty"`
 }
 
 // GetLinkedAccounts 返回关联到指定 Provider 的所有账号信息。
@@ -1269,19 +1493,21 @@ func (s *Sub2APIProviderService) GetLinkedAccounts(ctx context.Context, provider
 	for i := range accounts {
 		acc := &accounts[i]
 		info := &LinkedAccountInfo{
-			ID:                     acc.ID,
-			Name:                   acc.Name,
-			Platform:               acc.Platform,
-			Status:                 acc.Status,
-			ProviderID:             providerID,
-			ProviderAPIKeyID:       acc.ProviderAPIKeyID,
-			RemoteGroupID:          acc.RemoteGroupID,
-			RemoteGroupName:        acc.RemoteGroupName,
-			RemoteGroupMultiplier:  acc.RemoteGroupMultiplier,
-			Sub2APIOptimizeEnabled: acc.Sub2APIOptimizeEnabled,
-			Sub2APIMinMultiplier:   acc.Sub2APIMinMultiplier,
-			Sub2APIMaxMultiplier:   acc.Sub2APIMaxMultiplier,
-			Sub2APITestModel:       acc.Sub2APITestModel,
+			ID:                      acc.ID,
+			Name:                    acc.Name,
+			Platform:                acc.Platform,
+			Status:                  acc.Status,
+			ProviderID:              providerID,
+			ProviderAPIKeyID:        acc.ProviderAPIKeyID,
+			RemoteGroupID:           acc.RemoteGroupID,
+			RemoteGroupName:         acc.RemoteGroupName,
+			RemoteGroupMultiplier:   acc.RemoteGroupMultiplier,
+			Sub2APIOptimizeEnabled:  acc.Sub2APIOptimizeEnabled,
+			Sub2APIMinMultiplier:    acc.Sub2APIMinMultiplier,
+			Sub2APIMaxMultiplier:    acc.Sub2APIMaxMultiplier,
+			Sub2APITestModel:        acc.Sub2APITestModel,
+			Sub2APIOptimizeGroupID:  acc.Sub2APIOptimizeGroupID,
+			Sub2APIOptimizeGroupIDs: normalizeSub2APIOptimizeGroupIDs(acc.Sub2APIOptimizeGroupIDs),
 		}
 		if acc.RemoteGroupSyncedAt != nil {
 			t := acc.RemoteGroupSyncedAt.Format("2006-01-02T15:04:05Z07:00")
@@ -1324,11 +1550,17 @@ func (s *Sub2APIProviderService) syncRemoteGroups(ctx context.Context, provider 
 	if provider.APIPathGroups != nil && *provider.APIPathGroups != "" {
 		groupsPath = *provider.APIPathGroups
 	}
-	groupsByID := make(map[int64]sub2api.Group)
+	var groupsByID map[int64]sub2api.Group
 	if groups, groupErr := client.GetGroups(ctx, groupsPath); groupErr == nil {
-		for _, group := range groups {
-			groupsByID[group.ID] = group
+		effectiveRates := make(map[int64]float64)
+		if overrides, ratesErr := client.GetGroupRates(ctx); ratesErr == nil {
+			for _, group := range groups {
+				if rate, ok := overrides[strconv.FormatInt(group.ID, 10)]; ok {
+					effectiveRates[group.ID] = rate
+				}
+			}
 		}
+		groupsByID = indexProviderGroupsWithEffectiveRates(groups, effectiveRates)
 	}
 
 	byKeyID := make(map[int64]providerRemoteGroupInfo, len(remoteKeys))
@@ -1393,14 +1625,23 @@ type providerRemoteGroupInfo struct {
 }
 
 func resolveProviderRemoteKeyGroup(key sub2api.APIKey, groupsByID map[int64]sub2api.Group) (providerRemoteGroupInfo, bool) {
+	groupID := key.GroupID
+	// The embedded group is the authoritative identity when older compatible
+	// upstreams return a conflicting top-level group_id.
 	if key.Group != nil && key.Group.ID > 0 {
-		return providerRemoteGroupInfo{id: key.Group.ID, name: key.Group.Name, multiplier: key.Group.RateMultiplier, complete: true}, true
+		groupID = key.Group.ID
 	}
-	if key.GroupID <= 0 {
+	if groupID <= 0 {
 		return providerRemoteGroupInfo{}, false
 	}
-	if group, ok := groupsByID[key.GroupID]; ok {
+	// Once identity is resolved, prefer the separately fetched group catalog.
+	// Some upstream Key responses embed a stale multiplier; the catalog (plus
+	// user-specific rate override) is authoritative for display and pricing.
+	if group, ok := groupsByID[groupID]; ok {
 		return providerRemoteGroupInfo{id: group.ID, name: group.Name, multiplier: group.RateMultiplier, complete: true}, true
 	}
-	return providerRemoteGroupInfo{id: key.GroupID}, true
+	if key.Group != nil && key.Group.ID == groupID {
+		return providerRemoteGroupInfo{id: key.Group.ID, name: key.Group.Name, multiplier: key.Group.RateMultiplier, complete: true}, true
+	}
+	return providerRemoteGroupInfo{id: groupID}, true
 }

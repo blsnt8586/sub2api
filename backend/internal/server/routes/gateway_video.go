@@ -43,6 +43,8 @@ func registerVideoRoutes(
 	// Grok 走生成接口；即梦 POST /v1/videos 为固定创建接口。[CUSTOM: jimeng 分支]
 	videoGenerationHandler := func(c *gin.Context) {
 		switch getGroupPlatform(c) {
+		case service.PlatformOpenAI:
+			h.OpenAIGateway.OpenAIVideoCreation(c)
 		case service.PlatformGrok, service.PlatformComposite:
 			h.OpenAIGateway.GrokVideoGeneration(c)
 		case service.PlatformCanvas:
@@ -75,6 +77,8 @@ func registerVideoRoutes(
 	// 无法解析目标平台，交给调度器/选号阶段校验容量（与上游一致）。[CUSTOM: jimeng 分支]
 	videoStatusHandler := func(c *gin.Context) {
 		switch getGroupPlatform(c) {
+		case service.PlatformOpenAI:
+			h.OpenAIGateway.OpenAIVideoStatus(c)
 		case service.PlatformGrok, service.PlatformComposite:
 			h.OpenAIGateway.GrokVideoStatus(c)
 		case service.PlatformCanvas:
@@ -89,6 +93,8 @@ func registerVideoRoutes(
 	// 否则某平台会「查得到状态但下不了片」。[CUSTOM: jimeng 分支]
 	videoContentHandler := func(c *gin.Context) {
 		switch getGroupPlatform(c) {
+		case service.PlatformOpenAI:
+			h.OpenAIGateway.OpenAIVideoContent(c)
 		case service.PlatformGrok, service.PlatformComposite:
 			h.OpenAIGateway.GrokVideoContent(c)
 		// Canvas 无独立视频下载接口（视频 URL 已在状态响应里返回）；显式落到 unsupported。[CUSTOM]

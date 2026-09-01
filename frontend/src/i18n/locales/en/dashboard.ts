@@ -337,6 +337,7 @@ export default {
     cacheHit: 'Cache hit',
     cacheCreate: 'Cache create',
     cacheHitRate: 'Cache hit rate',
+    cacheHitRateShort: 'Hit rate',
     inputTokenPrice: 'Input price',
     outputTokenPrice: 'Output price',
     perMillionTokens: '/ 1M tokens',

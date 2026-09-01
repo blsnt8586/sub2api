@@ -1841,6 +1841,10 @@ const (
 	defaultGrokImagineVideo15Price480P  = 0.08
 	defaultGrokImagineVideo15Price720P  = 0.14
 	defaultGrokImagineVideo15Price1080P = 0.25
+	defaultSora2Price720P               = 0.10
+	defaultSora2ProPrice720P            = 0.30
+	defaultSora2ProPrice1024P           = 0.50
+	defaultSora2ProPrice1080P           = 0.70
 
 	// Codex alpha/search 网页搜索单次默认价：OpenAI 官方 web search 定价 $10/1000 次。
 	defaultWebSearchPricePerCall = 0.01
@@ -1985,7 +1989,7 @@ func (s *BillingService) CalculateImageCost(model string, imageSize string, imag
 	}
 }
 
-// CalculateVideoCost 计算视频生成费用（按秒计费，与 xAI 口径一致）。
+// CalculateVideoCost 计算视频生成费用（按秒计费）。
 // model: 请求的模型名称（用于获取默认价格）
 // resolution: 视频分辨率 "480p", "720p", "1080p"
 // videoCount: 生成的视频数量
@@ -1997,7 +2001,11 @@ func (s *BillingService) CalculateVideoCost(model string, resolution string, vid
 		return &CostBreakdown{}
 	}
 	resolution = NormalizeVideoBillingResolutionOrDefault(resolution)
-	durationSeconds = NormalizeVideoBillingDurationSecondsOrDefault(durationSeconds)
+	if isOpenAIVideoBillingModel(model) {
+		durationSeconds = NormalizeOpenAIVideoBillingDuration(durationSeconds)
+	} else {
+		durationSeconds = NormalizeVideoBillingDurationSecondsOrDefault(durationSeconds)
+	}
 
 	perSecondPrice := s.getVideoUnitPrice(model, resolution, groupConfig)
 	totalCost := perSecondPrice * float64(durationSeconds) * float64(videoCount)
@@ -2081,6 +2089,10 @@ func (s *BillingService) getVideoUnitPrice(model string, resolution string, grou
 			if groupConfig.Price720P != nil {
 				return *groupConfig.Price720P
 			}
+		case VideoBillingResolution1024P:
+			if groupConfig.Price1080P != nil {
+				return *groupConfig.Price1080P
+			}
 		case VideoBillingResolution1080P:
 			if groupConfig.Price1080P != nil {
 				return *groupConfig.Price1080P
@@ -2127,12 +2139,37 @@ func (s *BillingService) getDefaultVideoPrice(model string, resolution string) f
 	if price, ok := getDefaultGrokImagineVideoPrice(model, resolution); ok {
 		return price
 	}
+	if price, ok := getDefaultOpenAIVideoPrice(model, resolution); ok {
+		return price
+	}
 
 	// The bundled LiteLLM schema does not expose an output video generation price.
 	// Keep the historical model default as the fallback (interpreted as a per-second
 	// rate; today only Grok models reach video billing, so this path is a safety net),
 	// while letting group-level video prices override it independently from image prices.
 	return s.getDefaultImagePrice(model, ImageBillingSize2K)
+}
+
+func getDefaultOpenAIVideoPrice(model string, resolution string) (float64, bool) {
+	model = strings.ToLower(strings.TrimSpace(model))
+	resolution = NormalizeVideoBillingResolutionOrDefault(resolution)
+	switch {
+	case strings.HasPrefix(model, "sora-2-pro"):
+		switch resolution {
+		case VideoBillingResolution720P:
+			return defaultSora2ProPrice720P, true
+		case VideoBillingResolution1024P:
+			return defaultSora2ProPrice1024P, true
+		case VideoBillingResolution1080P:
+			return defaultSora2ProPrice1080P, true
+		default:
+			return defaultSora2ProPrice720P, true
+		}
+	case strings.HasPrefix(model, "sora-2"):
+		return defaultSora2Price720P, true
+	default:
+		return 0, false
+	}
 }
 
 func getDefaultGrokImagineImagePrice(model string, imageSize string) (float64, bool) {

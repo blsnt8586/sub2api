@@ -1053,7 +1053,12 @@ export default {
         videoPriorityHint: '每个模型单独选按次或按秒，再填对应单价。切换方式会清空已填单价（同一数字在两种方式下相差近一个数量级，避免误收费）。',
         emptyMeansFallback: '留空 = 使用内置默认价，不会按 $0 计费。',
         clearAll: '清空全部模型定价',
-        loadFailed: '加载模型列表失败'
+        loadFailed: '加载模型列表失败',
+        emptyModels: '暂无已同步的 Canvas 模型，请先同步至少一个活跃 Canvas 账号。'
+      },
+      canvasModelPricing: {
+        title: 'Canvas 模型定价',
+        hint: '模型来自活跃 Canvas 账号最近同步的上游列表；每个平台的同名模型分别定价，留空则使用对应默认价。'
       },
       voicePricing: {
         title: 'Grok Voice 定价',

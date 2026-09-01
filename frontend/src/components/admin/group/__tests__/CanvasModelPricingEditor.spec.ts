@@ -47,14 +47,14 @@ function lastEmitted(wrapper: any): ModelPricingConfig | null {
 
 // mock 返回：2 个视频模型 + 2 个图片模型 + 1 个音频模型
 // mount 后：
-//   inputs[0] = veo-3.1 价格, inputs[1] = kling-o3-omni 价格
-//   inputs[2..4] = gpt-image-2 (1k/2k/4k), inputs[5..7] = nano-banana-2 (1k/2k/4k)
-//   selects[0] = veo-3.1 计费方式, selects[1] = kling-o3-omni 计费方式
+//   inputs[0] = leonardo/veo-3.1 价格, inputs[1] = adobe/kling-3.0-omni 价格
+//   inputs[2..4] = leonardo/gpt-image-2 (1k/2k/4k), inputs[5..7] = adobe/gpt-image-2 (1k/2k/4k)
+//   selects[0] = leonardo/veo-3.1 计费方式, selects[1] = adobe/kling-3.0-omni 计费方式
 beforeEach(() => {
   mockGetCanvasPricingModels.mockReset()
   mockGetCanvasPricingModels.mockResolvedValue({
-    video: ['veo-3.1', 'kling-o3-omni'],
-    image: ['gpt-image-2', 'nano-banana-2'],
+    video: ['leonardo/veo-3.1', 'adobe/kling-3.0-omni'],
+    image: ['leonardo/gpt-image-2', 'adobe/gpt-image-2'],
     audio: ['music-v1']
   })
 })
@@ -69,16 +69,24 @@ describe('CanvasModelPricingEditor', () => {
     const wrapper = await mountEditor()
 
     const text = wrapper.text()
-    expect(text).toContain('veo-3.1')
-    expect(text).toContain('kling-o3-omni')
-    expect(text).toContain('gpt-image-2')
+    expect(text).toContain('leonardo/veo-3.1')
+    expect(text).toContain('adobe/kling-3.0-omni')
+    expect(text).toContain('leonardo/gpt-image-2')
+    expect(text).toContain('adobe/gpt-image-2')
     expect(text).not.toContain('music-v1')
+  })
+
+  it('使用 Canvas 专属定价标题，避免和通用逐模型定价混淆', async () => {
+    const wrapper = await mountEditor()
+
+    expect(wrapper.text()).toContain('admin.groups.canvasModelPricing.title')
+    expect(wrapper.text()).not.toContain('admin.groups.modelPricing.title')
   })
 
   it('有定价时回填正确值', async () => {
     const wrapper = await mountEditor({
-      video: { 'veo-3.1': { per_second: 0.02 } },
-      image: { 'gpt-image-2': { '2k': 0.03 } }
+      video: { 'leonardo/veo-3.1': { per_second: 0.02 } },
+      image: { 'leonardo/gpt-image-2': { '2k': 0.03 } }
     })
 
     const values = wrapper.findAll('input').map((i) => (i.element as HTMLInputElement).value)
@@ -91,8 +99,8 @@ describe('CanvasModelPricingEditor', () => {
 
     await wrapper.findAll('input')[0].setValue('0.3')
 
-    expect(lastEmitted(wrapper)).toEqual({ video: { 'veo-3.1': { per_count: 0.3 } } })
-    expect(lastEmitted(wrapper)?.video?.['veo-3.1']).not.toHaveProperty('per_second')
+    expect(lastEmitted(wrapper)).toEqual({ video: { 'leonardo/veo-3.1': { per_count: 0.3 } } })
+    expect(lastEmitted(wrapper)?.video?.['leonardo/veo-3.1']).not.toHaveProperty('per_second')
   })
 
   it('切换到按秒后填入价格只发出 per_second', async () => {
@@ -101,15 +109,15 @@ describe('CanvasModelPricingEditor', () => {
     await wrapper.findAll('select')[0].setValue('per_second')
     await wrapper.findAll('input')[0].setValue('0.02')
 
-    expect(lastEmitted(wrapper)).toEqual({ video: { 'veo-3.1': { per_second: 0.02 } } })
-    expect(lastEmitted(wrapper)?.video?.['veo-3.1']).not.toHaveProperty('per_count')
+    expect(lastEmitted(wrapper)).toEqual({ video: { 'leonardo/veo-3.1': { per_second: 0.02 } } })
+    expect(lastEmitted(wrapper)?.video?.['leonardo/veo-3.1']).not.toHaveProperty('per_count')
   })
 
   it('切换计费方式后已填价格被清空，防止 8 倍误收费', async () => {
     const wrapper = await mountEditor()
 
     await wrapper.findAll('input')[0].setValue('0.3')
-    expect(lastEmitted(wrapper)?.video?.['veo-3.1']).toEqual({ per_count: 0.3 })
+    expect(lastEmitted(wrapper)?.video?.['leonardo/veo-3.1']).toEqual({ per_count: 0.3 })
 
     await wrapper.findAll('select')[0].setValue('per_second')
     expect(lastEmitted(wrapper)).toEqual({})
@@ -119,7 +127,7 @@ describe('CanvasModelPricingEditor', () => {
     const wrapper = await mountEditor()
 
     await wrapper.findAll('input')[0].setValue('0.3')
-    expect(lastEmitted(wrapper)?.video?.['veo-3.1']).toBeDefined()
+    expect(lastEmitted(wrapper)?.video?.['leonardo/veo-3.1']).toBeDefined()
 
     await wrapper.findAll('input')[0].setValue('')
     expect(lastEmitted(wrapper)).toEqual({})
@@ -137,35 +145,48 @@ describe('CanvasModelPricingEditor', () => {
     const wrapper = await mountEditor()
 
     await wrapper.findAll('input')[0].setValue('0')
-    expect(lastEmitted(wrapper)).toEqual({ video: { 'veo-3.1': { per_count: 0 } } })
+    expect(lastEmitted(wrapper)).toEqual({ video: { 'leonardo/veo-3.1': { per_count: 0 } } })
   })
 
   it('不同模型互不干扰', async () => {
     const wrapper = await mountEditor()
 
-    await wrapper.findAll('input')[0].setValue('0.3')  // veo-3.1
-    await wrapper.findAll('input')[1].setValue('0.5')  // kling-o3-omni
+    await wrapper.findAll('input')[0].setValue('0.3')  // leonardo/veo-3.1
+    await wrapper.findAll('input')[1].setValue('0.5')  // adobe/kling-3.0-omni
 
     const payload = lastEmitted(wrapper)
-    expect(payload?.video?.['veo-3.1']).toEqual({ per_count: 0.3 })
-    expect(payload?.video?.['kling-o3-omni']).toEqual({ per_count: 0.5 })
+    expect(payload?.video?.['leonardo/veo-3.1']).toEqual({ per_count: 0.3 })
+    expect(payload?.video?.['adobe/kling-3.0-omni']).toEqual({ per_count: 0.5 })
+  })
+
+  it('相同模型名的不同平台保留独立定价 key', async () => {
+    const wrapper = await mountEditor()
+    const inputs = wrapper.findAll('input')
+
+    await inputs[2].setValue('0.11') // leonardo/gpt-image-2 1k
+    await inputs[5].setValue('0.22') // adobe/gpt-image-2 1k
+
+    expect(lastEmitted(wrapper)?.image).toEqual({
+      'leonardo/gpt-image-2': { '1k': 0.11 },
+      'adobe/gpt-image-2': { '1k': 0.22 }
+    })
   })
 
   it('图像模型按 1K/2K/4K 档位独立定价', async () => {
     const wrapper = await mountEditor()
 
-    // 视频 2 行各 1 个 input → gpt-image-2 从 inputs[2] 开始
+    // 视频 2 行各 1 个 input → leonardo/gpt-image-2 从 inputs[2] 开始
     const inputs = wrapper.findAll('input')
-    await inputs[2].setValue('0.01')  // gpt-image-2 1k
-    await inputs[4].setValue('0.09')  // gpt-image-2 4k（跳过 2k）
+    await inputs[2].setValue('0.01')  // leonardo/gpt-image-2 1k
+    await inputs[4].setValue('0.09')  // leonardo/gpt-image-2 4k（跳过 2k）
 
     const payload = lastEmitted(wrapper)
-    expect(payload?.image?.['gpt-image-2']).toEqual({ '1k': 0.01, '4k': 0.09 })
-    expect(payload?.image?.['gpt-image-2']).not.toHaveProperty('2k')
+    expect(payload?.image?.['leonardo/gpt-image-2']).toEqual({ '1k': 0.01, '4k': 0.09 })
+    expect(payload?.image?.['leonardo/gpt-image-2']).not.toHaveProperty('2k')
   })
 
   it('清空全部按钮发出空配置以清除后端定价', async () => {
-    const wrapper = await mountEditor({ video: { 'veo-3.1': { per_second: 0.02 } } })
+    const wrapper = await mountEditor({ video: { 'leonardo/veo-3.1': { per_second: 0.02 } } })
 
     const clearButton = wrapper
       .findAll('button')
@@ -184,6 +205,14 @@ describe('CanvasModelPricingEditor', () => {
     expect(wrapper.findAll('input')).toHaveLength(0)
   })
 
+  it('没有已同步模型时展示明确空状态', async () => {
+    mockGetCanvasPricingModels.mockResolvedValue({ video: [], image: [], audio: [] })
+    const wrapper = await mountEditor()
+
+    expect(wrapper.text()).toContain('admin.groups.modelPricing.emptyModels')
+    expect(wrapper.findAll('input')).toHaveLength(0)
+  })
+
   // 回归：父级 editForm 是 reactive()，v-model 会把 emit 出的 payload 包成 proxy 再回灌。
   // 若 syncFromProp 不 toRaw 拆包比引用，就会把这次回灌当成「外部换分组」而清空
   // videoModeDraft —— 用户刚选的「按秒」被重置回「按次」。这正是线上报的 bug。
@@ -193,7 +222,7 @@ describe('CanvasModelPricingEditor', () => {
     // 父级回灌空配置。若不 toRaw 拆包比引用，syncFromProp 会清空 videoModeDraft，
     // 而 videoDraft 已空 → videoMode() 无字段可反推 → select 掉回按次。
     const parent = reactive<{ mp: ModelPricingConfig | null }>({
-      mp: { video: { 'veo-3.1': { per_count: 0.2 } } }
+      mp: { video: { 'leonardo/veo-3.1': { per_count: 0.2 } } }
     })
     const wrapper = mount(CanvasModelPricingEditor, {
       props: {

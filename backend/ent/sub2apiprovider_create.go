@@ -111,6 +111,20 @@ func (_c *Sub2APIProviderCreate) SetNillableStatus(v *string) *Sub2APIProviderCr
 	return _c
 }
 
+// SetRemoteCostDivisor sets the "remote_cost_divisor" field.
+func (_c *Sub2APIProviderCreate) SetRemoteCostDivisor(v float64) *Sub2APIProviderCreate {
+	_c.mutation.SetRemoteCostDivisor(v)
+	return _c
+}
+
+// SetNillableRemoteCostDivisor sets the "remote_cost_divisor" field if the given value is not nil.
+func (_c *Sub2APIProviderCreate) SetNillableRemoteCostDivisor(v *float64) *Sub2APIProviderCreate {
+	if v != nil {
+		_c.SetRemoteCostDivisor(*v)
+	}
+	return _c
+}
+
 // SetNotes sets the "notes" field.
 func (_c *Sub2APIProviderCreate) SetNotes(v string) *Sub2APIProviderCreate {
 	_c.mutation.SetNotes(v)
@@ -475,6 +489,10 @@ func (_c *Sub2APIProviderCreate) defaults() error {
 		v := sub2apiprovider.DefaultStatus
 		_c.mutation.SetStatus(v)
 	}
+	if _, ok := _c.mutation.RemoteCostDivisor(); !ok {
+		v := sub2apiprovider.DefaultRemoteCostDivisor
+		_c.mutation.SetRemoteCostDivisor(v)
+	}
 	if _, ok := _c.mutation.PasswordEncrypted(); !ok {
 		v := sub2apiprovider.DefaultPasswordEncrypted
 		_c.mutation.SetPasswordEncrypted(v)
@@ -525,6 +543,9 @@ func (_c *Sub2APIProviderCreate) check() error {
 		if err := sub2apiprovider.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Sub2APIProvider.status": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.RemoteCostDivisor(); !ok {
+		return &ValidationError{Name: "remote_cost_divisor", err: errors.New(`ent: missing required field "Sub2APIProvider.remote_cost_divisor"`)}
 	}
 	if _, ok := _c.mutation.Email(); !ok {
 		return &ValidationError{Name: "email", err: errors.New(`ent: missing required field "Sub2APIProvider.email"`)}
@@ -614,6 +635,10 @@ func (_c *Sub2APIProviderCreate) createSpec() (*Sub2APIProvider, *sqlgraph.Creat
 	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(sub2apiprovider.FieldStatus, field.TypeString, value)
 		_node.Status = value
+	}
+	if value, ok := _c.mutation.RemoteCostDivisor(); ok {
+		_spec.SetField(sub2apiprovider.FieldRemoteCostDivisor, field.TypeFloat64, value)
+		_node.RemoteCostDivisor = value
 	}
 	if value, ok := _c.mutation.Notes(); ok {
 		_spec.SetField(sub2apiprovider.FieldNotes, field.TypeString, value)
@@ -911,6 +936,24 @@ func (u *Sub2APIProviderUpsert) SetStatus(v string) *Sub2APIProviderUpsert {
 // UpdateStatus sets the "status" field to the value that was provided on create.
 func (u *Sub2APIProviderUpsert) UpdateStatus() *Sub2APIProviderUpsert {
 	u.SetExcluded(sub2apiprovider.FieldStatus)
+	return u
+}
+
+// SetRemoteCostDivisor sets the "remote_cost_divisor" field.
+func (u *Sub2APIProviderUpsert) SetRemoteCostDivisor(v float64) *Sub2APIProviderUpsert {
+	u.Set(sub2apiprovider.FieldRemoteCostDivisor, v)
+	return u
+}
+
+// UpdateRemoteCostDivisor sets the "remote_cost_divisor" field to the value that was provided on create.
+func (u *Sub2APIProviderUpsert) UpdateRemoteCostDivisor() *Sub2APIProviderUpsert {
+	u.SetExcluded(sub2apiprovider.FieldRemoteCostDivisor)
+	return u
+}
+
+// AddRemoteCostDivisor adds v to the "remote_cost_divisor" field.
+func (u *Sub2APIProviderUpsert) AddRemoteCostDivisor(v float64) *Sub2APIProviderUpsert {
+	u.Add(sub2apiprovider.FieldRemoteCostDivisor, v)
 	return u
 }
 
@@ -1299,6 +1342,27 @@ func (u *Sub2APIProviderUpsertOne) SetStatus(v string) *Sub2APIProviderUpsertOne
 func (u *Sub2APIProviderUpsertOne) UpdateStatus() *Sub2APIProviderUpsertOne {
 	return u.Update(func(s *Sub2APIProviderUpsert) {
 		s.UpdateStatus()
+	})
+}
+
+// SetRemoteCostDivisor sets the "remote_cost_divisor" field.
+func (u *Sub2APIProviderUpsertOne) SetRemoteCostDivisor(v float64) *Sub2APIProviderUpsertOne {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.SetRemoteCostDivisor(v)
+	})
+}
+
+// AddRemoteCostDivisor adds v to the "remote_cost_divisor" field.
+func (u *Sub2APIProviderUpsertOne) AddRemoteCostDivisor(v float64) *Sub2APIProviderUpsertOne {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.AddRemoteCostDivisor(v)
+	})
+}
+
+// UpdateRemoteCostDivisor sets the "remote_cost_divisor" field to the value that was provided on create.
+func (u *Sub2APIProviderUpsertOne) UpdateRemoteCostDivisor() *Sub2APIProviderUpsertOne {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.UpdateRemoteCostDivisor()
 	})
 }
 
@@ -1895,6 +1959,27 @@ func (u *Sub2APIProviderUpsertBulk) SetStatus(v string) *Sub2APIProviderUpsertBu
 func (u *Sub2APIProviderUpsertBulk) UpdateStatus() *Sub2APIProviderUpsertBulk {
 	return u.Update(func(s *Sub2APIProviderUpsert) {
 		s.UpdateStatus()
+	})
+}
+
+// SetRemoteCostDivisor sets the "remote_cost_divisor" field.
+func (u *Sub2APIProviderUpsertBulk) SetRemoteCostDivisor(v float64) *Sub2APIProviderUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.SetRemoteCostDivisor(v)
+	})
+}
+
+// AddRemoteCostDivisor adds v to the "remote_cost_divisor" field.
+func (u *Sub2APIProviderUpsertBulk) AddRemoteCostDivisor(v float64) *Sub2APIProviderUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.AddRemoteCostDivisor(v)
+	})
+}
+
+// UpdateRemoteCostDivisor sets the "remote_cost_divisor" field to the value that was provided on create.
+func (u *Sub2APIProviderUpsertBulk) UpdateRemoteCostDivisor() *Sub2APIProviderUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderUpsert) {
+		s.UpdateRemoteCostDivisor()
 	})
 }
 

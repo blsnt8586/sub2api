@@ -29,6 +29,8 @@ const (
 	FieldProviderType = "provider_type"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
+	// FieldRemoteCostDivisor holds the string denoting the remote_cost_divisor field in the database.
+	FieldRemoteCostDivisor = "remote_cost_divisor"
 	// FieldNotes holds the string denoting the notes field in the database.
 	FieldNotes = "notes"
 	// FieldProxyID holds the string denoting the proxy_id field in the database.
@@ -136,6 +138,7 @@ var Columns = []string{
 	FieldBaseURL,
 	FieldProviderType,
 	FieldStatus,
+	FieldRemoteCostDivisor,
 	FieldNotes,
 	FieldProxyID,
 	FieldEmail,
@@ -189,6 +192,8 @@ var (
 	DefaultStatus string
 	// StatusValidator is a validator for the "status" field. It is called by the builders before save.
 	StatusValidator func(string) error
+	// DefaultRemoteCostDivisor holds the default value on creation for the "remote_cost_divisor" field.
+	DefaultRemoteCostDivisor float64
 	// EmailValidator is a validator for the "email" field. It is called by the builders before save.
 	EmailValidator func(string) error
 	// DefaultPasswordEncrypted holds the default value on creation for the "password_encrypted" field.
@@ -246,6 +251,11 @@ func ByProviderType(opts ...sql.OrderTermOption) OrderOption {
 // ByStatus orders the results by the status field.
 func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldStatus, opts...).ToFunc()
+}
+
+// ByRemoteCostDivisor orders the results by the remote_cost_divisor field.
+func ByRemoteCostDivisor(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRemoteCostDivisor, opts...).ToFunc()
 }
 
 // ByNotes orders the results by the notes field.

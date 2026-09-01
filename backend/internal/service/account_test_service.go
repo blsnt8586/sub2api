@@ -534,7 +534,7 @@ func (s *AccountTestService) testClaudeAccountConnection(c *gin.Context, account
 	c.Writer.Flush()
 
 	// Create Claude Code style payload (same for all account types)
-	payload, err := createTestPayload(testModelID)
+	payload, err := createAccountTestClaudePayload(ctx, testModelID)
 	if err != nil {
 		return s.sendErrorAndEnd(c, "Failed to create test payload")
 	}
@@ -593,8 +593,7 @@ func (s *AccountTestService) testClaudeAccountConnection(c *gin.Context, account
 			// A successful later probe is authoritative for this account. Mark
 			// request-time 403s as recoverable; administrator status edits clear
 			// this marker and remain protected from automatic recovery.
-			_ = s.accountRepo.UpdateExtra(ctx, account.ID, map[string]any{probeRuntimeRecoverableAccountErrorExtraKey: true})
-			_ = s.accountRepo.SetError(ctx, account.ID, errMsg)
+			_ = setRuntimeRecoverableAccountError(ctx, s.accountRepo, account, errMsg)
 		}
 
 		return s.sendErrorAndEnd(c, errMsg)
@@ -617,7 +616,7 @@ func (s *AccountTestService) testClaudeVertexServiceAccountConnection(c *gin.Con
 	c.Writer.Header().Set("X-Accel-Buffering", "no")
 	c.Writer.Flush()
 
-	payload, err := createTestPayload(testModelID)
+	payload, err := createAccountTestClaudePayload(ctx, testModelID)
 	if err != nil {
 		return s.sendErrorAndEnd(c, "Failed to create test payload")
 	}
@@ -667,8 +666,7 @@ func (s *AccountTestService) testClaudeVertexServiceAccountConnection(c *gin.Con
 			errMsg = sanitized
 		}
 		if resp.StatusCode == http.StatusForbidden && accountTestStatusMutationAllowed(ctx) {
-			_ = s.accountRepo.UpdateExtra(ctx, account.ID, map[string]any{probeRuntimeRecoverableAccountErrorExtraKey: true})
-			_ = s.accountRepo.SetError(ctx, account.ID, errMsg)
+			_ = setRuntimeRecoverableAccountError(ctx, s.accountRepo, account, errMsg)
 		}
 		return s.sendErrorAndEnd(c, errMsg)
 	}
@@ -693,6 +691,10 @@ func (s *AccountTestService) testBedrockAccountConnection(c *gin.Context, ctx co
 	c.Writer.Flush()
 
 	// Create a minimal Bedrock-compatible payload (no stream, no cache_control)
+	testPrompt, maxTokens, probeChallenge := accountProbePromptForModel(ctx, testModelID, "hi")
+	if !probeChallenge {
+		maxTokens = 256
+	}
 	bedrockPayload := map[string]any{
 		"anthropic_version": "bedrock-2023-05-31",
 		"messages": []map[string]any{
@@ -701,12 +703,12 @@ func (s *AccountTestService) testBedrockAccountConnection(c *gin.Context, ctx co
 				"content": []map[string]any{
 					{
 						"type": "text",
-						"text": "hi",
+						"text": testPrompt,
 					},
 				},
 			},
 		},
-		"max_tokens":  256,
+		"max_tokens":  maxTokens,
 		"temperature": 1,
 	}
 	bedrockBody, _ := json.Marshal(bedrockPayload)
@@ -873,7 +875,7 @@ func (s *AccountTestService) testOpenAIAccountConnection(c *gin.Context, account
 	if isOAuth {
 		upstreamTestModelID = normalizeOpenAIModelForUpstream(credentialAccount, testModelID)
 	}
-	payload := createOpenAITestPayload(upstreamTestModelID, isOAuth)
+	payload := createAccountTestOpenAIResponsesPayload(ctx, upstreamTestModelID, isOAuth)
 	payloadBytes, _ := json.Marshal(payload)
 
 	// Send test_start event once. A task-invalid Agent Identity response may
@@ -1242,7 +1244,7 @@ func (s *AccountTestService) testGrokResponsesConnection(c *gin.Context, ctx con
 
 	s.prepareGrokTestSSE(c)
 
-	payloadBytes, err := buildGrokQuotaProbeBody(testModelID)
+	payloadBytes, err := buildAccountTestGrokPayload(ctx, testModelID)
 	if err != nil {
 		return s.sendErrorAndEnd(c, "Failed to create Grok test payload")
 	}
@@ -2121,7 +2123,7 @@ func (s *AccountTestService) testOpenAIChatCompletionsConnection(
 	c.Writer.Header().Set("X-Accel-Buffering", "no")
 	c.Writer.Flush()
 
-	payload := createOpenAIChatCompletionsTestPayload(testModelID, prompt)
+	payload := createAccountTestOpenAIChatPayload(ctx, testModelID, prompt)
 	payloadBytes, _ := json.Marshal(payload)
 
 	s.sendEvent(c, TestEvent{Type: "test_start", Model: testModelID})
@@ -2398,7 +2400,7 @@ func (s *AccountTestService) testGeminiAccountConnection(c *gin.Context, account
 	c.Writer.Flush()
 
 	// Create test payload (Gemini format)
-	payload := createGeminiTestPayload(testModelID, prompt)
+	payload := createAccountTestGeminiPayload(ctx, testModelID, prompt)
 
 	// Build request based on account type
 	var req *http.Request
@@ -3265,7 +3267,16 @@ func (s *AccountTestService) RunTestBackground(ctx context.Context, accountID in
 // RunProbeTestBackground executes the same real account request while keeping
 // persistent status/error ownership with the provider-probe state machine.
 func (s *AccountTestService) RunProbeTestBackground(ctx context.Context, accountID int64, modelID string) (*ScheduledTestResult, error) {
-	return s.runTestBackground(suppressAccountTestStatusMutation(ctx), accountID, modelID)
+	probeCtx, challenge := withAccountProbeChallenge(suppressAccountTestStatusMutation(ctx))
+	result, err := s.runTestBackground(probeCtx, accountID, modelID)
+	if err != nil || result == nil || result.Status != "success" {
+		return result, err
+	}
+	if challengeErr := validateAccountProbeChallenge(challenge, result.ResponseText); challengeErr != nil {
+		result.Status = "failed"
+		result.ErrorMessage = challengeErr.Error()
+	}
+	return result, nil
 }
 
 func (s *AccountTestService) runTestBackground(ctx context.Context, accountID int64, modelID string) (*ScheduledTestResult, error) {

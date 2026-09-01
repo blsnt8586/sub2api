@@ -193,6 +193,114 @@ func TestGatewayModels_GeminiGroupFiltersMappedModelsByPlatform(t *testing.T) {
 	require.Equal(t, []string{"gemini-2.5-flash"}, modelIDsForTest(got.Data))
 }
 
+func TestGatewayModels_CanvasGroupUsesSchedulableAccountMappings(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	groupID := int64(25)
+	h := newGatewayModelsHandlerForTest(
+		&gatewayModelsAccountRepoStub{
+			byGroup: map[int64][]service.Account{
+				groupID: {
+					{
+						ID:       1,
+						Platform: service.PlatformCanvas,
+						Credentials: map[string]any{
+							"model_mapping": map[string]any{
+								"leonardo/gpt-image-2":   "leonardo/gpt-image-2",
+								"leonardo/kling-3-omni":  "leonardo/kling-3-omni",
+								"leonardo/nano-banana-2": "leonardo/nano-banana-2",
+							},
+						},
+					},
+				},
+			},
+		},
+	)
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodGet, "/v1/models", nil)
+	c.Set(string(middleware2.ContextKeyAPIKey), &service.APIKey{
+		Group: &service.Group{ID: groupID, Platform: service.PlatformCanvas},
+	})
+
+	h.Models(c)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+	var got gatewayModelsResponseForTest
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &got))
+	require.Equal(t, []string{
+		"leonardo/gpt-image-2",
+		"leonardo/kling-3-omni",
+		"leonardo/nano-banana-2",
+	}, modelIDsForTest(got.Data))
+	require.NotContains(t, modelIDsForTest(got.Data), "gpt-image-2")
+	require.NotContains(t, modelIDsForTest(got.Data), "claude-sonnet-4-6")
+}
+
+func TestGatewayModels_CanvasGroupDoesNotUseStaticFallback(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	groupID := int64(26)
+	h := newGatewayModelsHandlerForTest(
+		&gatewayModelsAccountRepoStub{
+			byGroup: map[int64][]service.Account{groupID: nil},
+		},
+	)
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodGet, "/v1/models", nil)
+	c.Set(string(middleware2.ContextKeyAPIKey), &service.APIKey{
+		Group: &service.Group{ID: groupID, Platform: service.PlatformCanvas},
+	})
+
+	h.Models(c)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+	var got gatewayModelsResponseForTest
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &got))
+	require.Empty(t, got.Data)
+}
+
+func TestGatewayModels_CanvasGroupPrefersGroupModelCatalog(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	groupID := int64(27)
+	h := newGatewayModelsHandlerForTest(
+		&gatewayModelsAccountRepoStub{
+			byGroup: map[int64][]service.Account{groupID: nil},
+		},
+	)
+	imagePrice := 0.05
+	videoPrice := 0.28
+
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodGet, "/v1/models", nil)
+	c.Set(string(middleware2.ContextKeyAPIKey), &service.APIKey{
+		Group: &service.Group{
+			ID:       groupID,
+			Platform: service.PlatformCanvas,
+			CanvasModelPricing: &service.ModelPricingConfig{
+				Image: map[string]*service.ModelImagePricing{
+					"leonardo/gpt-image-2": {Price1K: &imagePrice},
+				},
+				Video: map[string]*service.ModelVideoPricing{
+					"leonardo/kling-3-omni": {PricePerSecond: &videoPrice},
+				},
+			},
+		},
+	})
+
+	h.Models(c)
+
+	require.Equal(t, http.StatusOK, rec.Code)
+	var got gatewayModelsResponseForTest
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &got))
+	require.Equal(t, []string{"leonardo/gpt-image-2", "leonardo/kling-3-omni"}, modelIDsForTest(got.Data))
+}
+
 func TestGatewayModels_CustomModelsListDisabledKeepsOriginalModels(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 

@@ -140,6 +140,34 @@ const remoteOverview: Sub2APIProviderRemoteOverview = {
   source: 'control_probe',
   last_attempted_at: '2026-08-14T05:30:00Z',
   last_attempt_source: 'control_probe',
+  usage: {
+    total_recharged: 500,
+    order_recharged: 450,
+    redeem_recharged: 50,
+    total_consumed: 491.5,
+    total_requests: 100,
+    total_input_tokens: 10000,
+    total_output_tokens: 2000,
+    total_cache_creation_tokens: 500,
+    total_cache_read_tokens: 1500,
+    total_tokens: 14000,
+    total_cost: 20,
+    total_actual_cost: 18.5,
+    today_requests: 4,
+    today_input_tokens: 400,
+    today_output_tokens: 100,
+    today_cache_creation_tokens: 20,
+    today_cache_read_tokens: 80,
+    today_tokens: 600,
+    today_cost: 1.2,
+    today_actual_cost: 1,
+    average_duration_ms: 1250,
+    cache_hit_rate: 0.501,
+    cache_hit_rate_available: true,
+    funding_summary_available: true,
+    funding_summary_source: 'orders_and_redeems',
+    dashboard_available: true,
+  },
   groups: [
     {
       id: 10,
@@ -175,6 +203,7 @@ describe('Sub2APIProviderCard', () => {
     expect(wrapper.text()).toContain('relative:2026-08-14T05:00:00Z')
     expect(wrapper.text()).toContain('admin.sub2apiProviders.health.availabilityStatus.healthy')
     expect(wrapper.text()).toContain('admin.sub2apiProviders.apiPathStatus.ready')
+    expect(wrapper.text()).not.toContain('admin.sub2apiProviders.accountSyncLabel')
     expect(wrapper.text()).toContain('Codex Account')
     expect(wrapper.text()).toContain('Claude Account')
     expect(wrapper.text()).toContain('openai')
@@ -183,11 +212,14 @@ describe('Sub2APIProviderCard', () => {
     expect(wrapper.text()).toContain('anthropic-test-model')
     expect(wrapper.text()).toContain('×0.4')
     expect(wrapper.text()).toContain('×1')
-    expect(wrapper.get('[data-test="route-multiplier-1"]').classes()).toContain('text-gray-600')
+    expect(wrapper.get('[data-test="route-multiplier-1"]').classes()).toContain('text-emerald-700')
     expect(wrapper.get('[data-test="route-multiplier-1"]').find('svg').exists()).toBe(false)
     expect(wrapper.get('[data-test="route-multiplier-2"]').classes()).toContain('text-red-700')
     expect(wrapper.get('[data-test="route-multiplier-2"]').find('svg').exists()).toBe(true)
     expect(wrapper.get('[data-test="route-multiplier-2"]').attributes('title')).toBe('admin.sub2apiProviders.multiplierRangeAboveDetail')
+    expect(wrapper.get('[data-test="provider-route-probe-1"] .route-platform').classes()).toContain('bg-emerald-100')
+    expect(wrapper.get('[data-test="provider-route-probe-2"] .route-platform').classes()).toContain('bg-orange-100')
+    expect(wrapper.get('[data-test="route-optimize-1"]').attributes('aria-label')).toBe('admin.sub2apiProviders.joinScheduleOn')
     // The legacy fixture still contains 60 fixed slots per account, but only
     // one slot per account is backed by a real probe sample.
     expect(wrapper.findAll('[data-test="route-timeline-bucket"]')).toHaveLength(2)
@@ -196,6 +228,24 @@ describe('Sub2APIProviderCard', () => {
     expect(wrapper.find('[data-test="provider-traffic-status"]').exists()).toBe(false)
     expect(wrapper.find('[data-test="provider-health-timeline"]').exists()).toBe(false)
     expect(wrapper.get('article').classes()).toContain('provider-card')
+  })
+
+  it('renders the upstream host as a safe external navigation button', () => {
+    const wrapper = mount(Sub2APIProviderCard, { props: { provider, overview } })
+    const link = wrapper.get('[data-test="provider-upstream-link"]')
+
+    expect(link.attributes('href')).toBe(provider.base_url + '/')
+    expect(link.attributes('target')).toBe('_blank')
+    expect(link.attributes('rel')).toContain('noopener')
+    expect(link.find('svg').exists()).toBe(true)
+  })
+
+  it('does not create an external link for an invalid provider URL', () => {
+    const wrapper = mount(Sub2APIProviderCard, {
+      props: { provider: { ...provider, base_url: 'javascript:alert(1)' }, overview },
+    })
+
+    expect(wrapper.find('[data-test="provider-upstream-link"]').exists()).toBe(false)
   })
 
   it('opens account-level probe management without exposing a provider-wide run action', async () => {
@@ -218,7 +268,7 @@ describe('Sub2APIProviderCard', () => {
     expect(provider.status).toBe('active')
   })
 
-  it('shows a compact remote balance and rate summary after an explicit read', () => {
+  it('shows the remote usage summary without groups or multiplier range', () => {
     const preciseOverview: Sub2APIProviderRemoteOverview = {
       ...remoteOverview,
       groups: remoteOverview.groups.map((group, index) => index === 0
@@ -229,8 +279,21 @@ describe('Sub2APIProviderCard', () => {
 
     const summary = wrapper.get('[data-test="provider-remote-overview"]')
     expect(summary.text()).toContain('128.5')
-    expect(summary.text()).toContain('2')
-    expect(summary.text()).toContain('×0.035 - ×1')
+    expect(summary.text()).toContain('500.00')
+    expect(summary.text()).toContain('admin.sub2apiProviders.remoteOverview.fundingBreakdown')
+    expect(summary.findAll('[data-test="remote-metric-detail"]')).toHaveLength(1)
+    expect(summary.get('[data-test="remote-metric-total-recharged"]').find('span[title]').attributes('title')).toContain('admin.sub2apiProviders.remoteOverview.fundingBreakdown')
+    expect(summary.text()).toContain('491.50')
+    expect(summary.text()).toContain('4')
+    expect(summary.text()).toContain('1.00')
+    expect(summary.text()).toContain('600')
+    expect(summary.text()).toContain('14.0K')
+    expect(summary.text()).toContain('50.1%')
+    expect(summary.find('[data-test="remote-metric-cache-hit-rate"]').exists()).toBe(true)
+    expect(summary.find('[data-test="remote-metric-average-cache"]').exists()).toBe(false)
+    expect(summary.text()).toContain('1.25s')
+    expect(summary.text()).not.toContain('admin.sub2apiProviders.remoteOverview.groups')
+    expect(summary.text()).not.toContain('admin.sub2apiProviders.remoteOverview.rateRange')
     expect(wrapper.find('[data-test="provider-remote-overview-status"]').exists()).toBe(false)
     expect(summary.attributes('disabled')).toBeUndefined()
   })
@@ -263,7 +326,9 @@ describe('Sub2APIProviderCard', () => {
 
     const summary = wrapper.get('[data-test="provider-remote-overview"]')
     expect(summary.text()).toContain('128.5')
-    expect(summary.text()).toContain('×0.35 - ×1')
+    expect(summary.text()).toContain('500.00')
+    expect(summary.text()).not.toContain('admin.sub2apiProviders.remoteOverview.groups')
+    expect(summary.text()).not.toContain('admin.sub2apiProviders.remoteOverview.rateRange')
     expect(wrapper.find('[data-test="provider-remote-overview-status"]').exists()).toBe(false)
     expect(summary.text()).not.toContain('wallet unavailable')
   })
@@ -297,7 +362,7 @@ describe('Sub2APIProviderCard', () => {
     }
   })
 
-  it('keeps multiplier metadata neutral unless an enabled optimization range is exceeded', () => {
+  it('uses semantic multiplier colors for disabled and unconfigured optimization ranges', () => {
     const disabledOptimization = {
       ...route(3, 'Disabled optimization', 'openai'),
       sub2api_optimize_enabled: false,
@@ -315,7 +380,7 @@ describe('Sub2APIProviderCard', () => {
 
     for (const id of [3, 4]) {
       const badge = wrapper.get(`[data-test="route-multiplier-${id}"]`)
-      expect(badge.classes()).toContain('text-gray-600')
+      expect(badge.classes()).toContain(id === 3 ? 'text-slate-600' : 'text-sky-700')
       expect(badge.find('svg').exists()).toBe(false)
     }
     expect(wrapper.get('[data-test="route-multiplier-3"]').attributes('title')).toBe('admin.sub2apiProviders.multiplierOptimizationDisabled')
@@ -339,7 +404,7 @@ describe('Sub2APIProviderCard', () => {
 
     expect(wrapper.text()).not.toContain('admin.sub2apiProviders.noNotes')
     expect(wrapper.text()).toContain('admin.sub2apiProviders.apiPathStatus.notDetected')
-    expect(wrapper.text()).toContain('admin.sub2apiProviders.syncStatus.never')
+    expect(wrapper.text()).not.toContain('admin.sub2apiProviders.accountSyncLabel')
     expect(wrapper.text()).toContain('admin.sub2apiProviders.health.routes.empty')
     expect(wrapper.get('[data-test="provider-probe-paused"]').exists()).toBe(true)
     expect(wrapper.find('[data-test="provider-control-status"]').exists()).toBe(false)

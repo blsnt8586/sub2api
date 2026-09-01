@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -328,10 +329,76 @@ type Group struct {
 	Status         string  `json:"status"`
 }
 
-// CurrentUserBalance is the wallet balance exposed by the remote Sub2API
-// instance for the authenticated Provider account.
-type CurrentUserBalance struct {
-	Balance float64 `json:"balance"`
+// CurrentUserProfile is the small wallet/profile projection exposed by the
+// remote Sub2API instance for the authenticated Provider account.
+type CurrentUserProfile struct {
+	Balance        float64 `json:"balance"`
+	TotalRecharged float64 `json:"total_recharged"`
+}
+
+// CurrentUserBalance is kept as an alias for callers that only need the wallet
+// value. The profile response also carries the cumulative recharge total.
+type CurrentUserBalance = CurrentUserProfile
+
+// UserDashboardStats mirrors the user-facing usage dashboard fields exposed by
+// the remote Sub2API. It intentionally excludes API-key and live RPM/TPM data;
+// Provider cards only need account usage and cost aggregates.
+type UserDashboardStats struct {
+	TotalRequests            int64   `json:"total_requests"`
+	TotalInputTokens         int64   `json:"total_input_tokens"`
+	TotalOutputTokens        int64   `json:"total_output_tokens"`
+	TotalCacheCreationTokens int64   `json:"total_cache_creation_tokens"`
+	TotalCacheReadTokens     int64   `json:"total_cache_read_tokens"`
+	TotalTokens              int64   `json:"total_tokens"`
+	TotalCost                float64 `json:"total_cost"`
+	TotalActualCost          float64 `json:"total_actual_cost"`
+	TodayRequests            int64   `json:"today_requests"`
+	TodayInputTokens         int64   `json:"today_input_tokens"`
+	TodayOutputTokens        int64   `json:"today_output_tokens"`
+	TodayCacheCreationTokens int64   `json:"today_cache_creation_tokens"`
+	TodayCacheReadTokens     int64   `json:"today_cache_read_tokens"`
+	TodayTokens              int64   `json:"today_tokens"`
+	TodayCost                float64 `json:"today_cost"`
+	TodayActualCost          float64 `json:"today_actual_cost"`
+	AverageDurationMS        float64 `json:"average_duration_ms"`
+}
+
+// UserDashboardTrendPoint mirrors one point from the user Token usage trend.
+// The provider overview only needs token counters to calculate the latest
+// cache-hit ratio; cost and request fields remain available for compatibility.
+type UserDashboardTrendPoint struct {
+	Date                string  `json:"date"`
+	Requests            int64   `json:"requests"`
+	InputTokens         int64   `json:"input_tokens"`
+	OutputTokens        int64   `json:"output_tokens"`
+	CacheCreationTokens int64   `json:"cache_creation_tokens"`
+	CacheReadTokens     int64   `json:"cache_read_tokens"`
+	TotalTokens         int64   `json:"total_tokens"`
+	Cost                float64 `json:"cost"`
+	ActualCost          float64 `json:"actual_cost"`
+}
+
+// UserFundingSummary is the remote account's lifetime balance funding split.
+type UserFundingSummary struct {
+	OrderRecharged  float64 `json:"order_recharged"`
+	RedeemRecharged float64 `json:"redeem_recharged"`
+	TotalRecharged  float64 `json:"total_recharged"`
+}
+
+// APIKeyUsageStats mirrors the remote dashboard's per-key actual-cost
+// projection. The upstream endpoint returns a JSON object keyed by API key ID.
+type APIKeyUsageStats struct {
+	APIKeyID        int64   `json:"api_key_id"`
+	TodayActualCost float64 `json:"today_actual_cost"`
+	TotalActualCost float64 `json:"total_actual_cost"`
+}
+
+type APIKeysUsageResponse struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Data    struct {
+		Stats map[string]APIKeyUsageStats `json:"stats"`
+	} `json:"data"`
 }
 
 // APIKeysResponse API Keys 响应
@@ -357,7 +424,60 @@ type GroupsResponse struct {
 type CurrentUserResponse struct {
 	Code    int                `json:"code"`
 	Message string             `json:"message"`
-	Data    CurrentUserBalance `json:"data"`
+	Data    CurrentUserProfile `json:"data"`
+}
+
+type UserDashboardStatsResponse struct {
+	Code    int                `json:"code"`
+	Message string             `json:"message"`
+	Data    UserDashboardStats `json:"data"`
+}
+
+type UserDashboardTrendResponse struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Data    struct {
+		Trend []UserDashboardTrendPoint `json:"trend"`
+	} `json:"data"`
+}
+
+type UserFundingSummaryResponse struct {
+	Code    int                `json:"code"`
+	Message string             `json:"message"`
+	Data    UserFundingSummary `json:"data"`
+}
+
+// UserBalanceOrder is the compatibility projection returned by the standard
+// "my orders" endpoint on older upstreams that predate /payment/funding-summary.
+type UserBalanceOrder struct {
+	Amount       float64 `json:"amount"`
+	Status       string  `json:"status"`
+	OrderType    string  `json:"order_type"`
+	RefundAmount float64 `json:"refund_amount"`
+}
+
+type UserPaymentOrdersResponse struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Data    struct {
+		Items    []UserBalanceOrder `json:"items"`
+		Total    int64              `json:"total"`
+		Page     int                `json:"page"`
+		PageSize int                `json:"page_size"`
+		Pages    int                `json:"pages"`
+	} `json:"data"`
+}
+
+type UserBalanceRedemption struct {
+	Type   string  `json:"type"`
+	Value  float64 `json:"value"`
+	Status string  `json:"status"`
+}
+
+type UserRedeemHistoryResponse struct {
+	Code    int                     `json:"code"`
+	Message string                  `json:"message"`
+	Data    []UserBalanceRedemption `json:"data"`
 }
 
 // GroupRatesResponse contains user-specific rate overrides keyed by group ID.
@@ -438,14 +558,229 @@ func (c *Client) GetGroups(ctx context.Context, path string) ([]Group, error) {
 // wallet balance. It uses the same refresh-aware authentication path as keys
 // and groups, so imported token pairs are rotated and persisted normally.
 func (c *Client) GetCurrentUserBalance(ctx context.Context) (float64, error) {
+	profile, err := c.GetCurrentUserProfile(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return profile.Balance, nil
+}
+
+// GetCurrentUserProfile reads the authenticated user's wallet profile.
+func (c *Client) GetCurrentUserProfile(ctx context.Context) (CurrentUserProfile, error) {
 	var resp CurrentUserResponse
 	if err := c.makeRequestWithAuth(ctx, http.MethodGet, "/api/v1/auth/me", nil, &resp); err != nil {
-		return 0, fmt.Errorf("get current user balance failed: %w", err)
+		return CurrentUserProfile{}, fmt.Errorf("get current user profile failed: %w", err)
 	}
 	if resp.Code != 0 {
-		return 0, fmt.Errorf("current user response error: code=%d, message=%s", resp.Code, resp.Message)
+		return CurrentUserProfile{}, fmt.Errorf("current user response error: code=%d, message=%s", resp.Code, resp.Message)
 	}
-	return resp.Data.Balance, nil
+	return resp.Data, nil
+}
+
+// GetUserDashboardStats reads cumulative and today's usage aggregates from the
+// remote user dashboard. Older compatible upstreams may not expose this route;
+// callers should treat that error as an optional-metrics miss.
+func (c *Client) GetUserDashboardStats(ctx context.Context) (UserDashboardStats, error) {
+	var resp UserDashboardStatsResponse
+	if err := c.makeRequestWithAuth(ctx, http.MethodGet, "/api/v1/usage/dashboard/stats", nil, &resp); err != nil {
+		return UserDashboardStats{}, fmt.Errorf("get user dashboard stats failed: %w", err)
+	}
+	if resp.Code != 0 {
+		return UserDashboardStats{}, fmt.Errorf("user dashboard stats response error: code=%d, message=%s", resp.Code, resp.Message)
+	}
+	return resp.Data, nil
+}
+
+// GetUserDashboardTrend reads the user Token usage trend for a bounded date
+// range. The endpoint is optional on older upstreams.
+func (c *Client) GetUserDashboardTrend(ctx context.Context, startDate, endDate, granularity string) ([]UserDashboardTrendPoint, error) {
+	u, err := url.Parse("/api/v1/usage/dashboard/trend")
+	if err != nil {
+		return nil, fmt.Errorf("build user dashboard trend path: %w", err)
+	}
+	query := u.Query()
+	if strings.TrimSpace(startDate) != "" {
+		query.Set("start_date", strings.TrimSpace(startDate))
+	}
+	if strings.TrimSpace(endDate) != "" {
+		query.Set("end_date", strings.TrimSpace(endDate))
+	}
+	if strings.TrimSpace(granularity) == "" {
+		granularity = "hour"
+	}
+	query.Set("granularity", strings.TrimSpace(granularity))
+	u.RawQuery = query.Encode()
+
+	var resp UserDashboardTrendResponse
+	if err := c.makeRequestWithAuth(ctx, http.MethodGet, u.String(), nil, &resp); err != nil {
+		return nil, fmt.Errorf("get user dashboard trend failed: %w", err)
+	}
+	if resp.Code != 0 {
+		return nil, fmt.Errorf("user dashboard trend response error: code=%d, message=%s", resp.Code, resp.Message)
+	}
+	if resp.Data.Trend == nil {
+		return []UserDashboardTrendPoint{}, nil
+	}
+	return resp.Data.Trend, nil
+}
+
+// GetAPIKeysUsage reads bounded per-key usage totals from the upstream user
+// dashboard. The upstream contract accepts at most 100 IDs per request.
+func (c *Client) GetAPIKeysUsage(ctx context.Context, apiKeyIDs []int64) (map[int64]APIKeyUsageStats, error) {
+	ids := make([]int64, 0, len(apiKeyIDs))
+	seen := make(map[int64]struct{}, len(apiKeyIDs))
+	for _, id := range apiKeyIDs {
+		if id <= 0 {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		ids = append(ids, id)
+	}
+	if len(ids) == 0 {
+		return map[int64]APIKeyUsageStats{}, nil
+	}
+	if len(ids) > 100 {
+		return nil, fmt.Errorf("too many api key IDs: %d (maximum 100)", len(ids))
+	}
+	var resp APIKeysUsageResponse
+	if err := c.makeRequestWithAuth(ctx, http.MethodPost, "/api/v1/usage/dashboard/api-keys-usage", map[string]any{"api_key_ids": ids}, &resp); err != nil {
+		return nil, fmt.Errorf("get api key usage failed: %w", err)
+	}
+	if resp.Code != 0 {
+		return nil, fmt.Errorf("api key usage response error: code=%d, message=%s", resp.Code, resp.Message)
+	}
+	result := make(map[int64]APIKeyUsageStats, len(resp.Data.Stats))
+	for rawID, stats := range resp.Data.Stats {
+		id, err := strconv.ParseInt(rawID, 10, 64)
+		if err != nil || id <= 0 {
+			continue
+		}
+		stats.APIKeyID = id
+		result[id] = stats
+	}
+	return result, nil
+}
+
+// GetUserFundingSummary reads successful order and standalone redemption
+// funding totals. Older compatible upstreams may not expose this route.
+func (c *Client) GetUserFundingSummary(ctx context.Context) (UserFundingSummary, error) {
+	var resp UserFundingSummaryResponse
+	if err := c.makeRequestWithAuth(ctx, http.MethodGet, "/api/v1/payment/funding-summary", nil, &resp); err != nil {
+		return UserFundingSummary{}, fmt.Errorf("get user funding summary failed: %w", err)
+	}
+	if resp.Code != 0 {
+		return UserFundingSummary{}, fmt.Errorf("user funding summary response error: code=%d, message=%s", resp.Code, resp.Message)
+	}
+	return resp.Data, nil
+}
+
+// GetUserBalanceOrderFunding reads balance-order credits through the stable
+// user order endpoint. It is used only as a fallback for older upstreams that
+// do not expose the precise orders-and-redemptions summary route.
+func (c *Client) GetUserBalanceOrderFunding(ctx context.Context) (float64, error) {
+	const pageSize = 1000
+	var funded float64
+	for page := 1; page <= 100; page++ {
+		path := "/api/v1/payment/orders/my?page=" + strconv.Itoa(page) + "&page_size=" + strconv.Itoa(pageSize) + "&order_type=balance"
+		var resp UserPaymentOrdersResponse
+		if err := c.makeRequestWithAuth(ctx, http.MethodGet, path, nil, &resp); err != nil {
+			return 0, fmt.Errorf("get user balance orders failed: %w", err)
+		}
+		if resp.Code != 0 {
+			return 0, fmt.Errorf("user balance orders response error: code=%d, message=%s", resp.Code, resp.Message)
+		}
+		for _, order := range resp.Data.Items {
+			if !strings.EqualFold(strings.TrimSpace(order.OrderType), "balance") {
+				continue
+			}
+			switch strings.ToUpper(strings.TrimSpace(order.Status)) {
+			case "COMPLETED", "REFUND_REQUESTED", "REFUNDING", "REFUND_PENDING", "REFUND_FAILED", "PARTIALLY_REFUNDED", "REFUNDED":
+				amount := order.Amount
+				if strings.EqualFold(strings.TrimSpace(order.Status), "REFUNDED") || strings.EqualFold(strings.TrimSpace(order.Status), "PARTIALLY_REFUNDED") {
+					amount -= order.RefundAmount
+				}
+				if amount > 0 && !math.IsNaN(amount) && !math.IsInf(amount, 0) {
+					funded += amount
+				}
+			}
+		}
+		items := len(resp.Data.Items)
+		if items == 0 || (resp.Data.Total > 0 && int64(page*pageSize) >= resp.Data.Total) || (resp.Data.Pages > 0 && page >= resp.Data.Pages) || (resp.Data.Total <= 0 && items < pageSize) {
+			break
+		}
+	}
+	return funded, nil
+}
+
+// GetUserBalanceRedemptionFunding reads the legacy user redemption history.
+// The endpoint is intentionally optional; installations with a newer precise
+// funding-summary endpoint never call this compatibility helper.
+func (c *Client) GetUserBalanceRedemptionFunding(ctx context.Context) (float64, error) {
+	var resp UserRedeemHistoryResponse
+	if err := c.makeRequestWithAuth(ctx, http.MethodGet, "/api/v1/redeem/history?limit=1000", nil, &resp); err != nil {
+		return 0, fmt.Errorf("get user redemption history failed: %w", err)
+	}
+	if resp.Code != 0 {
+		return 0, fmt.Errorf("user redemption history response error: code=%d, message=%s", resp.Code, resp.Message)
+	}
+	var funded float64
+	for _, redeem := range resp.Data {
+		if !strings.EqualFold(strings.TrimSpace(redeem.Status), "used") {
+			continue
+		}
+		if !strings.EqualFold(strings.TrimSpace(redeem.Type), "balance") && !strings.EqualFold(strings.TrimSpace(redeem.Type), "admin_balance") {
+			continue
+		}
+		if redeem.Value > 0 && !math.IsNaN(redeem.Value) && !math.IsInf(redeem.Value, 0) {
+			funded += redeem.Value
+		}
+	}
+	return funded, nil
+}
+
+// GetUserFundingSummaryWithFallback keeps the precise endpoint as the source
+// of truth and reconstructs the order subtotal for older upstreams. The
+// profile's total_recharged is normally orders plus redemptions; if an older
+// installation only tracked redemptions, the order subtotal is added back.
+func (c *Client) GetUserFundingSummaryWithFallback(ctx context.Context, profileTotal float64) (UserFundingSummary, string, error) {
+	if summary, err := c.GetUserFundingSummary(ctx); err == nil {
+		return summary, "orders_and_redeems", nil
+	}
+	orderTotal, err := c.GetUserBalanceOrderFunding(ctx)
+	if err != nil {
+		return UserFundingSummary{}, "", err
+	}
+	if math.IsNaN(profileTotal) || math.IsInf(profileTotal, 0) || profileTotal < 0 {
+		profileTotal = 0
+	}
+	historyTotal, _ := c.GetUserBalanceRedemptionFunding(ctx)
+	profileRedeemTotal := profileTotal - orderTotal
+	if profileRedeemTotal < 0 {
+		profileRedeemTotal = 0
+	}
+	historyRedeemTotal := historyTotal - orderTotal
+	if historyRedeemTotal < 0 {
+		historyRedeemTotal = 0
+	}
+	redeemTotal := profileRedeemTotal
+	if historyRedeemTotal > redeemTotal {
+		redeemTotal = historyRedeemTotal
+	}
+	total := orderTotal + redeemTotal
+	if profileTotal > total {
+		// Preserve a newer profile total when the legacy history endpoint is
+		// limited to the most recent entries.
+		total = profileTotal
+		redeemTotal = profileTotal - orderTotal
+	}
+	return UserFundingSummary{
+		OrderRecharged:  orderTotal,
+		RedeemRecharged: redeemTotal,
+		TotalRecharged:  total,
+	}, "orders_plus_profile", nil
 }
 
 // GetGroupRates reads user-specific group multiplier overrides. Callers should

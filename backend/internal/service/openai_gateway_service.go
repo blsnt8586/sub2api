@@ -265,21 +265,26 @@ type OpenAIForwardResult struct {
 	// upstream Responses WebSocket turn. Empty preserves legacy/non-WS success.
 	UpstreamTerminalEvent string
 	ResponseHeaders       http.Header
-	Duration              time.Duration
-	FirstTokenMs          *int
-	ClientDisconnect      bool
-	ImageCount            int
-	ImageSize             string
-	ImageInputSize        string
-	ImageOutputSize       string
-	ImageOutputSizes      []string
-	ImageSizeSource       string
-	ImageSizeBreakdown    map[string]int
-	VideoCount            int
-	CanvasImageCount      int
-	CanvasAudioCount      int
-	VideoResolution       string
-	// VideoDurationSeconds 是提交时请求的生成时长（xAI 按输出秒数计费），已归一化到 1-15 秒。
+	// ResponseBody is populated only for buffered OpenAI video create/status
+	// responses. The handler commits it after task affinity and billing state are stored.
+	ResponseBody        []byte
+	ResponseStatusCode  int
+	ResponseContentType string
+	Duration            time.Duration
+	FirstTokenMs        *int
+	ClientDisconnect    bool
+	ImageCount          int
+	ImageSize           string
+	ImageInputSize      string
+	ImageOutputSize     string
+	ImageOutputSizes    []string
+	ImageSizeSource     string
+	ImageSizeBreakdown  map[string]int
+	VideoCount          int
+	CanvasImageCount    int
+	CanvasAudioCount    int
+	VideoResolution     string
+	// VideoDurationSeconds 是提交时请求的生成时长；Grok 最多 15 秒，OpenAI Sora 最多 20 秒。
 	VideoDurationSeconds int
 	// VideoSeconds 视频时长（秒，来自请求 duration 字段；Canvas canvas 平台使用；0 表示未知，退回按次计费）
 	VideoSeconds int

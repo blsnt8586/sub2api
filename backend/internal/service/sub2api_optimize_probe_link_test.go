@@ -49,9 +49,21 @@ func TestAggressiveProbeCandidatesFilterAndOrderOtherGroups(t *testing.T) {
 		{ID: 13, Platform: "openai", Status: "inactive", RateMultiplier: 0.6},
 		{ID: 14, Platform: "anthropic", Status: "active", RateMultiplier: 0.7},
 		{ID: 15, Platform: "openai", Status: "active", RateMultiplier: 1.4},
-	}, "openai", 10, 0.6, 1.0)
+	}, "openai", 10, 0.6, 1.0, nil)
 	if len(candidates) != 1 || candidates[0].ID != 11 {
 		t.Fatalf("unexpected aggressive candidates: %+v", candidates)
+	}
+}
+
+func TestAggressiveProbeCandidatesHonorsOptionalSelectedGroup(t *testing.T) {
+	selected := int64(12)
+	candidates := aggressiveProbeCandidates([]sub2api.Group{
+		{ID: 11, Platform: "openai", Status: "active", RateMultiplier: 0.7},
+		{ID: 12, Platform: "openai", Status: "active", RateMultiplier: 0.8},
+		{ID: 13, Platform: "anthropic", Status: "active", RateMultiplier: 0.8},
+	}, "openai", 10, 0.5, 1.0, &selected)
+	if len(candidates) != 1 || candidates[0].ID != selected {
+		t.Fatalf("unexpected restricted candidates: %+v", candidates)
 	}
 }
 

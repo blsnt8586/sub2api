@@ -66,6 +66,8 @@ const messages: Record<string, string> = {
 	'usage.upstreamResponseModel': 'Upstream response',
 	'usage.modelVariant': 'Possible version variant',
 	'usage.modelMismatch': 'Different model',
+  'usage.cacheHitRate': 'Cache hit rate',
+  'usage.cacheHitRateShort': 'Hit rate',
 }
 
 vi.mock('vue-i18n', async () => {
@@ -418,6 +420,60 @@ describe('admin UsageTable tooltip', () => {
     expect(text).toContain('Per-image price')
     expect(text).toContain('not recorded')
     expect(text).not.toContain('(2K)')
+  })
+})
+
+describe('admin UsageTable cache hit rate', () => {
+  const tokenRow = {
+    request_id: 'req-cache-hit-rate',
+    model: 'claude-sonnet-4',
+    billing_mode: 'token',
+    input_tokens: 100,
+    output_tokens: 20,
+    cache_creation_tokens: 10,
+    cache_read_tokens: 40,
+  }
+
+  const mountTokenRow = (row: Record<string, unknown>) => mount(UsageTable, {
+    props: {
+      data: [row],
+      loading: false,
+      columns: [],
+    },
+    global: {
+      stubs: {
+        DataTable: DataTableStub,
+        EmptyState: true,
+        Icon: true,
+        Teleport: true,
+      },
+    },
+  })
+
+  it('shows the cache hit rate beside cache token counts', () => {
+    const wrapper = mountTokenRow(tokenRow)
+
+    expect(wrapper.get('[data-test="cache-hit-rate"]').text()).toBe('Hit rate 26.7%')
+  })
+
+  it('does not show a hit rate when the request has no cache tokens', () => {
+    const wrapper = mountTokenRow({
+      ...tokenRow,
+      cache_creation_tokens: 0,
+      cache_read_tokens: 0,
+    })
+
+    expect(wrapper.find('[data-test="cache-hit-rate"]').exists()).toBe(false)
+  })
+
+  it('shows zero percent when cache creation exists but no cache read hit exists', () => {
+    const wrapper = mountTokenRow({
+      ...tokenRow,
+      cache_creation_tokens: 10,
+      cache_read_tokens: 0,
+    })
+
+    expect(wrapper.get('[data-test="cache-hit-rate"]').text()).toBe('Hit rate 0.0%')
   })
 })
 

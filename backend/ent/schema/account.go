@@ -269,6 +269,13 @@ func (Account) Fields() []ent.Field {
 			Nillable().
 			Comment("定时优化测试模型，null 时按平台使用默认模型"),
 
+		// 可选的远程分组限制。null 保持旧行为；设置后，只有该远程分组
+		// 能参与候选，并且仍需满足平台、启用状态以及倍率上下限。
+		field.Int64("sub2api_optimize_group_id").
+			Optional().
+			Nillable().
+			Comment("定时优化指定远程分组 ID，null 表示不限制"),
+
 		field.Int64("parent_account_id").Optional().Nillable().
 			Comment("Parent account id for a linked spark shadow (NULL = normal)."),
 		field.Enum("quota_dimension").Values("global", "spark").Default("global").

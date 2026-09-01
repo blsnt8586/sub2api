@@ -9,6 +9,8 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
+	"errors"
 	"sort"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
@@ -19,6 +21,8 @@ type sub2APIAccountRepository struct {
 	base service.AccountRepository
 	sql  sqlExecutor
 }
+
+var _ service.ProbeManagedAccountStateRepository = (*sub2APIAccountRepository)(nil)
 
 func NewSub2APIAccountRepository(base service.AccountRepository, db *sql.DB) service.Sub2APIAccountRepository {
 	return &sub2APIAccountRepository{base: base, sql: db}
@@ -44,10 +48,25 @@ func (r *sub2APIAccountRepository) UpdateExtra(ctx context.Context, id int64, up
 	return r.base.UpdateExtra(ctx, id, updates)
 }
 
-// These runtime-state methods are intentionally exposed by the Provider
-// adapter so a healthy Provider probe can clear transient request-time blocks
-// without expanding the narrow Sub2APIAccountRepository contract used by all
-// existing test doubles and callers.
+func (r *sub2APIAccountRepository) SetProbeManagedError(ctx context.Context, id int64, message string, groupsExhausted bool, expectedAdminGeneration string) (bool, error) {
+	stateRepo, ok := r.base.(service.ProbeManagedAccountStateRepository)
+	if !ok {
+		return false, errors.New("base account repository does not support atomic probe state")
+	}
+	return stateRepo.SetProbeManagedError(ctx, id, message, groupsExhausted, expectedAdminGeneration)
+}
+
+func (r *sub2APIAccountRepository) RecoverProbeManagedAccount(ctx context.Context, id int64, expectedAdminGeneration string) (bool, error) {
+	stateRepo, ok := r.base.(service.ProbeManagedAccountStateRepository)
+	if !ok {
+		return false, errors.New("base account repository does not support atomic probe state")
+	}
+	return stateRepo.RecoverProbeManagedAccount(ctx, id, expectedAdminGeneration)
+}
+
+// These runtime-state methods remain on the Provider adapter's compatibility
+// surface. Probe recovery deliberately leaves newer rate-limit and temporary
+// scheduling blocks to their owning state machines.
 func (r *sub2APIAccountRepository) ClearTempUnschedulable(ctx context.Context, id int64) error {
 	return r.base.ClearTempUnschedulable(ctx, id)
 }
@@ -65,6 +84,8 @@ func (r *sub2APIAccountRepository) UpdateProviderLink(ctx context.Context, accou
 			     proxy_fallback_origin_id = NULL,
 			     remote_group_id = NULL, remote_group_name = NULL,
 			     remote_group_multiplier = NULL, remote_group_synced_at = NULL,
+			     sub2api_optimize_group_id = NULL,
+			     extra = COALESCE(extra, '{}'::jsonb) - 'sub2api_optimize_group_ids',
 			     updated_at = NOW()
 			 WHERE id = $3 AND deleted_at IS NULL`,
 		providerID, providerAPIKeyID, accountID)
@@ -91,7 +112,8 @@ func (r *sub2APIAccountRepository) ClearProviderLink(ctx context.Context, accoun
 			 SET provider_id = NULL, provider_api_key_id = NULL,
 			     proxy_id = NULL, proxy_fallback_origin_id = NULL,
 			     remote_group_id = NULL, remote_group_name = NULL, remote_group_multiplier = NULL, remote_group_synced_at = NULL,
-		     sub2api_optimize_enabled = FALSE,
+		     sub2api_optimize_enabled = FALSE, sub2api_optimize_group_id = NULL,
+		     extra = COALESCE(extra, '{}'::jsonb) - 'sub2api_optimize_group_ids',
 		     updated_at = NOW()
 		 WHERE id = $1 AND provider_id = $2 AND deleted_at IS NULL`,
 		accountID, providerID)
@@ -217,15 +239,57 @@ func (r *sub2APIAccountRepository) ClearRemoteGroupBinding(ctx context.Context, 
 	return nil
 }
 
-// UpdateSub2APIOptimizeSettings 全量覆盖账号的定时优化配置（是否参与 + 倍率上限 + 测试模型）。
-// enabled 独立控制是否参与定时优化；三项配置在 enabled=false 时允许为空并照常持久化，
-// 便于用户逐项填写或关闭后保留。enabled=true 时由 service 和数据库约束保证三项均非空。
-func (r *sub2APIAccountRepository) UpdateSub2APIOptimizeSettings(ctx context.Context, providerID, accountID int64, enabled bool, minMultiplier, maxMultiplier *float64, testModel *string) error {
+// UpdateSub2APIOptimizeSettings 全量覆盖账号的定时优化配置。
+// enabled=false 时仍保留倍率、模型和可选分组；enabled=true 时由 service
+// 和数据库约束保证三个必填项非空。
+func (r *sub2APIAccountRepository) UpdateSub2APIOptimizeSettings(ctx context.Context, providerID, accountID int64, enabled bool, minMultiplier, maxMultiplier *float64, testModel *string, groupID *int64) error {
 	result, err := r.sql.ExecContext(ctx,
 		`UPDATE accounts
-		 SET sub2api_optimize_enabled = $1, sub2api_min_multiplier = $2, sub2api_max_multiplier = $3, sub2api_test_model = $4, updated_at = NOW()
-		 WHERE id = $5 AND provider_id = $6 AND provider_api_key_id IS NOT NULL AND deleted_at IS NULL`,
-		enabled, minMultiplier, maxMultiplier, testModel, accountID, providerID)
+		 SET sub2api_optimize_enabled = $1, sub2api_min_multiplier = $2, sub2api_max_multiplier = $3,
+		     sub2api_test_model = $4, sub2api_optimize_group_id = $5, updated_at = NOW()
+		 WHERE id = $6 AND provider_id = $7 AND provider_api_key_id IS NOT NULL AND deleted_at IS NULL`,
+		enabled, minMultiplier, maxMultiplier, testModel, groupID, accountID, providerID)
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}
+
+// UpdateSub2APIOptimizeSettingsWithGroupIDs persists the multi-select remote
+// group restriction in account.extra while mirroring the first ID to the
+// legacy scalar column for older readers.
+func (r *sub2APIAccountRepository) UpdateSub2APIOptimizeSettingsWithGroupIDs(ctx context.Context, providerID, accountID int64, enabled bool, minMultiplier, maxMultiplier *float64, testModel *string, groupIDs []int64) error {
+	groupIDs = service.NormalizeSub2APIOptimizeGroupIDsForPersistence(groupIDs)
+	var legacyGroupID *int64
+	if len(groupIDs) > 0 {
+		legacyGroupID = &groupIDs[0]
+	}
+	var encoded any
+	if len(groupIDs) > 0 {
+		data, err := json.Marshal(groupIDs)
+		if err != nil {
+			return err
+		}
+		encoded = string(data)
+	}
+	result, err := r.sql.ExecContext(ctx,
+		`UPDATE accounts
+		 SET sub2api_optimize_enabled = $1, sub2api_min_multiplier = $2, sub2api_max_multiplier = $3,
+		     sub2api_test_model = $4, sub2api_optimize_group_id = $5,
+		     extra = CASE WHEN $8::jsonb IS NULL
+		       THEN COALESCE(extra, '{}'::jsonb) - 'sub2api_optimize_group_ids'
+		       ELSE COALESCE(extra, '{}'::jsonb) || jsonb_build_object('sub2api_optimize_group_ids', $8::jsonb)
+		     END,
+		     updated_at = NOW()
+		 WHERE id = $6 AND provider_id = $7 AND provider_api_key_id IS NOT NULL AND deleted_at IS NULL`,
+		enabled, minMultiplier, maxMultiplier, testModel, legacyGroupID, accountID, providerID, encoded)
 	if err != nil {
 		return err
 	}
@@ -242,10 +306,11 @@ func (r *sub2APIAccountRepository) UpdateSub2APIOptimizeSettings(ctx context.Con
 // ListByProviderID 获取关联到指定 Provider 的所有 Account（含远端分组信息）
 func (r *sub2APIAccountRepository) ListByProviderID(ctx context.Context, providerID int64) ([]service.Account, error) {
 	rows, err := r.sql.QueryContext(ctx, `
-		SELECT id, name, platform, status,
+		SELECT id, name, platform, status, extra,
 		       provider_id, provider_api_key_id, remote_group_id,
 		       remote_group_name, remote_group_multiplier, remote_group_synced_at,
-		       sub2api_optimize_enabled, sub2api_min_multiplier, sub2api_max_multiplier, sub2api_test_model
+		       sub2api_optimize_enabled, sub2api_min_multiplier, sub2api_max_multiplier, sub2api_test_model,
+		       sub2api_optimize_group_id
 		  FROM accounts
 		 WHERE provider_id = $1
 		   AND deleted_at IS NULL
@@ -260,6 +325,7 @@ func (r *sub2APIAccountRepository) ListByProviderID(ctx context.Context, provide
 	for rows.Next() {
 		var a service.Account
 		var provID, keyID, groupID sql.NullInt64
+		var extraJSON []byte
 		var groupName sql.NullString
 		var groupMult sql.NullFloat64
 		var groupSyncedAt sql.NullTime
@@ -267,11 +333,12 @@ func (r *sub2APIAccountRepository) ListByProviderID(ctx context.Context, provide
 		var maxMult sql.NullFloat64
 		var testModel sql.NullString
 		var optimizeEnabled sql.NullBool
+		var optimizeGroupID sql.NullInt64
 		if err := rows.Scan(
-			&a.ID, &a.Name, &a.Platform, &a.Status,
+			&a.ID, &a.Name, &a.Platform, &a.Status, &extraJSON,
 			&provID, &keyID, &groupID,
 			&groupName, &groupMult, &groupSyncedAt,
-			&optimizeEnabled, &minMult, &maxMult, &testModel,
+			&optimizeEnabled, &minMult, &maxMult, &testModel, &optimizeGroupID,
 		); err != nil {
 			return nil, err
 		}
@@ -279,6 +346,10 @@ func (r *sub2APIAccountRepository) ListByProviderID(ctx context.Context, provide
 			v := provID.Int64
 			a.ProviderID = &v
 		}
+		if len(extraJSON) > 0 {
+			_ = json.Unmarshal(extraJSON, &a.Extra)
+		}
+		a.Sub2APIOptimizeGroupIDs = service.ParseSub2APIOptimizeGroupIDs(a.Extra)
 		if keyID.Valid {
 			v := keyID.Int64
 			a.ProviderAPIKeyID = &v
@@ -308,6 +379,10 @@ func (r *sub2APIAccountRepository) ListByProviderID(ctx context.Context, provide
 		}
 		if optimizeEnabled.Valid {
 			a.Sub2APIOptimizeEnabled = optimizeEnabled.Bool
+		}
+		if optimizeGroupID.Valid {
+			v := optimizeGroupID.Int64
+			a.Sub2APIOptimizeGroupID = &v
 		}
 		accounts = append(accounts, a)
 	}

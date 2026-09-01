@@ -533,6 +533,20 @@ func (_c *AccountCreate) SetNillableSub2apiTestModel(v *string) *AccountCreate {
 	return _c
 }
 
+// SetSub2apiOptimizeGroupID sets the "sub2api_optimize_group_id" field.
+func (_c *AccountCreate) SetSub2apiOptimizeGroupID(v int64) *AccountCreate {
+	_c.mutation.SetSub2apiOptimizeGroupID(v)
+	return _c
+}
+
+// SetNillableSub2apiOptimizeGroupID sets the "sub2api_optimize_group_id" field if the given value is not nil.
+func (_c *AccountCreate) SetNillableSub2apiOptimizeGroupID(v *int64) *AccountCreate {
+	if v != nil {
+		_c.SetSub2apiOptimizeGroupID(*v)
+	}
+	return _c
+}
+
 // SetParentAccountID sets the "parent_account_id" field.
 func (_c *AccountCreate) SetParentAccountID(v int64) *AccountCreate {
 	_c.mutation.SetParentAccountID(v)
@@ -1011,6 +1025,10 @@ func (_c *AccountCreate) createSpec() (*Account, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Sub2apiTestModel(); ok {
 		_spec.SetField(account.FieldSub2apiTestModel, field.TypeString, value)
 		_node.Sub2apiTestModel = &value
+	}
+	if value, ok := _c.mutation.Sub2apiOptimizeGroupID(); ok {
+		_spec.SetField(account.FieldSub2apiOptimizeGroupID, field.TypeInt64, value)
+		_node.Sub2apiOptimizeGroupID = &value
 	}
 	if value, ok := _c.mutation.QuotaDimension(); ok {
 		_spec.SetField(account.FieldQuotaDimension, field.TypeEnum, value)
@@ -1850,6 +1868,30 @@ func (u *AccountUpsert) UpdateSub2apiTestModel() *AccountUpsert {
 // ClearSub2apiTestModel clears the value of the "sub2api_test_model" field.
 func (u *AccountUpsert) ClearSub2apiTestModel() *AccountUpsert {
 	u.SetNull(account.FieldSub2apiTestModel)
+	return u
+}
+
+// SetSub2apiOptimizeGroupID sets the "sub2api_optimize_group_id" field.
+func (u *AccountUpsert) SetSub2apiOptimizeGroupID(v int64) *AccountUpsert {
+	u.Set(account.FieldSub2apiOptimizeGroupID, v)
+	return u
+}
+
+// UpdateSub2apiOptimizeGroupID sets the "sub2api_optimize_group_id" field to the value that was provided on create.
+func (u *AccountUpsert) UpdateSub2apiOptimizeGroupID() *AccountUpsert {
+	u.SetExcluded(account.FieldSub2apiOptimizeGroupID)
+	return u
+}
+
+// AddSub2apiOptimizeGroupID adds v to the "sub2api_optimize_group_id" field.
+func (u *AccountUpsert) AddSub2apiOptimizeGroupID(v int64) *AccountUpsert {
+	u.Add(account.FieldSub2apiOptimizeGroupID, v)
+	return u
+}
+
+// ClearSub2apiOptimizeGroupID clears the value of the "sub2api_optimize_group_id" field.
+func (u *AccountUpsert) ClearSub2apiOptimizeGroupID() *AccountUpsert {
+	u.SetNull(account.FieldSub2apiOptimizeGroupID)
 	return u
 }
 
@@ -2702,6 +2744,34 @@ func (u *AccountUpsertOne) UpdateSub2apiTestModel() *AccountUpsertOne {
 func (u *AccountUpsertOne) ClearSub2apiTestModel() *AccountUpsertOne {
 	return u.Update(func(s *AccountUpsert) {
 		s.ClearSub2apiTestModel()
+	})
+}
+
+// SetSub2apiOptimizeGroupID sets the "sub2api_optimize_group_id" field.
+func (u *AccountUpsertOne) SetSub2apiOptimizeGroupID(v int64) *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetSub2apiOptimizeGroupID(v)
+	})
+}
+
+// AddSub2apiOptimizeGroupID adds v to the "sub2api_optimize_group_id" field.
+func (u *AccountUpsertOne) AddSub2apiOptimizeGroupID(v int64) *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.AddSub2apiOptimizeGroupID(v)
+	})
+}
+
+// UpdateSub2apiOptimizeGroupID sets the "sub2api_optimize_group_id" field to the value that was provided on create.
+func (u *AccountUpsertOne) UpdateSub2apiOptimizeGroupID() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateSub2apiOptimizeGroupID()
+	})
+}
+
+// ClearSub2apiOptimizeGroupID clears the value of the "sub2api_optimize_group_id" field.
+func (u *AccountUpsertOne) ClearSub2apiOptimizeGroupID() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearSub2apiOptimizeGroupID()
 	})
 }
 
@@ -3725,6 +3795,34 @@ func (u *AccountUpsertBulk) UpdateSub2apiTestModel() *AccountUpsertBulk {
 func (u *AccountUpsertBulk) ClearSub2apiTestModel() *AccountUpsertBulk {
 	return u.Update(func(s *AccountUpsert) {
 		s.ClearSub2apiTestModel()
+	})
+}
+
+// SetSub2apiOptimizeGroupID sets the "sub2api_optimize_group_id" field.
+func (u *AccountUpsertBulk) SetSub2apiOptimizeGroupID(v int64) *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetSub2apiOptimizeGroupID(v)
+	})
+}
+
+// AddSub2apiOptimizeGroupID adds v to the "sub2api_optimize_group_id" field.
+func (u *AccountUpsertBulk) AddSub2apiOptimizeGroupID(v int64) *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.AddSub2apiOptimizeGroupID(v)
+	})
+}
+
+// UpdateSub2apiOptimizeGroupID sets the "sub2api_optimize_group_id" field to the value that was provided on create.
+func (u *AccountUpsertBulk) UpdateSub2apiOptimizeGroupID() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateSub2apiOptimizeGroupID()
+	})
+}
+
+// ClearSub2apiOptimizeGroupID clears the value of the "sub2api_optimize_group_id" field.
+func (u *AccountUpsertBulk) ClearSub2apiOptimizeGroupID() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearSub2apiOptimizeGroupID()
 	})
 }
 

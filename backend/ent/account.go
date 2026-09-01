@@ -98,6 +98,8 @@ type Account struct {
 	Sub2apiMinMultiplier *float64 `json:"sub2api_min_multiplier,omitempty"`
 	// 定时优化测试模型，null 时按平台使用默认模型
 	Sub2apiTestModel *string `json:"sub2api_test_model,omitempty"`
+	// 定时优化指定远程分组 ID，null 表示不限制
+	Sub2apiOptimizeGroupID *int64 `json:"sub2api_optimize_group_id,omitempty"`
 	// Parent account id for a linked spark shadow (NULL = normal).
 	ParentAccountID *int64 `json:"parent_account_id,omitempty"`
 	// 'global' (default) or 'spark' (shadow reads codex_bengalfox).
@@ -220,7 +222,7 @@ func (*Account) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case account.FieldRateMultiplier, account.FieldRemoteGroupMultiplier, account.FieldSub2apiMaxMultiplier, account.FieldSub2apiMinMultiplier:
 			values[i] = new(sql.NullFloat64)
-		case account.FieldID, account.FieldProxyID, account.FieldProxyFallbackOriginID, account.FieldConcurrency, account.FieldLoadFactor, account.FieldPriority, account.FieldProviderID, account.FieldProviderAPIKeyID, account.FieldRemoteGroupID, account.FieldParentAccountID:
+		case account.FieldID, account.FieldProxyID, account.FieldProxyFallbackOriginID, account.FieldConcurrency, account.FieldLoadFactor, account.FieldPriority, account.FieldProviderID, account.FieldProviderAPIKeyID, account.FieldRemoteGroupID, account.FieldSub2apiOptimizeGroupID, account.FieldParentAccountID:
 			values[i] = new(sql.NullInt64)
 		case account.FieldName, account.FieldNotes, account.FieldPlatform, account.FieldType, account.FieldStatus, account.FieldErrorMessage, account.FieldTempUnschedulableReason, account.FieldSessionWindowStatus, account.FieldRemoteGroupName, account.FieldSub2apiTestModel, account.FieldQuotaDimension:
 			values[i] = new(sql.NullString)
@@ -510,6 +512,13 @@ func (_m *Account) assignValues(columns []string, values []any) error {
 				_m.Sub2apiTestModel = new(string)
 				*_m.Sub2apiTestModel = value.String
 			}
+		case account.FieldSub2apiOptimizeGroupID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field sub2api_optimize_group_id", values[i])
+			} else if value.Valid {
+				_m.Sub2apiOptimizeGroupID = new(int64)
+				*_m.Sub2apiOptimizeGroupID = value.Int64
+			}
 		case account.FieldParentAccountID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field parent_account_id", values[i])
@@ -764,6 +773,11 @@ func (_m *Account) String() string {
 	if v := _m.Sub2apiTestModel; v != nil {
 		builder.WriteString("sub2api_test_model=")
 		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	if v := _m.Sub2apiOptimizeGroupID; v != nil {
+		builder.WriteString("sub2api_optimize_group_id=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
 	}
 	builder.WriteString(", ")
 	if v := _m.ParentAccountID; v != nil {

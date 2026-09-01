@@ -298,6 +298,11 @@ func (r *sub2APIProviderProbeRepository) CreateTarget(ctx context.Context, input
 		SetPlatform(input.Platform).
 		SetEnabled(input.Enabled).
 		SetIntervalSeconds(input.IntervalSeconds).
+		SetAdaptiveIntervalEnabled(input.AdaptiveIntervalEnabled).
+		SetHealthyIntervalSeconds(input.HealthyIntervalSeconds).
+		SetHealthyIntervalThreshold(input.HealthyIntervalThreshold).
+		SetStableHealthyIntervalSeconds(input.StableHealthyIntervalSeconds).
+		SetStableHealthyThreshold(input.StableHealthyThreshold).
 		SetAllowMediaProbe(input.AllowMediaProbe).
 		SetTimeoutSeconds(input.TimeoutSeconds).
 		SetDegradedLatencyMs(input.DegradedLatencyMS).
@@ -325,10 +330,25 @@ func (r *sub2APIProviderProbeRepository) UpdateTarget(ctx context.Context, provi
 		sub2apiproviderprobetarget.ProviderID(providerID),
 	)
 	if input.Enabled != nil {
-		u.SetEnabled(*input.Enabled)
+		u.SetEnabled(*input.Enabled).SetConsecutiveHealthy(0)
 	}
 	if input.IntervalSeconds != nil {
 		u.SetIntervalSeconds(*input.IntervalSeconds)
+	}
+	if input.AdaptiveIntervalEnabled != nil {
+		u.SetAdaptiveIntervalEnabled(*input.AdaptiveIntervalEnabled).SetConsecutiveHealthy(0)
+	}
+	if input.HealthyIntervalSeconds != nil {
+		u.SetHealthyIntervalSeconds(*input.HealthyIntervalSeconds)
+	}
+	if input.HealthyIntervalThreshold != nil {
+		u.SetHealthyIntervalThreshold(*input.HealthyIntervalThreshold)
+	}
+	if input.StableHealthyIntervalSeconds != nil {
+		u.SetStableHealthyIntervalSeconds(*input.StableHealthyIntervalSeconds)
+	}
+	if input.StableHealthyThreshold != nil {
+		u.SetStableHealthyThreshold(*input.StableHealthyThreshold)
 	}
 	if input.AllowMediaProbe != nil {
 		u.SetAllowMediaProbe(*input.AllowMediaProbe)
@@ -385,13 +405,23 @@ func (r *sub2APIProviderProbeRepository) UpdateTargetBinding(ctx context.Context
 		u.SetRemoteGroupName(*remoteGroupName)
 	}
 	if !sameOptionalInt64(target.RemoteGroupID, remoteGroupID) {
-		u.SetRouteChangedAt(time.Now().UTC())
+		u.SetRouteChangedAt(time.Now().UTC()).SetConsecutiveHealthy(0)
 	}
 	return u.Save(ctx)
 }
 
-func (r *sub2APIProviderProbeRepository) MarkTargetRun(ctx context.Context, targetID int64, at time.Time) error {
-	return r.client.Sub2APIProviderProbeTarget.UpdateOneID(targetID).SetLastRunAt(at.UTC()).Exec(ctx)
+func (r *sub2APIProviderProbeRepository) MarkTargetRun(ctx context.Context, targetID int64, at time.Time, status string) error {
+	u := r.client.Sub2APIProviderProbeTarget.UpdateOneID(targetID).SetLastRunAt(at.UTC())
+	switch status {
+	case "healthy":
+		u.AddConsecutiveHealthy(1)
+	case "":
+		// A skipped media probe advances the scan marker but is not a health
+		// result, so preserve the previous streak.
+	default:
+		u.SetConsecutiveHealthy(0)
+	}
+	return u.Exec(ctx)
 }
 
 func (r *sub2APIProviderProbeRepository) MarkTargetsCostOptimize(ctx context.Context, targetIDs []int64, at time.Time) error {

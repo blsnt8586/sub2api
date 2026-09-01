@@ -6,6 +6,14 @@
 import { apiClient } from '../client'
 import type { PaginatedResponse } from '@/types'
 
+function normalizeList<T>(value: unknown): T[] {
+  if (Array.isArray(value)) return value as T[]
+  if (value && typeof value === 'object' && Array.isArray((value as { items?: unknown }).items)) {
+    return (value as { items: T[] }).items
+  }
+  return []
+}
+
 // ==================== Types ====================
 
 export interface Sub2APIProvider {
@@ -15,6 +23,8 @@ export interface Sub2APIProvider {
   /** 上游类型：当前仅 sub2api，后续可扩展其他上游协议 */
   provider_type: string
   status: 'active' | 'inactive'
+  /** Remote overview money is displayed as upstream value divided by this value. */
+  remote_cost_divisor?: number
   notes?: string | null
   proxy_id: number | null
   proxy_name?: string | null
@@ -52,6 +62,7 @@ export interface CreateProviderRequest {
   refresh_token?: string
   notes?: string | null
   proxy_id?: number | null
+  remote_cost_divisor?: number
 }
 
 export interface UpdateProviderRequest {
@@ -65,6 +76,7 @@ export interface UpdateProviderRequest {
   status?: 'active' | 'inactive'
   notes?: string | null
   proxy_id?: number | null
+  remote_cost_divisor?: number
 }
 
 export interface PathDetectionResult {
@@ -95,6 +107,73 @@ export interface Sub2APIProviderRemoteOverview {
   last_attempt_source: 'manual' | 'control_probe' | ''
   last_error?: string | null
   last_error_at?: string | null
+  usage?: Sub2APIProviderRemoteUsageStats | null
+  profit?: Sub2APIProviderProfitSummary | null
+}
+
+export interface Sub2APIProviderProfitSummary {
+  available: boolean
+  range_start: string
+  range_end: string
+  sampled_at: string
+  total_revenue: number
+  total_remote_cost: number
+  total_gross_profit: number
+  total_gross_margin: number
+  today_revenue: number
+  today_remote_cost: number
+  today_gross_profit: number
+  today_gross_margin: number
+  accounts: Sub2APIProviderAccountProfit[]
+  error?: string | null
+}
+
+export interface Sub2APIProviderAccountProfit {
+  account_id: number
+  account_name: string
+  provider_api_key_id?: number | null
+  revenue: number
+  remote_cost: number
+  gross_profit: number
+  gross_margin: number
+  today_revenue: number
+  today_remote_cost: number
+  today_gross_profit: number
+  today_gross_margin: number
+  remote_cost_available: boolean
+  error?: string | null
+}
+
+export interface Sub2APIProviderRemoteUsageStats {
+  total_recharged: number
+  order_recharged: number
+  redeem_recharged: number
+  total_consumed: number
+  total_requests: number
+  total_input_tokens: number
+  total_output_tokens: number
+  total_cache_creation_tokens: number
+  total_cache_read_tokens: number
+  total_tokens: number
+  total_cost: number
+  total_actual_cost: number
+  today_requests: number
+  today_input_tokens: number
+  today_output_tokens: number
+  today_cache_creation_tokens: number
+  today_cache_read_tokens: number
+  today_tokens: number
+  today_cost: number
+  today_actual_cost: number
+  average_duration_ms: number
+  cache_hit_rate: number
+  cache_hit_rate_available: boolean
+  cache_hit_rate_error?: string | null
+  funding_summary_available: boolean
+  funding_summary_source: 'orders_and_redeems' | 'orders_plus_profile' | 'profile_fallback' | ''
+  funding_summary_error?: string | null
+  dashboard_available: boolean
+  dashboard_error?: string | null
 }
 
 export interface AccountProviderLink {
@@ -193,9 +272,18 @@ export interface Sub2APIProviderProbeTargetHealth {
   sub2api_optimize_enabled?: boolean
   sub2api_min_multiplier?: number | null
   sub2api_max_multiplier?: number | null
+  sub2api_optimize_group_id?: number | null
+  sub2api_optimize_group_ids?: number[]
   platform: string
   enabled: boolean
   interval_seconds: number
+  adaptive_interval_enabled: boolean
+  healthy_interval_seconds: number
+  healthy_interval_threshold: number
+  stable_healthy_interval_seconds: number
+  stable_healthy_threshold: number
+  consecutive_healthy: number
+  current_interval_seconds: number
   test_model?: string | null
   allow_media_probe: boolean
   timeout_seconds: number
@@ -225,6 +313,11 @@ export type UpdateProviderProbeTargetRequest = Partial<Pick<
   Sub2APIProviderProbeTargetHealth,
   | 'enabled'
   | 'interval_seconds'
+  | 'adaptive_interval_enabled'
+  | 'healthy_interval_seconds'
+  | 'healthy_interval_threshold'
+  | 'stable_healthy_interval_seconds'
+  | 'stable_healthy_threshold'
   | 'allow_media_probe'
   | 'timeout_seconds'
   | 'degraded_latency_ms'
@@ -276,6 +369,8 @@ export interface LinkedAccountInfo {
   sub2api_min_multiplier?: number | null
   sub2api_max_multiplier?: number | null
   sub2api_test_model?: string | null
+  sub2api_optimize_group_id?: number | null
+  sub2api_optimize_group_ids?: number[]
 }
 
 // 手动优化（单个/批量）返回结构，与定时任务日志明细 OptimizeLogDetail 共用同一契约：
@@ -366,14 +461,6 @@ export async function deleteProvider(id: number): Promise<{ message: string }> {
 }
 
 /**
- * 测试 Provider 连接
- */
-export async function testConnection(id: number): Promise<{ message: string }> {
-  const { data } = await apiClient.post<{ message: string }>(`/admin/sub2api-providers/${id}/test-connection`)
-  return data
-}
-
-/**
  * 探测并更新 API 路径
  */
 export async function detectPaths(id: number): Promise<PathDetectionResult> {
@@ -400,7 +487,7 @@ export async function getCachedRemoteOverviews(ids: number[]): Promise<Sub2APIPr
     '/admin/sub2api-providers/remote-overviews',
     { params: { ids: ids.join(',') } }
   )
-  return data
+  return normalizeList<Sub2APIProviderRemoteOverview>(data)
 }
 
 export async function getHealth(id: number): Promise<Sub2APIProviderHealth> {
@@ -413,7 +500,7 @@ export async function getHealthOverview(ids: number[]): Promise<Sub2APIProviderH
   const { data } = await apiClient.get<Sub2APIProviderHealthOverview[]>('/admin/sub2api-providers/health-overview', {
     params: { ids: ids.join(',') }
   })
-  return data
+  return normalizeList<Sub2APIProviderHealthOverview>(data)
 }
 
 export async function runProbe(id: number): Promise<Sub2APIProviderHealth> {
@@ -435,7 +522,7 @@ export async function getProbeHistory(id: number, limit = 100, sinceSeconds = 36
   const { data } = await apiClient.get<Sub2APIProviderHealth[]>(`/admin/sub2api-providers/${id}/probe/history`, {
     params: { limit, since_seconds: sinceSeconds }
   })
-  return data
+  return normalizeList<Sub2APIProviderHealth>(data)
 }
 
 export async function getProbeTargets(id: number, sync = false): Promise<Sub2APIProviderProbeTargetHealth[]> {
@@ -443,7 +530,7 @@ export async function getProbeTargets(id: number, sync = false): Promise<Sub2API
     `/admin/sub2api-providers/${id}/probe-targets`,
     { params: sync ? { sync: 'true' } : undefined }
   )
-  return data
+  return normalizeList<Sub2APIProviderProbeTargetHealth>(data)
 }
 
 export async function updateProbeTarget(
@@ -475,7 +562,7 @@ export async function getProbeTargetHistory(
     `/admin/sub2api-providers/${providerId}/probe-targets/${targetId}/history`,
     { params: { limit, since_seconds: sinceSeconds } }
   )
-  return data
+  return normalizeList<Sub2APIProviderProbeTargetHealth>(data)
 }
 
 /**
@@ -501,7 +588,7 @@ export async function getLinkedAccounts(providerId: number, sync = false): Promi
     `/admin/sub2api-providers/${providerId}/accounts`,
     { params: sync ? { sync: 'true' } : undefined }
   )
-  return data
+  return normalizeList<LinkedAccountInfo>(data)
 }
 
 /**
@@ -537,7 +624,16 @@ export async function optimizeAll(providerId: number): Promise<OptimizeAllResult
   const { data } = await apiClient.post<OptimizeAllResult>(
     `/admin/sub2api-providers/${providerId}/optimize-all`
   )
-  return data
+  const payload = (data && typeof data === 'object' ? data : {}) as Partial<OptimizeAllResult>
+  const results = normalizeList<OptimizeResult>(payload.results)
+  return {
+    ...payload,
+    results,
+    total: typeof payload.total === 'number' ? payload.total : results.length,
+    optimized: typeof payload.optimized === 'number' ? payload.optimized : results.filter(item => item.status === 'optimized').length,
+    skipped: typeof payload.skipped === 'number' ? payload.skipped : results.filter(item => item.status === 'skipped').length,
+    failed: typeof payload.failed === 'number' ? payload.failed : results.filter(item => item.status === 'failed').length,
+  }
 }
 
 // ==================== 定时优化 Types ====================
@@ -640,6 +736,8 @@ export interface UpdateAccountOptimizeSettingsRequest {
   min_multiplier?: number | null
   max_multiplier?: number | null
   test_model?: string | null
+  group_id?: number | null
+  group_ids?: number[]
 }
 
 // ==================== 定时优化 API Functions ====================
@@ -741,7 +839,6 @@ export const sub2apiProvidersAPI = {
   create,
   update,
   delete: deleteProvider,
-  testConnection,
   detectPaths,
   getRemoteOverview,
   getCachedRemoteOverviews,

@@ -230,6 +230,8 @@ type UpdateAccountSettingsRequest struct {
 	MinMultiplier *float64 `json:"min_multiplier"`
 	MaxMultiplier *float64 `json:"max_multiplier"`
 	TestModel     *string  `json:"test_model"`
+	GroupID       *int64   `json:"group_id"`
+	GroupIDs      []int64  `json:"group_ids"`
 }
 
 // UpdateAccountSettings 更新关联账号的定时优化设置（倍率上限、测试模型）
@@ -253,7 +255,10 @@ func (h *Sub2APIOptimizeScheduleHandler) UpdateAccountSettings(c *gin.Context) {
 	}
 
 	enabled := req.Enabled != nil && *req.Enabled
-	if err := h.scheduleService.UpdateAccountOptimizeSettings(c.Request.Context(), providerID, accountID, enabled, req.MinMultiplier, req.MaxMultiplier, req.TestModel); err != nil {
+	if req.GroupID != nil && len(req.GroupIDs) == 0 {
+		req.GroupIDs = []int64{*req.GroupID}
+	}
+	if err := h.scheduleService.UpdateAccountOptimizeSettingsWithGroupIDs(c.Request.Context(), providerID, accountID, enabled, req.MinMultiplier, req.MaxMultiplier, req.TestModel, req.GroupID, req.GroupIDs); err != nil {
 		response.ErrorFrom(c, err)
 		return
 	}

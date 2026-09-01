@@ -644,6 +644,13 @@ func (s *adminServiceImpl) UpdateAccount(ctx context.Context, id int64, input *U
 		delete(normalizedExtra, UpstreamBillingProbeEnabledExtraKey)
 		delete(normalizedExtra, UpstreamBillingRateSyncEnabledExtraKey)
 		delete(normalizedExtra, UpstreamBillingProbeExtraKey)
+		// Probe ownership/state is provider-managed and cannot be overwritten by
+		// a normal account edit payload.
+		delete(normalizedExtra, Sub2APIProbeManagedAccountStatusExtraKey)
+		delete(normalizedExtra, Sub2APIRuntimeRecoverableAccountErrorExtraKey)
+		delete(normalizedExtra, Sub2APIProbeGroupsExhaustedExtraKey)
+		delete(normalizedExtra, Sub2APIProbeGroupsExhaustedMessageExtraKey)
+		delete(normalizedExtra, Sub2APIAdminAccountStateGenerationExtraKey)
 		delete(normalizedExtra, OllamaCloudUsageSessionExtraKey)
 		delete(normalizedExtra, OllamaCloudUsageAutoRefreshExtraKey)
 		delete(normalizedExtra, OllamaCloudUsageSnapshotExtraKey)
@@ -658,6 +665,11 @@ func (s *adminServiceImpl) UpdateAccount(ctx context.Context, id int64, input *U
 			UpstreamBillingProbeEnabledExtraKey,
 			UpstreamBillingRateSyncEnabledExtraKey,
 			UpstreamBillingProbeExtraKey,
+			Sub2APIProbeManagedAccountStatusExtraKey,
+			Sub2APIRuntimeRecoverableAccountErrorExtraKey,
+			Sub2APIProbeGroupsExhaustedExtraKey,
+			Sub2APIProbeGroupsExhaustedMessageExtraKey,
+			Sub2APIAdminAccountStateGenerationExtraKey,
 			OllamaCloudUsageSessionExtraKey,
 			OllamaCloudUsageAutoRefreshExtraKey,
 			OllamaCloudUsageSnapshotExtraKey,
@@ -779,16 +791,20 @@ func (s *adminServiceImpl) UpdateAccount(ctx context.Context, id int64, input *U
 		}
 	}
 	if input.Status != "" {
-		account.Status = input.Status
-		// An explicit admin status edit takes ownership back from the optional
-		// provider-probe projection. Future healthy probes must not undo it.
-		if account.Extra == nil {
-			account.Extra = make(map[string]any)
+		// A probe-owned error is authoritative until a probe recovers it or an
+		// administrator uses the dedicated clear-error action. This prevents an
+		// edit form's stale status (active/inactive/error) from bypassing or
+		// stranding the provider state machine.
+		if !probeOwnsAbnormalAccountStatus(account) {
+			shouldReleaseProbeOwnership := shouldReleaseAdminProbeOwnershipOnStatusChange(account, input.Status)
+			account.Status = input.Status
+			// Only a normal account explicitly changed to inactive is a user stop.
+			// Re-submitting error (or changing active to error) must leave Provider
+			// probe ownership intact so a later healthy probe can recover it.
+			if shouldReleaseProbeOwnership {
+				releaseAdminProbeOwnership(account)
+			}
 		}
-		account.Extra[probeManagedAccountStatusExtraKey] = false
-		account.Extra[probeRuntimeRecoverableAccountErrorExtraKey] = false
-		account.Extra[probeGroupsExhaustedExtraKey] = false
-		account.Extra[probeGroupsExhaustedMessageKey] = ""
 	}
 	if input.ExpiresAt != nil {
 		if *input.ExpiresAt <= 0 {
@@ -913,6 +929,11 @@ func (s *adminServiceImpl) BulkUpdateAccounts(ctx context.Context, input *BulkUp
 	delete(input.Extra, UpstreamBillingProbeEnabledExtraKey)
 	delete(input.Extra, UpstreamBillingRateSyncEnabledExtraKey)
 	delete(input.Extra, UpstreamBillingProbeExtraKey)
+	delete(input.Extra, Sub2APIProbeManagedAccountStatusExtraKey)
+	delete(input.Extra, Sub2APIRuntimeRecoverableAccountErrorExtraKey)
+	delete(input.Extra, Sub2APIProbeGroupsExhaustedExtraKey)
+	delete(input.Extra, Sub2APIProbeGroupsExhaustedMessageExtraKey)
+	delete(input.Extra, Sub2APIAdminAccountStateGenerationExtraKey)
 	delete(input.Extra, OllamaCloudUsageSessionExtraKey)
 	delete(input.Extra, OllamaCloudUsageAutoRefreshExtraKey)
 	delete(input.Extra, OllamaCloudUsageSnapshotExtraKey)
@@ -948,7 +969,7 @@ func (s *adminServiceImpl) BulkUpdateAccounts(ctx context.Context, input *BulkUp
 
 	// 预取所有目标账号，供凭据守卫/代理守卫/混合渠道检查共用，避免多次 DB 查询。
 	var cachedTargets []*Account
-	if len(input.Credentials) > 0 || input.ProxyID != nil || needMixedChannelCheck || openAISettings.any() || input.ProbeEnabled != nil || input.RateMultiplier != nil {
+	if len(input.Credentials) > 0 || input.ProxyID != nil || needMixedChannelCheck || openAISettings.any() || input.ProbeEnabled != nil || input.RateMultiplier != nil || input.Status != "" || input.Schedulable != nil {
 		loaded, err := s.accountRepo.GetByIDs(ctx, input.AccountIDs)
 		if err != nil {
 			return nil, err
@@ -1063,17 +1084,12 @@ func (s *adminServiceImpl) BulkUpdateAccounts(ctx context.Context, input *BulkUp
 		ProbeEnabled:               input.ProbeEnabled,
 		EnsureCodexFingerprintSeed: ShouldEnsureCodexFingerprintSeedForExtraUpdates(input.Extra),
 	}
-	if input.Status != "" || input.Schedulable != nil {
-		if repoUpdates.Extra == nil {
-			repoUpdates.Extra = make(map[string]any)
-		}
-		// Bulk status/scheduling edits are explicit admin overrides and must
-		// cancel any probe-owned recovery marker for the same accounts.
-		repoUpdates.Extra[probeManagedAccountStatusExtraKey] = false
-		repoUpdates.Extra[probeRuntimeRecoverableAccountErrorExtraKey] = false
-		repoUpdates.Extra[probeGroupsExhaustedExtraKey] = false
-		repoUpdates.Extra[probeGroupsExhaustedMessageKey] = ""
-	}
+	// The repository applies this per row using the pre-update status and
+	// schedulable values. A mixed active/error bulk request therefore cannot
+	// accidentally release Provider ownership from the error accounts.
+	repoUpdates.ReleaseProbeOwnershipOnNormalStop =
+		(input.Status == "inactive" || input.Status == StatusDisabled) ||
+			(input.Schedulable != nil && !*input.Schedulable)
 	if input.ProbeEnabled != nil {
 		if repoUpdates.Extra == nil {
 			repoUpdates.Extra = make(map[string]any)
@@ -1265,12 +1281,7 @@ func (s *adminServiceImpl) RefreshAccountCredentials(ctx context.Context, id int
 }
 
 func (s *adminServiceImpl) ClearAccountError(ctx context.Context, id int64) (*Account, error) {
-	if err := s.accountRepo.ClearError(ctx, id); err != nil {
-		return nil, err
-	}
-	// Manual recovery relinquishes probe ownership; a later unhealthy streak
-	// may claim the account again only after the configured failure threshold.
-	if err := s.accountRepo.UpdateExtra(ctx, id, map[string]any{probeManagedAccountStatusExtraKey: false, probeRuntimeRecoverableAccountErrorExtraKey: false, probeGroupsExhaustedExtraKey: false, probeGroupsExhaustedMessageKey: ""}); err != nil {
+	if err := clearAdminAccountErrorState(ctx, s.accountRepo, id); err != nil {
 		return nil, err
 	}
 	if err := s.accountRepo.ClearRateLimit(ctx, id); err != nil {
@@ -1292,19 +1303,11 @@ func (s *adminServiceImpl) ClearAccountError(ctx context.Context, id int64) (*Ac
 }
 
 func (s *adminServiceImpl) SetAccountError(ctx context.Context, id int64, errorMsg string) error {
-	if err := s.accountRepo.SetError(ctx, id, errorMsg); err != nil {
-		return err
-	}
-	return s.accountRepo.UpdateExtra(ctx, id, map[string]any{probeManagedAccountStatusExtraKey: false, probeRuntimeRecoverableAccountErrorExtraKey: false, probeGroupsExhaustedExtraKey: false, probeGroupsExhaustedMessageKey: ""})
+	return setAdminAccountErrorState(ctx, s.accountRepo, id, errorMsg)
 }
 
 func (s *adminServiceImpl) SetAccountSchedulable(ctx context.Context, id int64, schedulable bool) (*Account, error) {
-	if err := s.accountRepo.SetSchedulable(ctx, id, schedulable); err != nil {
-		return nil, err
-	}
-	// A manual scheduling change is an explicit override of probe-owned
-	// account state. Clear the marker before returning the refreshed account.
-	if err := s.accountRepo.UpdateExtra(ctx, id, map[string]any{probeManagedAccountStatusExtraKey: false, probeRuntimeRecoverableAccountErrorExtraKey: false, probeGroupsExhaustedExtraKey: false, probeGroupsExhaustedMessageKey: ""}); err != nil {
+	if err := setAdminAccountSchedulableState(ctx, s.accountRepo, id, schedulable); err != nil {
 		return nil, err
 	}
 	updated, err := s.accountRepo.GetByID(ctx, id)

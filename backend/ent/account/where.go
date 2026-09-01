@@ -240,6 +240,11 @@ func Sub2apiTestModel(v string) predicate.Account {
 	return predicate.Account(sql.FieldEQ(FieldSub2apiTestModel, v))
 }
 
+// Sub2apiOptimizeGroupID applies equality check predicate on the "sub2api_optimize_group_id" field. It's identical to Sub2apiOptimizeGroupIDEQ.
+func Sub2apiOptimizeGroupID(v int64) predicate.Account {
+	return predicate.Account(sql.FieldEQ(FieldSub2apiOptimizeGroupID, v))
+}
+
 // ParentAccountID applies equality check predicate on the "parent_account_id" field. It's identical to ParentAccountIDEQ.
 func ParentAccountID(v int64) predicate.Account {
 	return predicate.Account(sql.FieldEQ(FieldParentAccountID, v))
@@ -2093,6 +2098,56 @@ func Sub2apiTestModelEqualFold(v string) predicate.Account {
 // Sub2apiTestModelContainsFold applies the ContainsFold predicate on the "sub2api_test_model" field.
 func Sub2apiTestModelContainsFold(v string) predicate.Account {
 	return predicate.Account(sql.FieldContainsFold(FieldSub2apiTestModel, v))
+}
+
+// Sub2apiOptimizeGroupIDEQ applies the EQ predicate on the "sub2api_optimize_group_id" field.
+func Sub2apiOptimizeGroupIDEQ(v int64) predicate.Account {
+	return predicate.Account(sql.FieldEQ(FieldSub2apiOptimizeGroupID, v))
+}
+
+// Sub2apiOptimizeGroupIDNEQ applies the NEQ predicate on the "sub2api_optimize_group_id" field.
+func Sub2apiOptimizeGroupIDNEQ(v int64) predicate.Account {
+	return predicate.Account(sql.FieldNEQ(FieldSub2apiOptimizeGroupID, v))
+}
+
+// Sub2apiOptimizeGroupIDIn applies the In predicate on the "sub2api_optimize_group_id" field.
+func Sub2apiOptimizeGroupIDIn(vs ...int64) predicate.Account {
+	return predicate.Account(sql.FieldIn(FieldSub2apiOptimizeGroupID, vs...))
+}
+
+// Sub2apiOptimizeGroupIDNotIn applies the NotIn predicate on the "sub2api_optimize_group_id" field.
+func Sub2apiOptimizeGroupIDNotIn(vs ...int64) predicate.Account {
+	return predicate.Account(sql.FieldNotIn(FieldSub2apiOptimizeGroupID, vs...))
+}
+
+// Sub2apiOptimizeGroupIDGT applies the GT predicate on the "sub2api_optimize_group_id" field.
+func Sub2apiOptimizeGroupIDGT(v int64) predicate.Account {
+	return predicate.Account(sql.FieldGT(FieldSub2apiOptimizeGroupID, v))
+}
+
+// Sub2apiOptimizeGroupIDGTE applies the GTE predicate on the "sub2api_optimize_group_id" field.
+func Sub2apiOptimizeGroupIDGTE(v int64) predicate.Account {
+	return predicate.Account(sql.FieldGTE(FieldSub2apiOptimizeGroupID, v))
+}
+
+// Sub2apiOptimizeGroupIDLT applies the LT predicate on the "sub2api_optimize_group_id" field.
+func Sub2apiOptimizeGroupIDLT(v int64) predicate.Account {
+	return predicate.Account(sql.FieldLT(FieldSub2apiOptimizeGroupID, v))
+}
+
+// Sub2apiOptimizeGroupIDLTE applies the LTE predicate on the "sub2api_optimize_group_id" field.
+func Sub2apiOptimizeGroupIDLTE(v int64) predicate.Account {
+	return predicate.Account(sql.FieldLTE(FieldSub2apiOptimizeGroupID, v))
+}
+
+// Sub2apiOptimizeGroupIDIsNil applies the IsNil predicate on the "sub2api_optimize_group_id" field.
+func Sub2apiOptimizeGroupIDIsNil() predicate.Account {
+	return predicate.Account(sql.FieldIsNull(FieldSub2apiOptimizeGroupID))
+}
+
+// Sub2apiOptimizeGroupIDNotNil applies the NotNil predicate on the "sub2api_optimize_group_id" field.
+func Sub2apiOptimizeGroupIDNotNil() predicate.Account {
+	return predicate.Account(sql.FieldNotNull(FieldSub2apiOptimizeGroupID))
 }
 
 // ParentAccountIDEQ applies the EQ predicate on the "parent_account_id" field.

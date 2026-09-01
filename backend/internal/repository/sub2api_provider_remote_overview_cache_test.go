@@ -29,7 +29,14 @@ func TestProviderRemoteOverviewCachePreservesLastSuccessAcrossFailure(t *testing
 		ProviderID: 7, Available: true, Balance: 12.5,
 		Groups:                 []service.Sub2APIProviderRemoteGroupRate{{ID: 1, Name: "Economy", EffectiveMultiplier: 0.25}},
 		RateOverridesAvailable: true,
-		SampledAt:              sampledAt, Source: service.Sub2APIProviderRemoteOverviewSourceControlProbe,
+		Usage: &service.Sub2APIProviderRemoteUsageStats{
+			TotalRecharged:        80,
+			TotalActualCost:       25.5,
+			CacheHitRate:          0.501,
+			CacheHitRateAvailable: true,
+			DashboardAvailable:    true,
+		},
+		SampledAt: sampledAt, Source: service.Sub2APIProviderRemoteOverviewSourceControlProbe,
 		LastAttemptedAt: sampledAt, LastAttemptSource: service.Sub2APIProviderRemoteOverviewSourceControlProbe,
 	}
 	require.NoError(t, cache.StoreSuccess(ctx, overview))
@@ -42,6 +49,12 @@ func TestProviderRemoteOverviewCachePreservesLastSuccessAcrossFailure(t *testing
 	require.NotNil(t, cached)
 	require.True(t, cached.Available)
 	require.Equal(t, 12.5, cached.Balance)
+	require.NotNil(t, cached.Usage)
+	require.Equal(t, 80.0, cached.Usage.TotalRecharged)
+	require.Equal(t, 25.5, cached.Usage.TotalActualCost)
+	require.Equal(t, 0.501, cached.Usage.CacheHitRate)
+	require.True(t, cached.Usage.CacheHitRateAvailable)
+	require.True(t, cached.Usage.DashboardAvailable)
 	require.Equal(t, sampledAt, cached.SampledAt)
 	require.Equal(t, service.Sub2APIProviderRemoteOverviewSourceControlProbe, cached.Source)
 	require.Equal(t, service.Sub2APIProviderRemoteOverviewSourceManual, cached.LastAttemptSource)

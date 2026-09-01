@@ -121,7 +121,7 @@ export async function getModelsListCandidates(
 
 /**
  * Canvas 平台可配置定价的模型，按媒体类型分类。[CUSTOM]
- * 由后端模型注册表供给，前端不维护副本。
+ * 由活跃 Canvas 账号同步的 model_mapping 供给，前端不维护副本。
  */
 export interface CanvasPricingModels {
   video: string[]

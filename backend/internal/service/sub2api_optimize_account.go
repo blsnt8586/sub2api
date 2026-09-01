@@ -225,6 +225,12 @@ func (s *Sub2APIOptimizeScheduleService) optimizeAccountsWithProbePolicies(
 		}
 		return details
 	}
+	// Bounds and cheapest-first ordering use the Provider account's effective
+	// multiplier. Older upstreams may not expose overrides; in that case the
+	// group catalog multiplier remains the compatible fallback.
+	if rateOverrides, rateErr := client.GetGroupRates(ctx); rateErr == nil {
+		groups = applyOptimizeGroupRateOverrides(groups, rateOverrides)
+	}
 
 	currentKeys, err := client.GetAPIKeys(ctx, keysPath)
 	if err != nil {
@@ -241,11 +247,19 @@ func (s *Sub2APIOptimizeScheduleService) optimizeAccountsWithProbePolicies(
 
 	// 构建 keyID -> 当前分组状态映射
 	keyStateMap := make(map[int64]optimizeKeyState, len(currentKeys))
+	groupByID := make(map[int64]sub2api.Group, len(groups))
+	for _, group := range groups {
+		groupByID[group.ID] = group
+	}
 	for _, k := range currentKeys {
 		ks := optimizeKeyState{groupID: k.GroupID}
 		if k.Group != nil {
 			ks.groupName = k.Group.Name
 			ks.multiplier = k.Group.RateMultiplier
+		}
+		if group, ok := groupByID[ks.groupID]; ok {
+			ks.groupName = group.Name
+			ks.multiplier = group.RateMultiplier
 		}
 		keyStateMap[k.ID] = ks
 	}
@@ -258,6 +272,19 @@ func (s *Sub2APIOptimizeScheduleService) optimizeAccountsWithProbePolicies(
 	}
 
 	return details
+}
+
+func applyOptimizeGroupRateOverrides(groups []sub2api.Group, overrides map[string]float64) []sub2api.Group {
+	if len(groups) == 0 || len(overrides) == 0 {
+		return groups
+	}
+	result := append([]sub2api.Group(nil), groups...)
+	for i := range result {
+		if rate, ok := overrides[fmt.Sprintf("%d", result[i].ID)]; ok && rate >= 0 {
+			result[i].RateMultiplier = rate
+		}
+	}
+	return result
 }
 
 // optimizeOneAccountWithPolicy uses the aggressive probe policy when
@@ -300,14 +327,17 @@ func (s *Sub2APIOptimizeScheduleService) optimizeOneAccountWithPolicy(
 	minMult := *acc.Sub2APIMinMultiplier
 	var candidates []sub2api.Group
 	for _, g := range groups {
-		if g.Platform == acc.Platform && g.Status == "active" &&
-			g.RateMultiplier >= minMult && g.RateMultiplier <= maxMult {
+		if optimizeGroupMatchesAccount(g, acc, minMult, maxMult) {
 			candidates = append(candidates, g)
 		}
 	}
 	if len(candidates) == 0 {
 		detail.Status = "failed"
-		detail.Reason = "无符合倍率区间的候选分组"
+		if len(configuredSub2APIOptimizeGroupIDs(acc)) > 0 {
+			detail.Reason = "指定分组不满足账号平台、启用状态或倍率区间"
+		} else {
+			detail.Reason = "无符合倍率区间的候选分组"
+		}
 		return detail
 	}
 	sort.Slice(candidates, func(i, j int) bool {
@@ -488,13 +518,14 @@ func (s *Sub2APIOptimizeScheduleService) optimizeOneAccountCheaper(
 	filtered := make([]sub2api.Group, 0, len(groups))
 	cheaperCount := 0
 	for _, group := range groups {
+		if !optimizeGroupMatchesAccount(group, acc, minMult, maxMult) {
+			continue
+		}
 		if group.ID == ks.groupID {
 			filtered = append(filtered, group)
 			continue
 		}
-		if group.Platform == acc.Platform && group.Status == "active" &&
-			group.RateMultiplier >= minMult && group.RateMultiplier <= maxMult &&
-			group.RateMultiplier < ks.multiplier {
+		if group.RateMultiplier < ks.multiplier {
 			filtered = append(filtered, group)
 			cheaperCount++
 		}
@@ -544,7 +575,7 @@ func (s *Sub2APIOptimizeScheduleService) optimizeOneAccountAggressive(
 		return detail
 	}
 	minMult, maxMult := *acc.Sub2APIMinMultiplier, *acc.Sub2APIMaxMultiplier
-	candidates := aggressiveProbeCandidates(groups, acc.Platform, ks.groupID, minMult, maxMult)
+	candidates := aggressiveProbeCandidatesForGroups(groups, acc.Platform, ks.groupID, minMult, maxMult, configuredSub2APIOptimizeGroupIDs(acc))
 	if len(candidates) == 0 {
 		detail.Status = "failed"
 		detail.ProbeExhausted = true
@@ -700,18 +731,39 @@ type aggressiveProbeSuccess struct {
 
 // aggressiveProbeCandidates excludes the unhealthy current group and keeps
 // only active groups on the same platform inside the account's multiplier
-// bounds. The stable multiplier order makes the first in-threshold success the
-// cheapest acceptable option.
-func aggressiveProbeCandidates(groups []sub2api.Group, platform string, currentGroupID int64, minMultiplier, maxMultiplier float64) []sub2api.Group {
+// bounds and optional group restriction. The stable multiplier order makes
+// the first in-threshold success the cheapest acceptable option.
+func aggressiveProbeCandidates(groups []sub2api.Group, platform string, currentGroupID int64, minMultiplier, maxMultiplier float64, selectedGroupID *int64) []sub2api.Group {
+	var selectedIDs []int64
+	if selectedGroupID != nil {
+		selectedIDs = []int64{*selectedGroupID}
+	}
+	return aggressiveProbeCandidatesForGroups(groups, platform, currentGroupID, minMultiplier, maxMultiplier, selectedIDs)
+}
+
+func aggressiveProbeCandidatesForGroups(groups []sub2api.Group, platform string, currentGroupID int64, minMultiplier, maxMultiplier float64, selectedGroupIDs []int64) []sub2api.Group {
 	candidates := make([]sub2api.Group, 0, len(groups))
 	for _, group := range groups {
 		if group.ID == currentGroupID || group.Platform != platform || group.Status != "active" || group.RateMultiplier < minMultiplier || group.RateMultiplier > maxMultiplier {
+			continue
+		}
+		if !groupIDSelected(group.ID, selectedGroupIDs) {
 			continue
 		}
 		candidates = append(candidates, group)
 	}
 	sort.SliceStable(candidates, func(i, j int) bool { return candidates[i].RateMultiplier < candidates[j].RateMultiplier })
 	return candidates
+}
+
+func optimizeGroupMatchesAccount(group sub2api.Group, account *Account, minMultiplier, maxMultiplier float64) bool {
+	if account == nil || group.Platform != account.Platform || group.Status != "active" {
+		return false
+	}
+	if group.RateMultiplier < minMultiplier || group.RateMultiplier > maxMultiplier {
+		return false
+	}
+	return groupIDSelected(group.ID, configuredSub2APIOptimizeGroupIDs(account))
 }
 
 // selectAggressiveProbeSuccess chooses the first successful candidate within

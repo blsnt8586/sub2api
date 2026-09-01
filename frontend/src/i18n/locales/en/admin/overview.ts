@@ -1056,7 +1056,12 @@ export default {
         videoPriorityHint: 'Pick per-request or per-second for each model, then enter its unit price. Switching mode clears the entered price (the same number differs by nearly an order of magnitude between modes, which would otherwise cause mis-billing).',
         emptyMeansFallback: 'Empty = built-in default price, not billed as $0.',
         clearAll: 'Clear all per-model prices',
-        loadFailed: 'Failed to load model list'
+        loadFailed: 'Failed to load model list',
+        emptyModels: 'No synced Canvas models are available. Sync at least one active Canvas account first.'
+      },
+      canvasModelPricing: {
+        title: 'Canvas model pricing',
+        hint: 'Models come from the latest upstream sync on active Canvas accounts. Same-named models on different platforms are priced independently; empty fields use the matching default price.'
       },
       voicePricing: {
         title: 'Grok Voice Pricing',

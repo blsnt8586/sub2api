@@ -76,10 +76,12 @@ type Account struct {
 	RemoteGroupSyncedAt   *time.Time
 
 	// Sub2API 定时优化字段
-	Sub2APIOptimizeEnabled bool     // 是否参与定时优化（与倍率上限/测试模型解耦，关闭后保留原值）
-	Sub2APIMinMultiplier   *float64 // 倍率下限：null = 未设置（不设质量底线，从最便宜开始试）
-	Sub2APIMaxMultiplier   *float64 // 倍率上限：null = 未设置
-	Sub2APITestModel       *string  // null = 按平台使用默认模型
+	Sub2APIOptimizeEnabled  bool     // 是否参与定时优化（与倍率上限/测试模型解耦，关闭后保留原值）
+	Sub2APIMinMultiplier    *float64 // 倍率下限：null = 未设置（不设质量底线，从最便宜开始试）
+	Sub2APIMaxMultiplier    *float64 // 倍率上限：null = 未设置
+	Sub2APITestModel        *string  // null = 按平台使用默认模型
+	Sub2APIOptimizeGroupID  *int64   // 旧版单个远程分组限制；null 表示不限制
+	Sub2APIOptimizeGroupIDs []int64  // 多选远程分组限制；空数组表示不限制
 
 	// model_mapping 热路径缓存（非持久化字段）
 	modelMappingCache               map[string]string
@@ -108,6 +110,10 @@ const (
 	OpenAIEndpointCapabilityEmbeddings      OpenAIEndpointCapability = "embeddings"
 	OpenAIEndpointCapabilityAlphaSearch     OpenAIEndpointCapability = "alpha_search"
 	OpenAIEndpointCapabilityLive            OpenAIEndpointCapability = "live"
+	// OpenAIEndpointCapabilityVideos is the official OpenAI Videos API. It is
+	// intentionally API-key only: ChatGPT/Codex OAuth credentials do not grant
+	// access to api.openai.com video generation jobs.
+	OpenAIEndpointCapabilityVideos OpenAIEndpointCapability = "videos"
 	// OpenAIEndpointCapabilityGrokMediaGeneration keeps image/video generation
 	// away from Grok accounts that are explicitly disabled or whose billing
 	// entitlement probe was forbidden. Video status lookups intentionally do not
@@ -1858,6 +1864,11 @@ func (a *Account) SupportsOpenAIEndpointCapability(capability OpenAIEndpointCapa
 		if a.Type != AccountTypeAPIKey {
 			return false
 		}
+	case OpenAIEndpointCapabilityVideos:
+		// Videos is gated by account type and supported_models. Keep it outside
+		// the legacy chat/embeddings capability set so existing API-key accounts
+		// do not need a credentials migration before Sora models can route.
+		return a.Platform == PlatformOpenAI && a.Type == AccountTypeAPIKey
 	default:
 		return false
 	}

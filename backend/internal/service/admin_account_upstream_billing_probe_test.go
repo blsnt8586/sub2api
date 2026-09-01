@@ -189,6 +189,154 @@ func TestUpdateAccountPreservesManagedUpstreamBillingProbeStateForUnrelatedEdit(
 	require.Equal(t, "value", updated.Extra["custom"])
 }
 
+func TestUpdateAccountPreservesProbeOwnershipWhenErrorStatusIsResubmitted(t *testing.T) {
+	accountID := int64(154)
+	repo := &upstreamBillingProbeAccountRepo{accounts: map[int64]*Account{
+		accountID: {
+			ID:       accountID,
+			Platform: PlatformOpenAI,
+			Type:     AccountTypeAPIKey,
+			Status:   StatusError,
+			Extra: map[string]any{
+				Sub2APIProbeManagedAccountStatusExtraKey:      true,
+				Sub2APIRuntimeRecoverableAccountErrorExtraKey: false,
+				Sub2APIAdminAccountStateGenerationExtraKey:    "probe-generation",
+			},
+		},
+	}}
+
+	updated, err := (&adminServiceImpl{accountRepo: repo}).UpdateAccount(context.Background(), accountID, &UpdateAccountInput{
+		Name:   "renamed",
+		Status: StatusError,
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, StatusError, updated.Status)
+	require.Equal(t, true, updated.Extra[Sub2APIProbeManagedAccountStatusExtraKey])
+	require.Equal(t, "probe-generation", updated.Extra[Sub2APIAdminAccountStateGenerationExtraKey])
+}
+
+func TestUpdateAccountDoesNotRewriteProbeOwnedErrorStatus(t *testing.T) {
+	for _, requestedStatus := range []string{"active", "inactive", StatusError} {
+		t.Run(requestedStatus, func(t *testing.T) {
+			accountID := int64(158)
+			repo := &upstreamBillingProbeAccountRepo{accounts: map[int64]*Account{
+				accountID: {
+					ID:          accountID,
+					Platform:    PlatformOpenAI,
+					Type:        AccountTypeAPIKey,
+					Status:      StatusError,
+					Schedulable: false,
+					Extra: map[string]any{
+						Sub2APIProbeManagedAccountStatusExtraKey:   true,
+						Sub2APIAdminAccountStateGenerationExtraKey: "probe-generation",
+					},
+				},
+			}}
+
+			updated, err := (&adminServiceImpl{accountRepo: repo}).UpdateAccount(context.Background(), accountID, &UpdateAccountInput{
+				Name:   "edited while unhealthy",
+				Status: requestedStatus,
+			})
+
+			require.NoError(t, err)
+			require.Equal(t, StatusError, updated.Status)
+			require.Equal(t, true, updated.Extra[Sub2APIProbeManagedAccountStatusExtraKey])
+		})
+	}
+}
+
+func TestUpdateAccountReleasesProbeOwnershipOnlyForActiveToInactive(t *testing.T) {
+	accountID := int64(155)
+	generation := "probe-generation"
+	repo := &upstreamBillingProbeAccountRepo{accounts: map[int64]*Account{
+		accountID: {
+			ID:          accountID,
+			Platform:    PlatformOpenAI,
+			Type:        AccountTypeAPIKey,
+			Status:      StatusActive,
+			Schedulable: true,
+			Extra: map[string]any{
+				Sub2APIProbeManagedAccountStatusExtraKey:   true,
+				Sub2APIAdminAccountStateGenerationExtraKey: generation,
+			},
+		},
+	}}
+
+	updated, err := (&adminServiceImpl{accountRepo: repo}).UpdateAccount(context.Background(), accountID, &UpdateAccountInput{
+		Status: "inactive",
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, "inactive", updated.Status)
+	require.Equal(t, false, updated.Extra[Sub2APIProbeManagedAccountStatusExtraKey])
+	require.NotEqual(t, generation, updated.Extra[Sub2APIAdminAccountStateGenerationExtraKey])
+}
+
+func TestUpdateAccountDoesNotReleaseProbeOwnershipWhenActiveBecomesError(t *testing.T) {
+	accountID := int64(156)
+	repo := &upstreamBillingProbeAccountRepo{accounts: map[int64]*Account{
+		accountID: {
+			ID:          accountID,
+			Platform:    PlatformOpenAI,
+			Type:        AccountTypeAPIKey,
+			Status:      StatusActive,
+			Schedulable: true,
+			Extra: map[string]any{
+				Sub2APIProbeManagedAccountStatusExtraKey:   true,
+				Sub2APIAdminAccountStateGenerationExtraKey: "probe-generation",
+			},
+		},
+	}}
+
+	updated, err := (&adminServiceImpl{accountRepo: repo}).UpdateAccount(context.Background(), accountID, &UpdateAccountInput{
+		Status: StatusError,
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, StatusError, updated.Status)
+	require.Equal(t, true, updated.Extra[Sub2APIProbeManagedAccountStatusExtraKey])
+}
+
+func TestSetAccountSchedulableDoesNotReleaseProbeOwnershipForErrorAccount(t *testing.T) {
+	accountID := int64(157)
+	repo := &upstreamBillingProbeAccountRepo{accounts: map[int64]*Account{
+		accountID: {
+			ID:          accountID,
+			Platform:    PlatformOpenAI,
+			Type:        AccountTypeAPIKey,
+			Status:      StatusError,
+			Schedulable: false,
+			Extra: map[string]any{
+				Sub2APIProbeManagedAccountStatusExtraKey:   true,
+				Sub2APIAdminAccountStateGenerationExtraKey: "probe-generation",
+			},
+		},
+	}}
+
+	_, err := (&adminServiceImpl{accountRepo: repo}).SetAccountSchedulable(context.Background(), accountID, false)
+
+	require.NoError(t, err)
+	require.Equal(t, true, repo.accounts[accountID].Extra[Sub2APIProbeManagedAccountStatusExtraKey])
+	require.Equal(t, "probe-generation", repo.accounts[accountID].Extra[Sub2APIAdminAccountStateGenerationExtraKey])
+}
+
+func TestAdminProbeOwnershipReleaseRules(t *testing.T) {
+	activeSchedulable := &Account{Status: StatusActive, Schedulable: true}
+	activeStopped := &Account{Status: StatusActive, Schedulable: false}
+	errorAccount := &Account{Status: StatusError, Schedulable: false}
+
+	require.True(t, shouldReleaseAdminProbeOwnershipOnStatusChange(activeSchedulable, "inactive"))
+	require.False(t, shouldReleaseAdminProbeOwnershipOnStatusChange(activeSchedulable, StatusActive))
+	require.False(t, shouldReleaseAdminProbeOwnershipOnStatusChange(activeSchedulable, StatusError))
+	require.False(t, shouldReleaseAdminProbeOwnershipOnStatusChange(errorAccount, "inactive"))
+	require.False(t, shouldReleaseAdminProbeOwnershipOnStatusChange(errorAccount, StatusError))
+
+	require.True(t, shouldReleaseAdminProbeOwnershipOnSchedulableChange(activeSchedulable, false))
+	require.False(t, shouldReleaseAdminProbeOwnershipOnSchedulableChange(activeStopped, false))
+	require.False(t, shouldReleaseAdminProbeOwnershipOnSchedulableChange(errorAccount, false))
+}
+
 func TestUpdateAccountPreservesGrokBillingSnapshotForUnrelatedEdit(t *testing.T) {
 	accountID := int64(112)
 	billing := &xai.BillingSummary{
@@ -642,6 +790,32 @@ func TestBulkUpdateAccountsDropsManagedUpstreamBillingProbeState(t *testing.T) {
 	require.NotContains(t, repo.bulkUpdates[0].Extra, UpstreamBillingRateSyncEnabledExtraKey)
 	require.NotContains(t, repo.bulkUpdates[0].Extra, UpstreamBillingProbeExtraKey)
 }
+
+func TestBulkUpdateAccountsMarksNormalStopForRepositoryPerRow(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		input BulkUpdateAccountsInput
+	}{
+		{name: "inactive status", input: BulkUpdateAccountsInput{Status: "inactive"}},
+		{name: "unschedulable", input: BulkUpdateAccountsInput{Schedulable: testBoolPtr(false)}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			repo := &upstreamBillingProbeAccountRepo{accounts: map[int64]*Account{
+				1: {ID: 1, Platform: PlatformOpenAI, Type: AccountTypeAPIKey, Status: StatusActive, Schedulable: true},
+			}}
+			tc.input.AccountIDs = []int64{1}
+
+			result, err := (&adminServiceImpl{accountRepo: repo}).BulkUpdateAccounts(context.Background(), &tc.input)
+
+			require.NoError(t, err)
+			require.Equal(t, 1, result.Success)
+			require.Len(t, repo.bulkUpdates, 1)
+			require.True(t, repo.bulkUpdates[0].ReleaseProbeOwnershipOnNormalStop)
+		})
+	}
+}
+
+func testBoolPtr(value bool) *bool { return &value }
 
 func TestBulkUpdateAccountsAcceptsDedicatedUpstreamBillingProbeSetting(t *testing.T) {
 	for _, enabled := range []bool{true, false} {

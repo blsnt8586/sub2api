@@ -48,6 +48,7 @@ func TestAccountEntityToServicePreservesSub2APIOptimizationSettings(t *testing.T
 	minMultiplier := 0.4
 	maxMultiplier := 1.2
 	testModel := "gpt-5.6-sol"
+	optimizeGroupID := int64(42)
 
 	got := accountEntityToService(&dbent.Account{
 		ID:                     13,
@@ -55,6 +56,7 @@ func TestAccountEntityToServicePreservesSub2APIOptimizationSettings(t *testing.T
 		Sub2apiMinMultiplier:   &minMultiplier,
 		Sub2apiMaxMultiplier:   &maxMultiplier,
 		Sub2apiTestModel:       &testModel,
+		Sub2apiOptimizeGroupID: &optimizeGroupID,
 	})
 
 	require.NotNil(t, got)
@@ -62,6 +64,7 @@ func TestAccountEntityToServicePreservesSub2APIOptimizationSettings(t *testing.T
 	require.Equal(t, minMultiplier, *got.Sub2APIMinMultiplier)
 	require.Equal(t, maxMultiplier, *got.Sub2APIMaxMultiplier)
 	require.Equal(t, testModel, *got.Sub2APITestModel)
+	require.Equal(t, optimizeGroupID, *got.Sub2APIOptimizeGroupID)
 }
 
 func newParameterLimitAccountRepo(t *testing.T) *accountRepository {

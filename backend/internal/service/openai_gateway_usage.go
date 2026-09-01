@@ -360,6 +360,9 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 		usageLog.VideoCount = result.VideoCount
 		usageLog.VideoResolution = optionalTrimmedStringPtr(NormalizeVideoBillingResolutionOrDefault(result.VideoResolution))
 		videoDurationSeconds := NormalizeVideoBillingDurationSecondsOrDefault(result.VideoDurationSeconds)
+		if isOpenAIVideoUsageResult(result, billingModels) {
+			videoDurationSeconds = NormalizeOpenAIVideoBillingDuration(result.VideoDurationSeconds)
+		}
 		usageLog.VideoDurationSeconds = &videoDurationSeconds
 	}
 	// canvas 视频（minimax-h3 / seedance 等）：VideoSeconds 存入 VideoDurationSeconds 供使用记录展示
@@ -700,6 +703,24 @@ func isGrokVideoBillingModel(model string) bool {
 	return strings.HasPrefix(strings.ToLower(strings.TrimSpace(model)), "grok-imagine-video")
 }
 
+func isOpenAIVideoBillingModel(model string) bool {
+	return strings.HasPrefix(strings.ToLower(strings.TrimSpace(model)), "sora-2")
+}
+
+func isOpenAIVideoUsageResult(result *OpenAIForwardResult, billingModels []string) bool {
+	if result == nil || result.VideoCount <= 0 {
+		return false
+	}
+	candidates := append([]string{}, billingModels...)
+	candidates = append(candidates, result.BillingModel, result.Model, result.UpstreamModel)
+	for _, candidate := range candidates {
+		if isOpenAIVideoBillingModel(candidate) {
+			return true
+		}
+	}
+	return false
+}
+
 func isGrokVideoUsageResult(result *OpenAIForwardResult, billingModels []string) bool {
 	if result == nil || result.VideoCount <= 0 {
 		return false
@@ -823,6 +844,9 @@ func (s *OpenAIGatewayService) calculateOpenAIVideoCost(
 	}
 	resolution := NormalizeVideoBillingResolutionOrDefault(result.VideoResolution)
 	durationSeconds := NormalizeVideoBillingDurationSecondsOrDefault(result.VideoDurationSeconds)
+	if strings.HasPrefix(strings.ToLower(strings.TrimSpace(billingModel)), "sora-2") {
+		durationSeconds = NormalizeOpenAIVideoBillingDuration(result.VideoDurationSeconds)
+	}
 	resolved := s.resolveOpenAIChannelPricing(ctx, billingModel, apiKey)
 	if resolved != nil && resolved.Source == PricingSourceGroup && resolved.Mode == BillingModeVideo {
 		gid := apiKey.Group.ID

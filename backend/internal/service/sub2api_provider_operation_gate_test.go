@@ -83,7 +83,7 @@ func TestScheduledTargetProbeYieldsWithoutWritingAResult(t *testing.T) {
 	require.True(t, acquired)
 
 	probe := &Sub2APIProviderProbeService{operationGate: gate}
-	run, acquired, err := probe.runTargetIfProviderAvailable(context.Background(), &ent.Sub2APIProviderProbeTarget{ProviderID: 41})
+	run, _, acquired, err := probe.runTargetIfProviderAvailable(context.Background(), &ent.Sub2APIProviderProbeTarget{ProviderID: 41})
 	require.NoError(t, err)
 	require.False(t, acquired)
 	require.Nil(t, run)

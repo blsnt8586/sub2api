@@ -173,4 +173,23 @@ describe('AccountActionMenu — spark shadow 按钮可见性', () => {
 
     wrapper.unmount()
   })
+
+  it('显示定时测试入口并触发 schedule 事件', async () => {
+    const account = makeAccount({ platform: 'anthropic', type: 'apikey', parent_account_id: null })
+    const wrapper = mount(AccountActionMenu, {
+      props: { show: true, account, position },
+      attachTo: document.body,
+    })
+
+    const scheduleBtn = getBodyButtons().find(b => b.textContent?.includes('admin.scheduledTests.schedule'))
+    expect(scheduleBtn).toBeDefined()
+
+    scheduleBtn!.click()
+    await wrapper.vm.$nextTick()
+
+    const emitted = wrapper.emitted('schedule')
+    expect(emitted).toBeTruthy()
+    expect(emitted![0][0]).toMatchObject({ id: account.id, name: account.name })
+    wrapper.unmount()
+  })
 })

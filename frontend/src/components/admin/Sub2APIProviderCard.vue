@@ -15,13 +15,25 @@
               {{ t(`admin.sub2apiProviders.statusLabels.${provider.status}`) }}
             </span>
           </div>
-	          <div class="mt-1.5 flex min-w-0 items-center gap-1.5 text-xs text-gray-500 dark:text-dark-400">
+          <div class="mt-1.5 flex min-w-0 items-center gap-1.5 text-xs text-gray-500 dark:text-dark-400">
             <span class="flex-shrink-0 font-medium text-blue-600 dark:text-blue-400">{{ providerTypeLabel }}</span>
             <span aria-hidden="true">·</span>
-            <span class="min-w-0 truncate" :title="provider.base_url">{{ providerHostname }}</span>
+            <a
+              v-if="providerURL"
+              :href="providerURL"
+              target="_blank"
+              rel="noopener noreferrer"
+              data-test="provider-upstream-link"
+              class="inline-flex min-w-0 max-w-[13rem] items-center gap-1 rounded border border-blue-200 bg-blue-50 px-1.5 py-1 font-medium text-blue-700 transition-colors hover:border-blue-300 hover:bg-blue-100 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-300 dark:hover:border-blue-700 dark:hover:bg-blue-900/40"
+              :title="t('admin.sub2apiProviders.openUpstream')"
+            >
+              <span class="truncate">{{ providerHostname }}</span>
+              <Icon name="externalLink" size="xs" class="flex-shrink-0" />
+            </a>
+            <span v-else class="min-w-0 truncate" :title="provider.base_url">{{ providerHostname }}</span>
             <span aria-hidden="true">·</span>
             <span class="flex-shrink-0 tabular-nums">{{ t('admin.sub2apiProviders.linkedAccountCount', { count: provider.accounts_count ?? 0 }) }}</span>
-	          </div>
+          </div>
         </div>
 
         <button
@@ -84,24 +96,24 @@
           <Icon name="refresh" size="sm" class="animate-spin" />
           {{ t('admin.sub2apiProviders.remoteOverview.loading') }}
         </span>
-        <span v-else-if="remoteOverviewAvailable" class="block min-w-0">
-          <span class="grid min-h-9 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3">
-            <span class="min-w-0">
-              <span class="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-dark-300">
-                <Icon name="creditCard" size="sm" class="flex-shrink-0 text-blue-500" />
-                {{ t('admin.sub2apiProviders.remoteOverview.balance') }}
+        <span v-else-if="remoteOverviewAvailable" class="block min-w-0" data-test="provider-remote-metrics">
+          <span class="grid grid-cols-3 gap-x-3 gap-y-2">
+            <span v-for="metric in remoteMetrics" :key="metric.key" class="min-w-0" :data-test="`remote-metric-${metric.key}`">
+              <span class="flex min-w-0 items-center gap-1 text-[10px] font-medium text-gray-500 dark:text-dark-400">
+                <Icon :name="metric.icon" size="xs" class="flex-shrink-0" :class="metric.iconClass" />
+                <span class="truncate">{{ t(`admin.sub2apiProviders.remoteOverview.${metric.label}`) }}</span>
               </span>
-              <span class="mt-0.5 block truncate text-base font-semibold tabular-nums text-gray-900 dark:text-white">
-                {{ formatBalance(remoteOverview?.balance ?? 0) }}
+              <span class="mt-0.5 block truncate text-sm font-semibold tabular-nums" :class="metric.valueClass" :title="metric.title">
+                {{ metric.value }}
               </span>
-            </span>
-            <span class="border-l border-gray-100 pl-3 dark:border-dark-700">
-              <span class="block text-xs text-gray-500 dark:text-dark-400">{{ t('admin.sub2apiProviders.remoteOverview.groups') }}</span>
-              <span class="mt-0.5 block text-sm font-semibold tabular-nums text-gray-800 dark:text-dark-100">{{ remoteGroups.length }}</span>
-            </span>
-            <span class="min-w-16 border-l border-gray-100 pl-3 dark:border-dark-700">
-              <span class="block text-xs text-gray-500 dark:text-dark-400">{{ t('admin.sub2apiProviders.remoteOverview.rateRange') }}</span>
-              <span class="mt-0.5 block text-sm font-semibold tabular-nums text-gray-800 dark:text-dark-100">{{ remoteRateRangeLabel }}</span>
+              <span
+                v-if="metric.detail"
+                class="mt-0.5 block truncate text-[10px] font-medium tabular-nums text-gray-500 dark:text-dark-400"
+                :title="metric.detail"
+                data-test="remote-metric-detail"
+              >
+                {{ metric.detail }}
+              </span>
             </span>
           </span>
         </span>
@@ -142,13 +154,13 @@
             v-for="route in sortedRoutes"
             :key="route.id"
             type="button"
-            class="group w-full min-w-0 cursor-pointer py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-inset"
+            class="group w-full min-w-0 cursor-pointer py-2.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-inset"
             :data-test="`provider-route-probe-${route.id}`"
             @click="emit('view-health')"
           >
-            <div class="flex min-w-0 items-center gap-2">
+            <div class="flex min-w-0 items-center gap-2.5">
               <span class="h-1.5 w-1.5 flex-shrink-0 rounded-full" :class="routeStatusDotClass(route.status)"></span>
-              <span class="min-w-0 flex-1 truncate text-xs font-medium text-gray-700 group-hover:text-gray-900 dark:text-dark-200 dark:group-hover:text-white" :title="route.account_name">
+              <span class="min-w-0 flex-1 truncate text-[13px] font-semibold text-gray-800 group-hover:text-gray-950 dark:text-dark-100 dark:group-hover:text-white" :title="route.account_name">
                 {{ route.account_name }}
               </span>
               <span
@@ -162,13 +174,26 @@
                 <Icon v-if="multiplierOutOfRange(route)" name="exclamationCircle" size="xs" class="flex-shrink-0" />
                 ×{{ formatMultiplier(route.remote_group_multiplier) }}
               </span>
-              <span class="route-platform flex-shrink-0 border border-gray-200 text-gray-500 dark:border-dark-600 dark:text-dark-300">{{ route.platform }}</span>
-              <span class="flex-shrink-0 text-[10px] tabular-nums" :class="routeStatusTextClass(route.status)">
+              <span
+                :class="['route-platform flex-shrink-0 border', platformTagClass(route.platform)]"
+                :title="route.platform"
+              >{{ route.platform }}</span>
+              <span
+                v-if="route.sub2api_optimize_enabled"
+                class="route-optimize-badge flex-shrink-0 border border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-800 dark:bg-violet-900/20 dark:text-violet-300"
+                :title="t('admin.sub2apiProviders.joinScheduleOn')"
+                :aria-label="t('admin.sub2apiProviders.joinScheduleOn')"
+                role="img"
+                :data-test="`route-optimize-${route.id}`"
+              >
+                <Icon name="bolt" size="xs" aria-hidden="true" />
+              </span>
+              <span class="flex-shrink-0 text-[11px] font-medium tabular-nums" :class="routeStatusTextClass(route.status)">
                 {{ route.latency_ms != null ? `${route.latency_ms} ms` : t(`admin.sub2apiProviders.health.status.${route.status}`) }}
               </span>
             </div>
-            <div class="mt-1 flex min-w-0 items-center gap-2 pl-3.5 text-[10px] text-gray-400 dark:text-dark-400">
-              <span class="min-w-0 flex-1 truncate" :title="routeIdentityTitle(route)">{{ route.remote_group_name || t('admin.sub2apiProviders.health.routes.unboundGroup') }}</span>
+            <div class="mt-1.5 flex min-w-0 items-center gap-2 pl-3.5 text-[11px] text-gray-500 dark:text-dark-400">
+              <span class="min-w-0 flex-1 truncate font-medium text-gray-600 dark:text-dark-300" :title="routeIdentityTitle(route)">{{ route.remote_group_name || t('admin.sub2apiProviders.health.routes.unboundGroup') }}</span>
               <span v-if="route.test_model" class="inline-flex min-w-0 max-w-[46%] items-center gap-1 text-gray-500 dark:text-dark-400" :title="route.test_model">
                 <Icon name="cpu" size="xs" class="flex-shrink-0" />
                 <span class="truncate">{{ route.test_model }}</span>
@@ -193,10 +218,6 @@
       </section>
 
       <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-gray-100 pt-2 text-[11px] text-gray-500 dark:border-dark-700 dark:text-dark-400">
-        <span class="inline-flex items-center gap-1.5" :title="provider.last_sync_error || provider.last_sync_at || undefined">
-          <span class="h-1.5 w-1.5 rounded-full" :class="syncDotClass"></span>
-          {{ t('admin.sub2apiProviders.accountSyncLabel') }}：{{ provider.last_sync_status ? t(`admin.sub2apiProviders.syncStatus.${provider.last_sync_status}`) : t('admin.sub2apiProviders.syncStatus.never') }}
-        </span>
         <span v-if="provider.proxy_id" class="inline-flex items-center gap-1.5" :title="t('admin.sub2apiProviders.form.proxyShort')">
           <Icon name="globe" size="xs" class="flex-shrink-0 text-cyan-600 dark:text-cyan-400" />
           <span>{{ t('admin.sub2apiProviders.form.proxyShort') }}</span>
@@ -258,6 +279,7 @@ import type {
 } from '@/api/admin/sub2apiProviders'
 import { formatRelativeTime } from '@/utils/format'
 import { getMultiplierRangeState } from '@/utils/sub2apiValidation'
+import { platformTagClass } from '@/utils/platformColors'
 import Icon from '@/components/icons/Icon.vue'
 import Sub2APIProviderRouteTimeline from './Sub2APIProviderRouteTimeline.vue'
 
@@ -309,23 +331,77 @@ const providerHostname = computed(() => {
     return props.provider.base_url
   }
 })
+const providerURL = computed(() => {
+  try {
+    const url = new URL(props.provider.base_url)
+    return url.protocol === 'http:' || url.protocol === 'https:' ? url.href : null
+  } catch {
+    return null
+  }
+})
 
-const remoteGroups = computed(() => props.remoteOverview?.groups ?? [])
 const remoteOverviewAvailable = computed(() => props.remoteOverview?.available === true)
 const remoteOverviewErrorMessage = computed(() => props.remoteOverviewError || props.remoteOverview?.last_error || null)
-const remoteRateRangeLabel = computed(() => {
-  if (remoteGroups.value.length === 0) return '-'
-  const values = remoteGroups.value.map(group => group.effective_multiplier)
-  const minimum = Math.min(...values)
-  const maximum = Math.max(...values)
-  return minimum === maximum
-    ? `×${formatMultiplier(minimum)}`
-    : `×${formatMultiplier(minimum)} - ×${formatMultiplier(maximum)}`
+const remoteUsage = computed(() => props.remoteOverview?.usage ?? null)
+const remoteDashboardAvailable = computed(() => remoteUsage.value?.dashboard_available === true)
+const formatMoney = (value: number | null | undefined) => {
+  if (value == null || !Number.isFinite(value)) return '-'
+  return `$${new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 }).format(value)}`
+}
+const formatCount = (value: number | null | undefined) => {
+  if (value == null || !Number.isFinite(value)) return '-'
+  return new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(value)
+}
+const formatTokens = (value: number | null | undefined) => {
+  if (value == null || !Number.isFinite(value)) return '-'
+  const absolute = Math.abs(value)
+  if (absolute >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`
+  if (absolute >= 1_000) return `${(value / 1_000).toFixed(1)}K`
+  return formatCount(value)
+}
+const formatDuration = (value: number | null | undefined) => {
+  if (value == null || !Number.isFinite(value) || value <= 0) return '-'
+  return value >= 1000 ? `${(value / 1000).toFixed(2)}s` : `${Math.round(value)}ms`
+}
+const formatPercent = (value: number | null | undefined) => {
+  if (value == null || !Number.isFinite(value)) return '-'
+  return `${(value * 100).toFixed(1)}%`
+}
+const remoteMetricValue = (value: number | null | undefined, formatter: (value: number | null | undefined) => string) =>
+  remoteDashboardAvailable.value ? formatter(value) : '-'
+type RemoteMetricIcon = 'creditCard' | 'dollar' | 'chart' | 'database' | 'clock'
+type RemoteMetric = {
+  key: string
+  label: string
+  icon: RemoteMetricIcon
+  iconClass: string
+  value: string
+  valueClass: string
+  title?: string
+  detail?: string
+}
+const remoteMetrics = computed<RemoteMetric[]>(() => {
+  const usage = remoteUsage.value
+  const metrics: RemoteMetric[] = [
+    { key: 'balance', label: 'balance', icon: 'creditCard', iconClass: 'text-emerald-500', value: formatMoney(props.remoteOverview?.balance), valueClass: 'text-emerald-600 dark:text-emerald-400' },
+    { key: 'total-recharged', label: 'totalRecharged', icon: 'dollar', iconClass: 'text-blue-500', value: formatMoney(usage?.total_recharged), valueClass: 'text-blue-600 dark:text-blue-400', title: usage?.funding_summary_available ? t('admin.sub2apiProviders.remoteOverview.fundingBreakdown', { orders: formatMoney(usage.order_recharged), redeems: formatMoney(usage.redeem_recharged) }) : undefined, detail: usage?.funding_summary_available ? t('admin.sub2apiProviders.remoteOverview.fundingBreakdown', { orders: formatMoney(usage.order_recharged), redeems: formatMoney(usage.redeem_recharged) }) : undefined },
+    { key: 'total-consumed', label: 'totalConsumed', icon: 'chart', iconClass: 'text-violet-500', value: formatMoney(usage?.total_consumed), valueClass: 'text-violet-600 dark:text-violet-400' },
+    { key: 'today-requests', label: 'todayRequests', icon: 'chart', iconClass: 'text-green-500', value: remoteMetricValue(usage?.today_requests, formatCount), valueClass: 'text-gray-900 dark:text-white' },
+    { key: 'today-consumed', label: 'todayConsumed', icon: 'dollar', iconClass: 'text-purple-500', value: remoteMetricValue(usage?.today_actual_cost, formatMoney), valueClass: 'text-purple-600 dark:text-purple-400' },
+    { key: 'today-tokens', label: 'todayTokens', icon: 'database', iconClass: 'text-amber-500', value: remoteMetricValue(usage?.today_tokens, formatTokens), valueClass: 'text-gray-900 dark:text-white' },
+    { key: 'total-tokens', label: 'totalTokens', icon: 'database', iconClass: 'text-indigo-500', value: remoteMetricValue(usage?.total_tokens, formatTokens), valueClass: 'text-gray-900 dark:text-white' },
+    { key: 'cache-hit-rate', label: 'cacheHitRate', icon: 'database', iconClass: 'text-cyan-500', value: usage?.cache_hit_rate_available ? formatPercent(usage.cache_hit_rate) : '-', valueClass: 'text-cyan-600 dark:text-cyan-400' },
+    { key: 'average-response', label: 'averageResponse', icon: 'clock', iconClass: 'text-rose-500', value: remoteMetricValue(usage?.average_duration_ms, formatDuration), valueClass: 'text-rose-600 dark:text-rose-400' },
+  ]
+  const profit = props.remoteOverview?.profit
+  if (profit?.available) {
+    metrics.push(
+      { key: 'today-profit', label: 'todayProfit', icon: 'dollar', iconClass: 'text-emerald-500', value: formatMoney(profit.today_gross_profit), valueClass: profit.today_gross_profit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400', detail: `${formatPercent(profit.today_gross_margin)} ${t('admin.sub2apiProviders.remoteOverview.marginSuffix')}` },
+      { key: 'total-profit', label: 'totalProfit', icon: 'chart', iconClass: 'text-teal-500', value: formatMoney(profit.total_gross_profit), valueClass: profit.total_gross_profit >= 0 ? 'text-teal-600 dark:text-teal-400' : 'text-red-600 dark:text-red-400', detail: `${formatPercent(profit.total_gross_margin)} ${t('admin.sub2apiProviders.remoteOverview.marginSuffix')}` },
+    )
+  }
+  return metrics
 })
-const formatBalance = (value: number) => new Intl.NumberFormat(undefined, {
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 2,
-}).format(value)
 
 const latestControl = computed(() => props.overview?.latest_control ?? null)
 const availabilityStatus = computed<ProviderHealthStatus>(() => props.overview?.availability_status ?? 'unknown')
@@ -379,9 +455,23 @@ const multiplierOutOfRange = (route: Sub2APIProviderProbeTargetHealth) => {
   const state = multiplierRangeState(route)
   return state === 'above' || state === 'below'
 }
-const multiplierClass = (route: Sub2APIProviderProbeTargetHealth) => multiplierOutOfRange(route)
-  ? 'border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300'
-  : 'border-gray-200 bg-gray-50 text-gray-600 dark:border-dark-600 dark:bg-dark-700 dark:text-dark-300'
+const multiplierClass = (route: Sub2APIProviderProbeTargetHealth) => {
+  if (!route.sub2api_optimize_enabled) {
+    return 'border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300'
+  }
+  switch (multiplierRangeState(route)) {
+    case 'below':
+      return 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300'
+    case 'within':
+      return 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300'
+    case 'above':
+      return 'border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300'
+    case 'unbounded':
+      return 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-800 dark:bg-sky-900/20 dark:text-sky-300'
+    default:
+      return 'border-gray-200 bg-gray-50 text-gray-600 dark:border-dark-600 dark:bg-dark-700 dark:text-dark-300'
+  }
+}
 const multiplierTitle = (route: Sub2APIProviderProbeTargetHealth) => {
   const current = route.remote_group_multiplier == null ? '-' : formatMultiplier(route.remote_group_multiplier)
   if (!route.sub2api_optimize_enabled) {
@@ -414,14 +504,6 @@ const routeIdentityTitle = (route: Sub2APIProviderProbeTargetHealth) => [
   route.remote_group_multiplier != null ? `×${formatMultiplier(route.remote_group_multiplier)}` : null,
 ].filter(Boolean).join(' · ')
 
-const syncDotClass = computed(() => {
-  switch (props.provider.last_sync_status) {
-    case 'success': return 'bg-green-500'
-    case 'failed': return 'bg-red-500'
-    default: return 'bg-gray-300 dark:bg-dark-500'
-  }
-})
-
 const pathStatusTitle = computed(() => props.provider.api_path_keys
   ? `Keys: ${props.provider.api_path_keys}\nGroups: ${props.provider.api_path_groups || t('admin.sub2apiProviders.pathsNotDetected')}`
   : t('admin.sub2apiProviders.pathsNotDetectedHint'))
@@ -446,14 +528,22 @@ const pathStatusTitle = computed(() => props.provider.api_path_keys
 }
 
 .route-platform,
-.multiplier-badge {
+.multiplier-badge,
+.route-optimize-badge {
   display: inline-flex;
   align-items: center;
   gap: 0.125rem;
   border-radius: 3px;
-  font-size: 9px;
-  line-height: 0.9rem;
-  padding: 0 0.25rem;
+  font-size: 10px;
+  line-height: 1rem;
+  padding: 0 0.375rem;
+}
+
+.multiplier-badge {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.25rem;
+  padding: 0 0.5rem;
 }
 
 .card-action {

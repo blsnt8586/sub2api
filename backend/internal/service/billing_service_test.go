@@ -1085,6 +1085,22 @@ func TestCalculateGrokImagineVideoCostUsesDefaultRateCard(t *testing.T) {
 	require.InDelta(t, 0.25, video15_1080P.TotalCost, 1e-10)
 }
 
+func TestCalculateOpenAIVideoCostUsesDefaultRateCardAndTwentySecondLimit(t *testing.T) {
+	svc := newTestBillingService()
+
+	sora2 := svc.CalculateVideoCost("sora-2", "720p", 1, 20, nil, 1.0)
+	sora2Pro720P := svc.CalculateVideoCost("sora-2-pro", "720p", 1, 1, nil, 1.0)
+	sora2Pro1024P := svc.CalculateVideoCost("sora-2-pro", "1024p", 1, 1, nil, 1.0)
+	sora2Pro1080P := svc.CalculateVideoCost("sora-2-pro", "1080p", 1, 1, nil, 1.0)
+	clamped := svc.CalculateVideoCost("sora-2-pro", "1080p", 1, 999, nil, 1.0)
+
+	require.InDelta(t, 0.10*20, sora2.TotalCost, 1e-10)
+	require.InDelta(t, 0.30, sora2Pro720P.TotalCost, 1e-10)
+	require.InDelta(t, 0.50, sora2Pro1024P.TotalCost, 1e-10)
+	require.InDelta(t, 0.70, sora2Pro1080P.TotalCost, 1e-10)
+	require.InDelta(t, 0.70*20, clamped.TotalCost, 1e-10)
+}
+
 func TestIsModelSupported(t *testing.T) {
 	svc := newTestBillingService()
 

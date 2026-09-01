@@ -60,7 +60,13 @@ func TestGetRemoteOverviewMergesCustomRatesAndSortsByEffectiveMultiplier(t *test
 		w.Header().Set("Content-Type", "application/json")
 		switch r.URL.Path {
 		case "/api/v1/auth/me":
-			_, _ = w.Write([]byte(`{"code":0,"data":{"balance":88.5}}`))
+			_, _ = w.Write([]byte(`{"code":0,"data":{"balance":88.5,"total_recharged":120}}`))
+		case "/api/v1/payment/funding-summary":
+			_, _ = w.Write([]byte(`{"code":0,"data":{"order_recharged":100,"redeem_recharged":50,"total_recharged":150}}`))
+		case "/api/v1/usage/dashboard/stats":
+			_, _ = w.Write([]byte(`{"code":0,"data":{"total_requests":4,"total_input_tokens":100,"total_output_tokens":50,"total_cache_creation_tokens":10,"total_cache_read_tokens":40,"total_tokens":200,"total_cost":3.5,"total_actual_cost":2.5,"today_requests":1,"today_input_tokens":20,"today_output_tokens":5,"today_cache_creation_tokens":2,"today_cache_read_tokens":8,"today_tokens":35,"today_cost":0.7,"today_actual_cost":0.5,"average_duration_ms":321.5}}`))
+		case "/api/v1/usage/dashboard/trend":
+			_, _ = w.Write([]byte(`{"code":0,"data":{"trend":[{"date":"2026-08-29 19:00","input_tokens":100,"cache_creation_tokens":20,"cache_read_tokens":30},{"date":"2026-08-29 20:00","input_tokens":100,"cache_creation_tokens":10,"cache_read_tokens":40}]}}`))
 		case "/api/v1/groups/available":
 			_, _ = w.Write([]byte(`{"code":0,"data":[{"id":1,"name":"Standard","description":"Default route","rate_multiplier":1,"platform":"openai","status":"active"},{"id":2,"name":"Economy","rate_multiplier":0.5,"platform":"anthropic","status":"active"}]}`))
 		case "/api/v1/groups/rates":
@@ -77,6 +83,7 @@ func TestGetRemoteOverviewMergesCustomRatesAndSortsByEffectiveMultiplier(t *test
 	repo := &remoteOverviewProviderRepo{provider: &ent.Sub2APIProvider{
 		ID:                    77,
 		BaseURL:               server.URL,
+		RemoteCostDivisor:     10,
 		AuthMode:              domain.Sub2APIProviderAuthModeTokenPair,
 		AccessTokenEncrypted:  &access,
 		RefreshTokenEncrypted: &refresh,
@@ -95,8 +102,11 @@ func TestGetRemoteOverviewMergesCustomRatesAndSortsByEffectiveMultiplier(t *test
 	if err != nil {
 		t.Fatalf("GetRemoteOverview: %v", err)
 	}
-	if overview.ProviderID != 77 || overview.Balance != 88.5 || !overview.RateOverridesAvailable {
+	if overview.ProviderID != 77 || overview.Balance != 8.85 || !overview.RateOverridesAvailable {
 		t.Fatalf("overview summary=%+v", overview)
+	}
+	if overview.Usage == nil || !overview.Usage.DashboardAvailable || !overview.Usage.FundingSummaryAvailable || !overview.Usage.CacheHitRateAvailable || overview.Usage.TotalRecharged != 15 || overview.Usage.OrderRecharged != 10 || overview.Usage.RedeemRecharged != 5 || overview.Usage.TotalConsumed != 6.15 || overview.Usage.TotalActualCost != 0.25 || overview.Usage.TodayActualCost != 0.05 || overview.Usage.TodayRequests != 1 || overview.Usage.CacheHitRate < 0.266 || overview.Usage.CacheHitRate > 0.267 {
+		t.Fatalf("overview usage=%+v", overview.Usage)
 	}
 	if !overview.Available || overview.Source != Sub2APIProviderRemoteOverviewSourceManual || overview.LastAttemptSource != Sub2APIProviderRemoteOverviewSourceManual {
 		t.Fatalf("overview collection metadata=%+v", overview)

@@ -44,14 +44,6 @@
             {{ t('admin.sub2apiProviders.detectPaths') }}
           </button>
           <button
-            @click="emit('test-connection', provider); emit('close')"
-            :disabled="testing"
-            class="flex min-h-11 w-full items-center gap-2 px-4 py-2 text-sm hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500 disabled:opacity-40 dark:hover:bg-dark-700"
-          >
-            <Icon :name="testing ? 'refresh' : 'play'" size="sm" class="text-blue-500" :class="testing ? 'animate-spin' : ''" />
-            {{ t('admin.sub2apiProviders.testConnection') }}
-          </button>
-          <button
             @click="emit('probe-settings', provider); emit('close')"
             class="flex min-h-11 w-full items-center gap-2 px-4 py-2 text-sm hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500 dark:hover:bg-dark-700"
           >
@@ -96,7 +88,6 @@ const props = defineProps<{
   detecting?: boolean
   optimizing?: boolean
   toggling?: boolean
-  testing?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -104,7 +95,6 @@ const emit = defineEmits<{
   (e: 'edit', provider: Sub2APIProvider): void
   (e: 'toggle-status', provider: Sub2APIProvider): void
   (e: 'detect-paths', provider: Sub2APIProvider): void
-  (e: 'test-connection', provider: Sub2APIProvider): void
   (e: 'probe-settings', provider: Sub2APIProvider): void
   (e: 'optimize-all', provider: Sub2APIProvider): void
   (e: 'delete', provider: Sub2APIProvider): void

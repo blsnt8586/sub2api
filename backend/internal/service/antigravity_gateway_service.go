@@ -366,9 +366,9 @@ func (s *AntigravityGatewayService) TestConnection(ctx context.Context, account 
 	// 构建请求体
 	var requestBody []byte
 	if strings.HasPrefix(modelID, "gemini-") {
-		requestBody, err = s.buildGeminiTestRequest(projectID, mappedModel)
+		requestBody, err = s.buildGeminiTestRequest(ctx, projectID, mappedModel)
 	} else {
-		requestBody, err = s.buildClaudeTestRequest(projectID, mappedModel)
+		requestBody, err = s.buildClaudeTestRequest(ctx, projectID, mappedModel)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("构建请求失败: %w", err)
@@ -439,15 +439,21 @@ func testConnectionHandleError(
 	return nil
 }
 
-// buildGeminiTestRequest 构建 Gemini 格式测试请求
-// 使用最小 token 消耗：输入 "." + maxOutputTokens: 1
-func (s *AntigravityGatewayService) buildGeminiTestRequest(projectID, model string) ([]byte, error) {
+// buildGeminiTestRequest 构建 Gemini 格式测试请求。普通手动测试仍使用
+// "." + 1 token；账号探针上下文改用可校验的紧凑算术题。
+func (s *AntigravityGatewayService) buildGeminiTestRequest(ctx context.Context, projectID, model string) ([]byte, error) {
+	prompt, maxTokens, probeChallenge := accountProbePromptForModel(ctx, model, ".")
+	if !probeChallenge {
+		maxTokens = 1
+	} else if maxTokens == accountProbeChallengeStandardMaxTokens {
+		maxTokens = accountProbeChallengeTightMaxTokens
+	}
 	payload := map[string]any{
 		"contents": []map[string]any{
 			{
 				"role": "user",
 				"parts": []map[string]any{
-					{"text": "."},
+					{"text": prompt},
 				},
 			},
 		},
@@ -458,26 +464,36 @@ func (s *AntigravityGatewayService) buildGeminiTestRequest(projectID, model stri
 			},
 		},
 		"generationConfig": map[string]any{
-			"maxOutputTokens": 1,
+			"maxOutputTokens": maxTokens,
 		},
 	}
 	payloadBytes, _ := json.Marshal(payload)
 	return s.wrapV1InternalRequest(projectID, model, payloadBytes)
 }
 
-// buildClaudeTestRequest 构建 Claude 格式测试请求并转换为 Gemini 格式
-// 使用最小 token 消耗：输入 "." + MaxTokens: 1
-func (s *AntigravityGatewayService) buildClaudeTestRequest(projectID, mappedModel string) ([]byte, error) {
+// buildClaudeTestRequest 构建 Claude 格式测试请求并转换为 Gemini 格式。
+// 普通手动测试保持 1 token；账号探针按模型使用紧凑输出预算。
+func (s *AntigravityGatewayService) buildClaudeTestRequest(ctx context.Context, projectID, mappedModel string) ([]byte, error) {
+	prompt, maxTokens, probeChallenge := accountProbePromptForModel(ctx, mappedModel, ".")
+	if !probeChallenge {
+		maxTokens = 1
+	} else if maxTokens == accountProbeChallengeStandardMaxTokens {
+		maxTokens = accountProbeChallengeTightMaxTokens
+	}
+	promptBytes, err := json.Marshal(prompt)
+	if err != nil {
+		return nil, err
+	}
 	claudeReq := &antigravity.ClaudeRequest{
 		Model: mappedModel,
 		Messages: []antigravity.ClaudeMessage{
 			{
 				Role:    "user",
-				Content: json.RawMessage(`"."`),
+				Content: promptBytes,
 			},
 		},
-		MaxTokens: 1,
-		Stream:    false,
+		MaxTokens: maxTokens,
+		Stream:    probeChallenge,
 	}
 	return antigravity.TransformClaudeToGemini(claudeReq, projectID, mappedModel)
 }

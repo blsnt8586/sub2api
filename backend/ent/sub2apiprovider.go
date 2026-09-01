@@ -34,6 +34,8 @@ type Sub2APIProvider struct {
 	ProviderType string `json:"provider_type,omitempty"`
 	// 状态：active, inactive
 	Status string `json:"status,omitempty"`
+	// 远程概览金额换算除数；展示金额 = 上游金额 ÷ 此值
+	RemoteCostDivisor float64 `json:"remote_cost_divisor,omitempty"`
 	// 备注信息
 	Notes *string `json:"notes,omitempty"`
 	// Provider 及其关联账号使用的统一出站代理；NULL 表示直连
@@ -165,6 +167,8 @@ func (*Sub2APIProvider) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case sub2apiprovider.FieldRemoteCostDivisor:
+			values[i] = new(sql.NullFloat64)
 		case sub2apiprovider.FieldID, sub2apiprovider.FieldProxyID:
 			values[i] = new(sql.NullInt64)
 		case sub2apiprovider.FieldName, sub2apiprovider.FieldBaseURL, sub2apiprovider.FieldProviderType, sub2apiprovider.FieldStatus, sub2apiprovider.FieldNotes, sub2apiprovider.FieldEmail, sub2apiprovider.FieldPasswordEncrypted, sub2apiprovider.FieldAuthMode, sub2apiprovider.FieldAccessTokenEncrypted, sub2apiprovider.FieldRefreshTokenEncrypted, sub2apiprovider.FieldLastAuthError, sub2apiprovider.FieldAPIPathKeys, sub2apiprovider.FieldAPIPathGroups, sub2apiprovider.FieldLastSyncStatus, sub2apiprovider.FieldLastSyncError:
@@ -234,6 +238,12 @@ func (_m *Sub2APIProvider) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field status", values[i])
 			} else if value.Valid {
 				_m.Status = value.String
+			}
+		case sub2apiprovider.FieldRemoteCostDivisor:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field remote_cost_divisor", values[i])
+			} else if value.Valid {
+				_m.RemoteCostDivisor = value.Float64
 			}
 		case sub2apiprovider.FieldNotes:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -430,6 +440,9 @@ func (_m *Sub2APIProvider) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(_m.Status)
+	builder.WriteString(", ")
+	builder.WriteString("remote_cost_divisor=")
+	builder.WriteString(fmt.Sprintf("%v", _m.RemoteCostDivisor))
 	builder.WriteString(", ")
 	if v := _m.Notes; v != nil {
 		builder.WriteString("notes=")

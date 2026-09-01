@@ -291,11 +291,15 @@ func (s *Sub2APIOptimizeScheduleService) ListLogs(ctx context.Context, providerI
 	return items, total, nil
 }
 
-// UpdateAccountOptimizeSettings 更新单个账号的定时优化设置（是否参与 + 倍率下限 + 倍率上限 + 测试模型）。
-// enabled 独立控制是否参与；minMultiplier/maxMultiplier/testModel 即使 enabled=false 也会持久化保留。
+// UpdateAccountOptimizeSettings 更新单个账号的定时优化设置。
+// enabled 独立控制是否参与；其他配置即使 enabled=false 也会持久化保留。
 // 开启参与时倍率下限、倍率上限、测试模型三项都必须明确填写。
 // 关闭参与时仍保留这些配置，便于用户补齐后重新开启。
-func (s *Sub2APIOptimizeScheduleService) UpdateAccountOptimizeSettings(ctx context.Context, providerID, accountID int64, enabled bool, minMultiplier, maxMultiplier *float64, testModel *string) error {
+func (s *Sub2APIOptimizeScheduleService) UpdateAccountOptimizeSettings(ctx context.Context, providerID, accountID int64, enabled bool, minMultiplier, maxMultiplier *float64, testModel *string, groupID *int64) error {
+	return s.UpdateAccountOptimizeSettingsWithGroupIDs(ctx, providerID, accountID, enabled, minMultiplier, maxMultiplier, testModel, groupID, nil)
+}
+
+func (s *Sub2APIOptimizeScheduleService) UpdateAccountOptimizeSettingsWithGroupIDs(ctx context.Context, providerID, accountID int64, enabled bool, minMultiplier, maxMultiplier *float64, testModel *string, groupID *int64, groupIDs []int64) error {
 	if testModel != nil {
 		trimmed := strings.TrimSpace(*testModel)
 		if trimmed == "" {
@@ -326,7 +330,27 @@ func (s *Sub2APIOptimizeScheduleService) UpdateAccountOptimizeSettings(ctx conte
 			return infraerrors.BadRequest("MISSING_TEST_MODEL", "test_model is required when optimize is enabled")
 		}
 	}
-	err := s.providerSvc.accountRepo.UpdateSub2APIOptimizeSettings(ctx, providerID, accountID, enabled, minMultiplier, maxMultiplier, testModel)
+	if groupID != nil && *groupID <= 0 {
+		return infraerrors.BadRequest("INVALID_OPTIMIZE_GROUP", "group_id must be a positive integer")
+	}
+	if groupIDs != nil {
+		groupIDs = normalizeSub2APIOptimizeGroupIDs(groupIDs)
+		if extended, ok := s.providerSvc.accountRepo.(Sub2APIOptimizeGroupIDsRepository); ok {
+			err := extended.UpdateSub2APIOptimizeSettingsWithGroupIDs(ctx, providerID, accountID, enabled, minMultiplier, maxMultiplier, testModel, groupIDs)
+			if errors.Is(err, sql.ErrNoRows) {
+				return infraerrors.BadRequest("ACCOUNT_NOT_LINKED", "该账号未关联到此上游，请重新打开账号面板后再操作")
+			}
+			return err
+		}
+		// A legacy adapter cannot persist the new list. The first selection is
+		// still a valid scalar restriction, so preserve a safe fallback.
+		if len(groupIDs) > 0 {
+			groupID = &groupIDs[0]
+		} else {
+			groupID = nil
+		}
+	}
+	err := s.providerSvc.accountRepo.UpdateSub2APIOptimizeSettings(ctx, providerID, accountID, enabled, minMultiplier, maxMultiplier, testModel, groupID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return infraerrors.BadRequest("ACCOUNT_NOT_LINKED", "该账号未关联到此上游，请重新打开账号面板后再操作")
 	}
@@ -525,8 +549,8 @@ func (s *Sub2APIOptimizeScheduleService) OptimizeAllManually(ctx context.Context
 	}
 
 	// 分流：满足前置条件的进引擎优化；已开启但配置非法的明确记失败。
-	var ready []Account
-	var invalid []OptimizeAccountDetail
+	ready := make([]Account, 0, len(accounts))
+	invalid := make([]OptimizeAccountDetail, 0, len(accounts))
 	for i := range accounts {
 		acc := accounts[i]
 		if !acc.Sub2APIOptimizeEnabled {

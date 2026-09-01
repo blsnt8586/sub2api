@@ -34,6 +34,18 @@ const (
 	FieldEnabled = "enabled"
 	// FieldIntervalSeconds holds the string denoting the interval_seconds field in the database.
 	FieldIntervalSeconds = "interval_seconds"
+	// FieldAdaptiveIntervalEnabled holds the string denoting the adaptive_interval_enabled field in the database.
+	FieldAdaptiveIntervalEnabled = "adaptive_interval_enabled"
+	// FieldHealthyIntervalSeconds holds the string denoting the healthy_interval_seconds field in the database.
+	FieldHealthyIntervalSeconds = "healthy_interval_seconds"
+	// FieldHealthyIntervalThreshold holds the string denoting the healthy_interval_threshold field in the database.
+	FieldHealthyIntervalThreshold = "healthy_interval_threshold"
+	// FieldStableHealthyIntervalSeconds holds the string denoting the stable_healthy_interval_seconds field in the database.
+	FieldStableHealthyIntervalSeconds = "stable_healthy_interval_seconds"
+	// FieldStableHealthyThreshold holds the string denoting the stable_healthy_threshold field in the database.
+	FieldStableHealthyThreshold = "stable_healthy_threshold"
+	// FieldConsecutiveHealthy holds the string denoting the consecutive_healthy field in the database.
+	FieldConsecutiveHealthy = "consecutive_healthy"
 	// FieldTestModel holds the string denoting the test_model field in the database.
 	FieldTestModel = "test_model"
 	// FieldAllowMediaProbe holds the string denoting the allow_media_probe field in the database.
@@ -104,6 +116,12 @@ var Columns = []string{
 	FieldPlatform,
 	FieldEnabled,
 	FieldIntervalSeconds,
+	FieldAdaptiveIntervalEnabled,
+	FieldHealthyIntervalSeconds,
+	FieldHealthyIntervalThreshold,
+	FieldStableHealthyIntervalSeconds,
+	FieldStableHealthyThreshold,
+	FieldConsecutiveHealthy,
 	FieldTestModel,
 	FieldAllowMediaProbe,
 	FieldTimeoutSeconds,
@@ -148,6 +166,28 @@ var (
 	DefaultIntervalSeconds int
 	// IntervalSecondsValidator is a validator for the "interval_seconds" field. It is called by the builders before save.
 	IntervalSecondsValidator func(int) error
+	// DefaultAdaptiveIntervalEnabled holds the default value on creation for the "adaptive_interval_enabled" field.
+	DefaultAdaptiveIntervalEnabled bool
+	// DefaultHealthyIntervalSeconds holds the default value on creation for the "healthy_interval_seconds" field.
+	DefaultHealthyIntervalSeconds int
+	// HealthyIntervalSecondsValidator is a validator for the "healthy_interval_seconds" field. It is called by the builders before save.
+	HealthyIntervalSecondsValidator func(int) error
+	// DefaultHealthyIntervalThreshold holds the default value on creation for the "healthy_interval_threshold" field.
+	DefaultHealthyIntervalThreshold int
+	// HealthyIntervalThresholdValidator is a validator for the "healthy_interval_threshold" field. It is called by the builders before save.
+	HealthyIntervalThresholdValidator func(int) error
+	// DefaultStableHealthyIntervalSeconds holds the default value on creation for the "stable_healthy_interval_seconds" field.
+	DefaultStableHealthyIntervalSeconds int
+	// StableHealthyIntervalSecondsValidator is a validator for the "stable_healthy_interval_seconds" field. It is called by the builders before save.
+	StableHealthyIntervalSecondsValidator func(int) error
+	// DefaultStableHealthyThreshold holds the default value on creation for the "stable_healthy_threshold" field.
+	DefaultStableHealthyThreshold int
+	// StableHealthyThresholdValidator is a validator for the "stable_healthy_threshold" field. It is called by the builders before save.
+	StableHealthyThresholdValidator func(int) error
+	// DefaultConsecutiveHealthy holds the default value on creation for the "consecutive_healthy" field.
+	DefaultConsecutiveHealthy int
+	// ConsecutiveHealthyValidator is a validator for the "consecutive_healthy" field. It is called by the builders before save.
+	ConsecutiveHealthyValidator func(int) error
 	// TestModelValidator is a validator for the "test_model" field. It is called by the builders before save.
 	TestModelValidator func(string) error
 	// DefaultAllowMediaProbe holds the default value on creation for the "allow_media_probe" field.
@@ -240,6 +280,36 @@ func ByEnabled(opts ...sql.OrderTermOption) OrderOption {
 // ByIntervalSeconds orders the results by the interval_seconds field.
 func ByIntervalSeconds(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldIntervalSeconds, opts...).ToFunc()
+}
+
+// ByAdaptiveIntervalEnabled orders the results by the adaptive_interval_enabled field.
+func ByAdaptiveIntervalEnabled(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAdaptiveIntervalEnabled, opts...).ToFunc()
+}
+
+// ByHealthyIntervalSeconds orders the results by the healthy_interval_seconds field.
+func ByHealthyIntervalSeconds(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldHealthyIntervalSeconds, opts...).ToFunc()
+}
+
+// ByHealthyIntervalThreshold orders the results by the healthy_interval_threshold field.
+func ByHealthyIntervalThreshold(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldHealthyIntervalThreshold, opts...).ToFunc()
+}
+
+// ByStableHealthyIntervalSeconds orders the results by the stable_healthy_interval_seconds field.
+func ByStableHealthyIntervalSeconds(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldStableHealthyIntervalSeconds, opts...).ToFunc()
+}
+
+// ByStableHealthyThreshold orders the results by the stable_healthy_threshold field.
+func ByStableHealthyThreshold(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldStableHealthyThreshold, opts...).ToFunc()
+}
+
+// ByConsecutiveHealthy orders the results by the consecutive_healthy field.
+func ByConsecutiveHealthy(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldConsecutiveHealthy, opts...).ToFunc()
 }
 
 // ByTestModel orders the results by the test_model field.

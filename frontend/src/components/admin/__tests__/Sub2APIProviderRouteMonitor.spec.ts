@@ -26,9 +26,19 @@ const route: Sub2APIProviderProbeTargetHealth = {
   remote_group_id: 44,
   remote_group_name: 'Claude-Kiro-90 cache',
   remote_group_multiplier: 0.4,
+  sub2api_optimize_enabled: true,
+  sub2api_min_multiplier: 0.3,
+  sub2api_max_multiplier: 0.8,
   platform: 'anthropic',
   enabled: true,
   interval_seconds: 1800,
+  adaptive_interval_enabled: true,
+  healthy_interval_seconds: 3600,
+  healthy_interval_threshold: 2,
+  stable_healthy_interval_seconds: 7200,
+  stable_healthy_threshold: 6,
+  consecutive_healthy: 4,
+  current_interval_seconds: 3600,
   test_model: 'claude-sonnet-4-6',
   allow_media_probe: false,
   timeout_seconds: 15,
@@ -74,6 +84,10 @@ describe('Sub2APIProviderRouteMonitor', () => {
     expect(wrapper.text()).toContain(route.test_model!)
     expect(wrapper.text()).toContain('×0.4')
     expect(wrapper.text()).toContain('421 ms')
+    expect(wrapper.get('[data-test="route-multiplier-77"]').classes()).toContain('text-emerald-700')
+    expect(wrapper.get('[data-test="route-multiplier-77"]').attributes('title')).toBe('admin.sub2apiProviders.multiplierRangeWithinDetail')
+    expect(wrapper.get('.route-platform').classes()).toContain('bg-orange-100')
+    expect(wrapper.get('[data-test="route-optimize-77"]').attributes('aria-label')).toBe('admin.sub2apiProviders.joinScheduleOn')
     expect(wrapper.text()).not.toContain(route.error_message!)
     expect(wrapper.findAll('[data-test="route-timeline-bucket"]')).toHaveLength(60)
     expect(wrapper.get('[data-test="route-timeline-detail"]').text()).toContain('421 ms')
@@ -113,6 +127,22 @@ describe('Sub2APIProviderRouteMonitor', () => {
 
     const interval = wrapper.get('select')
     expect(interval.find('option[value="1800"]').exists()).toBe(true)
+  })
+
+  it('shows and updates the adaptive healthy cadence independently', async () => {
+    const wrapper = mount(Sub2APIProviderRouteMonitor, {
+      props: { routes: [route], historyByTarget: {} },
+    })
+
+    await wrapper.get('[data-test="route-toggle-77"]').trigger('click')
+    const cadence = wrapper.get('[data-test="route-adaptive-cadence-77"]')
+    expect(cadence.text()).toContain('admin.sub2apiProviders.health.routes.currentInterval')
+    expect(cadence.text()).toContain('admin.sub2apiProviders.health.routes.healthyStreak')
+
+    const healthyInput = cadence.find('input[value="3600"]')
+    await healthyInput.setValue('4200')
+    await healthyInput.trigger('change')
+    expect(wrapper.emitted('update')).toContainEqual([77, { healthy_interval_seconds: 4200 }])
   })
 
   it('marks staged route changes as unsaved and prevents a probe run', async () => {

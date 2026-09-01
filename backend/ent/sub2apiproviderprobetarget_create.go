@@ -149,6 +149,90 @@ func (_c *Sub2APIProviderProbeTargetCreate) SetNillableIntervalSeconds(v *int) *
 	return _c
 }
 
+// SetAdaptiveIntervalEnabled sets the "adaptive_interval_enabled" field.
+func (_c *Sub2APIProviderProbeTargetCreate) SetAdaptiveIntervalEnabled(v bool) *Sub2APIProviderProbeTargetCreate {
+	_c.mutation.SetAdaptiveIntervalEnabled(v)
+	return _c
+}
+
+// SetNillableAdaptiveIntervalEnabled sets the "adaptive_interval_enabled" field if the given value is not nil.
+func (_c *Sub2APIProviderProbeTargetCreate) SetNillableAdaptiveIntervalEnabled(v *bool) *Sub2APIProviderProbeTargetCreate {
+	if v != nil {
+		_c.SetAdaptiveIntervalEnabled(*v)
+	}
+	return _c
+}
+
+// SetHealthyIntervalSeconds sets the "healthy_interval_seconds" field.
+func (_c *Sub2APIProviderProbeTargetCreate) SetHealthyIntervalSeconds(v int) *Sub2APIProviderProbeTargetCreate {
+	_c.mutation.SetHealthyIntervalSeconds(v)
+	return _c
+}
+
+// SetNillableHealthyIntervalSeconds sets the "healthy_interval_seconds" field if the given value is not nil.
+func (_c *Sub2APIProviderProbeTargetCreate) SetNillableHealthyIntervalSeconds(v *int) *Sub2APIProviderProbeTargetCreate {
+	if v != nil {
+		_c.SetHealthyIntervalSeconds(*v)
+	}
+	return _c
+}
+
+// SetHealthyIntervalThreshold sets the "healthy_interval_threshold" field.
+func (_c *Sub2APIProviderProbeTargetCreate) SetHealthyIntervalThreshold(v int) *Sub2APIProviderProbeTargetCreate {
+	_c.mutation.SetHealthyIntervalThreshold(v)
+	return _c
+}
+
+// SetNillableHealthyIntervalThreshold sets the "healthy_interval_threshold" field if the given value is not nil.
+func (_c *Sub2APIProviderProbeTargetCreate) SetNillableHealthyIntervalThreshold(v *int) *Sub2APIProviderProbeTargetCreate {
+	if v != nil {
+		_c.SetHealthyIntervalThreshold(*v)
+	}
+	return _c
+}
+
+// SetStableHealthyIntervalSeconds sets the "stable_healthy_interval_seconds" field.
+func (_c *Sub2APIProviderProbeTargetCreate) SetStableHealthyIntervalSeconds(v int) *Sub2APIProviderProbeTargetCreate {
+	_c.mutation.SetStableHealthyIntervalSeconds(v)
+	return _c
+}
+
+// SetNillableStableHealthyIntervalSeconds sets the "stable_healthy_interval_seconds" field if the given value is not nil.
+func (_c *Sub2APIProviderProbeTargetCreate) SetNillableStableHealthyIntervalSeconds(v *int) *Sub2APIProviderProbeTargetCreate {
+	if v != nil {
+		_c.SetStableHealthyIntervalSeconds(*v)
+	}
+	return _c
+}
+
+// SetStableHealthyThreshold sets the "stable_healthy_threshold" field.
+func (_c *Sub2APIProviderProbeTargetCreate) SetStableHealthyThreshold(v int) *Sub2APIProviderProbeTargetCreate {
+	_c.mutation.SetStableHealthyThreshold(v)
+	return _c
+}
+
+// SetNillableStableHealthyThreshold sets the "stable_healthy_threshold" field if the given value is not nil.
+func (_c *Sub2APIProviderProbeTargetCreate) SetNillableStableHealthyThreshold(v *int) *Sub2APIProviderProbeTargetCreate {
+	if v != nil {
+		_c.SetStableHealthyThreshold(*v)
+	}
+	return _c
+}
+
+// SetConsecutiveHealthy sets the "consecutive_healthy" field.
+func (_c *Sub2APIProviderProbeTargetCreate) SetConsecutiveHealthy(v int) *Sub2APIProviderProbeTargetCreate {
+	_c.mutation.SetConsecutiveHealthy(v)
+	return _c
+}
+
+// SetNillableConsecutiveHealthy sets the "consecutive_healthy" field if the given value is not nil.
+func (_c *Sub2APIProviderProbeTargetCreate) SetNillableConsecutiveHealthy(v *int) *Sub2APIProviderProbeTargetCreate {
+	if v != nil {
+		_c.SetConsecutiveHealthy(*v)
+	}
+	return _c
+}
+
 // SetTestModel sets the "test_model" field.
 func (_c *Sub2APIProviderProbeTargetCreate) SetTestModel(v string) *Sub2APIProviderProbeTargetCreate {
 	_c.mutation.SetTestModel(v)
@@ -411,6 +495,30 @@ func (_c *Sub2APIProviderProbeTargetCreate) defaults() {
 		v := sub2apiproviderprobetarget.DefaultIntervalSeconds
 		_c.mutation.SetIntervalSeconds(v)
 	}
+	if _, ok := _c.mutation.AdaptiveIntervalEnabled(); !ok {
+		v := sub2apiproviderprobetarget.DefaultAdaptiveIntervalEnabled
+		_c.mutation.SetAdaptiveIntervalEnabled(v)
+	}
+	if _, ok := _c.mutation.HealthyIntervalSeconds(); !ok {
+		v := sub2apiproviderprobetarget.DefaultHealthyIntervalSeconds
+		_c.mutation.SetHealthyIntervalSeconds(v)
+	}
+	if _, ok := _c.mutation.HealthyIntervalThreshold(); !ok {
+		v := sub2apiproviderprobetarget.DefaultHealthyIntervalThreshold
+		_c.mutation.SetHealthyIntervalThreshold(v)
+	}
+	if _, ok := _c.mutation.StableHealthyIntervalSeconds(); !ok {
+		v := sub2apiproviderprobetarget.DefaultStableHealthyIntervalSeconds
+		_c.mutation.SetStableHealthyIntervalSeconds(v)
+	}
+	if _, ok := _c.mutation.StableHealthyThreshold(); !ok {
+		v := sub2apiproviderprobetarget.DefaultStableHealthyThreshold
+		_c.mutation.SetStableHealthyThreshold(v)
+	}
+	if _, ok := _c.mutation.ConsecutiveHealthy(); !ok {
+		v := sub2apiproviderprobetarget.DefaultConsecutiveHealthy
+		_c.mutation.SetConsecutiveHealthy(v)
+	}
 	if _, ok := _c.mutation.AllowMediaProbe(); !ok {
 		v := sub2apiproviderprobetarget.DefaultAllowMediaProbe
 		_c.mutation.SetAllowMediaProbe(v)
@@ -485,6 +593,49 @@ func (_c *Sub2APIProviderProbeTargetCreate) check() error {
 	if v, ok := _c.mutation.IntervalSeconds(); ok {
 		if err := sub2apiproviderprobetarget.IntervalSecondsValidator(v); err != nil {
 			return &ValidationError{Name: "interval_seconds", err: fmt.Errorf(`ent: validator failed for field "Sub2APIProviderProbeTarget.interval_seconds": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.AdaptiveIntervalEnabled(); !ok {
+		return &ValidationError{Name: "adaptive_interval_enabled", err: errors.New(`ent: missing required field "Sub2APIProviderProbeTarget.adaptive_interval_enabled"`)}
+	}
+	if _, ok := _c.mutation.HealthyIntervalSeconds(); !ok {
+		return &ValidationError{Name: "healthy_interval_seconds", err: errors.New(`ent: missing required field "Sub2APIProviderProbeTarget.healthy_interval_seconds"`)}
+	}
+	if v, ok := _c.mutation.HealthyIntervalSeconds(); ok {
+		if err := sub2apiproviderprobetarget.HealthyIntervalSecondsValidator(v); err != nil {
+			return &ValidationError{Name: "healthy_interval_seconds", err: fmt.Errorf(`ent: validator failed for field "Sub2APIProviderProbeTarget.healthy_interval_seconds": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.HealthyIntervalThreshold(); !ok {
+		return &ValidationError{Name: "healthy_interval_threshold", err: errors.New(`ent: missing required field "Sub2APIProviderProbeTarget.healthy_interval_threshold"`)}
+	}
+	if v, ok := _c.mutation.HealthyIntervalThreshold(); ok {
+		if err := sub2apiproviderprobetarget.HealthyIntervalThresholdValidator(v); err != nil {
+			return &ValidationError{Name: "healthy_interval_threshold", err: fmt.Errorf(`ent: validator failed for field "Sub2APIProviderProbeTarget.healthy_interval_threshold": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.StableHealthyIntervalSeconds(); !ok {
+		return &ValidationError{Name: "stable_healthy_interval_seconds", err: errors.New(`ent: missing required field "Sub2APIProviderProbeTarget.stable_healthy_interval_seconds"`)}
+	}
+	if v, ok := _c.mutation.StableHealthyIntervalSeconds(); ok {
+		if err := sub2apiproviderprobetarget.StableHealthyIntervalSecondsValidator(v); err != nil {
+			return &ValidationError{Name: "stable_healthy_interval_seconds", err: fmt.Errorf(`ent: validator failed for field "Sub2APIProviderProbeTarget.stable_healthy_interval_seconds": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.StableHealthyThreshold(); !ok {
+		return &ValidationError{Name: "stable_healthy_threshold", err: errors.New(`ent: missing required field "Sub2APIProviderProbeTarget.stable_healthy_threshold"`)}
+	}
+	if v, ok := _c.mutation.StableHealthyThreshold(); ok {
+		if err := sub2apiproviderprobetarget.StableHealthyThresholdValidator(v); err != nil {
+			return &ValidationError{Name: "stable_healthy_threshold", err: fmt.Errorf(`ent: validator failed for field "Sub2APIProviderProbeTarget.stable_healthy_threshold": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.ConsecutiveHealthy(); !ok {
+		return &ValidationError{Name: "consecutive_healthy", err: errors.New(`ent: missing required field "Sub2APIProviderProbeTarget.consecutive_healthy"`)}
+	}
+	if v, ok := _c.mutation.ConsecutiveHealthy(); ok {
+		if err := sub2apiproviderprobetarget.ConsecutiveHealthyValidator(v); err != nil {
+			return &ValidationError{Name: "consecutive_healthy", err: fmt.Errorf(`ent: validator failed for field "Sub2APIProviderProbeTarget.consecutive_healthy": %w`, err)}
 		}
 	}
 	if v, ok := _c.mutation.TestModel(); ok {
@@ -618,6 +769,30 @@ func (_c *Sub2APIProviderProbeTargetCreate) createSpec() (*Sub2APIProviderProbeT
 	if value, ok := _c.mutation.IntervalSeconds(); ok {
 		_spec.SetField(sub2apiproviderprobetarget.FieldIntervalSeconds, field.TypeInt, value)
 		_node.IntervalSeconds = value
+	}
+	if value, ok := _c.mutation.AdaptiveIntervalEnabled(); ok {
+		_spec.SetField(sub2apiproviderprobetarget.FieldAdaptiveIntervalEnabled, field.TypeBool, value)
+		_node.AdaptiveIntervalEnabled = value
+	}
+	if value, ok := _c.mutation.HealthyIntervalSeconds(); ok {
+		_spec.SetField(sub2apiproviderprobetarget.FieldHealthyIntervalSeconds, field.TypeInt, value)
+		_node.HealthyIntervalSeconds = value
+	}
+	if value, ok := _c.mutation.HealthyIntervalThreshold(); ok {
+		_spec.SetField(sub2apiproviderprobetarget.FieldHealthyIntervalThreshold, field.TypeInt, value)
+		_node.HealthyIntervalThreshold = value
+	}
+	if value, ok := _c.mutation.StableHealthyIntervalSeconds(); ok {
+		_spec.SetField(sub2apiproviderprobetarget.FieldStableHealthyIntervalSeconds, field.TypeInt, value)
+		_node.StableHealthyIntervalSeconds = value
+	}
+	if value, ok := _c.mutation.StableHealthyThreshold(); ok {
+		_spec.SetField(sub2apiproviderprobetarget.FieldStableHealthyThreshold, field.TypeInt, value)
+		_node.StableHealthyThreshold = value
+	}
+	if value, ok := _c.mutation.ConsecutiveHealthy(); ok {
+		_spec.SetField(sub2apiproviderprobetarget.FieldConsecutiveHealthy, field.TypeInt, value)
+		_node.ConsecutiveHealthy = value
 	}
 	if value, ok := _c.mutation.TestModel(); ok {
 		_spec.SetField(sub2apiproviderprobetarget.FieldTestModel, field.TypeString, value)
@@ -914,6 +1089,108 @@ func (u *Sub2APIProviderProbeTargetUpsert) UpdateIntervalSeconds() *Sub2APIProvi
 // AddIntervalSeconds adds v to the "interval_seconds" field.
 func (u *Sub2APIProviderProbeTargetUpsert) AddIntervalSeconds(v int) *Sub2APIProviderProbeTargetUpsert {
 	u.Add(sub2apiproviderprobetarget.FieldIntervalSeconds, v)
+	return u
+}
+
+// SetAdaptiveIntervalEnabled sets the "adaptive_interval_enabled" field.
+func (u *Sub2APIProviderProbeTargetUpsert) SetAdaptiveIntervalEnabled(v bool) *Sub2APIProviderProbeTargetUpsert {
+	u.Set(sub2apiproviderprobetarget.FieldAdaptiveIntervalEnabled, v)
+	return u
+}
+
+// UpdateAdaptiveIntervalEnabled sets the "adaptive_interval_enabled" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsert) UpdateAdaptiveIntervalEnabled() *Sub2APIProviderProbeTargetUpsert {
+	u.SetExcluded(sub2apiproviderprobetarget.FieldAdaptiveIntervalEnabled)
+	return u
+}
+
+// SetHealthyIntervalSeconds sets the "healthy_interval_seconds" field.
+func (u *Sub2APIProviderProbeTargetUpsert) SetHealthyIntervalSeconds(v int) *Sub2APIProviderProbeTargetUpsert {
+	u.Set(sub2apiproviderprobetarget.FieldHealthyIntervalSeconds, v)
+	return u
+}
+
+// UpdateHealthyIntervalSeconds sets the "healthy_interval_seconds" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsert) UpdateHealthyIntervalSeconds() *Sub2APIProviderProbeTargetUpsert {
+	u.SetExcluded(sub2apiproviderprobetarget.FieldHealthyIntervalSeconds)
+	return u
+}
+
+// AddHealthyIntervalSeconds adds v to the "healthy_interval_seconds" field.
+func (u *Sub2APIProviderProbeTargetUpsert) AddHealthyIntervalSeconds(v int) *Sub2APIProviderProbeTargetUpsert {
+	u.Add(sub2apiproviderprobetarget.FieldHealthyIntervalSeconds, v)
+	return u
+}
+
+// SetHealthyIntervalThreshold sets the "healthy_interval_threshold" field.
+func (u *Sub2APIProviderProbeTargetUpsert) SetHealthyIntervalThreshold(v int) *Sub2APIProviderProbeTargetUpsert {
+	u.Set(sub2apiproviderprobetarget.FieldHealthyIntervalThreshold, v)
+	return u
+}
+
+// UpdateHealthyIntervalThreshold sets the "healthy_interval_threshold" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsert) UpdateHealthyIntervalThreshold() *Sub2APIProviderProbeTargetUpsert {
+	u.SetExcluded(sub2apiproviderprobetarget.FieldHealthyIntervalThreshold)
+	return u
+}
+
+// AddHealthyIntervalThreshold adds v to the "healthy_interval_threshold" field.
+func (u *Sub2APIProviderProbeTargetUpsert) AddHealthyIntervalThreshold(v int) *Sub2APIProviderProbeTargetUpsert {
+	u.Add(sub2apiproviderprobetarget.FieldHealthyIntervalThreshold, v)
+	return u
+}
+
+// SetStableHealthyIntervalSeconds sets the "stable_healthy_interval_seconds" field.
+func (u *Sub2APIProviderProbeTargetUpsert) SetStableHealthyIntervalSeconds(v int) *Sub2APIProviderProbeTargetUpsert {
+	u.Set(sub2apiproviderprobetarget.FieldStableHealthyIntervalSeconds, v)
+	return u
+}
+
+// UpdateStableHealthyIntervalSeconds sets the "stable_healthy_interval_seconds" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsert) UpdateStableHealthyIntervalSeconds() *Sub2APIProviderProbeTargetUpsert {
+	u.SetExcluded(sub2apiproviderprobetarget.FieldStableHealthyIntervalSeconds)
+	return u
+}
+
+// AddStableHealthyIntervalSeconds adds v to the "stable_healthy_interval_seconds" field.
+func (u *Sub2APIProviderProbeTargetUpsert) AddStableHealthyIntervalSeconds(v int) *Sub2APIProviderProbeTargetUpsert {
+	u.Add(sub2apiproviderprobetarget.FieldStableHealthyIntervalSeconds, v)
+	return u
+}
+
+// SetStableHealthyThreshold sets the "stable_healthy_threshold" field.
+func (u *Sub2APIProviderProbeTargetUpsert) SetStableHealthyThreshold(v int) *Sub2APIProviderProbeTargetUpsert {
+	u.Set(sub2apiproviderprobetarget.FieldStableHealthyThreshold, v)
+	return u
+}
+
+// UpdateStableHealthyThreshold sets the "stable_healthy_threshold" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsert) UpdateStableHealthyThreshold() *Sub2APIProviderProbeTargetUpsert {
+	u.SetExcluded(sub2apiproviderprobetarget.FieldStableHealthyThreshold)
+	return u
+}
+
+// AddStableHealthyThreshold adds v to the "stable_healthy_threshold" field.
+func (u *Sub2APIProviderProbeTargetUpsert) AddStableHealthyThreshold(v int) *Sub2APIProviderProbeTargetUpsert {
+	u.Add(sub2apiproviderprobetarget.FieldStableHealthyThreshold, v)
+	return u
+}
+
+// SetConsecutiveHealthy sets the "consecutive_healthy" field.
+func (u *Sub2APIProviderProbeTargetUpsert) SetConsecutiveHealthy(v int) *Sub2APIProviderProbeTargetUpsert {
+	u.Set(sub2apiproviderprobetarget.FieldConsecutiveHealthy, v)
+	return u
+}
+
+// UpdateConsecutiveHealthy sets the "consecutive_healthy" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsert) UpdateConsecutiveHealthy() *Sub2APIProviderProbeTargetUpsert {
+	u.SetExcluded(sub2apiproviderprobetarget.FieldConsecutiveHealthy)
+	return u
+}
+
+// AddConsecutiveHealthy adds v to the "consecutive_healthy" field.
+func (u *Sub2APIProviderProbeTargetUpsert) AddConsecutiveHealthy(v int) *Sub2APIProviderProbeTargetUpsert {
+	u.Add(sub2apiproviderprobetarget.FieldConsecutiveHealthy, v)
 	return u
 }
 
@@ -1349,6 +1626,125 @@ func (u *Sub2APIProviderProbeTargetUpsertOne) AddIntervalSeconds(v int) *Sub2API
 func (u *Sub2APIProviderProbeTargetUpsertOne) UpdateIntervalSeconds() *Sub2APIProviderProbeTargetUpsertOne {
 	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
 		s.UpdateIntervalSeconds()
+	})
+}
+
+// SetAdaptiveIntervalEnabled sets the "adaptive_interval_enabled" field.
+func (u *Sub2APIProviderProbeTargetUpsertOne) SetAdaptiveIntervalEnabled(v bool) *Sub2APIProviderProbeTargetUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.SetAdaptiveIntervalEnabled(v)
+	})
+}
+
+// UpdateAdaptiveIntervalEnabled sets the "adaptive_interval_enabled" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsertOne) UpdateAdaptiveIntervalEnabled() *Sub2APIProviderProbeTargetUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.UpdateAdaptiveIntervalEnabled()
+	})
+}
+
+// SetHealthyIntervalSeconds sets the "healthy_interval_seconds" field.
+func (u *Sub2APIProviderProbeTargetUpsertOne) SetHealthyIntervalSeconds(v int) *Sub2APIProviderProbeTargetUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.SetHealthyIntervalSeconds(v)
+	})
+}
+
+// AddHealthyIntervalSeconds adds v to the "healthy_interval_seconds" field.
+func (u *Sub2APIProviderProbeTargetUpsertOne) AddHealthyIntervalSeconds(v int) *Sub2APIProviderProbeTargetUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.AddHealthyIntervalSeconds(v)
+	})
+}
+
+// UpdateHealthyIntervalSeconds sets the "healthy_interval_seconds" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsertOne) UpdateHealthyIntervalSeconds() *Sub2APIProviderProbeTargetUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.UpdateHealthyIntervalSeconds()
+	})
+}
+
+// SetHealthyIntervalThreshold sets the "healthy_interval_threshold" field.
+func (u *Sub2APIProviderProbeTargetUpsertOne) SetHealthyIntervalThreshold(v int) *Sub2APIProviderProbeTargetUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.SetHealthyIntervalThreshold(v)
+	})
+}
+
+// AddHealthyIntervalThreshold adds v to the "healthy_interval_threshold" field.
+func (u *Sub2APIProviderProbeTargetUpsertOne) AddHealthyIntervalThreshold(v int) *Sub2APIProviderProbeTargetUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.AddHealthyIntervalThreshold(v)
+	})
+}
+
+// UpdateHealthyIntervalThreshold sets the "healthy_interval_threshold" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsertOne) UpdateHealthyIntervalThreshold() *Sub2APIProviderProbeTargetUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.UpdateHealthyIntervalThreshold()
+	})
+}
+
+// SetStableHealthyIntervalSeconds sets the "stable_healthy_interval_seconds" field.
+func (u *Sub2APIProviderProbeTargetUpsertOne) SetStableHealthyIntervalSeconds(v int) *Sub2APIProviderProbeTargetUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.SetStableHealthyIntervalSeconds(v)
+	})
+}
+
+// AddStableHealthyIntervalSeconds adds v to the "stable_healthy_interval_seconds" field.
+func (u *Sub2APIProviderProbeTargetUpsertOne) AddStableHealthyIntervalSeconds(v int) *Sub2APIProviderProbeTargetUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.AddStableHealthyIntervalSeconds(v)
+	})
+}
+
+// UpdateStableHealthyIntervalSeconds sets the "stable_healthy_interval_seconds" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsertOne) UpdateStableHealthyIntervalSeconds() *Sub2APIProviderProbeTargetUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.UpdateStableHealthyIntervalSeconds()
+	})
+}
+
+// SetStableHealthyThreshold sets the "stable_healthy_threshold" field.
+func (u *Sub2APIProviderProbeTargetUpsertOne) SetStableHealthyThreshold(v int) *Sub2APIProviderProbeTargetUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.SetStableHealthyThreshold(v)
+	})
+}
+
+// AddStableHealthyThreshold adds v to the "stable_healthy_threshold" field.
+func (u *Sub2APIProviderProbeTargetUpsertOne) AddStableHealthyThreshold(v int) *Sub2APIProviderProbeTargetUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.AddStableHealthyThreshold(v)
+	})
+}
+
+// UpdateStableHealthyThreshold sets the "stable_healthy_threshold" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsertOne) UpdateStableHealthyThreshold() *Sub2APIProviderProbeTargetUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.UpdateStableHealthyThreshold()
+	})
+}
+
+// SetConsecutiveHealthy sets the "consecutive_healthy" field.
+func (u *Sub2APIProviderProbeTargetUpsertOne) SetConsecutiveHealthy(v int) *Sub2APIProviderProbeTargetUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.SetConsecutiveHealthy(v)
+	})
+}
+
+// AddConsecutiveHealthy adds v to the "consecutive_healthy" field.
+func (u *Sub2APIProviderProbeTargetUpsertOne) AddConsecutiveHealthy(v int) *Sub2APIProviderProbeTargetUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.AddConsecutiveHealthy(v)
+	})
+}
+
+// UpdateConsecutiveHealthy sets the "consecutive_healthy" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsertOne) UpdateConsecutiveHealthy() *Sub2APIProviderProbeTargetUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.UpdateConsecutiveHealthy()
 	})
 }
 
@@ -1987,6 +2383,125 @@ func (u *Sub2APIProviderProbeTargetUpsertBulk) AddIntervalSeconds(v int) *Sub2AP
 func (u *Sub2APIProviderProbeTargetUpsertBulk) UpdateIntervalSeconds() *Sub2APIProviderProbeTargetUpsertBulk {
 	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
 		s.UpdateIntervalSeconds()
+	})
+}
+
+// SetAdaptiveIntervalEnabled sets the "adaptive_interval_enabled" field.
+func (u *Sub2APIProviderProbeTargetUpsertBulk) SetAdaptiveIntervalEnabled(v bool) *Sub2APIProviderProbeTargetUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.SetAdaptiveIntervalEnabled(v)
+	})
+}
+
+// UpdateAdaptiveIntervalEnabled sets the "adaptive_interval_enabled" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsertBulk) UpdateAdaptiveIntervalEnabled() *Sub2APIProviderProbeTargetUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.UpdateAdaptiveIntervalEnabled()
+	})
+}
+
+// SetHealthyIntervalSeconds sets the "healthy_interval_seconds" field.
+func (u *Sub2APIProviderProbeTargetUpsertBulk) SetHealthyIntervalSeconds(v int) *Sub2APIProviderProbeTargetUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.SetHealthyIntervalSeconds(v)
+	})
+}
+
+// AddHealthyIntervalSeconds adds v to the "healthy_interval_seconds" field.
+func (u *Sub2APIProviderProbeTargetUpsertBulk) AddHealthyIntervalSeconds(v int) *Sub2APIProviderProbeTargetUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.AddHealthyIntervalSeconds(v)
+	})
+}
+
+// UpdateHealthyIntervalSeconds sets the "healthy_interval_seconds" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsertBulk) UpdateHealthyIntervalSeconds() *Sub2APIProviderProbeTargetUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.UpdateHealthyIntervalSeconds()
+	})
+}
+
+// SetHealthyIntervalThreshold sets the "healthy_interval_threshold" field.
+func (u *Sub2APIProviderProbeTargetUpsertBulk) SetHealthyIntervalThreshold(v int) *Sub2APIProviderProbeTargetUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.SetHealthyIntervalThreshold(v)
+	})
+}
+
+// AddHealthyIntervalThreshold adds v to the "healthy_interval_threshold" field.
+func (u *Sub2APIProviderProbeTargetUpsertBulk) AddHealthyIntervalThreshold(v int) *Sub2APIProviderProbeTargetUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.AddHealthyIntervalThreshold(v)
+	})
+}
+
+// UpdateHealthyIntervalThreshold sets the "healthy_interval_threshold" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsertBulk) UpdateHealthyIntervalThreshold() *Sub2APIProviderProbeTargetUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.UpdateHealthyIntervalThreshold()
+	})
+}
+
+// SetStableHealthyIntervalSeconds sets the "stable_healthy_interval_seconds" field.
+func (u *Sub2APIProviderProbeTargetUpsertBulk) SetStableHealthyIntervalSeconds(v int) *Sub2APIProviderProbeTargetUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.SetStableHealthyIntervalSeconds(v)
+	})
+}
+
+// AddStableHealthyIntervalSeconds adds v to the "stable_healthy_interval_seconds" field.
+func (u *Sub2APIProviderProbeTargetUpsertBulk) AddStableHealthyIntervalSeconds(v int) *Sub2APIProviderProbeTargetUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.AddStableHealthyIntervalSeconds(v)
+	})
+}
+
+// UpdateStableHealthyIntervalSeconds sets the "stable_healthy_interval_seconds" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsertBulk) UpdateStableHealthyIntervalSeconds() *Sub2APIProviderProbeTargetUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.UpdateStableHealthyIntervalSeconds()
+	})
+}
+
+// SetStableHealthyThreshold sets the "stable_healthy_threshold" field.
+func (u *Sub2APIProviderProbeTargetUpsertBulk) SetStableHealthyThreshold(v int) *Sub2APIProviderProbeTargetUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.SetStableHealthyThreshold(v)
+	})
+}
+
+// AddStableHealthyThreshold adds v to the "stable_healthy_threshold" field.
+func (u *Sub2APIProviderProbeTargetUpsertBulk) AddStableHealthyThreshold(v int) *Sub2APIProviderProbeTargetUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.AddStableHealthyThreshold(v)
+	})
+}
+
+// UpdateStableHealthyThreshold sets the "stable_healthy_threshold" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsertBulk) UpdateStableHealthyThreshold() *Sub2APIProviderProbeTargetUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.UpdateStableHealthyThreshold()
+	})
+}
+
+// SetConsecutiveHealthy sets the "consecutive_healthy" field.
+func (u *Sub2APIProviderProbeTargetUpsertBulk) SetConsecutiveHealthy(v int) *Sub2APIProviderProbeTargetUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.SetConsecutiveHealthy(v)
+	})
+}
+
+// AddConsecutiveHealthy adds v to the "consecutive_healthy" field.
+func (u *Sub2APIProviderProbeTargetUpsertBulk) AddConsecutiveHealthy(v int) *Sub2APIProviderProbeTargetUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.AddConsecutiveHealthy(v)
+	})
+}
+
+// UpdateConsecutiveHealthy sets the "consecutive_healthy" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsertBulk) UpdateConsecutiveHealthy() *Sub2APIProviderProbeTargetUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.UpdateConsecutiveHealthy()
 	})
 }
 

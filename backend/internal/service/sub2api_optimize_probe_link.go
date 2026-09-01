@@ -25,14 +25,16 @@ const (
 // probe. Only scheduled probes submit this input; manual probe buttons remain
 // observational and never change a remote group.
 type Sub2APIProbeAutoOptimizeInput struct {
-	TargetID                 int64
-	ProbeRunID               int64
-	AccountID                int64
-	AccountStatusSyncEnabled bool
-	Trigger                  string
-	DegradedLatencyMS        int
-	ErrorCategory            string
-	ErrorMessage             string
+	TargetID                   int64
+	ProbeRunID                 int64
+	AccountID                  int64
+	AccountStatusSyncEnabled   bool
+	AccountFailureThresholdMet bool
+	AdminStateGeneration       string
+	Trigger                    string
+	DegradedLatencyMS          int
+	ErrorCategory              string
+	ErrorMessage               string
 }
 
 // Sub2APIProbeTargetBindingSyncer updates the monitoring route after the
@@ -484,25 +486,25 @@ func (s *Sub2APIOptimizeScheduleService) finishProbeAutoOptimize(
 	triggersByAccount map[int64]Sub2APIProbeAutoOptimizeInput,
 ) {
 	// An admitted probe failure defers account status while asynchronous group
-	// comparison runs. A successful switch clears only the probe-owned error;
-	// manual/admin errors remain untouched. Inputs that were not admitted are
-	// projected by the probe immediately instead of reaching this path.
+	// comparison runs. A failed comparison quarantines only after the configured
+	// failure streak; ProbeExhausted separately records that every candidate was
+	// tested. Successful switches wait for the normal responsive recovery streak
+	// (healthy or degraded probe results).
 	for _, detail := range details {
 		trigger, ok := triggersByAccount[detail.AccountID]
 		if !ok || !trigger.AccountStatusSyncEnabled || (trigger.Trigger != OptimizeLogTriggerProbeUnhealthy && trigger.Trigger != OptimizeLogTriggerProbeDegraded) || s.providerSvc == nil || s.providerSvc.accountRepo == nil {
 			continue
 		}
 		stateCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		if detail.Status == "failed" && detail.ProbeExhausted {
-			if err := markProbeManagedAccountError(stateCtx, s.providerSvc.accountRepo, detail.AccountID, detail.Reason); err != nil {
-				logger.LegacyPrintf("service.sub2api_optimize_probe", "[Sub2APIProbeAutoOptimize] provider=%d account=%d mark exhausted account error failed: %v", providerID, detail.AccountID, err)
+		if detail.Status == "failed" && trigger.AccountFailureThresholdMet {
+			var err error
+			if detail.ProbeExhausted {
+				err = markProbeManagedAccountExhaustedError(stateCtx, s.providerSvc.accountRepo, detail.AccountID, detail.Reason, trigger.AdminStateGeneration)
+			} else {
+				err = markProbeManagedAccountError(stateCtx, s.providerSvc.accountRepo, detail.AccountID, detail.Reason, trigger.AdminStateGeneration)
 			}
-			if err := markProbeGroupsExhausted(stateCtx, s.providerSvc.accountRepo, detail.AccountID, detail.Reason); err != nil {
-				logger.LegacyPrintf("service.sub2api_optimize_probe", "[Sub2APIProbeAutoOptimize] provider=%d account=%d persist exhausted state failed: %v", providerID, detail.AccountID, err)
-			}
-		} else if detail.Status == "optimized" || detail.Status == "skipped" {
-			if err := clearProbeManagedAccountError(stateCtx, s.providerSvc.accountRepo, detail.AccountID); err != nil {
-				logger.LegacyPrintf("service.sub2api_optimize_probe", "[Sub2APIProbeAutoOptimize] provider=%d account=%d clear probe account state failed: %v", providerID, detail.AccountID, err)
+			if err != nil {
+				logger.LegacyPrintf("service.sub2api_optimize_probe", "[Sub2APIProbeAutoOptimize] provider=%d account=%d mark failed account error failed: %v", providerID, detail.AccountID, err)
 			}
 		}
 		cancel()

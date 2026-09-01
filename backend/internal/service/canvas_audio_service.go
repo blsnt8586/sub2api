@@ -44,7 +44,8 @@ func (e CanvasAudioEndpoint) isGeneration() bool {
 // ForwardCanvasAudio 转发音频请求到 AIV2API 上游。
 //
 // 三种模型：dialogue-v3（TTS）、music-v1（音乐生成）、sound-effects-v2（音效生成）。
-// 请求均为 application/json，body 原样透传，Idempotency-Key 透传。
+// 请求均为 application/json，model 在出站边界按账号 mapping 选择，其余字段
+// 原样透传，Idempotency-Key 透传。
 func (s *OpenAIGatewayService) ForwardCanvasAudio(
 	ctx context.Context,
 	c *gin.Context,
@@ -75,9 +76,22 @@ func (s *OpenAIGatewayService) ForwardCanvasAudio(
 		return nil, err
 	}
 
+	requestInfo := avi2api.ParseAudioRequest(body)
+	requestModel := requestInfo.Model
+	forwardBody := body
+	upstreamModel := requestModel
+	if endpoint == JimengAudioGeneration {
+		upstreamModel = CanvasMappedUpstreamModel(account, requestModel)
+		forwardBody, err = RewriteCanvasModel(contentType, body, upstreamModel)
+		if err != nil {
+			return nil, err
+		}
+	}
+	SetOpsUpstreamModel(c, upstreamModel)
+
 	var bodyReader io.Reader
 	if endpoint.requiresRequestBody() {
-		bodyReader = bytes.NewReader(body)
+		bodyReader = bytes.NewReader(forwardBody)
 	}
 
 	upstreamCtx, releaseUpstreamCtx := detachUpstreamContext(ctx)
@@ -114,9 +128,6 @@ func (s *OpenAIGatewayService) ForwardCanvasAudio(
 	defer func() { _ = resp.Body.Close() }()
 
 	requestIDHeader := firstNonEmpty(resp.Header.Get("x-request-id"), resp.Header.Get("request-id"))
-	requestInfo := avi2api.ParseAudioRequest(body)
-	requestModel := requestInfo.Model
-
 	if resp.StatusCode >= 400 {
 		return s.handleCanvasVideoErrorResponse(ctx, resp, c, account, requestIDHeader, requestModel)
 	}
@@ -131,7 +142,7 @@ func (s *OpenAIGatewayService) ForwardCanvasAudio(
 		RequestID:       requestIDHeader,
 		Model:           requestModel,
 		BillingModel:    requestModel,
-		UpstreamModel:   requestModel,
+		UpstreamModel:   upstreamModel,
 		ResponseHeaders: resp.Header.Clone(),
 		Duration:        time.Since(startTime),
 	}
@@ -143,6 +154,7 @@ func (s *OpenAIGatewayService) ForwardCanvasAudio(
 		// 音频计费：按次（VideoCount=1）+ 展示时长（VideoSeconds）。
 		applyCanvasAsyncCompletionBilling(result, respBody, taskID, "audio")
 	}
+	SetOpsUpstreamModel(c, result.UpstreamModel)
 	return result, nil
 }
 

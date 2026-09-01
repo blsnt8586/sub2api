@@ -355,6 +355,22 @@ func (h *PaymentHandler) GetMyOrders(c *gin.Context) {
 	response.Paginated(c, sanitizePaymentOrdersForResponse(orders), int64(total), page, pageSize)
 }
 
+// GetFundingSummary returns the authenticated user's balance funding totals.
+// GET /api/v1/payment/funding-summary
+func (h *PaymentHandler) GetFundingSummary(c *gin.Context) {
+	subject, ok := requireAuth(c)
+	if !ok {
+		return
+	}
+
+	summary, err := h.paymentService.GetUserFundingSummary(c.Request.Context(), subject.UserID)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, summary)
+}
+
 // GetOrder returns a single order for the authenticated user.
 // GET /api/v1/payment/orders/:id
 func (h *PaymentHandler) GetOrder(c *gin.Context) {

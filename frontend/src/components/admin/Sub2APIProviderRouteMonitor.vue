@@ -24,9 +24,32 @@
             >
               <div class="flex min-w-0 items-center gap-2">
                 <span class="h-2 w-2 flex-shrink-0 rounded-full" :class="statusDotClass(route.status)"></span>
-                <span class="truncate text-sm font-medium text-gray-800 dark:text-dark-100" :title="route.account_name">{{ route.account_name }}</span>
-                <span v-if="route.remote_group_multiplier != null" class="route-multiplier flex-shrink-0">×{{ formatMultiplier(route.remote_group_multiplier) }}</span>
-                <span class="route-platform flex-shrink-0 text-gray-500 dark:text-dark-300">{{ route.platform }}</span>
+                <span class="min-w-0 flex-1 truncate text-sm font-medium text-gray-800 dark:text-dark-100" :title="route.account_name">{{ route.account_name }}</span>
+                <span
+                  v-if="route.remote_group_multiplier != null"
+                  class="route-multiplier flex-shrink-0 border"
+                  :class="multiplierClass(route)"
+                  :title="multiplierTitle(route)"
+                  :aria-label="multiplierTitle(route)"
+                  :data-test="`route-multiplier-${route.id}`"
+                >
+                  <Icon v-if="multiplierOutOfRange(route)" name="exclamationCircle" size="xs" aria-hidden="true" />
+                  ×{{ formatMultiplier(route.remote_group_multiplier) }}
+                </span>
+                <span
+                  :class="['route-platform flex-shrink-0 border', platformTagClass(route.platform)]"
+                  :title="route.platform"
+                >{{ route.platform }}</span>
+                <span
+                  v-if="route.sub2api_optimize_enabled"
+                  class="route-optimize-badge flex-shrink-0 border border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-800 dark:bg-violet-900/20 dark:text-violet-300"
+                  :title="t('admin.sub2apiProviders.joinScheduleOn')"
+                  :aria-label="t('admin.sub2apiProviders.joinScheduleOn')"
+                  role="img"
+                  :data-test="`route-optimize-${route.id}`"
+                >
+                  <Icon name="bolt" size="xs" aria-hidden="true" />
+                </span>
                 <span v-if="isDirty(route.id)" class="flex-shrink-0 text-xs font-medium text-amber-600 dark:text-amber-400">{{ t('admin.sub2apiProviders.health.routes.unsaved') }}</span>
                 <Icon name="chevronDown" size="xs" class="flex-shrink-0 text-gray-400 transition-transform duration-200 motion-reduce:transition-none" :class="expandedRouteID === route.id ? 'rotate-180' : ''" />
               </div>
@@ -88,7 +111,7 @@
               />
             </label>
             <label class="route-field">
-              <span class="font-medium">{{ t('admin.sub2apiProviders.health.routes.interval') }}</span>
+              <span class="font-medium">{{ t('admin.sub2apiProviders.health.routes.baseInterval') }}</span>
               <span class="route-field__hint">{{ t('admin.sub2apiProviders.health.routes.intervalHint') }}</span>
               <input
                 :value="route.interval_seconds"
@@ -132,6 +155,84 @@
                 <span class="flex-shrink-0 text-xs font-medium text-gray-500 dark:text-dark-400">
                   {{ t('admin.sub2apiProviders.health.routes.modelSourceAccount') }}
                 </span>
+              </div>
+            </div>
+            <div class="border-t border-gray-100 pt-3 dark:border-dark-700 sm:col-span-2" :data-test="`route-adaptive-cadence-${route.id}`">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <span class="text-sm font-semibold text-gray-700 dark:text-dark-200">{{ t('admin.sub2apiProviders.health.routes.adaptiveCadence') }}</span>
+                  <p class="route-field__hint mt-1">{{ t('admin.sub2apiProviders.health.routes.adaptiveCadenceHint') }}</p>
+                </div>
+                <label class="inline-flex min-h-11 items-center gap-2">
+                  <span class="text-xs font-medium" :class="route.adaptive_interval_enabled ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-dark-400'">
+                    {{ route.adaptive_interval_enabled ? t('admin.sub2apiProviders.health.routes.adaptiveEnabled') : t('admin.sub2apiProviders.health.routes.adaptiveDisabled') }}
+                  </span>
+                  <input
+                    :checked="route.adaptive_interval_enabled"
+                    type="checkbox"
+                    class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                    @change="emit('update', route.id, { adaptive_interval_enabled: ($event.target as HTMLInputElement).checked })"
+                  />
+                </label>
+              </div>
+              <div class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600 dark:border-dark-600 dark:bg-dark-800/60 dark:text-dark-300">
+                <span class="font-medium tabular-nums">{{ t('admin.sub2apiProviders.health.routes.currentInterval', { count: route.current_interval_seconds }) }}</span>
+                <span class="text-gray-300 dark:text-dark-600" aria-hidden="true">·</span>
+                <span class="tabular-nums">{{ t('admin.sub2apiProviders.health.routes.healthyStreak', { count: route.consecutive_healthy }) }}</span>
+              </div>
+              <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                <label class="route-field">
+                  <span class="font-medium">{{ t('admin.sub2apiProviders.health.routes.healthyInterval') }}</span>
+                  <span class="route-field__hint">{{ t('admin.sub2apiProviders.health.routes.healthyIntervalHint') }}</span>
+                  <input
+                    :value="route.healthy_interval_seconds"
+                    type="number"
+                    min="30"
+                    max="86400"
+                    :disabled="!route.adaptive_interval_enabled"
+                    class="input mt-1 disabled:cursor-not-allowed disabled:opacity-50"
+                    @change="emitNumber(route.id, 'healthy_interval_seconds', $event)"
+                  />
+                </label>
+                <label class="route-field">
+                  <span class="font-medium">{{ t('admin.sub2apiProviders.health.routes.healthyIntervalThreshold') }}</span>
+                  <span class="route-field__hint">{{ t('admin.sub2apiProviders.health.routes.healthyIntervalThresholdHint') }}</span>
+                  <input
+                    :value="route.healthy_interval_threshold"
+                    type="number"
+                    min="1"
+                    max="100"
+                    :disabled="!route.adaptive_interval_enabled"
+                    class="input mt-1 disabled:cursor-not-allowed disabled:opacity-50"
+                    @change="emitNumber(route.id, 'healthy_interval_threshold', $event)"
+                  />
+                </label>
+                <label class="route-field">
+                  <span class="font-medium">{{ t('admin.sub2apiProviders.health.routes.stableHealthyInterval') }}</span>
+                  <span class="route-field__hint">{{ t('admin.sub2apiProviders.health.routes.stableHealthyIntervalHint') }}</span>
+                  <input
+                    :value="route.stable_healthy_interval_seconds"
+                    type="number"
+                    min="30"
+                    max="86400"
+                    :disabled="!route.adaptive_interval_enabled"
+                    class="input mt-1 disabled:cursor-not-allowed disabled:opacity-50"
+                    @change="emitNumber(route.id, 'stable_healthy_interval_seconds', $event)"
+                  />
+                </label>
+                <label class="route-field">
+                  <span class="font-medium">{{ t('admin.sub2apiProviders.health.routes.stableHealthyThreshold') }}</span>
+                  <span class="route-field__hint">{{ t('admin.sub2apiProviders.health.routes.stableHealthyThresholdHint') }}</span>
+                  <input
+                    :value="route.stable_healthy_threshold"
+                    type="number"
+                    min="1"
+                    max="100"
+                    :disabled="!route.adaptive_interval_enabled"
+                    class="input mt-1 disabled:cursor-not-allowed disabled:opacity-50"
+                    @change="emitNumber(route.id, 'stable_healthy_threshold', $event)"
+                  />
+                </label>
               </div>
             </div>
             <div class="border-t border-gray-100 pt-3 dark:border-dark-700 sm:col-span-2">
@@ -245,6 +346,8 @@ import type {
   UpdateProviderProbeTargetRequest,
 } from '@/api/admin/sub2apiProviders'
 import { formatRelativeTime } from '@/utils/format'
+import { getMultiplierRangeState } from '@/utils/sub2apiValidation'
+import { platformTagClass } from '@/utils/platformColors'
 import Icon from '@/components/icons/Icon.vue'
 import Sub2APIProviderRouteTimeline from './Sub2APIProviderRouteTimeline.vue'
 
@@ -290,7 +393,7 @@ const openHistory = (targetID: number) => {
 
 const emitNumber = (
   targetID: number,
-  key: 'interval_seconds' | 'timeout_seconds' | 'degraded_latency_ms' | 'degraded_optimize_threshold' | 'cost_optimize_interval_seconds' | 'cost_optimize_healthy_threshold',
+  key: 'interval_seconds' | 'healthy_interval_seconds' | 'healthy_interval_threshold' | 'stable_healthy_interval_seconds' | 'stable_healthy_threshold' | 'timeout_seconds' | 'degraded_latency_ms' | 'degraded_optimize_threshold' | 'cost_optimize_interval_seconds' | 'cost_optimize_healthy_threshold',
   event: Event,
 ) => {
   const value = Number((event.target as HTMLInputElement | HTMLSelectElement).value)
@@ -299,6 +402,40 @@ const emitNumber = (
 
 const isDirty = (targetID: number) => props.dirtyTargetIds.includes(targetID)
 const formatMultiplier = (value: number) => Number.isInteger(value) ? value.toFixed(0) : String(Number(value.toFixed(2)))
+
+const multiplierRangeState = (route: Sub2APIProviderProbeTargetHealth) => route.sub2api_optimize_enabled
+  ? getMultiplierRangeState(route.remote_group_multiplier, route.sub2api_min_multiplier, route.sub2api_max_multiplier)
+  : 'unbounded'
+const multiplierOutOfRange = (route: Sub2APIProviderProbeTargetHealth) => {
+  const state = multiplierRangeState(route)
+  return state === 'above' || state === 'below'
+}
+const multiplierClass = (route: Sub2APIProviderProbeTargetHealth) => {
+  if (!route.sub2api_optimize_enabled) {
+    return 'border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300'
+  }
+  switch (multiplierRangeState(route)) {
+    case 'below':
+      return 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300'
+    case 'within':
+      return 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300'
+    case 'above':
+      return 'border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300'
+    case 'unbounded':
+      return 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-800 dark:bg-sky-900/20 dark:text-sky-300'
+    default:
+      return 'border-gray-200 bg-gray-50 text-gray-600 dark:border-dark-600 dark:bg-dark-700 dark:text-dark-300'
+  }
+}
+const multiplierTitle = (route: Sub2APIProviderProbeTargetHealth) => {
+  const current = route.remote_group_multiplier == null ? '-' : formatMultiplier(route.remote_group_multiplier)
+  if (!route.sub2api_optimize_enabled) return t('admin.sub2apiProviders.multiplierOptimizationDisabled', { current })
+  const state = multiplierRangeState(route)
+  if (state === 'above') return t('admin.sub2apiProviders.multiplierRangeAboveDetail', { current, max: route.sub2api_max_multiplier })
+  if (state === 'below') return t('admin.sub2apiProviders.multiplierRangeBelowDetail', { current, min: route.sub2api_min_multiplier })
+  if (state === 'within') return t('admin.sub2apiProviders.multiplierRangeWithinDetail', { current, min: route.sub2api_min_multiplier, max: route.sub2api_max_multiplier })
+  return t('admin.sub2apiProviders.multiplierRangeUnconfigured', { current })
+}
 
 const statusDotClass = (status: ProviderAccountProbeStatus) => ({
   healthy: 'bg-green-500',
@@ -336,7 +473,6 @@ const routeIdentityTitle = (route: Sub2APIProviderProbeTargetHealth) => [
 }
 
 .route-platform {
-  border: 1px solid rgb(226 232 240);
   border-radius: 3px;
   font-size: 11px;
   line-height: 1rem;
@@ -344,12 +480,18 @@ const routeIdentityTitle = (route: Sub2APIProviderProbeTargetHealth) => [
 }
 
 .route-multiplier {
-  border: 1px solid rgb(167 243 208);
   border-radius: 3px;
-  background: rgb(236 253 245);
-  color: rgb(4 120 87);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.1rem;
+  padding: 0 0.375rem;
+}
+
+.route-optimize-badge {
+  align-items: center;
+  border-radius: 3px;
+  display: inline-flex;
   font-size: 11px;
-  font-weight: 600;
   line-height: 0.9rem;
   padding: 0 0.25rem;
 }
@@ -395,16 +537,6 @@ const routeIdentityTitle = (route: Sub2APIProviderProbeTargetHealth) => [
 
 :global(.dark) .route-row:hover {
   background: rgb(30 41 59 / 0.42);
-}
-
-:global(.dark) .route-platform {
-  border-color: rgb(71 85 105);
-}
-
-:global(.dark) .route-multiplier {
-  border-color: rgb(6 78 59);
-  background: rgb(6 78 59 / 0.2);
-  color: rgb(110 231 183);
 }
 
 :global(.dark) .route-field {

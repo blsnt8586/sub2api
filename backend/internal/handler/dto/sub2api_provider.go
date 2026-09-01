@@ -11,6 +11,7 @@ type Provider struct {
 	BaseURL              string  `json:"base_url"`
 	ProviderType         string  `json:"provider_type"`
 	Status               string  `json:"status"`
+	RemoteCostDivisor    float64 `json:"remote_cost_divisor"`
 	Notes                *string `json:"notes"`
 	ProxyID              *int64  `json:"proxy_id"`
 	ProxyName            *string `json:"proxy_name,omitempty"`
@@ -43,6 +44,7 @@ func ProviderFromService(s *service.Provider) *Provider {
 		BaseURL:              s.BaseURL,
 		ProviderType:         s.ProviderType,
 		Status:               s.Status,
+		RemoteCostDivisor:    s.RemoteCostDivisor,
 		Notes:                s.Notes,
 		ProxyID:              s.ProxyID,
 		ProxyName:            s.ProxyName,

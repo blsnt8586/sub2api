@@ -20,6 +20,35 @@ type accountRepoStubForClearAccountError struct {
 	clearTempUnschedCalls    int
 }
 
+type atomicAdminAccountStateRepoStub struct {
+	accountRepoStubForClearAccountError
+	setAdminErrorCalls       int
+	clearAdminErrorCalls     int
+	setAdminSchedulableCalls int
+}
+
+func (r *atomicAdminAccountStateRepoStub) SetAdminAccountError(_ context.Context, _ int64, message string) error {
+	r.setAdminErrorCalls++
+	r.account.Status = StatusError
+	r.account.Schedulable = false
+	r.account.ErrorMessage = message
+	return nil
+}
+
+func (r *atomicAdminAccountStateRepoStub) ClearAdminAccountError(context.Context, int64) error {
+	r.clearAdminErrorCalls++
+	r.account.Status = StatusActive
+	r.account.Schedulable = true
+	r.account.ErrorMessage = ""
+	return nil
+}
+
+func (r *atomicAdminAccountStateRepoStub) SetAdminAccountSchedulable(_ context.Context, _ int64, schedulable bool) error {
+	r.setAdminSchedulableCalls++
+	r.account.Schedulable = schedulable
+	return nil
+}
+
 func (r *accountRepoStubForClearAccountError) GetByID(ctx context.Context, id int64) (*Account, error) {
 	return r.account, nil
 }
@@ -85,4 +114,32 @@ func TestAdminService_ClearAccountError_AlsoClearsRecoverableRuntimeState(t *tes
 	require.Nil(t, updated.TempUnschedulableUntil)
 	require.Empty(t, updated.TempUnschedulableReason)
 	require.Equal(t, []int64{31}, blocker.clearedIDs)
+}
+
+func TestAdminServiceAccountStateChangesUseAtomicRepository(t *testing.T) {
+	repo := &atomicAdminAccountStateRepoStub{accountRepoStubForClearAccountError: accountRepoStubForClearAccountError{
+		account: &Account{ID: 31, Status: StatusError, Schedulable: false},
+	}}
+	svc := &adminServiceImpl{accountRepo: repo}
+
+	if _, err := svc.ClearAccountError(context.Background(), 31); err != nil {
+		t.Fatalf("clear account error: %v", err)
+	}
+	if repo.clearAdminErrorCalls != 1 || repo.clearErrorCalls != 0 {
+		t.Fatalf("clear path calls: atomic=%d legacy=%d", repo.clearAdminErrorCalls, repo.clearErrorCalls)
+	}
+
+	if err := svc.SetAccountError(context.Background(), 31, "manual error"); err != nil {
+		t.Fatalf("set account error: %v", err)
+	}
+	if repo.setAdminErrorCalls != 1 || repo.account.ErrorMessage != "manual error" {
+		t.Fatalf("set error path: calls=%d account=%+v", repo.setAdminErrorCalls, repo.account)
+	}
+
+	if _, err := svc.SetAccountSchedulable(context.Background(), 31, true); err != nil {
+		t.Fatalf("set account schedulable: %v", err)
+	}
+	if repo.setAdminSchedulableCalls != 1 || !repo.account.Schedulable {
+		t.Fatalf("set schedulable path: calls=%d account=%+v", repo.setAdminSchedulableCalls, repo.account)
+	}
 }

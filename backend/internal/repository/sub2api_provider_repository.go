@@ -32,7 +32,8 @@ func (r *Sub2APIProviderRepository) Create(ctx context.Context, input *service.C
 		SetAuthMode(input.AuthMode).
 		SetNillableAccessTokenEncrypted(input.AccessToken).
 		SetNillableRefreshTokenEncrypted(input.RefreshToken).
-		SetNillableAccessTokenExpiresAt(input.TokenExpires)
+		SetNillableAccessTokenExpiresAt(input.TokenExpires).
+		SetRemoteCostDivisor(input.RemoteCostDivisor)
 
 	// 上游类型：显式指定时写入，未指定则由 ent schema 默认值（sub2api）兜底
 	if input.ProviderType != "" {
@@ -191,6 +192,9 @@ func (r *Sub2APIProviderRepository) Update(ctx context.Context, id int64, input 
 		} else {
 			update = update.SetProxyID(*input.ProxyID.Value)
 		}
+	}
+	if input.RemoteCostDivisor != nil {
+		update = update.SetRemoteCostDivisor(*input.RemoteCostDivisor)
 	}
 
 	updated, err := update.Save(ctx)

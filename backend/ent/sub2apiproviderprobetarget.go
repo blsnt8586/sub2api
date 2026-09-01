@@ -39,6 +39,18 @@ type Sub2APIProviderProbeTarget struct {
 	Enabled bool `json:"enabled,omitempty"`
 	// IntervalSeconds holds the value of the "interval_seconds" field.
 	IntervalSeconds int `json:"interval_seconds,omitempty"`
+	// AdaptiveIntervalEnabled holds the value of the "adaptive_interval_enabled" field.
+	AdaptiveIntervalEnabled bool `json:"adaptive_interval_enabled,omitempty"`
+	// HealthyIntervalSeconds holds the value of the "healthy_interval_seconds" field.
+	HealthyIntervalSeconds int `json:"healthy_interval_seconds,omitempty"`
+	// HealthyIntervalThreshold holds the value of the "healthy_interval_threshold" field.
+	HealthyIntervalThreshold int `json:"healthy_interval_threshold,omitempty"`
+	// StableHealthyIntervalSeconds holds the value of the "stable_healthy_interval_seconds" field.
+	StableHealthyIntervalSeconds int `json:"stable_healthy_interval_seconds,omitempty"`
+	// StableHealthyThreshold holds the value of the "stable_healthy_threshold" field.
+	StableHealthyThreshold int `json:"stable_healthy_threshold,omitempty"`
+	// ConsecutiveHealthy holds the value of the "consecutive_healthy" field.
+	ConsecutiveHealthy int `json:"consecutive_healthy,omitempty"`
 	// TestModel holds the value of the "test_model" field.
 	TestModel *string `json:"test_model,omitempty"`
 	// AllowMediaProbe holds the value of the "allow_media_probe" field.
@@ -120,9 +132,9 @@ func (*Sub2APIProviderProbeTarget) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case sub2apiproviderprobetarget.FieldEnabled, sub2apiproviderprobetarget.FieldAllowMediaProbe, sub2apiproviderprobetarget.FieldCostOptimizeEnabled:
+		case sub2apiproviderprobetarget.FieldEnabled, sub2apiproviderprobetarget.FieldAdaptiveIntervalEnabled, sub2apiproviderprobetarget.FieldAllowMediaProbe, sub2apiproviderprobetarget.FieldCostOptimizeEnabled:
 			values[i] = new(sql.NullBool)
-		case sub2apiproviderprobetarget.FieldID, sub2apiproviderprobetarget.FieldProviderID, sub2apiproviderprobetarget.FieldAccountID, sub2apiproviderprobetarget.FieldProviderAPIKeyID, sub2apiproviderprobetarget.FieldRemoteGroupID, sub2apiproviderprobetarget.FieldIntervalSeconds, sub2apiproviderprobetarget.FieldTimeoutSeconds, sub2apiproviderprobetarget.FieldDegradedLatencyMs, sub2apiproviderprobetarget.FieldDegradedOptimizeThreshold, sub2apiproviderprobetarget.FieldCostOptimizeIntervalSeconds, sub2apiproviderprobetarget.FieldCostOptimizeHealthyThreshold, sub2apiproviderprobetarget.FieldFailureThreshold, sub2apiproviderprobetarget.FieldRecoveryThreshold:
+		case sub2apiproviderprobetarget.FieldID, sub2apiproviderprobetarget.FieldProviderID, sub2apiproviderprobetarget.FieldAccountID, sub2apiproviderprobetarget.FieldProviderAPIKeyID, sub2apiproviderprobetarget.FieldRemoteGroupID, sub2apiproviderprobetarget.FieldIntervalSeconds, sub2apiproviderprobetarget.FieldHealthyIntervalSeconds, sub2apiproviderprobetarget.FieldHealthyIntervalThreshold, sub2apiproviderprobetarget.FieldStableHealthyIntervalSeconds, sub2apiproviderprobetarget.FieldStableHealthyThreshold, sub2apiproviderprobetarget.FieldConsecutiveHealthy, sub2apiproviderprobetarget.FieldTimeoutSeconds, sub2apiproviderprobetarget.FieldDegradedLatencyMs, sub2apiproviderprobetarget.FieldDegradedOptimizeThreshold, sub2apiproviderprobetarget.FieldCostOptimizeIntervalSeconds, sub2apiproviderprobetarget.FieldCostOptimizeHealthyThreshold, sub2apiproviderprobetarget.FieldFailureThreshold, sub2apiproviderprobetarget.FieldRecoveryThreshold:
 			values[i] = new(sql.NullInt64)
 		case sub2apiproviderprobetarget.FieldRemoteGroupName, sub2apiproviderprobetarget.FieldPlatform, sub2apiproviderprobetarget.FieldTestModel:
 			values[i] = new(sql.NullString)
@@ -211,6 +223,42 @@ func (_m *Sub2APIProviderProbeTarget) assignValues(columns []string, values []an
 				return fmt.Errorf("unexpected type %T for field interval_seconds", values[i])
 			} else if value.Valid {
 				_m.IntervalSeconds = int(value.Int64)
+			}
+		case sub2apiproviderprobetarget.FieldAdaptiveIntervalEnabled:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field adaptive_interval_enabled", values[i])
+			} else if value.Valid {
+				_m.AdaptiveIntervalEnabled = value.Bool
+			}
+		case sub2apiproviderprobetarget.FieldHealthyIntervalSeconds:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field healthy_interval_seconds", values[i])
+			} else if value.Valid {
+				_m.HealthyIntervalSeconds = int(value.Int64)
+			}
+		case sub2apiproviderprobetarget.FieldHealthyIntervalThreshold:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field healthy_interval_threshold", values[i])
+			} else if value.Valid {
+				_m.HealthyIntervalThreshold = int(value.Int64)
+			}
+		case sub2apiproviderprobetarget.FieldStableHealthyIntervalSeconds:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field stable_healthy_interval_seconds", values[i])
+			} else if value.Valid {
+				_m.StableHealthyIntervalSeconds = int(value.Int64)
+			}
+		case sub2apiproviderprobetarget.FieldStableHealthyThreshold:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field stable_healthy_threshold", values[i])
+			} else if value.Valid {
+				_m.StableHealthyThreshold = int(value.Int64)
+			}
+		case sub2apiproviderprobetarget.FieldConsecutiveHealthy:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field consecutive_healthy", values[i])
+			} else if value.Valid {
+				_m.ConsecutiveHealthy = int(value.Int64)
 			}
 		case sub2apiproviderprobetarget.FieldTestModel:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -380,6 +428,24 @@ func (_m *Sub2APIProviderProbeTarget) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("interval_seconds=")
 	builder.WriteString(fmt.Sprintf("%v", _m.IntervalSeconds))
+	builder.WriteString(", ")
+	builder.WriteString("adaptive_interval_enabled=")
+	builder.WriteString(fmt.Sprintf("%v", _m.AdaptiveIntervalEnabled))
+	builder.WriteString(", ")
+	builder.WriteString("healthy_interval_seconds=")
+	builder.WriteString(fmt.Sprintf("%v", _m.HealthyIntervalSeconds))
+	builder.WriteString(", ")
+	builder.WriteString("healthy_interval_threshold=")
+	builder.WriteString(fmt.Sprintf("%v", _m.HealthyIntervalThreshold))
+	builder.WriteString(", ")
+	builder.WriteString("stable_healthy_interval_seconds=")
+	builder.WriteString(fmt.Sprintf("%v", _m.StableHealthyIntervalSeconds))
+	builder.WriteString(", ")
+	builder.WriteString("stable_healthy_threshold=")
+	builder.WriteString(fmt.Sprintf("%v", _m.StableHealthyThreshold))
+	builder.WriteString(", ")
+	builder.WriteString("consecutive_healthy=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ConsecutiveHealthy))
 	builder.WriteString(", ")
 	if v := _m.TestModel; v != nil {
 		builder.WriteString("test_model=")

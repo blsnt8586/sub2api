@@ -1,4 +1,28 @@
-import type { LinkedAccountInfo, OptimizeResult } from '@/api/admin/sub2apiProviders'
+import type { LinkedAccountInfo, OptimizeResult, Sub2APIProviderRemoteGroupRate } from '@/api/admin/sub2apiProviders'
+
+/**
+ * Remote groups offered by the optional account restriction selector.
+ * Runtime optimization applies the same intersection again on the backend.
+ */
+export function eligibleRemoteOptimizeGroups(
+  account: LinkedAccountInfo,
+  groups: Sub2APIProviderRemoteGroupRate[]
+): Sub2APIProviderRemoteGroupRate[] {
+  return groups.filter(group =>
+    group.platform === account.platform &&
+    (!group.status || group.status === 'active') &&
+    (account.sub2api_min_multiplier == null || group.effective_multiplier >= account.sub2api_min_multiplier) &&
+    (account.sub2api_max_multiplier == null || group.effective_multiplier <= account.sub2api_max_multiplier)
+  )
+}
+
+export function selectedOptimizeGroupIDs(account: LinkedAccountInfo): number[] {
+  const ids = (account.sub2api_optimize_group_ids ?? [])
+    .filter(id => Number.isSafeInteger(id) && id > 0)
+  if (ids.length > 0) return [...new Set(ids)].sort((a, b) => a - b)
+  const legacy = account.sub2api_optimize_group_id
+  return typeof legacy === 'number' && Number.isSafeInteger(legacy) && legacy > 0 ? [legacy] : []
+}
 
 /**
  * 将单账号优化结果合并到对应行。

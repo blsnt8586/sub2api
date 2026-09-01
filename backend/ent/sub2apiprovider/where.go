@@ -90,6 +90,11 @@ func Status(v string) predicate.Sub2APIProvider {
 	return predicate.Sub2APIProvider(sql.FieldEQ(FieldStatus, v))
 }
 
+// RemoteCostDivisor applies equality check predicate on the "remote_cost_divisor" field. It's identical to RemoteCostDivisorEQ.
+func RemoteCostDivisor(v float64) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldEQ(FieldRemoteCostDivisor, v))
+}
+
 // Notes applies equality check predicate on the "notes" field. It's identical to NotesEQ.
 func Notes(v string) predicate.Sub2APIProvider {
 	return predicate.Sub2APIProvider(sql.FieldEQ(FieldNotes, v))
@@ -553,6 +558,46 @@ func StatusEqualFold(v string) predicate.Sub2APIProvider {
 // StatusContainsFold applies the ContainsFold predicate on the "status" field.
 func StatusContainsFold(v string) predicate.Sub2APIProvider {
 	return predicate.Sub2APIProvider(sql.FieldContainsFold(FieldStatus, v))
+}
+
+// RemoteCostDivisorEQ applies the EQ predicate on the "remote_cost_divisor" field.
+func RemoteCostDivisorEQ(v float64) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldEQ(FieldRemoteCostDivisor, v))
+}
+
+// RemoteCostDivisorNEQ applies the NEQ predicate on the "remote_cost_divisor" field.
+func RemoteCostDivisorNEQ(v float64) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldNEQ(FieldRemoteCostDivisor, v))
+}
+
+// RemoteCostDivisorIn applies the In predicate on the "remote_cost_divisor" field.
+func RemoteCostDivisorIn(vs ...float64) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldIn(FieldRemoteCostDivisor, vs...))
+}
+
+// RemoteCostDivisorNotIn applies the NotIn predicate on the "remote_cost_divisor" field.
+func RemoteCostDivisorNotIn(vs ...float64) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldNotIn(FieldRemoteCostDivisor, vs...))
+}
+
+// RemoteCostDivisorGT applies the GT predicate on the "remote_cost_divisor" field.
+func RemoteCostDivisorGT(v float64) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldGT(FieldRemoteCostDivisor, v))
+}
+
+// RemoteCostDivisorGTE applies the GTE predicate on the "remote_cost_divisor" field.
+func RemoteCostDivisorGTE(v float64) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldGTE(FieldRemoteCostDivisor, v))
+}
+
+// RemoteCostDivisorLT applies the LT predicate on the "remote_cost_divisor" field.
+func RemoteCostDivisorLT(v float64) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldLT(FieldRemoteCostDivisor, v))
+}
+
+// RemoteCostDivisorLTE applies the LTE predicate on the "remote_cost_divisor" field.
+func RemoteCostDivisorLTE(v float64) predicate.Sub2APIProvider {
+	return predicate.Sub2APIProvider(sql.FieldLTE(FieldRemoteCostDivisor, v))
 }
 
 // NotesEQ applies the EQ predicate on the "notes" field.

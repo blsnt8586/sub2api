@@ -6,16 +6,16 @@
   单一分组全局价无法表达真实成本。
 
   只写用户显式填过的模型：未填的模型不进 payload，运行时自动回退内置默认价。
-  模型清单来自后端注册表接口，前端不维护副本。
+  模型清单来自活跃 Canvas 账号同步的 model_mapping，前端不维护副本。
 -->
 <template>
   <div class="space-y-3">
     <div>
       <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-        {{ t('admin.groups.modelPricing.title') }}
+        {{ t('admin.groups.canvasModelPricing.title') }}
       </label>
       <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-        {{ t('admin.groups.modelPricing.hint') }}
+        {{ t('admin.groups.canvasModelPricing.hint') }}
       </p>
     </div>
 
@@ -28,6 +28,13 @@
       </p>
 
       <template v-else>
+        <p
+          v-if="videoModels.length === 0 && imageModels.length === 0"
+          class="rounded-lg border border-dashed border-gray-200 px-3 py-3 text-xs text-gray-500 dark:border-dark-600 dark:text-gray-400"
+        >
+          {{ t('admin.groups.modelPricing.emptyModels') }}
+        </p>
+
         <!-- 视频模型：按次 / 按秒 -->
         <section v-if="videoModels.length > 0">
           <h4 class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
@@ -50,7 +57,7 @@
               </thead>
               <tbody class="divide-y divide-gray-100 dark:divide-dark-600">
                 <tr v-for="model in videoModels" :key="model">
-                  <td class="px-3 py-1.5 font-mono text-xs text-gray-900 dark:text-gray-100">
+                  <td class="max-w-[20rem] break-all px-3 py-1.5 font-mono text-xs text-gray-900 dark:text-gray-100">
                     {{ model }}
                   </td>
                   <td class="px-3 py-1.5">
@@ -104,7 +111,7 @@
               </thead>
               <tbody class="divide-y divide-gray-100 dark:divide-dark-600">
                 <tr v-for="model in imageModels" :key="model">
-                  <td class="px-3 py-1.5 font-mono text-xs text-gray-900 dark:text-gray-100">
+                  <td class="max-w-[20rem] break-all px-3 py-1.5 font-mono text-xs text-gray-900 dark:text-gray-100">
                     {{ model }}
                   </td>
                   <td v-for="tier in imageTiers" :key="tier" class="px-3 py-1.5">

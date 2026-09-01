@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { LinkedAccountInfo, OptimizeResult } from '@/api/admin/sub2apiProviders'
-import { applyOptimizeResultToAccounts } from '../sub2apiOptimization'
+import type { LinkedAccountInfo, OptimizeResult, Sub2APIProviderRemoteGroupRate } from '@/api/admin/sub2apiProviders'
+import { applyOptimizeResultToAccounts, eligibleRemoteOptimizeGroups, selectedOptimizeGroupIDs } from '../sub2apiOptimization'
 
 const account: LinkedAccountInfo = {
   id: 1,
@@ -23,6 +23,37 @@ const result = (overrides: Partial<OptimizeResult> = {}): OptimizeResult => ({
   new_group: 'New group',
   new_multiplier: 0.55,
   ...overrides,
+})
+
+describe('eligibleRemoteOptimizeGroups', () => {
+  it('intersects account platform, active status, and multiplier bounds', () => {
+    const group = (id: number, platform: string, multiplier: number, status = 'active'): Sub2APIProviderRemoteGroupRate => ({
+      id,
+      name: `group-${id}`,
+      platform,
+      status,
+      default_multiplier: multiplier,
+      effective_multiplier: multiplier,
+      has_custom_rate: false,
+    })
+
+    expect(eligibleRemoteOptimizeGroups(account, [
+      group(1, 'openai', 0.08),
+      group(2, 'openai', 0.1),
+      group(3, 'openai', 0.5),
+      group(4, 'openai', 1.1),
+      group(5, 'anthropic', 0.5),
+      group(6, 'openai', 0.5, 'inactive'),
+    ]).map(item => item.id)).toEqual([2, 3])
+  })
+})
+
+describe('selectedOptimizeGroupIDs', () => {
+  it('prefers normalized multi-select IDs and falls back to the legacy scalar', () => {
+    expect(selectedOptimizeGroupIDs({ ...account, sub2api_optimize_group_ids: [31, 22, 31, 0] })).toEqual([22, 31])
+    expect(selectedOptimizeGroupIDs({ ...account, sub2api_optimize_group_ids: [], sub2api_optimize_group_id: 9 })).toEqual([9])
+    expect(selectedOptimizeGroupIDs({ ...account, sub2api_optimize_group_ids: [], sub2api_optimize_group_id: null })).toEqual([])
+  })
 })
 
 describe('applyOptimizeResultToAccounts', () => {

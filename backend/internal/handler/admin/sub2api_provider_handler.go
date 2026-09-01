@@ -28,16 +28,17 @@ func NewSub2APIProviderHandler(providerService *service.Sub2APIProviderService, 
 
 // CreateProviderRequest 创建 Provider 请求
 type CreateProviderRequest struct {
-	Name         string  `json:"name" binding:"required"`
-	BaseURL      string  `json:"base_url" binding:"required,url"`
-	ProviderType string  `json:"provider_type" binding:"omitempty,oneof=sub2api"`
-	Email        string  `json:"email" binding:"required,email"`
-	Password     string  `json:"password"`
-	AuthMode     string  `json:"auth_mode" binding:"omitempty,oneof=password token_pair"`
-	AccessToken  *string `json:"access_token"`
-	RefreshToken *string `json:"refresh_token"`
-	Notes        *string `json:"notes"`
-	ProxyID      *int64  `json:"proxy_id"`
+	Name              string   `json:"name" binding:"required"`
+	BaseURL           string   `json:"base_url" binding:"required,url"`
+	ProviderType      string   `json:"provider_type" binding:"omitempty,oneof=sub2api"`
+	Email             string   `json:"email" binding:"required,email"`
+	Password          string   `json:"password"`
+	AuthMode          string   `json:"auth_mode" binding:"omitempty,oneof=password token_pair"`
+	AccessToken       *string  `json:"access_token"`
+	RefreshToken      *string  `json:"refresh_token"`
+	Notes             *string  `json:"notes"`
+	ProxyID           *int64   `json:"proxy_id"`
+	RemoteCostDivisor *float64 `json:"remote_cost_divisor"`
 }
 
 // optionalProviderNotes distinguishes an omitted notes field (keep the current
@@ -86,16 +87,17 @@ func (f *optionalProviderProxyID) UnmarshalJSON(data []byte) error {
 
 // UpdateProviderRequest 更新 Provider 请求
 type UpdateProviderRequest struct {
-	Name         *string                 `json:"name"`
-	BaseURL      *string                 `json:"base_url" binding:"omitempty,url"`
-	Email        *string                 `json:"email" binding:"omitempty,email"`
-	Password     *string                 `json:"password"`
-	AuthMode     *string                 `json:"auth_mode" binding:"omitempty,oneof=password token_pair"`
-	AccessToken  *string                 `json:"access_token"`
-	RefreshToken *string                 `json:"refresh_token"`
-	Status       *string                 `json:"status" binding:"omitempty,oneof=active inactive"`
-	Notes        optionalProviderNotes   `json:"notes"`
-	ProxyID      optionalProviderProxyID `json:"proxy_id"`
+	Name              *string                 `json:"name"`
+	BaseURL           *string                 `json:"base_url" binding:"omitempty,url"`
+	Email             *string                 `json:"email" binding:"omitempty,email"`
+	Password          *string                 `json:"password"`
+	AuthMode          *string                 `json:"auth_mode" binding:"omitempty,oneof=password token_pair"`
+	AccessToken       *string                 `json:"access_token"`
+	RefreshToken      *string                 `json:"refresh_token"`
+	Status            *string                 `json:"status" binding:"omitempty,oneof=active inactive"`
+	Notes             optionalProviderNotes   `json:"notes"`
+	ProxyID           optionalProviderProxyID `json:"proxy_id"`
+	RemoteCostDivisor *float64                `json:"remote_cost_divisor"`
 }
 
 // Create 创建 Provider
@@ -108,16 +110,17 @@ func (h *Sub2APIProviderHandler) Create(c *gin.Context) {
 	}
 
 	provider, err := h.providerService.CreateProvider(c.Request.Context(), &service.CreateProviderInput{
-		Name:         req.Name,
-		BaseURL:      req.BaseURL,
-		ProviderType: req.ProviderType,
-		Email:        req.Email,
-		Password:     req.Password,
-		AuthMode:     req.AuthMode,
-		AccessToken:  req.AccessToken,
-		RefreshToken: req.RefreshToken,
-		Notes:        req.Notes,
-		ProxyID:      req.ProxyID,
+		Name:              req.Name,
+		BaseURL:           req.BaseURL,
+		ProviderType:      req.ProviderType,
+		Email:             req.Email,
+		Password:          req.Password,
+		AuthMode:          req.AuthMode,
+		AccessToken:       req.AccessToken,
+		RefreshToken:      req.RefreshToken,
+		Notes:             req.Notes,
+		ProxyID:           req.ProxyID,
+		RemoteCostDivisor: req.RemoteCostDivisor,
 	})
 
 	if err != nil {
@@ -229,6 +232,7 @@ func (h *Sub2APIProviderHandler) Update(c *gin.Context) {
 			Set:   req.ProxyID.Set,
 			Value: req.ProxyID.Value,
 		},
+		RemoteCostDivisor: req.RemoteCostDivisor,
 	})
 
 	if err != nil {

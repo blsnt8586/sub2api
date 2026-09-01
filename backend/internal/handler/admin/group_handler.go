@@ -6,13 +6,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/domain"
 	"github.com/Wei-Shaw/sub2api/internal/handler/dto"
-	"github.com/Wei-Shaw/sub2api/internal/pkg/avi2api"
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
 	"github.com/Wei-Shaw/sub2api/internal/platform/liveattestation"
@@ -504,16 +504,116 @@ func (h *GroupHandler) GetModelsListCandidates(c *gin.Context) {
 	response.Success(c, gin.H{"models": models})
 }
 
-// GetCanvasPricingModels 返回 canvas 平台可配置定价的模型，按媒体类型分类。
-// 前端按模型定价的编辑器需要知道「哪些是视频模型、哪些是图像模型」，
-// 由后端注册表统一供给，避免前端维护一份会漂移的硬编码副本。
+// GetCanvasPricingModels 返回活跃 Canvas 账号最近同步的模型，按媒体类型分类。
+// 模型 ID 保留完整的「平台/模型」形式，避免不同平台的同名模型共享定价。
 // GET /api/v1/admin/groups/canvas-pricing-models
 func (h *GroupHandler) GetCanvasPricingModels(c *gin.Context) {
-	response.Success(c, gin.H{
-		"video": avi2api.AllVideoModels(),
-		"image": avi2api.AllImageModels(),
-		"audio": avi2api.AllAudioModels(),
-	})
+	accounts, err := h.adminService.ListAccountsForSchedulerScoreFilter(
+		c.Request.Context(),
+		service.PlatformCanvas,
+		"",
+		"",
+		"",
+		0,
+		"",
+	)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+
+	activeCanvasAccounts := make([]service.Account, 0, len(accounts))
+	for _, account := range accounts {
+		if account.Platform == service.PlatformCanvas && account.Status == service.StatusActive {
+			activeCanvasAccounts = append(activeCanvasAccounts, account)
+		}
+	}
+	video, image, audio := collectCanvasPricingModels(activeCanvasAccounts)
+	response.Success(c, gin.H{"video": video, "image": image, "audio": audio})
+}
+
+// collectCanvasPricingModels collects model_mapping keys from Canvas accounts.
+// Classification deliberately uses the suffix after the last slash: the
+// platform prefix remains part of every returned ID and therefore every price
+// map key.
+func collectCanvasPricingModels(accounts []service.Account) (video, image, audio []string) {
+	videoSet := make(map[string]struct{})
+	imageSet := make(map[string]struct{})
+	audioSet := make(map[string]struct{})
+
+	for _, account := range accounts {
+		for model := range account.GetModelMapping() {
+			model = strings.TrimSpace(model)
+			if model == "" {
+				continue
+			}
+			switch classifyCanvasModel(model) {
+			case "video":
+				videoSet[model] = struct{}{}
+			case "image":
+				imageSet[model] = struct{}{}
+			case "audio":
+				audioSet[model] = struct{}{}
+			}
+		}
+	}
+
+	video = sortedModelIDs(videoSet)
+	image = sortedModelIDs(imageSet)
+	audio = sortedModelIDs(audioSet)
+	return video, image, audio
+}
+
+func sortedModelIDs(models map[string]struct{}) []string {
+	result := make([]string, 0, len(models))
+	for model := range models {
+		result = append(result, model)
+	}
+	sort.Strings(result)
+	return result
+}
+
+// classifyCanvasModel classifies a synced model without stripping its
+// platform prefix. Unknown models are omitted from the pricing editor until
+// their media capability is known, while audio remains available for future UI.
+func classifyCanvasModel(model string) string {
+	model = strings.TrimSpace(model)
+	if model == "" {
+		return ""
+	}
+	suffix := strings.ToLower(model)
+	if idx := strings.LastIndexByte(suffix, '/'); idx >= 0 {
+		suffix = suffix[idx+1:]
+	}
+	suffix = strings.NewReplacer(" ", "-", "_", "-").Replace(strings.TrimSpace(suffix))
+
+	switch suffix {
+	case "gpt-image-2", "nano-banana-pro", "nano-banana-2", "seedream-5.0-pro":
+		return "image"
+	case "flux-3-video", "seedance-2.0", "seedance-2.0-fast", "seedance-2.0-mini",
+		"veo-3.1", "veo-3.1-fast", "kling-o3-omni", "grok-imagine-1.5", "minimax-h3",
+		"kling-3", "kling-3-turbo", "kling-3-omni", "kling-3.0-omni", "gemini-omni-flash", "happy-horse-1.1",
+		"hailuo-2.3", "wan-2.7":
+		return "video"
+	case "dialogue-v3", "music-v1", "sound-effects-v2":
+		return "audio"
+	default:
+		// Keep classification forward-compatible with newly versioned upstream
+		// IDs while avoiding a generic prefix-only match.
+		switch {
+		case strings.Contains(suffix, "image"), strings.Contains(suffix, "banana"), strings.Contains(suffix, "seedream"):
+			return "image"
+		case strings.Contains(suffix, "veo"), strings.Contains(suffix, "kling"), strings.Contains(suffix, "seedance"),
+			strings.Contains(suffix, "hailuo"), strings.Contains(suffix, "wan-"), strings.Contains(suffix, "gemini-omni"),
+			strings.Contains(suffix, "happy-horse"), strings.Contains(suffix, "grok-imagine"), strings.Contains(suffix, "minimax"),
+			strings.Contains(suffix, "flux"):
+			return "video"
+		case strings.Contains(suffix, "dialogue"), strings.Contains(suffix, "music"), strings.Contains(suffix, "sound"):
+			return "audio"
+		default:
+			return ""
+		}
+	}
 }
 
 // Create handles creating a new group

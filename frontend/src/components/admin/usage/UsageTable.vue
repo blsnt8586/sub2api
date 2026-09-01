@@ -173,6 +173,14 @@
                   <span v-if="row.cache_creation_1h_tokens > 0" class="inline-flex items-center rounded px-1 py-px text-[10px] font-medium leading-tight bg-orange-100 text-orange-600 ring-1 ring-inset ring-orange-200 dark:bg-orange-500/20 dark:text-orange-400 dark:ring-orange-500/30">1h</span>
                   <span v-if="row.cache_ttl_overridden" :title="t('usage.cacheTtlOverriddenHint')" class="inline-flex items-center rounded px-1 py-px text-[10px] font-medium leading-tight bg-rose-100 text-rose-600 ring-1 ring-inset ring-rose-200 dark:bg-rose-500/20 dark:text-rose-400 dark:ring-rose-500/30 cursor-help">R</span>
                 </div>
+                <span
+                  v-if="getCacheHitRate(row) != null"
+                  data-test="cache-hit-rate"
+                  class="inline-flex items-center whitespace-nowrap font-medium tabular-nums text-violet-600 dark:text-violet-400"
+                  :title="t('usage.cacheHitRate')"
+                >
+                  {{ t('usage.cacheHitRateShort') }} {{ formatCacheHitRate(row) }}
+                </span>
               </div>
               <div v-if="hasImageInputTokens(row)" class="flex items-center gap-2">
                 <div class="inline-flex items-center gap-1">
@@ -621,6 +629,32 @@ const modelAuditTitle = (row: AdminUsageLog): string => [
   `${t('usage.sentUpstreamModel')}: ${sentUpstreamModel(row) || '-'}`,
   `${t('usage.upstreamResponseModel')}: ${row.upstream_response_model || '-'}`,
 ].join('\n')
+
+type CacheTokenRow = Pick<AdminUsageLog, 'input_tokens' | 'cache_creation_tokens' | 'cache_read_tokens'>
+
+/** Keep the table's cache metric aligned with the token usage trend chart. */
+const getCacheHitRate = (row: CacheTokenRow): number | null => {
+  const inputTokens = Number(row.input_tokens ?? 0)
+  const cacheCreationTokens = Number(row.cache_creation_tokens ?? 0)
+  const cacheReadTokens = Number(row.cache_read_tokens ?? 0)
+  const totalPromptTokens = inputTokens + cacheCreationTokens + cacheReadTokens
+
+  if (
+    !Number.isFinite(inputTokens) ||
+    !Number.isFinite(cacheCreationTokens) ||
+    !Number.isFinite(cacheReadTokens) ||
+    totalPromptTokens <= 0
+  ) {
+    return null
+  }
+
+  return cacheReadTokens / totalPromptTokens
+}
+
+const formatCacheHitRate = (row: CacheTokenRow): string => {
+  const rate = getCacheHitRate(row)
+  return rate == null ? '-' : `${(rate * 100).toFixed(1)}%`
+}
 
 const currentPageIps = computed(() =>
   Array.from(new Set(props.data.map((row) => row.ip_address).filter((ip): ip is string => Boolean(ip))))

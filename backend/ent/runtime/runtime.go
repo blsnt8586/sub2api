@@ -1990,8 +1990,12 @@ func init() {
 	sub2apiprovider.DefaultStatus = sub2apiproviderDescStatus.Default.(string)
 	// sub2apiprovider.StatusValidator is a validator for the "status" field. It is called by the builders before save.
 	sub2apiprovider.StatusValidator = sub2apiproviderDescStatus.Validators[0].(func(string) error)
+	// sub2apiproviderDescRemoteCostDivisor is the schema descriptor for remote_cost_divisor field.
+	sub2apiproviderDescRemoteCostDivisor := sub2apiproviderFields[4].Descriptor()
+	// sub2apiprovider.DefaultRemoteCostDivisor holds the default value on creation for the remote_cost_divisor field.
+	sub2apiprovider.DefaultRemoteCostDivisor = sub2apiproviderDescRemoteCostDivisor.Default.(float64)
 	// sub2apiproviderDescEmail is the schema descriptor for email field.
-	sub2apiproviderDescEmail := sub2apiproviderFields[6].Descriptor()
+	sub2apiproviderDescEmail := sub2apiproviderFields[7].Descriptor()
 	// sub2apiprovider.EmailValidator is a validator for the "email" field. It is called by the builders before save.
 	sub2apiprovider.EmailValidator = func() func(string) error {
 		validators := sub2apiproviderDescEmail.Validators
@@ -2009,25 +2013,25 @@ func init() {
 		}
 	}()
 	// sub2apiproviderDescPasswordEncrypted is the schema descriptor for password_encrypted field.
-	sub2apiproviderDescPasswordEncrypted := sub2apiproviderFields[7].Descriptor()
+	sub2apiproviderDescPasswordEncrypted := sub2apiproviderFields[8].Descriptor()
 	// sub2apiprovider.DefaultPasswordEncrypted holds the default value on creation for the password_encrypted field.
 	sub2apiprovider.DefaultPasswordEncrypted = sub2apiproviderDescPasswordEncrypted.Default.(string)
 	// sub2apiproviderDescAuthMode is the schema descriptor for auth_mode field.
-	sub2apiproviderDescAuthMode := sub2apiproviderFields[8].Descriptor()
+	sub2apiproviderDescAuthMode := sub2apiproviderFields[9].Descriptor()
 	// sub2apiprovider.DefaultAuthMode holds the default value on creation for the auth_mode field.
 	sub2apiprovider.DefaultAuthMode = sub2apiproviderDescAuthMode.Default.(string)
 	// sub2apiprovider.AuthModeValidator is a validator for the "auth_mode" field. It is called by the builders before save.
 	sub2apiprovider.AuthModeValidator = sub2apiproviderDescAuthMode.Validators[0].(func(string) error)
 	// sub2apiproviderDescAPIPathKeys is the schema descriptor for api_path_keys field.
-	sub2apiproviderDescAPIPathKeys := sub2apiproviderFields[14].Descriptor()
+	sub2apiproviderDescAPIPathKeys := sub2apiproviderFields[15].Descriptor()
 	// sub2apiprovider.APIPathKeysValidator is a validator for the "api_path_keys" field. It is called by the builders before save.
 	sub2apiprovider.APIPathKeysValidator = sub2apiproviderDescAPIPathKeys.Validators[0].(func(string) error)
 	// sub2apiproviderDescAPIPathGroups is the schema descriptor for api_path_groups field.
-	sub2apiproviderDescAPIPathGroups := sub2apiproviderFields[15].Descriptor()
+	sub2apiproviderDescAPIPathGroups := sub2apiproviderFields[16].Descriptor()
 	// sub2apiprovider.APIPathGroupsValidator is a validator for the "api_path_groups" field. It is called by the builders before save.
 	sub2apiprovider.APIPathGroupsValidator = sub2apiproviderDescAPIPathGroups.Validators[0].(func(string) error)
 	// sub2apiproviderDescLastSyncStatus is the schema descriptor for last_sync_status field.
-	sub2apiproviderDescLastSyncStatus := sub2apiproviderFields[17].Descriptor()
+	sub2apiproviderDescLastSyncStatus := sub2apiproviderFields[18].Descriptor()
 	// sub2apiprovider.LastSyncStatusValidator is a validator for the "last_sync_status" field. It is called by the builders before save.
 	sub2apiprovider.LastSyncStatusValidator = sub2apiproviderDescLastSyncStatus.Validators[0].(func(string) error)
 	sub2apiproviderprobeconfigMixin := schema.Sub2APIProviderProbeConfig{}.Mixin()
@@ -2186,56 +2190,90 @@ func init() {
 	sub2apiproviderprobetarget.DefaultIntervalSeconds = sub2apiproviderprobetargetDescIntervalSeconds.Default.(int)
 	// sub2apiproviderprobetarget.IntervalSecondsValidator is a validator for the "interval_seconds" field. It is called by the builders before save.
 	sub2apiproviderprobetarget.IntervalSecondsValidator = sub2apiproviderprobetargetDescIntervalSeconds.Validators[0].(func(int) error)
+	// sub2apiproviderprobetargetDescAdaptiveIntervalEnabled is the schema descriptor for adaptive_interval_enabled field.
+	sub2apiproviderprobetargetDescAdaptiveIntervalEnabled := sub2apiproviderprobetargetFields[8].Descriptor()
+	// sub2apiproviderprobetarget.DefaultAdaptiveIntervalEnabled holds the default value on creation for the adaptive_interval_enabled field.
+	sub2apiproviderprobetarget.DefaultAdaptiveIntervalEnabled = sub2apiproviderprobetargetDescAdaptiveIntervalEnabled.Default.(bool)
+	// sub2apiproviderprobetargetDescHealthyIntervalSeconds is the schema descriptor for healthy_interval_seconds field.
+	sub2apiproviderprobetargetDescHealthyIntervalSeconds := sub2apiproviderprobetargetFields[9].Descriptor()
+	// sub2apiproviderprobetarget.DefaultHealthyIntervalSeconds holds the default value on creation for the healthy_interval_seconds field.
+	sub2apiproviderprobetarget.DefaultHealthyIntervalSeconds = sub2apiproviderprobetargetDescHealthyIntervalSeconds.Default.(int)
+	// sub2apiproviderprobetarget.HealthyIntervalSecondsValidator is a validator for the "healthy_interval_seconds" field. It is called by the builders before save.
+	sub2apiproviderprobetarget.HealthyIntervalSecondsValidator = sub2apiproviderprobetargetDescHealthyIntervalSeconds.Validators[0].(func(int) error)
+	// sub2apiproviderprobetargetDescHealthyIntervalThreshold is the schema descriptor for healthy_interval_threshold field.
+	sub2apiproviderprobetargetDescHealthyIntervalThreshold := sub2apiproviderprobetargetFields[10].Descriptor()
+	// sub2apiproviderprobetarget.DefaultHealthyIntervalThreshold holds the default value on creation for the healthy_interval_threshold field.
+	sub2apiproviderprobetarget.DefaultHealthyIntervalThreshold = sub2apiproviderprobetargetDescHealthyIntervalThreshold.Default.(int)
+	// sub2apiproviderprobetarget.HealthyIntervalThresholdValidator is a validator for the "healthy_interval_threshold" field. It is called by the builders before save.
+	sub2apiproviderprobetarget.HealthyIntervalThresholdValidator = sub2apiproviderprobetargetDescHealthyIntervalThreshold.Validators[0].(func(int) error)
+	// sub2apiproviderprobetargetDescStableHealthyIntervalSeconds is the schema descriptor for stable_healthy_interval_seconds field.
+	sub2apiproviderprobetargetDescStableHealthyIntervalSeconds := sub2apiproviderprobetargetFields[11].Descriptor()
+	// sub2apiproviderprobetarget.DefaultStableHealthyIntervalSeconds holds the default value on creation for the stable_healthy_interval_seconds field.
+	sub2apiproviderprobetarget.DefaultStableHealthyIntervalSeconds = sub2apiproviderprobetargetDescStableHealthyIntervalSeconds.Default.(int)
+	// sub2apiproviderprobetarget.StableHealthyIntervalSecondsValidator is a validator for the "stable_healthy_interval_seconds" field. It is called by the builders before save.
+	sub2apiproviderprobetarget.StableHealthyIntervalSecondsValidator = sub2apiproviderprobetargetDescStableHealthyIntervalSeconds.Validators[0].(func(int) error)
+	// sub2apiproviderprobetargetDescStableHealthyThreshold is the schema descriptor for stable_healthy_threshold field.
+	sub2apiproviderprobetargetDescStableHealthyThreshold := sub2apiproviderprobetargetFields[12].Descriptor()
+	// sub2apiproviderprobetarget.DefaultStableHealthyThreshold holds the default value on creation for the stable_healthy_threshold field.
+	sub2apiproviderprobetarget.DefaultStableHealthyThreshold = sub2apiproviderprobetargetDescStableHealthyThreshold.Default.(int)
+	// sub2apiproviderprobetarget.StableHealthyThresholdValidator is a validator for the "stable_healthy_threshold" field. It is called by the builders before save.
+	sub2apiproviderprobetarget.StableHealthyThresholdValidator = sub2apiproviderprobetargetDescStableHealthyThreshold.Validators[0].(func(int) error)
+	// sub2apiproviderprobetargetDescConsecutiveHealthy is the schema descriptor for consecutive_healthy field.
+	sub2apiproviderprobetargetDescConsecutiveHealthy := sub2apiproviderprobetargetFields[13].Descriptor()
+	// sub2apiproviderprobetarget.DefaultConsecutiveHealthy holds the default value on creation for the consecutive_healthy field.
+	sub2apiproviderprobetarget.DefaultConsecutiveHealthy = sub2apiproviderprobetargetDescConsecutiveHealthy.Default.(int)
+	// sub2apiproviderprobetarget.ConsecutiveHealthyValidator is a validator for the "consecutive_healthy" field. It is called by the builders before save.
+	sub2apiproviderprobetarget.ConsecutiveHealthyValidator = sub2apiproviderprobetargetDescConsecutiveHealthy.Validators[0].(func(int) error)
 	// sub2apiproviderprobetargetDescTestModel is the schema descriptor for test_model field.
-	sub2apiproviderprobetargetDescTestModel := sub2apiproviderprobetargetFields[8].Descriptor()
+	sub2apiproviderprobetargetDescTestModel := sub2apiproviderprobetargetFields[14].Descriptor()
 	// sub2apiproviderprobetarget.TestModelValidator is a validator for the "test_model" field. It is called by the builders before save.
 	sub2apiproviderprobetarget.TestModelValidator = sub2apiproviderprobetargetDescTestModel.Validators[0].(func(string) error)
 	// sub2apiproviderprobetargetDescAllowMediaProbe is the schema descriptor for allow_media_probe field.
-	sub2apiproviderprobetargetDescAllowMediaProbe := sub2apiproviderprobetargetFields[9].Descriptor()
+	sub2apiproviderprobetargetDescAllowMediaProbe := sub2apiproviderprobetargetFields[15].Descriptor()
 	// sub2apiproviderprobetarget.DefaultAllowMediaProbe holds the default value on creation for the allow_media_probe field.
 	sub2apiproviderprobetarget.DefaultAllowMediaProbe = sub2apiproviderprobetargetDescAllowMediaProbe.Default.(bool)
 	// sub2apiproviderprobetargetDescTimeoutSeconds is the schema descriptor for timeout_seconds field.
-	sub2apiproviderprobetargetDescTimeoutSeconds := sub2apiproviderprobetargetFields[10].Descriptor()
+	sub2apiproviderprobetargetDescTimeoutSeconds := sub2apiproviderprobetargetFields[16].Descriptor()
 	// sub2apiproviderprobetarget.DefaultTimeoutSeconds holds the default value on creation for the timeout_seconds field.
 	sub2apiproviderprobetarget.DefaultTimeoutSeconds = sub2apiproviderprobetargetDescTimeoutSeconds.Default.(int)
 	// sub2apiproviderprobetarget.TimeoutSecondsValidator is a validator for the "timeout_seconds" field. It is called by the builders before save.
 	sub2apiproviderprobetarget.TimeoutSecondsValidator = sub2apiproviderprobetargetDescTimeoutSeconds.Validators[0].(func(int) error)
 	// sub2apiproviderprobetargetDescDegradedLatencyMs is the schema descriptor for degraded_latency_ms field.
-	sub2apiproviderprobetargetDescDegradedLatencyMs := sub2apiproviderprobetargetFields[11].Descriptor()
+	sub2apiproviderprobetargetDescDegradedLatencyMs := sub2apiproviderprobetargetFields[17].Descriptor()
 	// sub2apiproviderprobetarget.DefaultDegradedLatencyMs holds the default value on creation for the degraded_latency_ms field.
 	sub2apiproviderprobetarget.DefaultDegradedLatencyMs = sub2apiproviderprobetargetDescDegradedLatencyMs.Default.(int)
 	// sub2apiproviderprobetarget.DegradedLatencyMsValidator is a validator for the "degraded_latency_ms" field. It is called by the builders before save.
 	sub2apiproviderprobetarget.DegradedLatencyMsValidator = sub2apiproviderprobetargetDescDegradedLatencyMs.Validators[0].(func(int) error)
 	// sub2apiproviderprobetargetDescDegradedOptimizeThreshold is the schema descriptor for degraded_optimize_threshold field.
-	sub2apiproviderprobetargetDescDegradedOptimizeThreshold := sub2apiproviderprobetargetFields[12].Descriptor()
+	sub2apiproviderprobetargetDescDegradedOptimizeThreshold := sub2apiproviderprobetargetFields[18].Descriptor()
 	// sub2apiproviderprobetarget.DefaultDegradedOptimizeThreshold holds the default value on creation for the degraded_optimize_threshold field.
 	sub2apiproviderprobetarget.DefaultDegradedOptimizeThreshold = sub2apiproviderprobetargetDescDegradedOptimizeThreshold.Default.(int)
 	// sub2apiproviderprobetarget.DegradedOptimizeThresholdValidator is a validator for the "degraded_optimize_threshold" field. It is called by the builders before save.
 	sub2apiproviderprobetarget.DegradedOptimizeThresholdValidator = sub2apiproviderprobetargetDescDegradedOptimizeThreshold.Validators[0].(func(int) error)
 	// sub2apiproviderprobetargetDescCostOptimizeEnabled is the schema descriptor for cost_optimize_enabled field.
-	sub2apiproviderprobetargetDescCostOptimizeEnabled := sub2apiproviderprobetargetFields[13].Descriptor()
+	sub2apiproviderprobetargetDescCostOptimizeEnabled := sub2apiproviderprobetargetFields[19].Descriptor()
 	// sub2apiproviderprobetarget.DefaultCostOptimizeEnabled holds the default value on creation for the cost_optimize_enabled field.
 	sub2apiproviderprobetarget.DefaultCostOptimizeEnabled = sub2apiproviderprobetargetDescCostOptimizeEnabled.Default.(bool)
 	// sub2apiproviderprobetargetDescCostOptimizeIntervalSeconds is the schema descriptor for cost_optimize_interval_seconds field.
-	sub2apiproviderprobetargetDescCostOptimizeIntervalSeconds := sub2apiproviderprobetargetFields[14].Descriptor()
+	sub2apiproviderprobetargetDescCostOptimizeIntervalSeconds := sub2apiproviderprobetargetFields[20].Descriptor()
 	// sub2apiproviderprobetarget.DefaultCostOptimizeIntervalSeconds holds the default value on creation for the cost_optimize_interval_seconds field.
 	sub2apiproviderprobetarget.DefaultCostOptimizeIntervalSeconds = sub2apiproviderprobetargetDescCostOptimizeIntervalSeconds.Default.(int)
 	// sub2apiproviderprobetarget.CostOptimizeIntervalSecondsValidator is a validator for the "cost_optimize_interval_seconds" field. It is called by the builders before save.
 	sub2apiproviderprobetarget.CostOptimizeIntervalSecondsValidator = sub2apiproviderprobetargetDescCostOptimizeIntervalSeconds.Validators[0].(func(int) error)
 	// sub2apiproviderprobetargetDescCostOptimizeHealthyThreshold is the schema descriptor for cost_optimize_healthy_threshold field.
-	sub2apiproviderprobetargetDescCostOptimizeHealthyThreshold := sub2apiproviderprobetargetFields[15].Descriptor()
+	sub2apiproviderprobetargetDescCostOptimizeHealthyThreshold := sub2apiproviderprobetargetFields[21].Descriptor()
 	// sub2apiproviderprobetarget.DefaultCostOptimizeHealthyThreshold holds the default value on creation for the cost_optimize_healthy_threshold field.
 	sub2apiproviderprobetarget.DefaultCostOptimizeHealthyThreshold = sub2apiproviderprobetargetDescCostOptimizeHealthyThreshold.Default.(int)
 	// sub2apiproviderprobetarget.CostOptimizeHealthyThresholdValidator is a validator for the "cost_optimize_healthy_threshold" field. It is called by the builders before save.
 	sub2apiproviderprobetarget.CostOptimizeHealthyThresholdValidator = sub2apiproviderprobetargetDescCostOptimizeHealthyThreshold.Validators[0].(func(int) error)
 	// sub2apiproviderprobetargetDescFailureThreshold is the schema descriptor for failure_threshold field.
-	sub2apiproviderprobetargetDescFailureThreshold := sub2apiproviderprobetargetFields[17].Descriptor()
+	sub2apiproviderprobetargetDescFailureThreshold := sub2apiproviderprobetargetFields[23].Descriptor()
 	// sub2apiproviderprobetarget.DefaultFailureThreshold holds the default value on creation for the failure_threshold field.
 	sub2apiproviderprobetarget.DefaultFailureThreshold = sub2apiproviderprobetargetDescFailureThreshold.Default.(int)
 	// sub2apiproviderprobetarget.FailureThresholdValidator is a validator for the "failure_threshold" field. It is called by the builders before save.
 	sub2apiproviderprobetarget.FailureThresholdValidator = sub2apiproviderprobetargetDescFailureThreshold.Validators[0].(func(int) error)
 	// sub2apiproviderprobetargetDescRecoveryThreshold is the schema descriptor for recovery_threshold field.
-	sub2apiproviderprobetargetDescRecoveryThreshold := sub2apiproviderprobetargetFields[18].Descriptor()
+	sub2apiproviderprobetargetDescRecoveryThreshold := sub2apiproviderprobetargetFields[24].Descriptor()
 	// sub2apiproviderprobetarget.DefaultRecoveryThreshold holds the default value on creation for the recovery_threshold field.
 	sub2apiproviderprobetarget.DefaultRecoveryThreshold = sub2apiproviderprobetargetDescRecoveryThreshold.Default.(int)
 	// sub2apiproviderprobetarget.RecoveryThresholdValidator is a validator for the "recovery_threshold" field. It is called by the builders before save.

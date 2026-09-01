@@ -939,6 +939,8 @@ var ProviderSet = wire.NewSet(
 	NewAffiliateService,
 	sub2api.NewTokenCache,
 	NewSub2APIProviderOperationGate,
+	ProvideSub2APIProviderProxyRepository,
+	ProvideSub2APIProbeTestRunner,
 	NewSub2APIProviderService,
 	NewSub2APIProviderProbeService,
 	ProvideSub2APIProviderProbeRunner,
@@ -999,17 +1001,33 @@ func ProvideSub2APIOptimizeScheduleService(
 	return svc
 }
 
+// ProvideSub2APIProviderProxyRepository adapts the shared proxy repository to
+// the Provider subsystem's deliberately narrow read port.
+func ProvideSub2APIProviderProxyRepository(repo ProxyRepository) Sub2APIProviderProxyRepository {
+	return repo
+}
+
+// ProvideSub2APIProbeTestRunner adapts AccountTestService to the narrow port
+// consumed by Provider route probes.
+func ProvideSub2APIProbeTestRunner(svc *AccountTestService) Sub2APIProbeTestRunner {
+	return svc
+}
+
 // ProvideSub2APIProviderProbeRunner starts the persisted Provider health probe
 // scheduler. Manual probes and scheduled probes share the same provider lock.
 func ProvideSub2APIProviderProbeRunner(
 	probeService *Sub2APIProviderProbeService,
 	optimizeService *Sub2APIOptimizeScheduleService,
+	providerService *Sub2APIProviderService,
+	usageRepo UsageLogRepository,
 	remoteOverviewCache Sub2APIProviderRemoteOverviewCache,
 	lockCache LeaderLockCache,
 	db *sql.DB,
 ) *Sub2APIProviderProbeRunner {
 	probeService.SetAutoOptimizeTrigger(optimizeService)
 	probeService.SetRemoteOverviewCache(remoteOverviewCache)
+	probeService.SetUsageLogRepository(usageRepo)
+	providerService.SetUsageLogRepository(usageRepo)
 	optimizeService.SetProbeTargetBindingSyncer(probeService)
 	runner := NewSub2APIProviderProbeRunner(probeService, lockCache, db)
 	runner.Start()

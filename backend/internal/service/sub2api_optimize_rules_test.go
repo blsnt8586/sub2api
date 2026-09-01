@@ -5,6 +5,8 @@ package service
 import (
 	"context"
 	"testing"
+
+	"github.com/Wei-Shaw/sub2api/internal/pkg/sub2api"
 )
 
 func optimizeFloat(v float64) *float64 { return &v }
@@ -96,10 +98,64 @@ func TestUpdateAccountOptimizeSettingsRejectsMissingRequiredSettings(t *testing.
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := svc.UpdateAccountOptimizeSettings(context.Background(), 7, 1, true, tt.min, tt.max, tt.model); err == nil {
+			if err := svc.UpdateAccountOptimizeSettings(context.Background(), 7, 1, true, tt.min, tt.max, tt.model, nil); err == nil {
 				t.Fatal("expected validation error")
 			}
 		})
+	}
+}
+
+func TestUpdateAccountOptimizeSettingsRejectsInvalidOptionalGroup(t *testing.T) {
+	svc := &Sub2APIOptimizeScheduleService{}
+	invalidGroupID := int64(0)
+	err := svc.UpdateAccountOptimizeSettings(
+		context.Background(), 7, 1, false, nil, nil, nil, &invalidGroupID,
+	)
+	if err == nil {
+		t.Fatal("expected an invalid optional group to be rejected")
+	}
+}
+
+func TestOptimizeGroupMatchesOptionalSelectedGroup(t *testing.T) {
+	account := completeOptimizeAccount()
+	account.Platform = "openai"
+	selected := int64(22)
+	account.Sub2APIOptimizeGroupID = &selected
+
+	if optimizeGroupMatchesAccount(sub2api.Group{ID: 21, Platform: "openai", Status: "active", RateMultiplier: 0.5}, &account, 0.3, 0.8) {
+		t.Fatal("an unselected group must not enter the candidate set")
+	}
+	if !optimizeGroupMatchesAccount(sub2api.Group{ID: 22, Platform: "openai", Status: "active", RateMultiplier: 0.5}, &account, 0.3, 0.8) {
+		t.Fatal("the selected same-platform in-range group should enter the candidate set")
+	}
+	if optimizeGroupMatchesAccount(sub2api.Group{ID: 22, Platform: "anthropic", Status: "active", RateMultiplier: 0.5}, &account, 0.3, 0.8) {
+		t.Fatal("selected group must still match the account platform")
+	}
+}
+
+func TestOptimizeGroupMatchesMultipleSelectedGroups(t *testing.T) {
+	account := completeOptimizeAccount()
+	account.Platform = "openai"
+	account.Sub2APIOptimizeGroupIDs = []int64{31, 22, 31}
+
+	if optimizeGroupMatchesAccount(sub2api.Group{ID: 21, Platform: "openai", Status: "active", RateMultiplier: 0.5}, &account, 0.3, 0.8) {
+		t.Fatal("an unselected group must not enter the candidate set")
+	}
+	for _, id := range []int64{22, 31} {
+		if !optimizeGroupMatchesAccount(sub2api.Group{ID: id, Platform: "openai", Status: "active", RateMultiplier: 0.5}, &account, 0.3, 0.8) {
+			t.Fatalf("selected group %d should enter the candidate set", id)
+		}
+	}
+}
+
+func TestApplyOptimizeGroupRateOverridesUsesEffectiveRates(t *testing.T) {
+	groups := []sub2api.Group{{ID: 11, RateMultiplier: 0.8}, {ID: 12, RateMultiplier: 1.0}}
+	got := applyOptimizeGroupRateOverrides(groups, map[string]float64{"11": 0.08})
+	if got[0].RateMultiplier != 0.08 || got[1].RateMultiplier != 1.0 {
+		t.Fatalf("overridden groups = %+v", got)
+	}
+	if groups[0].RateMultiplier != 0.8 {
+		t.Fatal("override helper must not mutate the shared group catalog")
 	}
 }
 

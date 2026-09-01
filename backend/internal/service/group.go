@@ -208,6 +208,10 @@ func (g *Group) GetVideoPrice(resolution string) *float64 {
 		return g.VideoPrice480P
 	case VideoBillingResolution720P:
 		return g.VideoPrice720P
+	case VideoBillingResolution1024P:
+		// The legacy flat schema has no 1024p column. Use the high-resolution
+		// override; per-model video_model_prices can still configure 1024p exactly.
+		return g.VideoPrice1080P
 	case VideoBillingResolution1080P:
 		return g.VideoPrice1080P
 	default:

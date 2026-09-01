@@ -761,6 +761,33 @@ func (_u *AccountUpdate) ClearSub2apiTestModel() *AccountUpdate {
 	return _u
 }
 
+// SetSub2apiOptimizeGroupID sets the "sub2api_optimize_group_id" field.
+func (_u *AccountUpdate) SetSub2apiOptimizeGroupID(v int64) *AccountUpdate {
+	_u.mutation.ResetSub2apiOptimizeGroupID()
+	_u.mutation.SetSub2apiOptimizeGroupID(v)
+	return _u
+}
+
+// SetNillableSub2apiOptimizeGroupID sets the "sub2api_optimize_group_id" field if the given value is not nil.
+func (_u *AccountUpdate) SetNillableSub2apiOptimizeGroupID(v *int64) *AccountUpdate {
+	if v != nil {
+		_u.SetSub2apiOptimizeGroupID(*v)
+	}
+	return _u
+}
+
+// AddSub2apiOptimizeGroupID adds value to the "sub2api_optimize_group_id" field.
+func (_u *AccountUpdate) AddSub2apiOptimizeGroupID(v int64) *AccountUpdate {
+	_u.mutation.AddSub2apiOptimizeGroupID(v)
+	return _u
+}
+
+// ClearSub2apiOptimizeGroupID clears the value of the "sub2api_optimize_group_id" field.
+func (_u *AccountUpdate) ClearSub2apiOptimizeGroupID() *AccountUpdate {
+	_u.mutation.ClearSub2apiOptimizeGroupID()
+	return _u
+}
+
 // SetParentAccountID sets the "parent_account_id" field.
 func (_u *AccountUpdate) SetParentAccountID(v int64) *AccountUpdate {
 	_u.mutation.SetParentAccountID(v)
@@ -1296,6 +1323,15 @@ func (_u *AccountUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.Sub2apiTestModelCleared() {
 		_spec.ClearField(account.FieldSub2apiTestModel, field.TypeString)
+	}
+	if value, ok := _u.mutation.Sub2apiOptimizeGroupID(); ok {
+		_spec.SetField(account.FieldSub2apiOptimizeGroupID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedSub2apiOptimizeGroupID(); ok {
+		_spec.AddField(account.FieldSub2apiOptimizeGroupID, field.TypeInt64, value)
+	}
+	if _u.mutation.Sub2apiOptimizeGroupIDCleared() {
+		_spec.ClearField(account.FieldSub2apiOptimizeGroupID, field.TypeInt64)
 	}
 	if value, ok := _u.mutation.QuotaDimension(); ok {
 		_spec.SetField(account.FieldQuotaDimension, field.TypeEnum, value)
@@ -2327,6 +2363,33 @@ func (_u *AccountUpdateOne) ClearSub2apiTestModel() *AccountUpdateOne {
 	return _u
 }
 
+// SetSub2apiOptimizeGroupID sets the "sub2api_optimize_group_id" field.
+func (_u *AccountUpdateOne) SetSub2apiOptimizeGroupID(v int64) *AccountUpdateOne {
+	_u.mutation.ResetSub2apiOptimizeGroupID()
+	_u.mutation.SetSub2apiOptimizeGroupID(v)
+	return _u
+}
+
+// SetNillableSub2apiOptimizeGroupID sets the "sub2api_optimize_group_id" field if the given value is not nil.
+func (_u *AccountUpdateOne) SetNillableSub2apiOptimizeGroupID(v *int64) *AccountUpdateOne {
+	if v != nil {
+		_u.SetSub2apiOptimizeGroupID(*v)
+	}
+	return _u
+}
+
+// AddSub2apiOptimizeGroupID adds value to the "sub2api_optimize_group_id" field.
+func (_u *AccountUpdateOne) AddSub2apiOptimizeGroupID(v int64) *AccountUpdateOne {
+	_u.mutation.AddSub2apiOptimizeGroupID(v)
+	return _u
+}
+
+// ClearSub2apiOptimizeGroupID clears the value of the "sub2api_optimize_group_id" field.
+func (_u *AccountUpdateOne) ClearSub2apiOptimizeGroupID() *AccountUpdateOne {
+	_u.mutation.ClearSub2apiOptimizeGroupID()
+	return _u
+}
+
 // SetParentAccountID sets the "parent_account_id" field.
 func (_u *AccountUpdateOne) SetParentAccountID(v int64) *AccountUpdateOne {
 	_u.mutation.SetParentAccountID(v)
@@ -2892,6 +2955,15 @@ func (_u *AccountUpdateOne) sqlSave(ctx context.Context) (_node *Account, err er
 	}
 	if _u.mutation.Sub2apiTestModelCleared() {
 		_spec.ClearField(account.FieldSub2apiTestModel, field.TypeString)
+	}
+	if value, ok := _u.mutation.Sub2apiOptimizeGroupID(); ok {
+		_spec.SetField(account.FieldSub2apiOptimizeGroupID, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedSub2apiOptimizeGroupID(); ok {
+		_spec.AddField(account.FieldSub2apiOptimizeGroupID, field.TypeInt64, value)
+	}
+	if _u.mutation.Sub2apiOptimizeGroupIDCleared() {
+		_spec.ClearField(account.FieldSub2apiOptimizeGroupID, field.TypeInt64)
 	}
 	if value, ok := _u.mutation.QuotaDimension(); ok {
 		_spec.SetField(account.FieldQuotaDimension, field.TypeEnum, value)

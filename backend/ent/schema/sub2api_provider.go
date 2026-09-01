@@ -55,6 +55,11 @@ func (Sub2APIProvider) Fields() []ent.Field {
 			Default(domain.StatusActive).
 			Comment("状态：active, inactive"),
 
+		field.Float("remote_cost_divisor").
+			SchemaType(map[string]string{dialect.Postgres: "decimal(20,8)"}).
+			Default(1.0).
+			Comment("远程概览金额换算除数；展示金额 = 上游金额 ÷ 此值"),
+
 		field.String("notes").
 			Optional().
 			Nillable().

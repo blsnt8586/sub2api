@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -1101,6 +1102,22 @@ func (h *GatewayHandler) Models(c *gin.Context) {
 
 	// Get available models from account configurations for the selected group platform.
 	availableModels := h.gatewayService.GetAvailableModels(c.Request.Context(), groupID, platform)
+	if platform == service.PlatformCanvas {
+		// Canvas model visibility is configured per group (canvas_model_pricing).
+		// Prefer that catalog when present so clients such as Infinite Canvas never
+		// inherit a stale/static media model list. Keep any account-mapping models
+		// outside the image/video catalog (for example audio models, which do not
+		// have a per-model pricing map yet) as a compatibility path.
+		if apiKey != nil && apiKey.Group != nil {
+			if groupModels := canvasGroupModelIDs(apiKey.Group.CanvasModelPricing); len(groupModels) > 0 {
+				availableModels = mergeModelIDs(groupModels, availableModels)
+				sort.Strings(availableModels)
+			}
+		}
+		writeModelsList(c, platform, availableModels)
+		return
+	}
+
 	if apiKey != nil && apiKey.Group != nil && apiKey.Group.CustomModelsListEnabled() {
 		fallbackModels := defaultModelIDsForPlatform(platform)
 		availableModels = filterModelsByCustomList(customModelsListSource(platform, availableModels, fallbackModels), fallbackModels, apiKey.Group.ModelsListConfig.Models)
@@ -1138,6 +1155,41 @@ func (h *GatewayHandler) Models(c *gin.Context) {
 		"object": "list",
 		"data":   claude.DefaultModels,
 	})
+}
+
+// canvasGroupModelIDs returns the exact model IDs declared by a Canvas group.
+// Group pricing maps are also the user-visible Canvas model catalog; preserve
+// platform-qualified IDs such as "leonardo/gpt-image-2" and keep output stable.
+func canvasGroupModelIDs(pricing *service.ModelPricingConfig) []string {
+	if pricing == nil {
+		return nil
+	}
+	seen := make(map[string]struct{}, len(pricing.Image)+len(pricing.Video))
+	models := make([]string, 0, len(pricing.Image)+len(pricing.Video))
+	for model := range pricing.Image {
+		model = strings.TrimSpace(model)
+		if model == "" {
+			continue
+		}
+		if _, ok := seen[model]; ok {
+			continue
+		}
+		seen[model] = struct{}{}
+		models = append(models, model)
+	}
+	for model := range pricing.Video {
+		model = strings.TrimSpace(model)
+		if model == "" {
+			continue
+		}
+		if _, ok := seen[model]; ok {
+			continue
+		}
+		seen[model] = struct{}{}
+		models = append(models, model)
+	}
+	sort.Strings(models)
+	return models
 }
 
 func (h *GatewayHandler) compositeAvailableModels(ctx context.Context, groupID *int64) []string {

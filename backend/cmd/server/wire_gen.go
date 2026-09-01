@@ -282,6 +282,7 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	complianceHandler := admin.NewComplianceHandler(settingService)
 	sub2APIProviderRepository := repository.NewSub2APIProviderRepository(client)
 	sub2APIAccountRepository := repository.NewSub2APIAccountRepository(accountRepository, db)
+	sub2APIProviderProxyRepository := service.ProvideSub2APIProviderProxyRepository(proxyRepository)
 	tokenCache := sub2api.NewTokenCache()
 	providerTokenEncryptor, err := repository.NewProviderTokenEncryptor(configConfig)
 	if err != nil {
@@ -289,9 +290,10 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	}
 	sub2APIProviderRemoteOverviewCache := repository.NewSub2APIProviderRemoteOverviewCache(redisClient)
 	sub2APIProviderOperationGate := service.NewSub2APIProviderOperationGate(leaderLockCache, db)
-	sub2APIProviderService := service.NewSub2APIProviderService(sub2APIProviderRepository, sub2APIAccountRepository, proxyRepository, tokenCache, providerTokenEncryptor, sub2APIProviderRemoteOverviewCache, sub2APIProviderOperationGate, configConfig)
+	sub2APIProviderService := service.NewSub2APIProviderService(sub2APIProviderRepository, sub2APIAccountRepository, sub2APIProviderProxyRepository, tokenCache, providerTokenEncryptor, sub2APIProviderRemoteOverviewCache, sub2APIProviderOperationGate, configConfig)
 	sub2APIProviderProbeRepository := repository.NewSub2APIProviderProbeRepository(client, db)
-	sub2APIProviderProbeService := service.NewSub2APIProviderProbeService(sub2APIProviderRepository, sub2APIProviderProbeRepository, sub2APIAccountRepository, accountTestService, rateLimitService, tokenCache, providerTokenEncryptor, sub2APIProviderOperationGate)
+	sub2APIProbeTestRunner := service.ProvideSub2APIProbeTestRunner(accountTestService)
+	sub2APIProviderProbeService := service.NewSub2APIProviderProbeService(sub2APIProviderRepository, sub2APIProviderProbeRepository, sub2APIAccountRepository, sub2APIProbeTestRunner, rateLimitService, tokenCache, providerTokenEncryptor, sub2APIProviderOperationGate)
 	sub2APIProviderHandler := admin.NewSub2APIProviderHandler(sub2APIProviderService, sub2APIProviderProbeService)
 	sub2APIOptimizeScheduleRepository := repository.NewSub2APIOptimizeScheduleRepository(client)
 	sub2APIOptimizeScheduleService := service.ProvideSub2APIOptimizeScheduleService(sub2APIOptimizeScheduleRepository, sub2APIProviderService, accountTestService, sub2APIProviderOperationGate, leaderLockCache, concurrencyService)
@@ -367,7 +369,7 @@ func initializeApplication(buildInfo handler.BuildInfo) (*Application, error) {
 	channelMonitorV2Aggregator := service.ProvideChannelMonitorV2Aggregator(channelMonitorV2Repository, db, settingService)
 	userPlatformQuotaUsageFlusher := service.ProvideUserPlatformQuotaUsageFlusher(configConfig, billingCache, serviceUserPlatformQuotaRepository, timingWheelService)
 	sub2APIOptimizeRunnerService := service.ProvideSub2APIOptimizeRunnerService(sub2APIOptimizeScheduleService, configConfig, leaderLockCache, db)
-	sub2APIProviderProbeRunner := service.ProvideSub2APIProviderProbeRunner(sub2APIProviderProbeService, sub2APIOptimizeScheduleService, sub2APIProviderRemoteOverviewCache, leaderLockCache, db)
+	sub2APIProviderProbeRunner := service.ProvideSub2APIProviderProbeRunner(sub2APIProviderProbeService, sub2APIOptimizeScheduleService, sub2APIProviderService, usageLogRepository, sub2APIProviderRemoteOverviewCache, leaderLockCache, db)
 	v := provideCleanup(client, redisClient, opsMetricsCollector, opsAggregationService, opsAlertEvaluatorService, opsCleanupService, opsScheduledReportService, opsSystemLogSink, opsService, opsIngressRejectAggregator, apiKeyService, authCacheInvalidationWorker, schedulerSnapshotService, tokenRefreshService, accountExpiryService, cnProviderBalanceCheckService, openAICodexVersionSyncService, proxyExpiryService, subscriptionExpiryService, usageCleanupService, idempotencyCleanupService, batchImageCleanupService, batchImageWorkerRuntime, pricingService, emailQueueService, billingCacheService, usageRecordWorkerPool, subscriptionService, oAuthService, openAIOAuthService, geminiOAuthService, antigravityOAuthService, grokOAuthService, openAIGatewayService, scheduledTestRunnerService, backupService, paymentOrderExpiryService, channelMonitorRunner, channelMonitorV2Aggregator, userPlatformQuotaUsageFlusher, sub2APIOptimizeRunnerService, sub2APIProviderProbeRunner, upstreamBillingProbeService, ollamaCloudUsageService, auditLogService, openAIQuotaAutoResetService, promptService, pluginManager)
 	application := &Application{
 		Server:        httpServer,
