@@ -28,18 +28,6 @@ const (
 	FieldDescription = "description"
 	// FieldRateMultiplier holds the string denoting the rate_multiplier field in the database.
 	FieldRateMultiplier = "rate_multiplier"
-	// FieldDynamicPricingEnabled holds the string denoting the dynamic_pricing_enabled field in the database.
-	FieldDynamicPricingEnabled = "dynamic_pricing_enabled"
-	// FieldDynamicPricingMarkup holds the string denoting the dynamic_pricing_markup field in the database.
-	FieldDynamicPricingMarkup = "dynamic_pricing_markup"
-	// FieldManualRateMultiplier holds the string denoting the manual_rate_multiplier field in the database.
-	FieldManualRateMultiplier = "manual_rate_multiplier"
-	// FieldDynamicSourceMaxMultiplier holds the string denoting the dynamic_source_max_multiplier field in the database.
-	FieldDynamicSourceMaxMultiplier = "dynamic_source_max_multiplier"
-	// FieldDynamicPricingUpdatedAt holds the string denoting the dynamic_pricing_updated_at field in the database.
-	FieldDynamicPricingUpdatedAt = "dynamic_pricing_updated_at"
-	// FieldDynamicPricingStatus holds the string denoting the dynamic_pricing_status field in the database.
-	FieldDynamicPricingStatus = "dynamic_pricing_status"
 	// FieldPeakRateEnabled holds the string denoting the peak_rate_enabled field in the database.
 	FieldPeakRateEnabled = "peak_rate_enabled"
 	// FieldPeakStart holds the string denoting the peak_start field in the database.
@@ -249,12 +237,6 @@ var Columns = []string{
 	FieldName,
 	FieldDescription,
 	FieldRateMultiplier,
-	FieldDynamicPricingEnabled,
-	FieldDynamicPricingMarkup,
-	FieldManualRateMultiplier,
-	FieldDynamicSourceMaxMultiplier,
-	FieldDynamicPricingUpdatedAt,
-	FieldDynamicPricingStatus,
 	FieldPeakRateEnabled,
 	FieldPeakStart,
 	FieldPeakEnd,
@@ -358,16 +340,6 @@ var (
 	NameValidator func(string) error
 	// DefaultRateMultiplier holds the default value on creation for the "rate_multiplier" field.
 	DefaultRateMultiplier float64
-	// DefaultDynamicPricingEnabled holds the default value on creation for the "dynamic_pricing_enabled" field.
-	DefaultDynamicPricingEnabled bool
-	// DefaultDynamicPricingMarkup holds the default value on creation for the "dynamic_pricing_markup" field.
-	DefaultDynamicPricingMarkup float64
-	// DefaultManualRateMultiplier holds the default value on creation for the "manual_rate_multiplier" field.
-	DefaultManualRateMultiplier float64
-	// DefaultDynamicPricingStatus holds the default value on creation for the "dynamic_pricing_status" field.
-	DefaultDynamicPricingStatus string
-	// DynamicPricingStatusValidator is a validator for the "dynamic_pricing_status" field. It is called by the builders before save.
-	DynamicPricingStatusValidator func(string) error
 	// DefaultPeakRateEnabled holds the default value on creation for the "peak_rate_enabled" field.
 	DefaultPeakRateEnabled bool
 	// DefaultPeakStart holds the default value on creation for the "peak_start" field.
@@ -510,36 +482,6 @@ func ByDescription(opts ...sql.OrderTermOption) OrderOption {
 // ByRateMultiplier orders the results by the rate_multiplier field.
 func ByRateMultiplier(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRateMultiplier, opts...).ToFunc()
-}
-
-// ByDynamicPricingEnabled orders the results by the dynamic_pricing_enabled field.
-func ByDynamicPricingEnabled(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldDynamicPricingEnabled, opts...).ToFunc()
-}
-
-// ByDynamicPricingMarkup orders the results by the dynamic_pricing_markup field.
-func ByDynamicPricingMarkup(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldDynamicPricingMarkup, opts...).ToFunc()
-}
-
-// ByManualRateMultiplier orders the results by the manual_rate_multiplier field.
-func ByManualRateMultiplier(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldManualRateMultiplier, opts...).ToFunc()
-}
-
-// ByDynamicSourceMaxMultiplier orders the results by the dynamic_source_max_multiplier field.
-func ByDynamicSourceMaxMultiplier(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldDynamicSourceMaxMultiplier, opts...).ToFunc()
-}
-
-// ByDynamicPricingUpdatedAt orders the results by the dynamic_pricing_updated_at field.
-func ByDynamicPricingUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldDynamicPricingUpdatedAt, opts...).ToFunc()
-}
-
-// ByDynamicPricingStatus orders the results by the dynamic_pricing_status field.
-func ByDynamicPricingStatus(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldDynamicPricingStatus, opts...).ToFunc()
 }
 
 // ByPeakRateEnabled orders the results by the peak_rate_enabled field.

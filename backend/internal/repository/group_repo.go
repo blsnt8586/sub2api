@@ -57,15 +57,6 @@ func createGroupRecord(ctx context.Context, client *dbent.Client, groupIn *servi
 	if groupIn == nil {
 		return errors.New("group is nil")
 	}
-	if groupIn.ManualRateMultiplier <= 0 {
-		groupIn.ManualRateMultiplier = groupIn.RateMultiplier
-	}
-	if groupIn.DynamicPricingStatus == "" {
-		groupIn.DynamicPricingStatus = "manual"
-		if groupIn.DynamicPricingEnabled {
-			groupIn.DynamicPricingStatus = "no_accounts"
-		}
-	}
 	modelPricing, err := json.Marshal(groupIn.ModelPricing)
 	if err != nil {
 		return fmt.Errorf("marshal group model pricing: %w", err)
@@ -82,12 +73,6 @@ func createGroupRecord(ctx context.Context, client *dbent.Client, groupIn *servi
 		SetDescription(groupIn.Description).
 		SetPlatform(groupIn.Platform).
 		SetRateMultiplier(groupIn.RateMultiplier).
-		SetDynamicPricingEnabled(groupIn.DynamicPricingEnabled).
-		SetDynamicPricingMarkup(groupIn.DynamicPricingMarkup).
-		SetManualRateMultiplier(groupIn.ManualRateMultiplier).
-		SetNillableDynamicSourceMaxMultiplier(groupIn.DynamicSourceMaxMultiplier).
-		SetNillableDynamicPricingUpdatedAt(groupIn.DynamicPricingUpdatedAt).
-		SetDynamicPricingStatus(groupIn.DynamicPricingStatus).
 		SetSortOrder(groupIn.SortOrder).
 		SetIsExclusive(groupIn.IsExclusive).
 		SetStatus(groupIn.Status).
@@ -291,12 +276,6 @@ func (r *groupRepository) Update(ctx context.Context, groupIn *service.Group) er
 		SetDescription(groupIn.Description).
 		SetPlatform(groupIn.Platform).
 		SetRateMultiplier(groupIn.RateMultiplier).
-		SetDynamicPricingEnabled(groupIn.DynamicPricingEnabled).
-		SetDynamicPricingMarkup(groupIn.DynamicPricingMarkup).
-		SetManualRateMultiplier(groupIn.ManualRateMultiplier).
-		SetNillableDynamicSourceMaxMultiplier(groupIn.DynamicSourceMaxMultiplier).
-		SetNillableDynamicPricingUpdatedAt(groupIn.DynamicPricingUpdatedAt).
-		SetDynamicPricingStatus(groupIn.DynamicPricingStatus).
 		SetIsExclusive(groupIn.IsExclusive).
 		SetStatus(groupIn.Status).
 		SetSubscriptionType(groupIn.SubscriptionType).

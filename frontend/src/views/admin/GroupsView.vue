@@ -258,31 +258,8 @@
           </template>
 
           <template #cell-rate_multiplier="{ value, row }">
-            <div class="space-y-0.5">
-              <div class="text-sm font-medium text-gray-700 dark:text-gray-300">
-                {{ Number(value).toFixed(4).replace(/\.?0+$/, "") }}x
-              </div>
-              <div
-                v-if="row.dynamic_pricing_enabled && row.dynamic_source_max_multiplier != null"
-                class="whitespace-nowrap text-xs text-gray-500 dark:text-gray-400"
-              >
-                {{ t("admin.groups.dynamicPricing.listFormula", {
-                  source: formatDynamicMultiplier(row.dynamic_source_max_multiplier),
-                  markup: formatDynamicMultiplier(row.dynamic_pricing_markup),
-                }) }}
-              </div>
-              <div
-                v-else-if="row.dynamic_pricing_enabled && row.dynamic_pricing_status === 'error'"
-                class="text-xs text-red-600 dark:text-red-400"
-              >
-                {{ t("admin.groups.dynamicPricing.sourceMissing") }}
-              </div>
-              <div
-                v-else-if="row.dynamic_pricing_enabled"
-                class="text-xs text-amber-600 dark:text-amber-400"
-              >
-                {{ t("admin.groups.dynamicPricing.usingFallback") }}
-              </div>
+            <div class="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {{ Number(value).toFixed(4).replace(/\.?0+$/, "") }}x
             </div>
           </template>
 
@@ -623,27 +600,8 @@
           </select>
           <p class="input-hint">{{ t("admin.groups.copyAccounts.hint") }}</p>
         </div>
-        <div class="space-y-3">
-          <label class="input-label">{{ t("admin.groups.dynamicPricing.mode") }}</label>
-          <div class="inline-flex overflow-hidden rounded-md border border-gray-300 dark:border-dark-600">
-            <button
-              type="button"
-              class="px-3 py-2 text-sm"
-              :class="!createForm.dynamic_pricing_enabled ? 'bg-primary-500 text-white' : 'bg-white text-gray-700 dark:bg-dark-800 dark:text-gray-300'"
-              @click="createForm.dynamic_pricing_enabled = false"
-            >{{ t("admin.groups.dynamicPricing.manualMode") }}</button>
-            <button
-              type="button"
-              class="border-l border-gray-300 px-3 py-2 text-sm dark:border-dark-600"
-              :class="createForm.dynamic_pricing_enabled ? 'bg-primary-500 text-white' : 'bg-white text-gray-700 dark:bg-dark-800 dark:text-gray-300'"
-              @click="createForm.dynamic_pricing_enabled = true"
-            >{{ t("admin.groups.dynamicPricing.dynamicMode") }}</button>
-          </div>
-        </div>
         <div>
-          <label class="input-label">{{ createForm.dynamic_pricing_enabled
-            ? t("admin.groups.dynamicPricing.fallbackRate")
-            : t("admin.groups.form.rateMultiplier") }}</label>
+          <label class="input-label">{{ t("admin.groups.form.rateMultiplier") }}</label>
           <input
             v-model.number="createForm.rate_multiplier"
             type="number"
@@ -653,21 +611,7 @@
             class="input"
             data-tour="group-form-multiplier"
           />
-          <p class="input-hint">{{ createForm.dynamic_pricing_enabled
-            ? t("admin.groups.dynamicPricing.fallbackHint")
-            : t("admin.groups.rateMultiplierHint") }}</p>
-        </div>
-        <div v-if="createForm.dynamic_pricing_enabled">
-          <label class="input-label">{{ t("admin.groups.dynamicPricing.markup") }}</label>
-          <input
-            v-model.number="createForm.dynamic_pricing_markup"
-            type="number"
-            step="0.0001"
-            min="0"
-            required
-            class="input"
-          />
-          <p class="input-hint">{{ t("admin.groups.dynamicPricing.markupHint") }}</p>
+          <p class="input-hint">{{ t("admin.groups.rateMultiplierHint") }}</p>
         </div>
         <div>
           <label class="input-label">{{ t("admin.groups.form.rpmLimit") }}</label>
@@ -2482,29 +2426,10 @@
             {{ t("admin.groups.copyAccounts.hintEdit") }}
           </p>
         </div>
-        <div class="space-y-3">
-          <label class="input-label">{{ t("admin.groups.dynamicPricing.mode") }}</label>
-          <div class="inline-flex overflow-hidden rounded-md border border-gray-300 dark:border-dark-600">
-            <button
-              type="button"
-              class="px-3 py-2 text-sm"
-              :class="!editForm.dynamic_pricing_enabled ? 'bg-primary-500 text-white' : 'bg-white text-gray-700 dark:bg-dark-800 dark:text-gray-300'"
-              @click="editForm.dynamic_pricing_enabled = false"
-            >{{ t("admin.groups.dynamicPricing.manualMode") }}</button>
-            <button
-              type="button"
-              class="border-l border-gray-300 px-3 py-2 text-sm dark:border-dark-600"
-              :class="editForm.dynamic_pricing_enabled ? 'bg-primary-500 text-white' : 'bg-white text-gray-700 dark:bg-dark-800 dark:text-gray-300'"
-              @click="editForm.dynamic_pricing_enabled = true"
-            >{{ t("admin.groups.dynamicPricing.dynamicMode") }}</button>
-          </div>
-        </div>
         <div>
-          <label class="input-label">{{ editForm.dynamic_pricing_enabled
-            ? t("admin.groups.dynamicPricing.fallbackRate")
-            : t("admin.groups.form.rateMultiplier") }}</label>
+          <label class="input-label">{{ t("admin.groups.form.rateMultiplier") }}</label>
           <input
-            v-model.number="editForm.manual_rate_multiplier"
+            v-model.number="editForm.rate_multiplier"
             type="number"
             step="0.001"
             min="0.001"
@@ -2512,36 +2437,7 @@
             class="input"
             data-tour="group-form-multiplier"
           />
-          <p v-if="editForm.dynamic_pricing_enabled" class="input-hint">
-            {{ t("admin.groups.dynamicPricing.fallbackHint") }}
-          </p>
-        </div>
-        <div v-if="editForm.dynamic_pricing_enabled">
-          <label class="input-label">{{ t("admin.groups.dynamicPricing.markup") }}</label>
-          <input
-            v-model.number="editForm.dynamic_pricing_markup"
-            type="number"
-            step="0.0001"
-            min="0"
-            required
-            class="input"
-          />
-          <div class="mt-2 text-xs text-gray-600 dark:text-gray-300">
-            <template v-if="editingGroup?.dynamic_source_max_multiplier != null">
-              {{ t("admin.groups.dynamicPricing.currentFormula", {
-                source: formatDynamicMultiplier(editingGroup.dynamic_source_max_multiplier),
-                markup: formatDynamicMultiplier(editForm.dynamic_pricing_markup),
-                final: formatDynamicMultiplier(
-                  Number(editingGroup.dynamic_source_max_multiplier) +
-                    Number(editForm.dynamic_pricing_markup),
-                ),
-              }) }}
-            </template>
-            <template v-else-if="editingGroup?.dynamic_pricing_status === 'error'">
-              {{ t("admin.groups.dynamicPricing.sourceMissing") }}
-            </template>
-            <template v-else>{{ t("admin.groups.dynamicPricing.usingFallback") }}</template>
-          </div>
+          <p class="input-hint">{{ t("admin.groups.rateMultiplierHint") }}</p>
         </div>
         <div>
           <label class="input-label">{{ t("admin.groups.form.rpmLimit") }}</label>
@@ -5367,8 +5263,6 @@ const createForm = reactive({
   description: "",
   platform: "anthropic" as GroupPlatform,
   rate_multiplier: 1.0,
-  dynamic_pricing_enabled: false,
-  dynamic_pricing_markup: 0.02,
   is_exclusive: false,
   subscription_type: "standard" as SubscriptionType,
   daily_limit_usd: null as number | null,
@@ -5748,9 +5642,6 @@ const editForm = reactive({
   description: "",
   platform: "anthropic" as GroupPlatform,
   rate_multiplier: 1.0,
-  manual_rate_multiplier: 1.0,
-  dynamic_pricing_enabled: false,
-  dynamic_pricing_markup: 0.02,
   is_exclusive: false,
   status: "active" as "active" | "inactive",
   subscription_type: "standard" as SubscriptionType,
@@ -6238,8 +6129,6 @@ const closeCreateModal = () => {
   createForm.description = "";
   createForm.platform = "anthropic";
   createForm.rate_multiplier = 1.0;
-  createForm.dynamic_pricing_enabled = false;
-  createForm.dynamic_pricing_markup = 0.02;
   createForm.is_exclusive = false;
   createForm.subscription_type = "standard";
   createForm.daily_limit_usd = null;
@@ -6343,21 +6232,6 @@ const validateProfitControlForm = (form: ProfitControlFormState): boolean => {
   return true;
 };
 
-const formatDynamicMultiplier = (value: number): string =>
-  Number(value).toFixed(4).replace(/\.?0+$/, "");
-
-const validateDynamicPricingForm = (manualRate: number, enabled: boolean, markup: number): boolean => {
-  if (!Number.isFinite(manualRate) || manualRate <= 0) {
-    appStore.showError(t("admin.groups.dynamicPricing.invalidFallback"));
-    return false;
-  }
-  if (enabled && (!Number.isFinite(markup) || markup < 0)) {
-    appStore.showError(t("admin.groups.dynamicPricing.invalidMarkup"));
-    return false;
-  }
-  return true;
-};
-
 const handleCreateGroup = async () => {
   if (!createForm.name.trim()) {
     appStore.showError(t("admin.groups.nameRequired"));
@@ -6373,11 +6247,6 @@ const handleCreateGroup = async () => {
   if (!validateProfitControlForm(createForm)) {
     return;
   }
-  if (!validateDynamicPricingForm(
-    createForm.rate_multiplier,
-    createForm.dynamic_pricing_enabled,
-    createForm.dynamic_pricing_markup,
-  )) return;
   submitting.value = true;
   try {
     const {
@@ -6551,9 +6420,6 @@ const handleEdit = async (group: AdminGroup) => {
   editForm.description = group.description || "";
   editForm.platform = group.platform;
   editForm.rate_multiplier = group.rate_multiplier;
-  editForm.manual_rate_multiplier = group.manual_rate_multiplier ?? group.rate_multiplier;
-  editForm.dynamic_pricing_enabled = group.dynamic_pricing_enabled ?? false;
-  editForm.dynamic_pricing_markup = group.dynamic_pricing_markup ?? 0.02;
   editForm.is_exclusive = group.is_exclusive;
   editForm.status = group.status;
   editForm.subscription_type = group.subscription_type || "standard";
@@ -6670,9 +6536,6 @@ const closeEditModal = () => {
   editModelRoutingRules.value = [];
   editForm.copy_accounts_from_group_ids = [];
   editForm.rate_multiplier = 1.0;
-  editForm.manual_rate_multiplier = 1.0;
-  editForm.dynamic_pricing_enabled = false;
-  editForm.dynamic_pricing_markup = 0.02;
   editForm.peak_rate_enabled = false;
   editForm.peak_start = "";
   editForm.peak_end = "";
@@ -6718,21 +6581,12 @@ const handleUpdateGroup = async () => {
   if (!validateProfitControlForm(editForm)) {
     return;
   }
-  if (!validateDynamicPricingForm(
-    editForm.manual_rate_multiplier,
-    editForm.dynamic_pricing_enabled,
-    editForm.dynamic_pricing_markup,
-  )) return;
-
   submitting.value = true;
   try {
     // 转换 fallback_group_id: null -> 0 (后端使用 0 表示清除)
     const payload = {
       ...editForm,
-      rate_multiplier: editForm.dynamic_pricing_enabled
-        ? undefined
-        : editForm.manual_rate_multiplier,
-      manual_rate_multiplier: editForm.manual_rate_multiplier,
+      rate_multiplier: editForm.rate_multiplier,
       // Canvas uses canvas_model_pricing exclusively; clear any legacy
       // token-platform pricing when saving a Canvas group.
       model_pricing:

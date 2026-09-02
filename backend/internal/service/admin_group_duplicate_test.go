@@ -126,11 +126,6 @@ func TestDuplicateGroupCopiesConfigurationDeeplyAndResetsRuntimeState(t *testing
 		Description:                  "configuration",
 		Platform:                     PlatformOpenAI,
 		RateMultiplier:               1.75,
-		DynamicPricingEnabled:        true,
-		DynamicPricingMarkup:         0.02,
-		ManualRateMultiplier:         0.35,
-		DynamicSourceMaxMultiplier:   groupDuplicateTestPointer(1.73),
-		DynamicPricingStatus:         "ready",
 		PeakRateEnabled:              true,
 		PeakStart:                    "09:00",
 		PeakEnd:                      "18:00",
@@ -212,9 +207,6 @@ func TestDuplicateGroupCopiesConfigurationDeeplyAndResetsRuntimeState(t *testing
 	require.Equal(t, source.Description, duplicate.Description)
 	require.Equal(t, source.Platform, duplicate.Platform)
 	require.Equal(t, source.RateMultiplier, duplicate.RateMultiplier)
-	require.Equal(t, source.DynamicPricingEnabled, duplicate.DynamicPricingEnabled)
-	require.Equal(t, source.DynamicPricingMarkup, duplicate.DynamicPricingMarkup)
-	require.Equal(t, source.ManualRateMultiplier, duplicate.ManualRateMultiplier)
 	require.Equal(t, source.PeakRateMultiplier, duplicate.PeakRateMultiplier)
 	require.Equal(t, source.DefaultValidityDays, duplicate.DefaultValidityDays)
 	require.Equal(t, source.ImagePrice4K, duplicate.ImagePrice4K)

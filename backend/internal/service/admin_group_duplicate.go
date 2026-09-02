@@ -95,15 +95,10 @@ func cloneGroupMessagesDispatchModelConfig(value OpenAIMessagesDispatchModelConf
 
 func cloneGroupForDuplicate(source *Group, operationID string) *Group {
 	return &Group{
-		Name:           duplicateGroupName(source.Name, 1),
-		Description:    source.Description,
-		Platform:       source.Platform,
-		RateMultiplier: source.RateMultiplier,
-		// Preserve the pricing policy, while leaving the derived source/status
-		// fields to the database trigger after the copied account bindings exist.
-		DynamicPricingEnabled:           source.DynamicPricingEnabled,
-		DynamicPricingMarkup:            source.DynamicPricingMarkup,
-		ManualRateMultiplier:            source.ManualRateMultiplier,
+		Name:                            duplicateGroupName(source.Name, 1),
+		Description:                     source.Description,
+		Platform:                        source.Platform,
+		RateMultiplier:                  source.RateMultiplier,
 		PeakRateEnabled:                 source.PeakRateEnabled,
 		PeakStart:                       source.PeakStart,
 		PeakEnd:                         source.PeakEnd,

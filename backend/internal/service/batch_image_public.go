@@ -1026,7 +1026,6 @@ func (s *BatchImagePublicService) resolvePricingSnapshot(ctx context.Context, ow
 				effectiveGroupMultiplier = *userRate
 			}
 		}
-		effectiveGroupMultiplier = group.ApplyDynamicPricingFloor(effectiveGroupMultiplier)
 		groupMultiplier = effectiveGroupMultiplier
 		if group.ImageRateIndependent {
 			groupMultiplier = group.ImageRateMultiplier

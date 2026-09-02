@@ -174,12 +174,6 @@ type Group struct {
 // 注意：普通用户接口不得返回 model_routing/account_count/account_groups 等内部信息。
 type AdminGroup struct {
 	Group
-	DynamicPricingEnabled      bool       `json:"dynamic_pricing_enabled"`
-	DynamicPricingMarkup       float64    `json:"dynamic_pricing_markup"`
-	ManualRateMultiplier       float64    `json:"manual_rate_multiplier"`
-	DynamicSourceMaxMultiplier *float64   `json:"dynamic_source_max_multiplier"`
-	DynamicPricingUpdatedAt    *time.Time `json:"dynamic_pricing_updated_at"`
-	DynamicPricingStatus       string     `json:"dynamic_pricing_status"`
 	// ForceOpenAIFast 是管理端请求策略，用户侧分组 DTO 无需暴露。
 	ForceOpenAIFast bool `json:"force_openai_fast"`
 	// FreeOpenAIFast 是管理端计费策略，用户侧分组 DTO 无需暴露。

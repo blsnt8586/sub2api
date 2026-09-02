@@ -1579,8 +1579,8 @@ func (s *Sub2APIProviderService) syncRemoteGroups(ctx context.Context, provider 
 		gi, ok := byKeyID[*acc.ProviderAPIKeyID]
 		if !ok {
 			// The upstream key was removed or is no longer visible. Clear the
-			// cached remote group so dynamic pricing cannot keep charging from
-			// an obsolete procurement multiplier; the local account remains
+				// cached remote group so pricing cannot keep charging from an obsolete
+				// procurement multiplier; the local account remains
 			// linked and its probe can continue reporting the failure.
 			acc.RemoteGroupID = nil
 			acc.RemoteGroupName = nil

@@ -21,14 +21,6 @@ type Group struct {
 	Description    string
 	Platform       string
 	RateMultiplier float64
-	// DynamicPricingEnabled 启用后，RateMultiplier 由分组内账号最高采购倍率
-	// 加 DynamicPricingMarkup 自动维护；ManualRateMultiplier 是空分组和关闭后的备用价。
-	DynamicPricingEnabled      bool
-	DynamicPricingMarkup       float64
-	ManualRateMultiplier       float64
-	DynamicSourceMaxMultiplier *float64
-	DynamicPricingUpdatedAt    *time.Time
-	DynamicPricingStatus       string
 	// 高峰时段倍率：peak_rate_enabled 为 true 且当前时刻处于 [PeakStart, PeakEnd) 时，
 	// token 计费倍率额外乘以 PeakRateMultiplier。详见 PeakMultiplierAt。
 	PeakRateEnabled    bool
@@ -166,15 +158,6 @@ func (g *Group) IsActive() bool {
 
 func (g *Group) IsSubscriptionType() bool {
 	return g.SubscriptionType == SubscriptionTypeSubscription
-}
-
-// ApplyDynamicPricingFloor prevents a per-user override from selling below the
-// current dynamic group floor. Static groups retain the historical override semantics.
-func (g *Group) ApplyDynamicPricingFloor(multiplier float64) float64 {
-	if g != nil && g.DynamicPricingEnabled && multiplier < g.RateMultiplier {
-		return g.RateMultiplier
-	}
-	return multiplier
 }
 
 func (g *Group) HasDailyLimit() bool {

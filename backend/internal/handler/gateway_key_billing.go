@@ -69,13 +69,13 @@ func (h *GatewayHandler) resolveKeyBillingRate(c *gin.Context, apiKey *service.A
 			return 0, false
 		}
 		resolved := h.openAIGatewayService.ResolveUserGroupRateMultiplier(c.Request.Context(), apiKey.UserID, *apiKey.GroupID, groupRate)
-		return apiKey.Group.ApplyDynamicPricingFloor(resolved), true
+		return resolved, true
 	default:
 		if h.gatewayService == nil {
 			return 0, false
 		}
 		resolved := h.gatewayService.ResolveUserGroupRateMultiplier(c.Request.Context(), apiKey.UserID, *apiKey.GroupID, groupRate)
-		return apiKey.Group.ApplyDynamicPricingFloor(resolved), true
+		return resolved, true
 	}
 }
 

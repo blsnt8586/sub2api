@@ -22,7 +22,7 @@ fork 在上游之上叠加了三大功能块，外加一层解耦重构：
 | E. OpenAI/Codex 全局 system prompt 注入 | 管理端配置全局系统提示词，前置合并到 Responses `instructions`，覆盖 responses/codex/chat 三条路径 | 低（逻辑全在新增文件，上游纯追加 + 2 处网关钩子） |
 | F. Codex 雷达（第三方数据代理） | 代理缓存第三方站点 codexradar.com 的 Codex 观测数据，用户+管理员共用页面，带第三方来源免责说明 | 极低（全新增文件 + opt-in 功能开关，零上游钩子） |
 | G. 首页整体重构（2026-07 提交 `0f60c3edd`） | `HomeView.vue` 全量重写为深空网关风格：明暗双主题（默认亮色）、canvas 波形/星尘/剖半点阵地球、Base URL 复制组件、SDK 兼容徽章、终端三 Tab、FAQ；`landing.ts`(zh/en) 新增大量 key；`site_subtitle` 支持 JSON 多语言；router `scrollBehavior` 刷新不恢复滚动位置 | **高（HomeView.vue 与上游完全分叉，同步时保留本 fork 版本）** |
-| H. 分组动态定价 | 按本地分组内账号最高上游倍率加固定盈利倍率，自动维护最终销售倍率；空分组回退静态备用倍率 | 中（Group schema/API/管理页 + 计费保护，数据库触发器为核心） |
+| H. 分组动态定价（已移除） | 历史 fork 功能；当前使用上游原生静态 `rate_multiplier` | 已退役（保留兼容迁移） |
 
 > 注：**Grok 平台是上游自带**，非本 fork 新增。fork 唯一新增的平台是**即梦（jimeng）**。
 
@@ -381,30 +381,12 @@ Refresh Token 轮换、Cloudflare 错误分类和管理面板，不引入它的 
 
 ---
 
-## 四之二、分组动态定价（功能块 H）
+## 四之二、分组动态定价（已移除）
 
-管理端分组支持“固定倍率 / 动态倍率”两种模式。动态模式的有效销售倍率为：
-
-```text
-groups.rate_multiplier = MAX(COALESCE(accounts.remote_group_multiplier, accounts.rate_multiplier))
-                         + groups.dynamic_pricing_markup
-```
-
-- `dynamic_pricing_markup` 是绝对倍率加成，不是百分比；`0.08 + 0.02 = 0.10`。
-- 统计所有未删除且仍绑定在本地分组的账号，不因临时 `error`、限流或
-  `schedulable=false` 降价，避免账号恢复后重新调度形成亏损窗口。
-- 无有效账号倍率时使用 `manual_rate_multiplier`；关闭动态模式也恢复此备用倍率。
-- `groups.rate_multiplier` 仍是所有计费链路的唯一生效字段。动态模式下用户专属倍率
-  低于动态底价时按动态底价计费。
-
-数据库迁移 `backend/migrations/238_group_dynamic_pricing.sql` 提供带分组行锁的原子重算函数，
-并通过 statement-level transition-table triggers 覆盖账号绑定/解绑、软删除、Provider
-关联解除、远端分组同步和优化切组。`groups` 的配置变更也由触发器立即重算，最终倍率变化
-继续复用 `auth_cache_invalidation_outbox` 使所有实例的 API Key 认证缓存失效。
-
-主要冲突文件：`ent/schema/group.go`、`internal/service/admin_group.go`、
-`internal/repository/group_repo.go`、两条 usage billing/profit-control 链路和
-`frontend/src/views/admin/GroupsView.vue`。同步上游后必须重新生成 Ent 并执行迁移测试。
+此前 fork 曾增加按分组账号上游倍率自动调整 `groups.rate_multiplier` 的动态定价功能。
+该功能现已停用，分组恢复使用上游原生的静态 `rate_multiplier`；用户专属分组倍率和利润控制
+仍按各自原有逻辑生效。历史迁移 `238_group_dynamic_pricing.sql` 保留用于旧库兼容，
+`242_remove_group_dynamic_pricing.sql` 会停止相关触发器并把动态分组恢复到其静态备用倍率。
 
 ## 五、部署改动
 

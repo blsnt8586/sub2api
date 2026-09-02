@@ -29,18 +29,17 @@ func profitAuthTestAPIKey() *APIKey {
 			Concurrency: 5,
 		},
 		Group: &Group{
-			ID:                    groupID,
-			Name:                  "VIP-roundtrip",
-			Platform:              PlatformOpenAI,
-			Status:                StatusActive,
-			Hydrated:              true,
-			RateMultiplier:        0.06,
-			DynamicPricingEnabled: true,
-			SubscriptionType:      SubscriptionTypeStandard,
-			PeakRateEnabled:       false,
-			ProfitControlEnabled:  true,
-			ProfitMinMargin:       0.2,
-			ProfitSafetyBuffer:    0.05,
+			ID:                   groupID,
+			Name:                 "VIP-roundtrip",
+			Platform:             PlatformOpenAI,
+			Status:               StatusActive,
+			Hydrated:             true,
+			RateMultiplier:       0.06,
+			SubscriptionType:     SubscriptionTypeStandard,
+			PeakRateEnabled:      false,
+			ProfitControlEnabled: true,
+			ProfitMinMargin:      0.2,
+			ProfitSafetyBuffer:   0.05,
 		},
 	}
 }
@@ -54,7 +53,7 @@ func TestAPIKeyAuthSnapshotProfitControlRoundtrip(t *testing.T) {
 	snapshot := svc.snapshotFromAPIKey(context.Background(), apiKey)
 	require.NotNil(t, snapshot)
 	require.Equal(t, apiKeyAuthSnapshotVersion, snapshot.Version)
-	require.Equal(t, 24, snapshot.Version, "v24 起认证快照同时携带动态定价与 OpenAI Fast 开关")
+	require.Equal(t, 25, snapshot.Version, "v25 起认证快照使用静态分组倍率并携带 OpenAI Fast 开关")
 
 	// 模拟 L2 缓存的完整 JSON 往返（与 apiKeyCache.SetAuthCache/GetAuthCache 同构）。
 	payload, err := json.Marshal(&APIKeyAuthCacheEntry{Snapshot: snapshot})
@@ -71,7 +70,6 @@ func TestAPIKeyAuthSnapshotProfitControlRoundtrip(t *testing.T) {
 	require.InDelta(t, 0.2, materialized.Group.ProfitMinMargin, 1e-12)
 	require.InDelta(t, 0.05, materialized.Group.ProfitSafetyBuffer, 1e-12)
 	require.InDelta(t, 0.06, materialized.Group.RateMultiplier, 1e-12)
-	require.True(t, materialized.Group.DynamicPricingEnabled)
 
 	// 中间件语义：materialized.Group 进请求 ctx → 门必须按快照配置装上。
 	ctx := context.WithValue(context.Background(), ctxkey.Group, materialized.Group)

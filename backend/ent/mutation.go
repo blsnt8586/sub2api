@@ -23219,15 +23219,6 @@ type GroupMutation struct {
 	description                             *string
 	rate_multiplier                         *float64
 	addrate_multiplier                      *float64
-	dynamic_pricing_enabled                 *bool
-	dynamic_pricing_markup                  *float64
-	adddynamic_pricing_markup               *float64
-	manual_rate_multiplier                  *float64
-	addmanual_rate_multiplier               *float64
-	dynamic_source_max_multiplier           *float64
-	adddynamic_source_max_multiplier        *float64
-	dynamic_pricing_updated_at              *time.Time
-	dynamic_pricing_status                  *string
 	peak_rate_enabled                       *bool
 	peak_start                              *string
 	peak_end                                *string
@@ -23707,309 +23698,6 @@ func (m *GroupMutation) AddedRateMultiplier() (r float64, exists bool) {
 func (m *GroupMutation) ResetRateMultiplier() {
 	m.rate_multiplier = nil
 	m.addrate_multiplier = nil
-}
-
-// SetDynamicPricingEnabled sets the "dynamic_pricing_enabled" field.
-func (m *GroupMutation) SetDynamicPricingEnabled(b bool) {
-	m.dynamic_pricing_enabled = &b
-}
-
-// DynamicPricingEnabled returns the value of the "dynamic_pricing_enabled" field in the mutation.
-func (m *GroupMutation) DynamicPricingEnabled() (r bool, exists bool) {
-	v := m.dynamic_pricing_enabled
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldDynamicPricingEnabled returns the old "dynamic_pricing_enabled" field's value of the Group entity.
-// If the Group object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *GroupMutation) OldDynamicPricingEnabled(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldDynamicPricingEnabled is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldDynamicPricingEnabled requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldDynamicPricingEnabled: %w", err)
-	}
-	return oldValue.DynamicPricingEnabled, nil
-}
-
-// ResetDynamicPricingEnabled resets all changes to the "dynamic_pricing_enabled" field.
-func (m *GroupMutation) ResetDynamicPricingEnabled() {
-	m.dynamic_pricing_enabled = nil
-}
-
-// SetDynamicPricingMarkup sets the "dynamic_pricing_markup" field.
-func (m *GroupMutation) SetDynamicPricingMarkup(f float64) {
-	m.dynamic_pricing_markup = &f
-	m.adddynamic_pricing_markup = nil
-}
-
-// DynamicPricingMarkup returns the value of the "dynamic_pricing_markup" field in the mutation.
-func (m *GroupMutation) DynamicPricingMarkup() (r float64, exists bool) {
-	v := m.dynamic_pricing_markup
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldDynamicPricingMarkup returns the old "dynamic_pricing_markup" field's value of the Group entity.
-// If the Group object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *GroupMutation) OldDynamicPricingMarkup(ctx context.Context) (v float64, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldDynamicPricingMarkup is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldDynamicPricingMarkup requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldDynamicPricingMarkup: %w", err)
-	}
-	return oldValue.DynamicPricingMarkup, nil
-}
-
-// AddDynamicPricingMarkup adds f to the "dynamic_pricing_markup" field.
-func (m *GroupMutation) AddDynamicPricingMarkup(f float64) {
-	if m.adddynamic_pricing_markup != nil {
-		*m.adddynamic_pricing_markup += f
-	} else {
-		m.adddynamic_pricing_markup = &f
-	}
-}
-
-// AddedDynamicPricingMarkup returns the value that was added to the "dynamic_pricing_markup" field in this mutation.
-func (m *GroupMutation) AddedDynamicPricingMarkup() (r float64, exists bool) {
-	v := m.adddynamic_pricing_markup
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ResetDynamicPricingMarkup resets all changes to the "dynamic_pricing_markup" field.
-func (m *GroupMutation) ResetDynamicPricingMarkup() {
-	m.dynamic_pricing_markup = nil
-	m.adddynamic_pricing_markup = nil
-}
-
-// SetManualRateMultiplier sets the "manual_rate_multiplier" field.
-func (m *GroupMutation) SetManualRateMultiplier(f float64) {
-	m.manual_rate_multiplier = &f
-	m.addmanual_rate_multiplier = nil
-}
-
-// ManualRateMultiplier returns the value of the "manual_rate_multiplier" field in the mutation.
-func (m *GroupMutation) ManualRateMultiplier() (r float64, exists bool) {
-	v := m.manual_rate_multiplier
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldManualRateMultiplier returns the old "manual_rate_multiplier" field's value of the Group entity.
-// If the Group object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *GroupMutation) OldManualRateMultiplier(ctx context.Context) (v float64, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldManualRateMultiplier is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldManualRateMultiplier requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldManualRateMultiplier: %w", err)
-	}
-	return oldValue.ManualRateMultiplier, nil
-}
-
-// AddManualRateMultiplier adds f to the "manual_rate_multiplier" field.
-func (m *GroupMutation) AddManualRateMultiplier(f float64) {
-	if m.addmanual_rate_multiplier != nil {
-		*m.addmanual_rate_multiplier += f
-	} else {
-		m.addmanual_rate_multiplier = &f
-	}
-}
-
-// AddedManualRateMultiplier returns the value that was added to the "manual_rate_multiplier" field in this mutation.
-func (m *GroupMutation) AddedManualRateMultiplier() (r float64, exists bool) {
-	v := m.addmanual_rate_multiplier
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ResetManualRateMultiplier resets all changes to the "manual_rate_multiplier" field.
-func (m *GroupMutation) ResetManualRateMultiplier() {
-	m.manual_rate_multiplier = nil
-	m.addmanual_rate_multiplier = nil
-}
-
-// SetDynamicSourceMaxMultiplier sets the "dynamic_source_max_multiplier" field.
-func (m *GroupMutation) SetDynamicSourceMaxMultiplier(f float64) {
-	m.dynamic_source_max_multiplier = &f
-	m.adddynamic_source_max_multiplier = nil
-}
-
-// DynamicSourceMaxMultiplier returns the value of the "dynamic_source_max_multiplier" field in the mutation.
-func (m *GroupMutation) DynamicSourceMaxMultiplier() (r float64, exists bool) {
-	v := m.dynamic_source_max_multiplier
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldDynamicSourceMaxMultiplier returns the old "dynamic_source_max_multiplier" field's value of the Group entity.
-// If the Group object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *GroupMutation) OldDynamicSourceMaxMultiplier(ctx context.Context) (v *float64, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldDynamicSourceMaxMultiplier is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldDynamicSourceMaxMultiplier requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldDynamicSourceMaxMultiplier: %w", err)
-	}
-	return oldValue.DynamicSourceMaxMultiplier, nil
-}
-
-// AddDynamicSourceMaxMultiplier adds f to the "dynamic_source_max_multiplier" field.
-func (m *GroupMutation) AddDynamicSourceMaxMultiplier(f float64) {
-	if m.adddynamic_source_max_multiplier != nil {
-		*m.adddynamic_source_max_multiplier += f
-	} else {
-		m.adddynamic_source_max_multiplier = &f
-	}
-}
-
-// AddedDynamicSourceMaxMultiplier returns the value that was added to the "dynamic_source_max_multiplier" field in this mutation.
-func (m *GroupMutation) AddedDynamicSourceMaxMultiplier() (r float64, exists bool) {
-	v := m.adddynamic_source_max_multiplier
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ClearDynamicSourceMaxMultiplier clears the value of the "dynamic_source_max_multiplier" field.
-func (m *GroupMutation) ClearDynamicSourceMaxMultiplier() {
-	m.dynamic_source_max_multiplier = nil
-	m.adddynamic_source_max_multiplier = nil
-	m.clearedFields[group.FieldDynamicSourceMaxMultiplier] = struct{}{}
-}
-
-// DynamicSourceMaxMultiplierCleared returns if the "dynamic_source_max_multiplier" field was cleared in this mutation.
-func (m *GroupMutation) DynamicSourceMaxMultiplierCleared() bool {
-	_, ok := m.clearedFields[group.FieldDynamicSourceMaxMultiplier]
-	return ok
-}
-
-// ResetDynamicSourceMaxMultiplier resets all changes to the "dynamic_source_max_multiplier" field.
-func (m *GroupMutation) ResetDynamicSourceMaxMultiplier() {
-	m.dynamic_source_max_multiplier = nil
-	m.adddynamic_source_max_multiplier = nil
-	delete(m.clearedFields, group.FieldDynamicSourceMaxMultiplier)
-}
-
-// SetDynamicPricingUpdatedAt sets the "dynamic_pricing_updated_at" field.
-func (m *GroupMutation) SetDynamicPricingUpdatedAt(t time.Time) {
-	m.dynamic_pricing_updated_at = &t
-}
-
-// DynamicPricingUpdatedAt returns the value of the "dynamic_pricing_updated_at" field in the mutation.
-func (m *GroupMutation) DynamicPricingUpdatedAt() (r time.Time, exists bool) {
-	v := m.dynamic_pricing_updated_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldDynamicPricingUpdatedAt returns the old "dynamic_pricing_updated_at" field's value of the Group entity.
-// If the Group object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *GroupMutation) OldDynamicPricingUpdatedAt(ctx context.Context) (v *time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldDynamicPricingUpdatedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldDynamicPricingUpdatedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldDynamicPricingUpdatedAt: %w", err)
-	}
-	return oldValue.DynamicPricingUpdatedAt, nil
-}
-
-// ClearDynamicPricingUpdatedAt clears the value of the "dynamic_pricing_updated_at" field.
-func (m *GroupMutation) ClearDynamicPricingUpdatedAt() {
-	m.dynamic_pricing_updated_at = nil
-	m.clearedFields[group.FieldDynamicPricingUpdatedAt] = struct{}{}
-}
-
-// DynamicPricingUpdatedAtCleared returns if the "dynamic_pricing_updated_at" field was cleared in this mutation.
-func (m *GroupMutation) DynamicPricingUpdatedAtCleared() bool {
-	_, ok := m.clearedFields[group.FieldDynamicPricingUpdatedAt]
-	return ok
-}
-
-// ResetDynamicPricingUpdatedAt resets all changes to the "dynamic_pricing_updated_at" field.
-func (m *GroupMutation) ResetDynamicPricingUpdatedAt() {
-	m.dynamic_pricing_updated_at = nil
-	delete(m.clearedFields, group.FieldDynamicPricingUpdatedAt)
-}
-
-// SetDynamicPricingStatus sets the "dynamic_pricing_status" field.
-func (m *GroupMutation) SetDynamicPricingStatus(s string) {
-	m.dynamic_pricing_status = &s
-}
-
-// DynamicPricingStatus returns the value of the "dynamic_pricing_status" field in the mutation.
-func (m *GroupMutation) DynamicPricingStatus() (r string, exists bool) {
-	v := m.dynamic_pricing_status
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldDynamicPricingStatus returns the old "dynamic_pricing_status" field's value of the Group entity.
-// If the Group object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *GroupMutation) OldDynamicPricingStatus(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldDynamicPricingStatus is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldDynamicPricingStatus requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldDynamicPricingStatus: %w", err)
-	}
-	return oldValue.DynamicPricingStatus, nil
-}
-
-// ResetDynamicPricingStatus resets all changes to the "dynamic_pricing_status" field.
-func (m *GroupMutation) ResetDynamicPricingStatus() {
-	m.dynamic_pricing_status = nil
 }
 
 // SetPeakRateEnabled sets the "peak_rate_enabled" field.
@@ -27665,7 +27353,7 @@ func (m *GroupMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GroupMutation) Fields() []string {
-	fields := make([]string, 0, 76)
+	fields := make([]string, 0, 70)
 	if m.created_at != nil {
 		fields = append(fields, group.FieldCreatedAt)
 	}
@@ -27683,24 +27371,6 @@ func (m *GroupMutation) Fields() []string {
 	}
 	if m.rate_multiplier != nil {
 		fields = append(fields, group.FieldRateMultiplier)
-	}
-	if m.dynamic_pricing_enabled != nil {
-		fields = append(fields, group.FieldDynamicPricingEnabled)
-	}
-	if m.dynamic_pricing_markup != nil {
-		fields = append(fields, group.FieldDynamicPricingMarkup)
-	}
-	if m.manual_rate_multiplier != nil {
-		fields = append(fields, group.FieldManualRateMultiplier)
-	}
-	if m.dynamic_source_max_multiplier != nil {
-		fields = append(fields, group.FieldDynamicSourceMaxMultiplier)
-	}
-	if m.dynamic_pricing_updated_at != nil {
-		fields = append(fields, group.FieldDynamicPricingUpdatedAt)
-	}
-	if m.dynamic_pricing_status != nil {
-		fields = append(fields, group.FieldDynamicPricingStatus)
 	}
 	if m.peak_rate_enabled != nil {
 		fields = append(fields, group.FieldPeakRateEnabled)
@@ -27914,18 +27584,6 @@ func (m *GroupMutation) Field(name string) (ent.Value, bool) {
 		return m.Description()
 	case group.FieldRateMultiplier:
 		return m.RateMultiplier()
-	case group.FieldDynamicPricingEnabled:
-		return m.DynamicPricingEnabled()
-	case group.FieldDynamicPricingMarkup:
-		return m.DynamicPricingMarkup()
-	case group.FieldManualRateMultiplier:
-		return m.ManualRateMultiplier()
-	case group.FieldDynamicSourceMaxMultiplier:
-		return m.DynamicSourceMaxMultiplier()
-	case group.FieldDynamicPricingUpdatedAt:
-		return m.DynamicPricingUpdatedAt()
-	case group.FieldDynamicPricingStatus:
-		return m.DynamicPricingStatus()
 	case group.FieldPeakRateEnabled:
 		return m.PeakRateEnabled()
 	case group.FieldPeakStart:
@@ -28075,18 +27733,6 @@ func (m *GroupMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldDescription(ctx)
 	case group.FieldRateMultiplier:
 		return m.OldRateMultiplier(ctx)
-	case group.FieldDynamicPricingEnabled:
-		return m.OldDynamicPricingEnabled(ctx)
-	case group.FieldDynamicPricingMarkup:
-		return m.OldDynamicPricingMarkup(ctx)
-	case group.FieldManualRateMultiplier:
-		return m.OldManualRateMultiplier(ctx)
-	case group.FieldDynamicSourceMaxMultiplier:
-		return m.OldDynamicSourceMaxMultiplier(ctx)
-	case group.FieldDynamicPricingUpdatedAt:
-		return m.OldDynamicPricingUpdatedAt(ctx)
-	case group.FieldDynamicPricingStatus:
-		return m.OldDynamicPricingStatus(ctx)
 	case group.FieldPeakRateEnabled:
 		return m.OldPeakRateEnabled(ctx)
 	case group.FieldPeakStart:
@@ -28265,48 +27911,6 @@ func (m *GroupMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetRateMultiplier(v)
-		return nil
-	case group.FieldDynamicPricingEnabled:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetDynamicPricingEnabled(v)
-		return nil
-	case group.FieldDynamicPricingMarkup:
-		v, ok := value.(float64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetDynamicPricingMarkup(v)
-		return nil
-	case group.FieldManualRateMultiplier:
-		v, ok := value.(float64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetManualRateMultiplier(v)
-		return nil
-	case group.FieldDynamicSourceMaxMultiplier:
-		v, ok := value.(float64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetDynamicSourceMaxMultiplier(v)
-		return nil
-	case group.FieldDynamicPricingUpdatedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetDynamicPricingUpdatedAt(v)
-		return nil
-	case group.FieldDynamicPricingStatus:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetDynamicPricingStatus(v)
 		return nil
 	case group.FieldPeakRateEnabled:
 		v, ok := value.(bool)
@@ -28767,15 +28371,6 @@ func (m *GroupMutation) AddedFields() []string {
 	if m.addrate_multiplier != nil {
 		fields = append(fields, group.FieldRateMultiplier)
 	}
-	if m.adddynamic_pricing_markup != nil {
-		fields = append(fields, group.FieldDynamicPricingMarkup)
-	}
-	if m.addmanual_rate_multiplier != nil {
-		fields = append(fields, group.FieldManualRateMultiplier)
-	}
-	if m.adddynamic_source_max_multiplier != nil {
-		fields = append(fields, group.FieldDynamicSourceMaxMultiplier)
-	}
 	if m.addpeak_rate_multiplier != nil {
 		fields = append(fields, group.FieldPeakRateMultiplier)
 	}
@@ -28876,12 +28471,6 @@ func (m *GroupMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case group.FieldRateMultiplier:
 		return m.AddedRateMultiplier()
-	case group.FieldDynamicPricingMarkup:
-		return m.AddedDynamicPricingMarkup()
-	case group.FieldManualRateMultiplier:
-		return m.AddedManualRateMultiplier()
-	case group.FieldDynamicSourceMaxMultiplier:
-		return m.AddedDynamicSourceMaxMultiplier()
 	case group.FieldPeakRateMultiplier:
 		return m.AddedPeakRateMultiplier()
 	case group.FieldDailyLimitUsd:
@@ -28957,27 +28546,6 @@ func (m *GroupMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddRateMultiplier(v)
-		return nil
-	case group.FieldDynamicPricingMarkup:
-		v, ok := value.(float64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddDynamicPricingMarkup(v)
-		return nil
-	case group.FieldManualRateMultiplier:
-		v, ok := value.(float64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddManualRateMultiplier(v)
-		return nil
-	case group.FieldDynamicSourceMaxMultiplier:
-		v, ok := value.(float64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddDynamicSourceMaxMultiplier(v)
 		return nil
 	case group.FieldPeakRateMultiplier:
 		v, ok := value.(float64)
@@ -29203,12 +28771,6 @@ func (m *GroupMutation) ClearedFields() []string {
 	if m.FieldCleared(group.FieldDescription) {
 		fields = append(fields, group.FieldDescription)
 	}
-	if m.FieldCleared(group.FieldDynamicSourceMaxMultiplier) {
-		fields = append(fields, group.FieldDynamicSourceMaxMultiplier)
-	}
-	if m.FieldCleared(group.FieldDynamicPricingUpdatedAt) {
-		fields = append(fields, group.FieldDynamicPricingUpdatedAt)
-	}
 	if m.FieldCleared(group.FieldDuplicateOperationID) {
 		fields = append(fields, group.FieldDuplicateOperationID)
 	}
@@ -29303,12 +28865,6 @@ func (m *GroupMutation) ClearField(name string) error {
 		return nil
 	case group.FieldDescription:
 		m.ClearDescription()
-		return nil
-	case group.FieldDynamicSourceMaxMultiplier:
-		m.ClearDynamicSourceMaxMultiplier()
-		return nil
-	case group.FieldDynamicPricingUpdatedAt:
-		m.ClearDynamicPricingUpdatedAt()
 		return nil
 	case group.FieldDuplicateOperationID:
 		m.ClearDuplicateOperationID()
@@ -29410,24 +28966,6 @@ func (m *GroupMutation) ResetField(name string) error {
 		return nil
 	case group.FieldRateMultiplier:
 		m.ResetRateMultiplier()
-		return nil
-	case group.FieldDynamicPricingEnabled:
-		m.ResetDynamicPricingEnabled()
-		return nil
-	case group.FieldDynamicPricingMarkup:
-		m.ResetDynamicPricingMarkup()
-		return nil
-	case group.FieldManualRateMultiplier:
-		m.ResetManualRateMultiplier()
-		return nil
-	case group.FieldDynamicSourceMaxMultiplier:
-		m.ResetDynamicSourceMaxMultiplier()
-		return nil
-	case group.FieldDynamicPricingUpdatedAt:
-		m.ResetDynamicPricingUpdatedAt()
-		return nil
-	case group.FieldDynamicPricingStatus:
-		m.ResetDynamicPricingStatus()
 		return nil
 	case group.FieldPeakRateEnabled:
 		m.ResetPeakRateEnabled()

@@ -215,9 +215,6 @@ func toModelPlazaGroupDTO(g *service.PlazaGroup, userRates map[int64]float64) mo
 		Models:                    models,
 	}
 	if rate, ok := userRates[g.ID]; ok {
-		if g.DynamicPricingEnabled && rate < g.RateMultiplier {
-			rate = g.RateMultiplier
-		}
 		dto.UserRateMultiplier = &rate
 	}
 	return dto

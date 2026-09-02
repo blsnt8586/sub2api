@@ -37,20 +37,17 @@ type PlazaModel struct {
 // 支持模型（普通分组按分组平台隔离，Composite 分组展开关联渠道已配置的
 // 具体平台），与「可用渠道」页口径一致。
 type PlazaGroup struct {
-	ID               int64
-	Name             string
-	Description      string
-	Platform         string
-	SubscriptionType string
-	RateMultiplier   float64
-	// DynamicPricingEnabled 标识倍率由分组内账户的最高采购倍率加成动态维护。
-	// 模型广场和管理端据此展示动态倍率的来源与状态。
-	DynamicPricingEnabled bool
-	PeakRateEnabled       bool
-	PeakStart             string
-	PeakEnd               string
-	PeakRateMultiplier    float64
-	IsExclusive           bool
+	ID                 int64
+	Name               string
+	Description        string
+	Platform           string
+	SubscriptionType   string
+	RateMultiplier     float64
+	PeakRateEnabled    bool
+	PeakStart          string
+	PeakEnd            string
+	PeakRateMultiplier float64
+	IsExclusive        bool
 	// 图片按次实付倍率：ImageRateIndependent 为 true 时，图片计费模型的实付
 	// = 档位价 × ImageRateMultiplier，不乘分组/用户专属倍率（与计费口径一致）。
 	ImageRateIndependent bool
@@ -128,7 +125,6 @@ func (s *ModelPlazaService) ListGroups(ctx context.Context) ([]PlazaGroup, error
 			Platform:                  g.Platform,
 			SubscriptionType:          g.SubscriptionType,
 			RateMultiplier:            g.RateMultiplier,
-			DynamicPricingEnabled:     g.DynamicPricingEnabled,
 			PeakRateEnabled:           g.PeakRateEnabled,
 			PeakStart:                 g.PeakStart,
 			PeakEnd:                   g.PeakEnd,

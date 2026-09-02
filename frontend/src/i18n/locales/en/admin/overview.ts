@@ -914,21 +914,6 @@ export default {
       groupUpdatedSuccess: 'Group updated successfully',
       groupDeletedSuccess: 'Group deleted successfully',
       rateMultiplierHint: 'Cost multiplier for this group (e.g., 1.5 = 150% of base cost)',
-      dynamicPricing: {
-        mode: 'Pricing mode',
-        manualMode: 'Fixed rate',
-        dynamicMode: 'Dynamic rate',
-        markup: 'Fixed profit markup',
-        markupHint: 'An absolute multiplier markup. For example, 0.08 upstream plus 0.02 markup produces a 0.10 final rate.',
-        fallbackRate: 'Static fallback rate',
-        fallbackHint: 'Used when the group has no valid account rate and restored when dynamic pricing is disabled.',
-        currentFormula: 'Current: highest upstream {source} + markup {markup} = final {final}',
-        listFormula: 'Dynamic: {source} + {markup}',
-        usingFallback: 'Awaiting dynamic rate; using static fallback',
-        sourceMissing: 'Remote procurement rate is missing; using static fallback',
-        invalidFallback: 'The static fallback rate must be greater than 0',
-        invalidMarkup: 'The fixed profit markup must be at least 0'
-      },
       exclusiveHint: 'Exclusive group, manually assign to specific users',
       exclusiveTooltip: {
         title: 'What is an exclusive group?',

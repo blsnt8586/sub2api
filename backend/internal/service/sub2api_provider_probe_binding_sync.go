@@ -61,8 +61,8 @@ func (s *Sub2APIProviderProbeService) syncControlProbeBindingsLocked(
 	}
 
 	// Apply the authenticated Provider user's effective multiplier to a copy of
-	// the catalog so account display, dynamic pricing and optimizer bounds all use
-	// the same value.
+	// the catalog so account display, pricing calculations and optimizer bounds
+	// all use the same value.
 	groupsByID := indexProviderGroupsWithEffectiveRates(groups, effectiveRates)
 	keyBindings := make(map[int64]providerRemoteGroupInfo, len(keys))
 	for _, key := range keys {

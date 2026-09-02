@@ -118,123 +118,6 @@ func (_u *GroupUpdate) AddRateMultiplier(v float64) *GroupUpdate {
 	return _u
 }
 
-// SetDynamicPricingEnabled sets the "dynamic_pricing_enabled" field.
-func (_u *GroupUpdate) SetDynamicPricingEnabled(v bool) *GroupUpdate {
-	_u.mutation.SetDynamicPricingEnabled(v)
-	return _u
-}
-
-// SetNillableDynamicPricingEnabled sets the "dynamic_pricing_enabled" field if the given value is not nil.
-func (_u *GroupUpdate) SetNillableDynamicPricingEnabled(v *bool) *GroupUpdate {
-	if v != nil {
-		_u.SetDynamicPricingEnabled(*v)
-	}
-	return _u
-}
-
-// SetDynamicPricingMarkup sets the "dynamic_pricing_markup" field.
-func (_u *GroupUpdate) SetDynamicPricingMarkup(v float64) *GroupUpdate {
-	_u.mutation.ResetDynamicPricingMarkup()
-	_u.mutation.SetDynamicPricingMarkup(v)
-	return _u
-}
-
-// SetNillableDynamicPricingMarkup sets the "dynamic_pricing_markup" field if the given value is not nil.
-func (_u *GroupUpdate) SetNillableDynamicPricingMarkup(v *float64) *GroupUpdate {
-	if v != nil {
-		_u.SetDynamicPricingMarkup(*v)
-	}
-	return _u
-}
-
-// AddDynamicPricingMarkup adds value to the "dynamic_pricing_markup" field.
-func (_u *GroupUpdate) AddDynamicPricingMarkup(v float64) *GroupUpdate {
-	_u.mutation.AddDynamicPricingMarkup(v)
-	return _u
-}
-
-// SetManualRateMultiplier sets the "manual_rate_multiplier" field.
-func (_u *GroupUpdate) SetManualRateMultiplier(v float64) *GroupUpdate {
-	_u.mutation.ResetManualRateMultiplier()
-	_u.mutation.SetManualRateMultiplier(v)
-	return _u
-}
-
-// SetNillableManualRateMultiplier sets the "manual_rate_multiplier" field if the given value is not nil.
-func (_u *GroupUpdate) SetNillableManualRateMultiplier(v *float64) *GroupUpdate {
-	if v != nil {
-		_u.SetManualRateMultiplier(*v)
-	}
-	return _u
-}
-
-// AddManualRateMultiplier adds value to the "manual_rate_multiplier" field.
-func (_u *GroupUpdate) AddManualRateMultiplier(v float64) *GroupUpdate {
-	_u.mutation.AddManualRateMultiplier(v)
-	return _u
-}
-
-// SetDynamicSourceMaxMultiplier sets the "dynamic_source_max_multiplier" field.
-func (_u *GroupUpdate) SetDynamicSourceMaxMultiplier(v float64) *GroupUpdate {
-	_u.mutation.ResetDynamicSourceMaxMultiplier()
-	_u.mutation.SetDynamicSourceMaxMultiplier(v)
-	return _u
-}
-
-// SetNillableDynamicSourceMaxMultiplier sets the "dynamic_source_max_multiplier" field if the given value is not nil.
-func (_u *GroupUpdate) SetNillableDynamicSourceMaxMultiplier(v *float64) *GroupUpdate {
-	if v != nil {
-		_u.SetDynamicSourceMaxMultiplier(*v)
-	}
-	return _u
-}
-
-// AddDynamicSourceMaxMultiplier adds value to the "dynamic_source_max_multiplier" field.
-func (_u *GroupUpdate) AddDynamicSourceMaxMultiplier(v float64) *GroupUpdate {
-	_u.mutation.AddDynamicSourceMaxMultiplier(v)
-	return _u
-}
-
-// ClearDynamicSourceMaxMultiplier clears the value of the "dynamic_source_max_multiplier" field.
-func (_u *GroupUpdate) ClearDynamicSourceMaxMultiplier() *GroupUpdate {
-	_u.mutation.ClearDynamicSourceMaxMultiplier()
-	return _u
-}
-
-// SetDynamicPricingUpdatedAt sets the "dynamic_pricing_updated_at" field.
-func (_u *GroupUpdate) SetDynamicPricingUpdatedAt(v time.Time) *GroupUpdate {
-	_u.mutation.SetDynamicPricingUpdatedAt(v)
-	return _u
-}
-
-// SetNillableDynamicPricingUpdatedAt sets the "dynamic_pricing_updated_at" field if the given value is not nil.
-func (_u *GroupUpdate) SetNillableDynamicPricingUpdatedAt(v *time.Time) *GroupUpdate {
-	if v != nil {
-		_u.SetDynamicPricingUpdatedAt(*v)
-	}
-	return _u
-}
-
-// ClearDynamicPricingUpdatedAt clears the value of the "dynamic_pricing_updated_at" field.
-func (_u *GroupUpdate) ClearDynamicPricingUpdatedAt() *GroupUpdate {
-	_u.mutation.ClearDynamicPricingUpdatedAt()
-	return _u
-}
-
-// SetDynamicPricingStatus sets the "dynamic_pricing_status" field.
-func (_u *GroupUpdate) SetDynamicPricingStatus(v string) *GroupUpdate {
-	_u.mutation.SetDynamicPricingStatus(v)
-	return _u
-}
-
-// SetNillableDynamicPricingStatus sets the "dynamic_pricing_status" field if the given value is not nil.
-func (_u *GroupUpdate) SetNillableDynamicPricingStatus(v *string) *GroupUpdate {
-	if v != nil {
-		_u.SetDynamicPricingStatus(*v)
-	}
-	return _u
-}
-
 // SetPeakRateEnabled sets the "peak_rate_enabled" field.
 func (_u *GroupUpdate) SetPeakRateEnabled(v bool) *GroupUpdate {
 	_u.mutation.SetPeakRateEnabled(v)
@@ -1711,11 +1594,6 @@ func (_u *GroupUpdate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Group.name": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.DynamicPricingStatus(); ok {
-		if err := group.DynamicPricingStatusValidator(v); err != nil {
-			return &ValidationError{Name: "dynamic_pricing_status", err: fmt.Errorf(`ent: validator failed for field "Group.dynamic_pricing_status": %w`, err)}
-		}
-	}
 	if v, ok := _u.mutation.PeakStart(); ok {
 		if err := group.PeakStartValidator(v); err != nil {
 			return &ValidationError{Name: "peak_start", err: fmt.Errorf(`ent: validator failed for field "Group.peak_start": %w`, err)}
@@ -1814,39 +1692,6 @@ func (_u *GroupUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.AddedRateMultiplier(); ok {
 		_spec.AddField(group.FieldRateMultiplier, field.TypeFloat64, value)
-	}
-	if value, ok := _u.mutation.DynamicPricingEnabled(); ok {
-		_spec.SetField(group.FieldDynamicPricingEnabled, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.DynamicPricingMarkup(); ok {
-		_spec.SetField(group.FieldDynamicPricingMarkup, field.TypeFloat64, value)
-	}
-	if value, ok := _u.mutation.AddedDynamicPricingMarkup(); ok {
-		_spec.AddField(group.FieldDynamicPricingMarkup, field.TypeFloat64, value)
-	}
-	if value, ok := _u.mutation.ManualRateMultiplier(); ok {
-		_spec.SetField(group.FieldManualRateMultiplier, field.TypeFloat64, value)
-	}
-	if value, ok := _u.mutation.AddedManualRateMultiplier(); ok {
-		_spec.AddField(group.FieldManualRateMultiplier, field.TypeFloat64, value)
-	}
-	if value, ok := _u.mutation.DynamicSourceMaxMultiplier(); ok {
-		_spec.SetField(group.FieldDynamicSourceMaxMultiplier, field.TypeFloat64, value)
-	}
-	if value, ok := _u.mutation.AddedDynamicSourceMaxMultiplier(); ok {
-		_spec.AddField(group.FieldDynamicSourceMaxMultiplier, field.TypeFloat64, value)
-	}
-	if _u.mutation.DynamicSourceMaxMultiplierCleared() {
-		_spec.ClearField(group.FieldDynamicSourceMaxMultiplier, field.TypeFloat64)
-	}
-	if value, ok := _u.mutation.DynamicPricingUpdatedAt(); ok {
-		_spec.SetField(group.FieldDynamicPricingUpdatedAt, field.TypeTime, value)
-	}
-	if _u.mutation.DynamicPricingUpdatedAtCleared() {
-		_spec.ClearField(group.FieldDynamicPricingUpdatedAt, field.TypeTime)
-	}
-	if value, ok := _u.mutation.DynamicPricingStatus(); ok {
-		_spec.SetField(group.FieldDynamicPricingStatus, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.PeakRateEnabled(); ok {
 		_spec.SetField(group.FieldPeakRateEnabled, field.TypeBool, value)
@@ -2609,123 +2454,6 @@ func (_u *GroupUpdateOne) SetNillableRateMultiplier(v *float64) *GroupUpdateOne 
 // AddRateMultiplier adds value to the "rate_multiplier" field.
 func (_u *GroupUpdateOne) AddRateMultiplier(v float64) *GroupUpdateOne {
 	_u.mutation.AddRateMultiplier(v)
-	return _u
-}
-
-// SetDynamicPricingEnabled sets the "dynamic_pricing_enabled" field.
-func (_u *GroupUpdateOne) SetDynamicPricingEnabled(v bool) *GroupUpdateOne {
-	_u.mutation.SetDynamicPricingEnabled(v)
-	return _u
-}
-
-// SetNillableDynamicPricingEnabled sets the "dynamic_pricing_enabled" field if the given value is not nil.
-func (_u *GroupUpdateOne) SetNillableDynamicPricingEnabled(v *bool) *GroupUpdateOne {
-	if v != nil {
-		_u.SetDynamicPricingEnabled(*v)
-	}
-	return _u
-}
-
-// SetDynamicPricingMarkup sets the "dynamic_pricing_markup" field.
-func (_u *GroupUpdateOne) SetDynamicPricingMarkup(v float64) *GroupUpdateOne {
-	_u.mutation.ResetDynamicPricingMarkup()
-	_u.mutation.SetDynamicPricingMarkup(v)
-	return _u
-}
-
-// SetNillableDynamicPricingMarkup sets the "dynamic_pricing_markup" field if the given value is not nil.
-func (_u *GroupUpdateOne) SetNillableDynamicPricingMarkup(v *float64) *GroupUpdateOne {
-	if v != nil {
-		_u.SetDynamicPricingMarkup(*v)
-	}
-	return _u
-}
-
-// AddDynamicPricingMarkup adds value to the "dynamic_pricing_markup" field.
-func (_u *GroupUpdateOne) AddDynamicPricingMarkup(v float64) *GroupUpdateOne {
-	_u.mutation.AddDynamicPricingMarkup(v)
-	return _u
-}
-
-// SetManualRateMultiplier sets the "manual_rate_multiplier" field.
-func (_u *GroupUpdateOne) SetManualRateMultiplier(v float64) *GroupUpdateOne {
-	_u.mutation.ResetManualRateMultiplier()
-	_u.mutation.SetManualRateMultiplier(v)
-	return _u
-}
-
-// SetNillableManualRateMultiplier sets the "manual_rate_multiplier" field if the given value is not nil.
-func (_u *GroupUpdateOne) SetNillableManualRateMultiplier(v *float64) *GroupUpdateOne {
-	if v != nil {
-		_u.SetManualRateMultiplier(*v)
-	}
-	return _u
-}
-
-// AddManualRateMultiplier adds value to the "manual_rate_multiplier" field.
-func (_u *GroupUpdateOne) AddManualRateMultiplier(v float64) *GroupUpdateOne {
-	_u.mutation.AddManualRateMultiplier(v)
-	return _u
-}
-
-// SetDynamicSourceMaxMultiplier sets the "dynamic_source_max_multiplier" field.
-func (_u *GroupUpdateOne) SetDynamicSourceMaxMultiplier(v float64) *GroupUpdateOne {
-	_u.mutation.ResetDynamicSourceMaxMultiplier()
-	_u.mutation.SetDynamicSourceMaxMultiplier(v)
-	return _u
-}
-
-// SetNillableDynamicSourceMaxMultiplier sets the "dynamic_source_max_multiplier" field if the given value is not nil.
-func (_u *GroupUpdateOne) SetNillableDynamicSourceMaxMultiplier(v *float64) *GroupUpdateOne {
-	if v != nil {
-		_u.SetDynamicSourceMaxMultiplier(*v)
-	}
-	return _u
-}
-
-// AddDynamicSourceMaxMultiplier adds value to the "dynamic_source_max_multiplier" field.
-func (_u *GroupUpdateOne) AddDynamicSourceMaxMultiplier(v float64) *GroupUpdateOne {
-	_u.mutation.AddDynamicSourceMaxMultiplier(v)
-	return _u
-}
-
-// ClearDynamicSourceMaxMultiplier clears the value of the "dynamic_source_max_multiplier" field.
-func (_u *GroupUpdateOne) ClearDynamicSourceMaxMultiplier() *GroupUpdateOne {
-	_u.mutation.ClearDynamicSourceMaxMultiplier()
-	return _u
-}
-
-// SetDynamicPricingUpdatedAt sets the "dynamic_pricing_updated_at" field.
-func (_u *GroupUpdateOne) SetDynamicPricingUpdatedAt(v time.Time) *GroupUpdateOne {
-	_u.mutation.SetDynamicPricingUpdatedAt(v)
-	return _u
-}
-
-// SetNillableDynamicPricingUpdatedAt sets the "dynamic_pricing_updated_at" field if the given value is not nil.
-func (_u *GroupUpdateOne) SetNillableDynamicPricingUpdatedAt(v *time.Time) *GroupUpdateOne {
-	if v != nil {
-		_u.SetDynamicPricingUpdatedAt(*v)
-	}
-	return _u
-}
-
-// ClearDynamicPricingUpdatedAt clears the value of the "dynamic_pricing_updated_at" field.
-func (_u *GroupUpdateOne) ClearDynamicPricingUpdatedAt() *GroupUpdateOne {
-	_u.mutation.ClearDynamicPricingUpdatedAt()
-	return _u
-}
-
-// SetDynamicPricingStatus sets the "dynamic_pricing_status" field.
-func (_u *GroupUpdateOne) SetDynamicPricingStatus(v string) *GroupUpdateOne {
-	_u.mutation.SetDynamicPricingStatus(v)
-	return _u
-}
-
-// SetNillableDynamicPricingStatus sets the "dynamic_pricing_status" field if the given value is not nil.
-func (_u *GroupUpdateOne) SetNillableDynamicPricingStatus(v *string) *GroupUpdateOne {
-	if v != nil {
-		_u.SetDynamicPricingStatus(*v)
-	}
 	return _u
 }
 
@@ -4218,11 +3946,6 @@ func (_u *GroupUpdateOne) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Group.name": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.DynamicPricingStatus(); ok {
-		if err := group.DynamicPricingStatusValidator(v); err != nil {
-			return &ValidationError{Name: "dynamic_pricing_status", err: fmt.Errorf(`ent: validator failed for field "Group.dynamic_pricing_status": %w`, err)}
-		}
-	}
 	if v, ok := _u.mutation.PeakStart(); ok {
 		if err := group.PeakStartValidator(v); err != nil {
 			return &ValidationError{Name: "peak_start", err: fmt.Errorf(`ent: validator failed for field "Group.peak_start": %w`, err)}
@@ -4338,39 +4061,6 @@ func (_u *GroupUpdateOne) sqlSave(ctx context.Context) (_node *Group, err error)
 	}
 	if value, ok := _u.mutation.AddedRateMultiplier(); ok {
 		_spec.AddField(group.FieldRateMultiplier, field.TypeFloat64, value)
-	}
-	if value, ok := _u.mutation.DynamicPricingEnabled(); ok {
-		_spec.SetField(group.FieldDynamicPricingEnabled, field.TypeBool, value)
-	}
-	if value, ok := _u.mutation.DynamicPricingMarkup(); ok {
-		_spec.SetField(group.FieldDynamicPricingMarkup, field.TypeFloat64, value)
-	}
-	if value, ok := _u.mutation.AddedDynamicPricingMarkup(); ok {
-		_spec.AddField(group.FieldDynamicPricingMarkup, field.TypeFloat64, value)
-	}
-	if value, ok := _u.mutation.ManualRateMultiplier(); ok {
-		_spec.SetField(group.FieldManualRateMultiplier, field.TypeFloat64, value)
-	}
-	if value, ok := _u.mutation.AddedManualRateMultiplier(); ok {
-		_spec.AddField(group.FieldManualRateMultiplier, field.TypeFloat64, value)
-	}
-	if value, ok := _u.mutation.DynamicSourceMaxMultiplier(); ok {
-		_spec.SetField(group.FieldDynamicSourceMaxMultiplier, field.TypeFloat64, value)
-	}
-	if value, ok := _u.mutation.AddedDynamicSourceMaxMultiplier(); ok {
-		_spec.AddField(group.FieldDynamicSourceMaxMultiplier, field.TypeFloat64, value)
-	}
-	if _u.mutation.DynamicSourceMaxMultiplierCleared() {
-		_spec.ClearField(group.FieldDynamicSourceMaxMultiplier, field.TypeFloat64)
-	}
-	if value, ok := _u.mutation.DynamicPricingUpdatedAt(); ok {
-		_spec.SetField(group.FieldDynamicPricingUpdatedAt, field.TypeTime, value)
-	}
-	if _u.mutation.DynamicPricingUpdatedAtCleared() {
-		_spec.ClearField(group.FieldDynamicPricingUpdatedAt, field.TypeTime)
-	}
-	if value, ok := _u.mutation.DynamicPricingStatus(); ok {
-		_spec.SetField(group.FieldDynamicPricingStatus, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.PeakRateEnabled(); ok {
 		_spec.SetField(group.FieldPeakRateEnabled, field.TypeBool, value)
