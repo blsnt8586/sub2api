@@ -25,11 +25,17 @@ const (
 	OpenAIVideoEndpointCreate  OpenAIVideoEndpoint = "create"
 	OpenAIVideoEndpointStatus  OpenAIVideoEndpoint = "status"
 	OpenAIVideoEndpointContent OpenAIVideoEndpoint = "content"
+	// OpenAIVideoEndpointDelete permanently removes an OpenAI video task and
+	// its stored assets.  This follows the official DELETE /videos/{id}
+	// contract; it is intentionally distinct from Canvas' POST cancel route.
+	OpenAIVideoEndpointDelete OpenAIVideoEndpoint = "delete"
 
 	openAIPlatformVideosURL = "https://api.openai.com/v1/videos"
 )
 
 func (e OpenAIVideoEndpoint) IsCreate() bool { return e == OpenAIVideoEndpointCreate }
+
+func (e OpenAIVideoEndpoint) IsDelete() bool { return e == OpenAIVideoEndpointDelete }
 
 type OpenAIVideoRequestInfo struct {
 	Model             string
@@ -286,9 +292,12 @@ func (s *OpenAIGatewayService) ForwardOpenAIVideo(
 		}, nil
 	}
 
-	respBody, err := ReadUpstreamResponseBody(resp.Body, s.cfg, c, openAITooLargeError)
-	if err != nil {
-		return nil, err
+	var respBody []byte
+	if resp.Body != nil {
+		respBody, err = ReadUpstreamResponseBody(resp.Body, s.cfg, c, openAITooLargeError)
+		if err != nil {
+			return nil, err
+		}
 	}
 	responseID := strings.TrimSpace(gjson.GetBytes(respBody, "id").String())
 	if responseID == "" {
@@ -349,6 +358,9 @@ func (s *OpenAIGatewayService) buildOpenAIVideoRequest(ctx context.Context, c *g
 	method := http.MethodPost
 	if endpoint != OpenAIVideoEndpointCreate {
 		method = http.MethodGet
+		if endpoint.IsDelete() {
+			method = http.MethodDelete
+		}
 		targetURL = strings.TrimRight(targetURL, "/") + "/" + requestID
 		if endpoint == OpenAIVideoEndpointContent {
 			targetURL += "/content"
@@ -484,6 +496,35 @@ func (s *OpenAIGatewayService) SelectBoundOpenAIVideoAccount(ctx context.Context
 		}, nil
 	}
 	return nil, ErrNoAvailableAccounts
+}
+
+// SelectBoundOpenAIVideoAccountForControl resolves the account that created a
+// video without consuming its generation concurrency slot.  Control-plane
+// operations such as DELETE must remain usable when that slot is already full;
+// the account/platform checks are still performed so a request cannot be sent
+// through an unrelated account.
+func (s *OpenAIGatewayService) SelectBoundOpenAIVideoAccountForControl(ctx context.Context, groupID *int64, accountID int64) (*AccountSelectionResult, error) {
+	if s == nil || accountID <= 0 {
+		return nil, ErrNoAvailableAccounts
+	}
+	var (
+		account *Account
+		err     error
+	)
+	// Use the durable repository snapshot when available. The scheduler cache
+	// intentionally omits blocked accounts, but a control-plane delete must be
+	// able to reach the account that owns an in-flight task even in that state.
+	if s.accountRepo != nil {
+		account, err = s.accountRepo.GetByID(ctx, accountID)
+	} else if s.schedulerSnapshot != nil {
+		account, err = s.schedulerSnapshot.GetAccount(ctx, accountID)
+	} else {
+		return nil, ErrNoAvailableAccounts
+	}
+	if err != nil || account == nil || !account.IsActive() || account.Platform != PlatformOpenAI || account.Type != AccountTypeAPIKey || !account.SupportsOpenAIEndpointCapability(OpenAIEndpointCapabilityVideos) || !s.openAIAccountMatchesSchedulingGroup(account, groupID) {
+		return nil, ErrNoAvailableAccounts
+	}
+	return &AccountSelectionResult{Account: account}, nil
 }
 
 func openAIVideoPendingBillingKey(requestID string, userID, apiKeyID int64) string {

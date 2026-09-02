@@ -169,6 +169,30 @@ func TestForwardOpenAIVideoStatusMarksCompletedForBilling(t *testing.T) {
 	require.Equal(t, 20, result.VideoDurationSeconds)
 }
 
+func TestForwardOpenAIVideoDeleteUsesOfficialDeleteProtocol(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	upstream := &openAIVideoUpstreamStub{response: &http.Response{
+		StatusCode: http.StatusNoContent, Header: http.Header{},
+		Body: io.NopCloser(strings.NewReader("")),
+	}}
+	c, recorder := openAIVideoGinContext(http.MethodDelete, "/v1/videos/video_123", nil)
+
+	result, err := openAIVideoTestService(upstream).ForwardOpenAIVideo(
+		context.Background(), c, openAIVideoTestAccount(), OpenAIVideoEndpointDelete,
+		"video_123", nil, "", "",
+	)
+
+	require.NoError(t, err)
+	require.Equal(t, http.MethodDelete, upstream.request.Method)
+	require.Equal(t, "https://upstream.test/v1/videos/video_123", upstream.request.URL.String())
+	require.Equal(t, http.StatusNoContent, result.ResponseStatusCode)
+	require.Empty(t, result.ResponseBody)
+	require.Equal(t, 0, recorder.Body.Len(), "delete response must remain buffered until forwarding completes")
+
+	openAIVideoTestService(upstream).CommitOpenAIVideoResponse(c, result)
+	require.Equal(t, http.StatusNoContent, recorder.Code)
+}
+
 func TestForwardOpenAIVideoContentProxiesBytes(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	upstream := &openAIVideoUpstreamStub{response: &http.Response{
@@ -233,4 +257,33 @@ func TestSelectBoundOpenAIVideoAccountUsesOnlyCreatingAccount(t *testing.T) {
 	if selection.ReleaseFunc != nil {
 		selection.ReleaseFunc()
 	}
+}
+
+func TestSelectBoundOpenAIVideoAccountForControlDoesNotRequireGenerationSlot(t *testing.T) {
+	creating := Account{
+		ID: 7, Name: "creating", Platform: PlatformOpenAI, Type: AccountTypeAPIKey,
+		Status: StatusActive, Schedulable: false, Concurrency: 1,
+	}
+	svc := &OpenAIGatewayService{accountRepo: stubOpenAIAccountRepo{accounts: []Account{creating}}}
+
+	selection, err := svc.SelectBoundOpenAIVideoAccountForControl(context.Background(), nil, creating.ID)
+
+	require.NoError(t, err)
+	require.NotNil(t, selection)
+	require.Equal(t, creating.ID, selection.Account.ID)
+	require.False(t, selection.Acquired)
+	require.Nil(t, selection.ReleaseFunc)
+}
+
+func TestSelectBoundOpenAIVideoAccountForControlRejectsInactiveAccount(t *testing.T) {
+	creating := Account{
+		ID: 7, Name: "disabled", Platform: PlatformOpenAI, Type: AccountTypeAPIKey,
+		Status: StatusError, Schedulable: true, Concurrency: 1,
+	}
+	svc := &OpenAIGatewayService{accountRepo: stubOpenAIAccountRepo{accounts: []Account{creating}}}
+
+	selection, err := svc.SelectBoundOpenAIVideoAccountForControl(context.Background(), nil, creating.ID)
+
+	require.ErrorIs(t, err, ErrNoAvailableAccounts)
+	require.Nil(t, selection)
 }

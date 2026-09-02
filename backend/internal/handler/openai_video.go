@@ -29,6 +29,14 @@ func (h *OpenAIGatewayHandler) OpenAIVideoContent(c *gin.Context) {
 	h.handleOpenAIVideo(c, service.OpenAIVideoEndpointContent, c.Param("request_id"))
 }
 
+// OpenAIVideoDelete implements the official DELETE /videos/{video_id}
+// operation.  The request is still resolved through the creation-time account
+// binding so a video ID can never be deleted through another user's key or a
+// different upstream account.
+func (h *OpenAIGatewayHandler) OpenAIVideoDelete(c *gin.Context) {
+	h.handleOpenAIVideo(c, service.OpenAIVideoEndpointDelete, c.Param("request_id"))
+}
+
 func (h *OpenAIGatewayHandler) handleOpenAIVideo(c *gin.Context, endpoint service.OpenAIVideoEndpoint, requestID string) {
 	streamStarted := false
 	defer h.recoverResponsesPanic(c, &streamStarted)
@@ -101,20 +109,26 @@ func (h *OpenAIGatewayHandler) handleOpenAIVideo(c *gin.Context, endpoint servic
 		service.BindErrorPassthroughService(c, h.errorPassthroughService)
 	}
 	subscription, _ := middleware2.GetSubscriptionFromContext(c)
-	releaseUser, acquired := h.acquireResponsesUserSlot(c, subject.UserID, subject.Concurrency, false, &streamStarted, reqLog)
-	if !acquired {
-		return
-	}
-	if releaseUser != nil {
-		defer releaseUser()
-	}
-	if err := h.billingCacheService.CheckBillingEligibility(c.Request.Context(), apiKey.User, apiKey, apiKey.Group, subscription, service.QuotaPlatform(c.Request.Context(), apiKey)); err != nil {
-		status, code, message, retryAfter := billingErrorDetails(err)
-		if retryAfter > 0 {
-			c.Header("Retry-After", strconv.Itoa(retryAfter))
+	// DELETE is a control-plane cleanup operation. It must remain available
+	// when a user's generation quota or normal concurrency budget is exhausted;
+	// otherwise an in-flight upstream job can keep running (and accruing cost)
+	// precisely when the user most needs to stop it.
+	if !endpoint.IsDelete() {
+		releaseUser, acquired := h.acquireResponsesUserSlot(c, subject.UserID, subject.Concurrency, false, &streamStarted, reqLog)
+		if !acquired {
+			return
 		}
-		h.errorResponse(c, status, code, message)
-		return
+		if releaseUser != nil {
+			defer releaseUser()
+		}
+		if err := h.billingCacheService.CheckBillingEligibility(c.Request.Context(), apiKey.User, apiKey, apiKey.Group, subscription, service.QuotaPlatform(c.Request.Context(), apiKey)); err != nil {
+			status, code, message, retryAfter := billingErrorDetails(err)
+			if retryAfter > 0 {
+				c.Header("Retry-After", strconv.Itoa(retryAfter))
+			}
+			h.errorResponse(c, status, code, message)
+			return
+		}
 	}
 
 	requestCtx := service.WithOpenAIProfitControlSuppressed(c.Request.Context())
@@ -147,7 +161,11 @@ func (h *OpenAIGatewayHandler) handleOpenAIVideo(c *gin.Context, endpoint servic
 		var selection *service.AccountSelectionResult
 		var err error
 		if boundAccountID > 0 {
-			selection, err = h.gatewayService.SelectBoundOpenAIVideoAccount(requestCtx, apiKey.GroupID, boundAccountID)
+			if endpoint.IsDelete() {
+				selection, err = h.gatewayService.SelectBoundOpenAIVideoAccountForControl(requestCtx, apiKey.GroupID, boundAccountID)
+			} else {
+				selection, err = h.gatewayService.SelectBoundOpenAIVideoAccount(requestCtx, apiKey.GroupID, boundAccountID)
+			}
 		} else {
 			selection, _, err = h.gatewayService.SelectAccountWithSchedulerForCapability(
 				requestCtx, apiKey.GroupID, "", sessionHash, routingModel, failedAccountIDs,
@@ -162,9 +180,13 @@ func (h *OpenAIGatewayHandler) handleOpenAIVideo(c *gin.Context, endpoint servic
 		}
 		account := selection.Account
 		setOpsSelectedAccount(c, account.ID, account.Platform)
-		releaseAccount, slotResult := h.acquireResponsesAccountSlot(c, apiKey.GroupID, sessionHash, selection, false, &streamStarted, reqLog)
-		if slotResult != openAISlotAcquireOK {
-			return
+		var releaseAccount func()
+		if !endpoint.IsDelete() {
+			var slotResult openAISlotAcquireResult
+			releaseAccount, slotResult = h.acquireResponsesAccountSlot(c, apiKey.GroupID, sessionHash, selection, false, &streamStarted, reqLog)
+			if slotResult != openAISlotAcquireOK {
+				return
+			}
 		}
 		writerSize := c.Writer.Size()
 		result, forwardErr := func() (*service.OpenAIForwardResult, error) {
@@ -213,7 +235,10 @@ func (h *OpenAIGatewayHandler) handleOpenAIVideo(c *gin.Context, endpoint servic
 				return
 			}
 		}
-		if !endpoint.IsCreate() {
+		// Only status/content responses can contain a completed video result and
+		// therefore trigger deferred usage billing.  DELETE is a control-plane
+		// operation and must never claim or record media usage.
+		if endpoint == service.OpenAIVideoEndpointStatus || endpoint == service.OpenAIVideoEndpointContent {
 			if billed := prepareOpenAIVideoCompletionBilling(requestCtx, h, reqLog, apiKey, subject, requestID, result); billed != nil {
 				recordOpenAIVideoUsage(c, h, reqLog, apiKey, subject, subscription, account, billed, requestID)
 			}

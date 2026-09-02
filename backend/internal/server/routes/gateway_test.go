@@ -324,6 +324,8 @@ func TestGatewayRoutesOpenAIVideoCreateStatusAndContentReachHandler(t *testing.T
 		{http.MethodGet, "/videos/request-123/content", ""},
 		{http.MethodGet, "/v1/videos/generations/request-123", ""},
 		{http.MethodGet, "/videos/generations/request-123/content", ""},
+		{http.MethodDelete, "/v1/videos/request-123", ""},
+		{http.MethodDelete, "/videos/request-123", ""},
 	} {
 		req := httptest.NewRequest(tc.method, tc.path, strings.NewReader(tc.body))
 		req.Header.Set("Content-Type", "application/json")

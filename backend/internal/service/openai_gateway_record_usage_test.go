@@ -12,6 +12,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func openAIRecordUsageFloatPtr(v float64) *float64 { return &v }
+
 type openAIRecordUsageLogRepoStub struct {
 	UsageLogRepository
 
@@ -2033,7 +2035,7 @@ func TestOpenAIGatewayServiceRecordUsage_CanvasImageUsesIndependentMarkerAndMode
 				RateMultiplier: 1,
 				// The model price must win over the intentionally different global
 				// Canvas price, proving the existing editor contract is honored.
-				CanvasImagePricePerCount: priceOf(0.99),
+				CanvasImagePricePerCount: openAIRecordUsageFloatPtr(0.99),
 				CanvasModelPricing: &ModelPricingConfig{
 					Image: map[string]*ModelImagePricing{
 						"seedream-5.0-pro": {Price2K: &modelPrice},

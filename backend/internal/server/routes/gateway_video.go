@@ -112,6 +112,17 @@ func registerVideoRoutes(
 		videoUnsupported(c)
 	}
 
+	// OpenAI's official task lifecycle uses DELETE /videos/{id} to permanently
+	// remove a video.  Keep Canvas' POST .../cancel route separate because it is
+	// an AIV2API control-plane operation with different semantics.
+	videoDeleteHandler := func(c *gin.Context) {
+		if getGroupPlatform(c) == service.PlatformOpenAI {
+			h.OpenAIGateway.OpenAIVideoDelete(c)
+			return
+		}
+		videoUnsupported(c)
+	}
+
 	// seedanceTasksHandler 处理 POST /v1/contents/generations/tasks（Seedance/Ark Plan v3 原生接口）。
 	// infinite-canvas 等客户端对含 "seedance" 的模型走此路径；body 在 handler 层自动转换成
 	// AIV2API 风格后沿 jimeng 通道转发。仅限 jimeng 平台。[CUSTOM]
@@ -149,6 +160,7 @@ func registerVideoRoutes(
 	gateway.GET("/videos/:request_id", videoStatusHandler)
 	gateway.GET("/videos/:request_id/content", videoContentHandler)
 	gateway.POST("/videos/:request_id/cancel", videoCancelHandler) // [CUSTOM] jimeng
+	gateway.DELETE("/videos/:request_id", videoDeleteHandler)
 	gateway.POST("/contents/generations/tasks", seedanceTasksHandler)
 	gateway.GET("/contents/generations/tasks/:request_id", seedanceTaskStatusHandler)
 
@@ -166,6 +178,7 @@ func registerVideoRoutes(
 	r.GET("/videos/:request_id", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, videoStatusHandler)
 	r.GET("/videos/:request_id/content", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, videoContentHandler)
 	r.POST("/videos/:request_id/cancel", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, videoCancelHandler) // [CUSTOM] jimeng
+	r.DELETE("/videos/:request_id", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, videoDeleteHandler)
 	r.POST("/contents/generations/tasks", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, seedanceTasksHandler)
 	r.GET("/contents/generations/tasks/:request_id", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, seedanceTaskStatusHandler)
 }
