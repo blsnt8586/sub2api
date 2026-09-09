@@ -275,7 +275,7 @@ func (s *OpenAIGatewayService) ForwardOpenAIVideo(
 	if resp.StatusCode >= http.StatusBadRequest {
 		respBody := s.readUpstreamErrorBody(resp)
 		message := sanitizeUpstreamErrorMessage(extractUpstreamErrorMessage(respBody))
-		if s.shouldFailoverOpenAIUpstreamResponse(resp.StatusCode, message, respBody) {
+		if s.shouldFailoverOpenAIUpstreamResponse(account, resp.StatusCode, message, respBody) {
 			return nil, newOpenAIUpstreamFailoverError(resp.StatusCode, resp.Header, respBody, message, false)
 		}
 		writeGrokMediaResponse(c, resp, respBody, s.responseHeaderFilter)

@@ -45,8 +45,8 @@ const (
 	FieldExpiryWarnDays = "expiry_warn_days"
 	// EdgeAccounts holds the string denoting the accounts edge name in mutations.
 	EdgeAccounts = "accounts"
-	// EdgeSub2apiProviders holds the string denoting the sub2api_providers edge name in mutations.
-	EdgeSub2apiProviders = "sub2api_providers"
+	// EdgePrimaryProxies holds the string denoting the primary_proxies edge name in mutations.
+	EdgePrimaryProxies = "primary_proxies"
 	// EdgeBackupProxy holds the string denoting the backup_proxy edge name in mutations.
 	EdgeBackupProxy = "backup_proxy"
 	// Table holds the table name of the proxy in the database.
@@ -58,13 +58,10 @@ const (
 	AccountsInverseTable = "accounts"
 	// AccountsColumn is the table column denoting the accounts relation/edge.
 	AccountsColumn = "proxy_id"
-	// Sub2apiProvidersTable is the table that holds the sub2api_providers relation/edge.
-	Sub2apiProvidersTable = "sub2api_providers"
-	// Sub2apiProvidersInverseTable is the table name for the Sub2APIProvider entity.
-	// It exists in this package in order to avoid circular dependency with the "sub2apiprovider" package.
-	Sub2apiProvidersInverseTable = "sub2api_providers"
-	// Sub2apiProvidersColumn is the table column denoting the sub2api_providers relation/edge.
-	Sub2apiProvidersColumn = "proxy_id"
+	// PrimaryProxiesTable is the table that holds the primary_proxies relation/edge.
+	PrimaryProxiesTable = "proxies"
+	// PrimaryProxiesColumn is the table column denoting the primary_proxies relation/edge.
+	PrimaryProxiesColumn = "backup_proxy_id"
 	// BackupProxyTable is the table that holds the backup_proxy relation/edge.
 	BackupProxyTable = "proxies"
 	// BackupProxyColumn is the table column denoting the backup_proxy relation/edge.
@@ -228,17 +225,17 @@ func ByAccounts(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
-// BySub2apiProvidersCount orders the results by sub2api_providers count.
-func BySub2apiProvidersCount(opts ...sql.OrderTermOption) OrderOption {
+// ByPrimaryProxiesCount orders the results by primary_proxies count.
+func ByPrimaryProxiesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newSub2apiProvidersStep(), opts...)
+		sqlgraph.OrderByNeighborsCount(s, newPrimaryProxiesStep(), opts...)
 	}
 }
 
-// BySub2apiProviders orders the results by sub2api_providers terms.
-func BySub2apiProviders(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+// ByPrimaryProxies orders the results by primary_proxies terms.
+func ByPrimaryProxies(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newSub2apiProvidersStep(), append([]sql.OrderTerm{term}, terms...)...)
+		sqlgraph.OrderByNeighborTerms(s, newPrimaryProxiesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
 
@@ -255,17 +252,17 @@ func newAccountsStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.O2M, true, AccountsTable, AccountsColumn),
 	)
 }
-func newSub2apiProvidersStep() *sqlgraph.Step {
+func newPrimaryProxiesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(Sub2apiProvidersInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, true, Sub2apiProvidersTable, Sub2apiProvidersColumn),
+		sqlgraph.To(Table, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, true, PrimaryProxiesTable, PrimaryProxiesColumn),
 	)
 }
 func newBackupProxyStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(Table, FieldID),
-		sqlgraph.Edge(sqlgraph.O2O, false, BackupProxyTable, BackupProxyColumn),
+		sqlgraph.Edge(sqlgraph.M2O, false, BackupProxyTable, BackupProxyColumn),
 	)
 }

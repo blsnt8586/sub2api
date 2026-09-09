@@ -7,9 +7,11 @@ const concretePlatforms = [
   'gemini',
   'antigravity',
   'grok',
+  'canvas',
   'kimi',
   'zhipu',
-  'deepseek'
+  'deepseek',
+  'minimax'
 ]
 
 describe('platform option catalogs', () => {

@@ -50,6 +50,7 @@ vi.mock('@/components/common/BaseDialog.vue', () => ({
 
 import UserPlatformQuotaModal from '../UserPlatformQuotaModal.vue'
 import type { UserSubscription } from '@/types'
+import { ALL_PLATFORMS } from '@/utils/platformColors'
 
 function makeUser(overrides: { subscriptions?: UserSubscription[] } = {}) {
   return { id: 99, email: 'u@example.com', ...overrides } as any
@@ -79,15 +80,12 @@ describe('UserPlatformQuotaModal', () => {
     expect(apiMocks.getPlatformQuotas).toHaveBeenCalledWith(99)
   })
 
-  it('空数据渲染全部 6 个 platform 行', async () => {
+  it('空数据渲染全部 platform 行', async () => {
     const w = await mountAndOpen()
     const html = w.html()
-    expect(html).toContain('anthropic')
-    expect(html).toContain('openai')
-    expect(html).toContain('gemini')
-    expect(html).toContain('antigravity')
-    expect(html).toContain('grok')
-    expect(html).toContain('canvas')
+    for (const platform of ALL_PLATFORMS) {
+      expect(html).toContain(platform)
+    }
   })
 
   it('已有数据正确填充 limit input', async () => {
@@ -99,13 +97,12 @@ describe('UserPlatformQuotaModal', () => {
     })
     const w = await mountAndOpen()
     const inputs = w.findAll('input[type=number]')
-    // 6 platforms × 3 windows = 18 inputs
-    expect(inputs.length).toBe(18)
+    expect(inputs.length).toBe(ALL_PLATFORMS.length * 3)
     // 第一个 input 是 anthropic.daily = 10
     expect((inputs[0].element as HTMLInputElement).value).toBe('10')
   })
 
-  it('保存提交完整 6 platform payload', async () => {
+  it('保存提交完整 platform payload', async () => {
     apiMocks.getPlatformQuotas.mockResolvedValueOnce({
       platform_quotas: [
         { platform: 'openai', daily_limit_usd: null, weekly_limit_usd: 20, monthly_limit_usd: null,
@@ -122,15 +119,8 @@ describe('UserPlatformQuotaModal', () => {
     expect(apiMocks.updatePlatformQuotas).toHaveBeenCalledTimes(1)
     const [uid, payload] = apiMocks.updatePlatformQuotas.mock.calls[0]
     expect(uid).toBe(99)
-    expect(payload).toHaveLength(6) // 6 platforms, including canvas, are always submitted
-    expect(payload.map((p: any) => p.platform)).toEqual([
-      'anthropic',
-      'openai',
-      'gemini',
-      'antigravity',
-      'grok',
-      'canvas',
-    ])
+    expect(payload).toHaveLength(ALL_PLATFORMS.length)
+    expect(payload.map((p: any) => p.platform)).toEqual(ALL_PLATFORMS)
     const openai = payload.find((p: any) => p.platform === 'openai')
     expect(openai.weekly_limit_usd).toBe(20)
   })

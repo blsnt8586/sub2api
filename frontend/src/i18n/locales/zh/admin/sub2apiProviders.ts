@@ -612,6 +612,7 @@ export default {
       weekly: '每周一凌晨 2 点',
     },
     scheduleEnabled: '启用定时优化',
+    scheduleLoadFailed: '调度配置加载失败',
     scheduleSaved: '调度配置已保存',
     scheduleSaveFailed: '调度配置保存失败',
     scheduleDeleted: '调度已删除',

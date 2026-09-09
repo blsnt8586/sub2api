@@ -55,8 +55,8 @@ type Proxy struct {
 type ProxyEdges struct {
 	// Accounts holds the value of the accounts edge.
 	Accounts []*Account `json:"accounts,omitempty"`
-	// Sub2apiProviders holds the value of the sub2api_providers edge.
-	Sub2apiProviders []*Sub2APIProvider `json:"sub2api_providers,omitempty"`
+	// PrimaryProxies holds the value of the primary_proxies edge.
+	PrimaryProxies []*Proxy `json:"primary_proxies,omitempty"`
 	// BackupProxy holds the value of the backup_proxy edge.
 	BackupProxy *Proxy `json:"backup_proxy,omitempty"`
 	// loadedTypes holds the information for reporting if a
@@ -73,13 +73,13 @@ func (e ProxyEdges) AccountsOrErr() ([]*Account, error) {
 	return nil, &NotLoadedError{edge: "accounts"}
 }
 
-// Sub2apiProvidersOrErr returns the Sub2apiProviders value or an error if the edge
+// PrimaryProxiesOrErr returns the PrimaryProxies value or an error if the edge
 // was not loaded in eager-loading.
-func (e ProxyEdges) Sub2apiProvidersOrErr() ([]*Sub2APIProvider, error) {
+func (e ProxyEdges) PrimaryProxiesOrErr() ([]*Proxy, error) {
 	if e.loadedTypes[1] {
-		return e.Sub2apiProviders, nil
+		return e.PrimaryProxies, nil
 	}
-	return nil, &NotLoadedError{edge: "sub2api_providers"}
+	return nil, &NotLoadedError{edge: "primary_proxies"}
 }
 
 // BackupProxyOrErr returns the BackupProxy value or an error if the edge
@@ -232,9 +232,9 @@ func (_m *Proxy) QueryAccounts() *AccountQuery {
 	return NewProxyClient(_m.config).QueryAccounts(_m)
 }
 
-// QuerySub2apiProviders queries the "sub2api_providers" edge of the Proxy entity.
-func (_m *Proxy) QuerySub2apiProviders() *Sub2APIProviderQuery {
-	return NewProxyClient(_m.config).QuerySub2apiProviders(_m)
+// QueryPrimaryProxies queries the "primary_proxies" edge of the Proxy entity.
+func (_m *Proxy) QueryPrimaryProxies() *ProxyQuery {
+	return NewProxyClient(_m.config).QueryPrimaryProxies(_m)
 }
 
 // QueryBackupProxy queries the "backup_proxy" edge of the Proxy entity.

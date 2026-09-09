@@ -28,9 +28,9 @@ export function extractErrorMessage(error: any, fallback: string): string {
  * @example
  * await handleApiError(
  *   () => adminAPI.sub2apiProviders.delete(id),
- *   appStore.showSuccess.bind(appStore, t('deleteSuccess')),
+ *   appStore.showSuccess.bind(appStore, t('admin.sub2apiProviders.deleteSuccess')),
  *   appStore.showError.bind(appStore),
- *   t('deleteFailed')
+ *   t('admin.sub2apiProviders.deleteFailed')
  * )
  */
 export async function handleApiError<T>(

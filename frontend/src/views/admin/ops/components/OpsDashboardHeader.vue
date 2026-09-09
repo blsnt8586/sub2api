@@ -2,6 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Select from '@/components/common/Select.vue'
+import { CONCRETE_PLATFORM_OPTIONS } from '@/constants/platforms'
 import HelpTooltip from '@/components/common/HelpTooltip.vue'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import Icon from '@/components/icons/Icon.vue'
@@ -10,7 +11,6 @@ import { opsAPI, type OpsDashboardOverview, type OpsMetricThresholds, type OpsRe
 import type { OpsRequestDetailsPreset } from './OpsRequestDetailsModal.vue'
 import { useAdminSettingsStore } from '@/stores'
 import { formatNumber } from '@/utils/format'
-import { platformSelectOptions } from '@/utils/platformColors'
 import { formatMemorySizeMB } from '../utils/opsFormatters'
 
 type RealtimeWindow = '1min' | '5min' | '30min' | '1h'
@@ -110,7 +110,7 @@ const groups = ref<Array<{ id: number; name: string; platform: string }>>([])
 
 const platformOptions = computed(() => [
   { value: '', label: t('common.all') },
-  ...platformSelectOptions()
+  ...CONCRETE_PLATFORM_OPTIONS
 ])
 
 const timeRangeOptions = computed(() => [

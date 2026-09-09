@@ -14,7 +14,6 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/account"
 	"github.com/Wei-Shaw/sub2api/ent/predicate"
 	"github.com/Wei-Shaw/sub2api/ent/proxy"
-	"github.com/Wei-Shaw/sub2api/ent/sub2apiprovider"
 )
 
 // ProxyUpdate is the builder for updating Proxy entities.
@@ -263,19 +262,19 @@ func (_u *ProxyUpdate) AddAccounts(v ...*Account) *ProxyUpdate {
 	return _u.AddAccountIDs(ids...)
 }
 
-// AddSub2apiProviderIDs adds the "sub2api_providers" edge to the Sub2APIProvider entity by IDs.
-func (_u *ProxyUpdate) AddSub2apiProviderIDs(ids ...int64) *ProxyUpdate {
-	_u.mutation.AddSub2apiProviderIDs(ids...)
+// AddPrimaryProxyIDs adds the "primary_proxies" edge to the Proxy entity by IDs.
+func (_u *ProxyUpdate) AddPrimaryProxyIDs(ids ...int64) *ProxyUpdate {
+	_u.mutation.AddPrimaryProxyIDs(ids...)
 	return _u
 }
 
-// AddSub2apiProviders adds the "sub2api_providers" edges to the Sub2APIProvider entity.
-func (_u *ProxyUpdate) AddSub2apiProviders(v ...*Sub2APIProvider) *ProxyUpdate {
+// AddPrimaryProxies adds the "primary_proxies" edges to the Proxy entity.
+func (_u *ProxyUpdate) AddPrimaryProxies(v ...*Proxy) *ProxyUpdate {
 	ids := make([]int64, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
-	return _u.AddSub2apiProviderIDs(ids...)
+	return _u.AddPrimaryProxyIDs(ids...)
 }
 
 // SetBackupProxy sets the "backup_proxy" edge to the Proxy entity.
@@ -309,25 +308,25 @@ func (_u *ProxyUpdate) RemoveAccounts(v ...*Account) *ProxyUpdate {
 	return _u.RemoveAccountIDs(ids...)
 }
 
-// ClearSub2apiProviders clears all "sub2api_providers" edges to the Sub2APIProvider entity.
-func (_u *ProxyUpdate) ClearSub2apiProviders() *ProxyUpdate {
-	_u.mutation.ClearSub2apiProviders()
+// ClearPrimaryProxies clears all "primary_proxies" edges to the Proxy entity.
+func (_u *ProxyUpdate) ClearPrimaryProxies() *ProxyUpdate {
+	_u.mutation.ClearPrimaryProxies()
 	return _u
 }
 
-// RemoveSub2apiProviderIDs removes the "sub2api_providers" edge to Sub2APIProvider entities by IDs.
-func (_u *ProxyUpdate) RemoveSub2apiProviderIDs(ids ...int64) *ProxyUpdate {
-	_u.mutation.RemoveSub2apiProviderIDs(ids...)
+// RemovePrimaryProxyIDs removes the "primary_proxies" edge to Proxy entities by IDs.
+func (_u *ProxyUpdate) RemovePrimaryProxyIDs(ids ...int64) *ProxyUpdate {
+	_u.mutation.RemovePrimaryProxyIDs(ids...)
 	return _u
 }
 
-// RemoveSub2apiProviders removes "sub2api_providers" edges to Sub2APIProvider entities.
-func (_u *ProxyUpdate) RemoveSub2apiProviders(v ...*Sub2APIProvider) *ProxyUpdate {
+// RemovePrimaryProxies removes "primary_proxies" edges to Proxy entities.
+func (_u *ProxyUpdate) RemovePrimaryProxies(v ...*Proxy) *ProxyUpdate {
 	ids := make([]int64, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
-	return _u.RemoveSub2apiProviderIDs(ids...)
+	return _u.RemovePrimaryProxyIDs(ids...)
 }
 
 // ClearBackupProxy clears the "backup_proxy" edge to the Proxy entity.
@@ -529,28 +528,28 @@ func (_u *ProxyUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.Sub2apiProvidersCleared() {
+	if _u.mutation.PrimaryProxiesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   proxy.Sub2apiProvidersTable,
-			Columns: []string{proxy.Sub2apiProvidersColumn},
+			Table:   proxy.PrimaryProxiesTable,
+			Columns: []string{proxy.PrimaryProxiesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(sub2apiprovider.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(proxy.FieldID, field.TypeInt64),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.RemovedSub2apiProvidersIDs(); len(nodes) > 0 && !_u.mutation.Sub2apiProvidersCleared() {
+	if nodes := _u.mutation.RemovedPrimaryProxiesIDs(); len(nodes) > 0 && !_u.mutation.PrimaryProxiesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   proxy.Sub2apiProvidersTable,
-			Columns: []string{proxy.Sub2apiProvidersColumn},
+			Table:   proxy.PrimaryProxiesTable,
+			Columns: []string{proxy.PrimaryProxiesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(sub2apiprovider.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(proxy.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -558,15 +557,15 @@ func (_u *ProxyUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.Sub2apiProvidersIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.PrimaryProxiesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   proxy.Sub2apiProvidersTable,
-			Columns: []string{proxy.Sub2apiProvidersColumn},
+			Table:   proxy.PrimaryProxiesTable,
+			Columns: []string{proxy.PrimaryProxiesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(sub2apiprovider.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(proxy.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -576,11 +575,11 @@ func (_u *ProxyUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.BackupProxyCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
+			Rel:     sqlgraph.M2O,
 			Inverse: false,
 			Table:   proxy.BackupProxyTable,
 			Columns: []string{proxy.BackupProxyColumn},
-			Bidi:    true,
+			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(proxy.FieldID, field.TypeInt64),
 			},
@@ -589,11 +588,11 @@ func (_u *ProxyUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if nodes := _u.mutation.BackupProxyIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
+			Rel:     sqlgraph.M2O,
 			Inverse: false,
 			Table:   proxy.BackupProxyTable,
 			Columns: []string{proxy.BackupProxyColumn},
-			Bidi:    true,
+			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(proxy.FieldID, field.TypeInt64),
 			},
@@ -856,19 +855,19 @@ func (_u *ProxyUpdateOne) AddAccounts(v ...*Account) *ProxyUpdateOne {
 	return _u.AddAccountIDs(ids...)
 }
 
-// AddSub2apiProviderIDs adds the "sub2api_providers" edge to the Sub2APIProvider entity by IDs.
-func (_u *ProxyUpdateOne) AddSub2apiProviderIDs(ids ...int64) *ProxyUpdateOne {
-	_u.mutation.AddSub2apiProviderIDs(ids...)
+// AddPrimaryProxyIDs adds the "primary_proxies" edge to the Proxy entity by IDs.
+func (_u *ProxyUpdateOne) AddPrimaryProxyIDs(ids ...int64) *ProxyUpdateOne {
+	_u.mutation.AddPrimaryProxyIDs(ids...)
 	return _u
 }
 
-// AddSub2apiProviders adds the "sub2api_providers" edges to the Sub2APIProvider entity.
-func (_u *ProxyUpdateOne) AddSub2apiProviders(v ...*Sub2APIProvider) *ProxyUpdateOne {
+// AddPrimaryProxies adds the "primary_proxies" edges to the Proxy entity.
+func (_u *ProxyUpdateOne) AddPrimaryProxies(v ...*Proxy) *ProxyUpdateOne {
 	ids := make([]int64, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
-	return _u.AddSub2apiProviderIDs(ids...)
+	return _u.AddPrimaryProxyIDs(ids...)
 }
 
 // SetBackupProxy sets the "backup_proxy" edge to the Proxy entity.
@@ -902,25 +901,25 @@ func (_u *ProxyUpdateOne) RemoveAccounts(v ...*Account) *ProxyUpdateOne {
 	return _u.RemoveAccountIDs(ids...)
 }
 
-// ClearSub2apiProviders clears all "sub2api_providers" edges to the Sub2APIProvider entity.
-func (_u *ProxyUpdateOne) ClearSub2apiProviders() *ProxyUpdateOne {
-	_u.mutation.ClearSub2apiProviders()
+// ClearPrimaryProxies clears all "primary_proxies" edges to the Proxy entity.
+func (_u *ProxyUpdateOne) ClearPrimaryProxies() *ProxyUpdateOne {
+	_u.mutation.ClearPrimaryProxies()
 	return _u
 }
 
-// RemoveSub2apiProviderIDs removes the "sub2api_providers" edge to Sub2APIProvider entities by IDs.
-func (_u *ProxyUpdateOne) RemoveSub2apiProviderIDs(ids ...int64) *ProxyUpdateOne {
-	_u.mutation.RemoveSub2apiProviderIDs(ids...)
+// RemovePrimaryProxyIDs removes the "primary_proxies" edge to Proxy entities by IDs.
+func (_u *ProxyUpdateOne) RemovePrimaryProxyIDs(ids ...int64) *ProxyUpdateOne {
+	_u.mutation.RemovePrimaryProxyIDs(ids...)
 	return _u
 }
 
-// RemoveSub2apiProviders removes "sub2api_providers" edges to Sub2APIProvider entities.
-func (_u *ProxyUpdateOne) RemoveSub2apiProviders(v ...*Sub2APIProvider) *ProxyUpdateOne {
+// RemovePrimaryProxies removes "primary_proxies" edges to Proxy entities.
+func (_u *ProxyUpdateOne) RemovePrimaryProxies(v ...*Proxy) *ProxyUpdateOne {
 	ids := make([]int64, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
-	return _u.RemoveSub2apiProviderIDs(ids...)
+	return _u.RemovePrimaryProxyIDs(ids...)
 }
 
 // ClearBackupProxy clears the "backup_proxy" edge to the Proxy entity.
@@ -1152,28 +1151,28 @@ func (_u *ProxyUpdateOne) sqlSave(ctx context.Context) (_node *Proxy, err error)
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.Sub2apiProvidersCleared() {
+	if _u.mutation.PrimaryProxiesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   proxy.Sub2apiProvidersTable,
-			Columns: []string{proxy.Sub2apiProvidersColumn},
+			Table:   proxy.PrimaryProxiesTable,
+			Columns: []string{proxy.PrimaryProxiesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(sub2apiprovider.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(proxy.FieldID, field.TypeInt64),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.RemovedSub2apiProvidersIDs(); len(nodes) > 0 && !_u.mutation.Sub2apiProvidersCleared() {
+	if nodes := _u.mutation.RemovedPrimaryProxiesIDs(); len(nodes) > 0 && !_u.mutation.PrimaryProxiesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   proxy.Sub2apiProvidersTable,
-			Columns: []string{proxy.Sub2apiProvidersColumn},
+			Table:   proxy.PrimaryProxiesTable,
+			Columns: []string{proxy.PrimaryProxiesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(sub2apiprovider.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(proxy.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -1181,15 +1180,15 @@ func (_u *ProxyUpdateOne) sqlSave(ctx context.Context) (_node *Proxy, err error)
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.Sub2apiProvidersIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.PrimaryProxiesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
-			Table:   proxy.Sub2apiProvidersTable,
-			Columns: []string{proxy.Sub2apiProvidersColumn},
+			Table:   proxy.PrimaryProxiesTable,
+			Columns: []string{proxy.PrimaryProxiesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(sub2apiprovider.FieldID, field.TypeInt64),
+				IDSpec: sqlgraph.NewFieldSpec(proxy.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -1199,11 +1198,11 @@ func (_u *ProxyUpdateOne) sqlSave(ctx context.Context) (_node *Proxy, err error)
 	}
 	if _u.mutation.BackupProxyCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
+			Rel:     sqlgraph.M2O,
 			Inverse: false,
 			Table:   proxy.BackupProxyTable,
 			Columns: []string{proxy.BackupProxyColumn},
-			Bidi:    true,
+			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(proxy.FieldID, field.TypeInt64),
 			},
@@ -1212,11 +1211,11 @@ func (_u *ProxyUpdateOne) sqlSave(ctx context.Context) (_node *Proxy, err error)
 	}
 	if nodes := _u.mutation.BackupProxyIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
+			Rel:     sqlgraph.M2O,
 			Inverse: false,
 			Table:   proxy.BackupProxyTable,
 			Columns: []string{proxy.BackupProxyColumn},
-			Bidi:    true,
+			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(proxy.FieldID, field.TypeInt64),
 			},

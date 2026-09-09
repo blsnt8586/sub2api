@@ -14,13 +14,7 @@ import (
 	"github.com/dgraph-io/ristretto"
 )
 
-// v20: 合并 v19(search/audio/video_model_prices) + v18(canvas model_pricing) 两批字段。
-// v21: Canvas 图片/音频全局按次价进入认证快照。
-// 必须升版本强制刷新——否则升级后 Redis 里旧快照仍被判定有效，新字段缺失会导致
-// canvas 分组/语音搜索计费一直回退到分组全局价直到缓存自然过期。[CUSTOM+upstream]
-// v24: OpenAI Fast policy fields (force/free) are present in the snapshot.
-// v25: Retire dynamic group pricing and force cached effective rates to reload.
-const apiKeyAuthSnapshotVersion = 26
+const apiKeyAuthSnapshotVersion = 24 // v24: group model_allowlist field (renamed from models_list_config, enforcing semantics)
 
 type apiKeyAuthCacheConfig struct {
 	l1Size        int
@@ -441,7 +435,8 @@ func (s *APIKeyService) snapshotFromAPIKey(ctx context.Context, apiKey *APIKey) 
 			FreeOpenAIFast:                  apiKey.Group.FreeOpenAIFast,
 			DefaultMappedModel:              apiKey.Group.DefaultMappedModel,
 			MessagesDispatchModelConfig:     apiKey.Group.MessagesDispatchModelConfig,
-			ModelsListConfig:                apiKey.Group.ModelsListConfig,
+			ModelAllowlist:                  apiKey.Group.ModelAllowlist,
+			CodexModelsManifestConfig:       apiKey.Group.CodexModelsManifestConfig,
 			RPMLimit:                        apiKey.Group.RPMLimit,
 			MaxReasoningEffort:              apiKey.Group.MaxReasoningEffort,
 			MaxReasoningEffortOverLimit:     apiKey.Group.MaxReasoningEffortOverLimit,
@@ -555,7 +550,8 @@ func (s *APIKeyService) snapshotToAPIKey(key string, snapshot *APIKeyAuthSnapsho
 			FreeOpenAIFast:                  snapshot.Group.FreeOpenAIFast,
 			DefaultMappedModel:              snapshot.Group.DefaultMappedModel,
 			MessagesDispatchModelConfig:     snapshot.Group.MessagesDispatchModelConfig,
-			ModelsListConfig:                snapshot.Group.ModelsListConfig,
+			ModelAllowlist:                  snapshot.Group.ModelAllowlist,
+			CodexModelsManifestConfig:       snapshot.Group.CodexModelsManifestConfig,
 			RPMLimit:                        snapshot.Group.RPMLimit,
 			MaxReasoningEffort:              snapshot.Group.MaxReasoningEffort,
 			MaxReasoningEffortOverLimit:     snapshot.Group.MaxReasoningEffortOverLimit,

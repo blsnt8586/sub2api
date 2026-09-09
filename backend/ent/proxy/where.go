@@ -913,21 +913,21 @@ func HasAccountsWith(preds ...predicate.Account) predicate.Proxy {
 	})
 }
 
-// HasSub2apiProviders applies the HasEdge predicate on the "sub2api_providers" edge.
-func HasSub2apiProviders() predicate.Proxy {
+// HasPrimaryProxies applies the HasEdge predicate on the "primary_proxies" edge.
+func HasPrimaryProxies() predicate.Proxy {
 	return predicate.Proxy(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, true, Sub2apiProvidersTable, Sub2apiProvidersColumn),
+			sqlgraph.Edge(sqlgraph.O2M, true, PrimaryProxiesTable, PrimaryProxiesColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasSub2apiProvidersWith applies the HasEdge predicate on the "sub2api_providers" edge with a given conditions (other predicates).
-func HasSub2apiProvidersWith(preds ...predicate.Sub2APIProvider) predicate.Proxy {
+// HasPrimaryProxiesWith applies the HasEdge predicate on the "primary_proxies" edge with a given conditions (other predicates).
+func HasPrimaryProxiesWith(preds ...predicate.Proxy) predicate.Proxy {
 	return predicate.Proxy(func(s *sql.Selector) {
-		step := newSub2apiProvidersStep()
+		step := newPrimaryProxiesStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
@@ -941,7 +941,7 @@ func HasBackupProxy() predicate.Proxy {
 	return predicate.Proxy(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, false, BackupProxyTable, BackupProxyColumn),
+			sqlgraph.Edge(sqlgraph.M2O, false, BackupProxyTable, BackupProxyColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})

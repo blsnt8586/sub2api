@@ -597,6 +597,7 @@ export default {
       weekly: 'Every Monday at 2 AM',
     },
     scheduleEnabled: 'Enable scheduled optimization',
+    scheduleLoadFailed: 'Failed to load schedule',
     scheduleSaved: 'Schedule saved',
     scheduleSaveFailed: 'Failed to save schedule',
     scheduleDeleted: 'Schedule deleted',
