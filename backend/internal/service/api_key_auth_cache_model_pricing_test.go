@@ -72,7 +72,7 @@ func TestAPIKeyAuthGroupSnapshot_NilCanvasModelPricingOmitted(t *testing.T) {
 
 // 旧版本快照必须被拒绝，否则升级后仍会命中不含 model_pricing 的缓存。
 func TestAPIKeyService_RejectsSnapshotWithoutModelPricingSupport(t *testing.T) {
-	require.Equal(t, 26, apiKeyAuthSnapshotVersion,
+	require.GreaterOrEqual(t, apiKeyAuthSnapshotVersion, 27,
 		"新增快照字段后必须递增版本号，否则旧缓存不会失效")
 
 	svc := &APIKeyService{}
@@ -89,4 +89,16 @@ func TestAPIKeyService_RejectsSnapshotWithoutModelPricingSupport(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.False(t, ok, "低版本快照应被拒绝并回源")
+}
+
+func TestAPIKeyService_RejectsPreMergeAuthSnapshots(t *testing.T) {
+	svc := &APIKeyService{}
+	for _, version := range []int{24, 26} {
+		key, ok, err := svc.applyAuthCacheEntry("k-pre-merge", &APIKeyAuthCacheEntry{
+			Snapshot: &APIKeyAuthSnapshot{Version: version},
+		})
+		require.NoError(t, err)
+		require.False(t, ok, "pre-merge snapshot version %d must reload", version)
+		require.Nil(t, key)
+	}
 }

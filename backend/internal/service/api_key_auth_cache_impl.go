@@ -14,7 +14,10 @@ import (
 	"github.com/dgraph-io/ristretto"
 )
 
-const apiKeyAuthSnapshotVersion = 24 // v24: group model_allowlist field (renamed from models_list_config, enforcing semantics)
+// v24: group model_allowlist field (renamed from models_list_config, enforcing semantics).
+// v25: retire dynamic group pricing and force cached effective rates to reload.
+// v27: combine upstream model_allowlist with fork snapshots; reject both v24 and v26 caches.
+const apiKeyAuthSnapshotVersion = 27
 
 type apiKeyAuthCacheConfig struct {
 	l1Size        int
