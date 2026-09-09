@@ -392,7 +392,10 @@ func (h *GatewayHandler) handleResponsesFailoverExhausted(c *gin.Context, lastEr
 		// In that case a terminal frame is still required; once any semantic or
 		// official terminal bytes exist, preserve them without appending a second
 		// generic response.failed.
-		service.MarkOpsStreamError(c, code, message, status)
+		// This is the terminal result after all account failover attempts have
+		// been exhausted.  Even though the SSE wire status is already 200, the
+		// smart-group state machine must observe it as a real upstream failure.
+		service.MarkOpsStreamFailure(c, code, "", message, status)
 		if c != nil && c.Writer != nil && (c.Writer.Size() <= 0 || gatewayStreamHasOnlyHeartbeats(c)) {
 			writeResponsesFailedSSE(c, code, "", message)
 		}

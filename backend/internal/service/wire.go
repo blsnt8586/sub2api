@@ -819,6 +819,18 @@ func ProvideAPIKeyService(
 	return svc
 }
 
+func ProvideAPIKeySmartGroupService(
+	repo APIKeySmartGroupStateRepository,
+	apiKeyService *APIKeyService,
+	accountRepo AccountRepository,
+	accountTest *AccountTestService,
+	userGroupRateRepo UserGroupRateRepository,
+) *APIKeySmartGroupService {
+	svc := NewAPIKeySmartGroupService(repo, apiKeyService, accountRepo, accountTest, userGroupRateRepo)
+	svc.Start()
+	return svc
+}
+
 // ProviderSet is the Wire provider set for all services
 var ProviderSet = wire.NewSet(
 	// Core services
@@ -826,6 +838,7 @@ var ProviderSet = wire.NewSet(
 	NewPasskeyService,
 	NewUserService,
 	ProvideAPIKeyService,
+	ProvideAPIKeySmartGroupService,
 	ProvideAPIKeyAuthCacheInvalidator,
 	ProvideAuthCacheInvalidationWorker,
 	NewGroupService,

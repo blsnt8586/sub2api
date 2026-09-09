@@ -2004,6 +2004,17 @@ func (s *OpenAIGatewayService) handleGrokAccountUpstreamError(ctx context.Contex
 	if s == nil || account == nil {
 		return
 	}
+	// An explicitly configured custom error code is an administrator-defined
+	// account-level failure. Apply it before Grok's request-scoped content,
+	// billing, and model-capacity shortcuts so the real account state and the
+	// API-key smart-group failure counter stay consistent.
+	if isConfiguredCustomAccountError(account, statusCode) {
+		MarkOpsCustomAccountError(ctx, account.ID, statusCode)
+		if s.rateLimitService != nil {
+			s.rateLimitService.HandleUpstreamError(ctx, account, statusCode, headers, responseBody)
+		}
+		return
+	}
 	if isGrokContentPolicyRejection(statusCode, responseBody) {
 		return
 	}

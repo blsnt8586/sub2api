@@ -71,7 +71,7 @@
                     <span class="text-right">{{ t('codexRadar.colCost') }}</span>
                   </div>
                   <div
-                    v-for="item in group.items.slice(0, 3)"
+                    v-for="item in group.items.slice(0, 2)"
                     :key="`${item.model}-${item.effort}`"
                     class="rec-row"
                   >
@@ -161,6 +161,7 @@ import {
   getCodexRadarSummary,
   type CodexRadarData,
   type CodexRadarIntelligencePoint,
+  type CodexRadarRecommendationItem,
   type CodexRadarRecommendationGroup,
   type CodexRadarSummary,
 } from '@/api/codexradar'
@@ -196,11 +197,20 @@ const loadFailed = ref(false)
 let refreshTimer: ReturnType<typeof setInterval> | undefined
 
 const data = computed<CodexRadarData>(() => (summary.value?.data || {}) as CodexRadarData)
-const recommendationGroups = computed<CodexRadarRecommendationGroup[]>(() => data.value.recommendations?.recommendations || [])
 /** 软件工程能力（deep-swe 基准）原始数据。 */
 const softwarePoints = computed<CodexRadarIntelligencePoint[]>(() => data.value.intelligence?.points || [])
 /** 视觉空间推理（pompeii-adjacency 基准）原始数据；旧缓存可能缺失。 */
 const visualPoints = computed<CodexRadarIntelligencePoint[]>(() => data.value.visual?.points || [])
+
+/**
+ * 原站的站长推荐不是简单展示 radar-insights 返回的 items：当某个分类不足
+ * 两条时，原站会用同一份综合 IQ 与指标数据补位到两条，再按分类规则排序。
+ * 后端保持原始数据代理，这里在展示层复刻该规则，避免源站当天样本不足时出现
+ * 空卡片/单条卡片，也避免把任何候选写回上游或本地数据库。
+ */
+const recommendationGroups = computed<CodexRadarRecommendationGroup[]>(() => (
+  supplementRecommendationGroups(data.value.recommendations, softwarePoints.value)
+))
 
 /**
  * 综合智能（复刻原站合成算法）：两基准按「模型|档位」配对，只纳入两个维度均有
@@ -251,6 +261,134 @@ const intelligenceMeta = computed(() => {
   const timestamp = typeof raw?.source_updated_at === 'string' ? raw.source_updated_at : ''
   return timestamp ? t('codexRadar.updatedAt', { time: new Date(timestamp).toLocaleString() }) : t('codexRadar.hourly')
 })
+
+/** 原站站长推荐允许参与补位的 Codex 模型。 */
+const CODEX_STATION_MODELS = new Set([
+  'gpt-5.6-sol',
+  'gpt-5.6-terra',
+  'gpt-5.6-luna',
+  'gpt-5.5',
+  'deepseek-v4-flash',
+  'deepseek-v4-pro',
+])
+
+function recommendationIdentity(item: { model?: unknown; effort?: unknown }): string {
+  return `${String(item.model || '').toLowerCase()}|${String(item.effort || '').toLowerCase()}`
+}
+
+function isEligibleRecommendationModel(item: unknown): item is CodexRadarRecommendationItem {
+  if (!item || typeof item !== 'object') return false
+  const model = String((item as { model?: unknown }).model || '').trim().toLowerCase()
+  // 原站会将 DeepSeek 留在雷达数据中，但站长推荐明确不纳入它们。
+  return CODEX_STATION_MODELS.has(model) && !model.startsWith('deepseek')
+}
+
+function normalizedRecommendationKey(key: unknown): string {
+  return String(key || '').trim().toLowerCase().replace(/_/g, '-')
+}
+
+/**
+ * 按原站分类规则生成候选排序，并在原始 items 不足两条时补位。
+ * `comprehensive_points` 是 radar-insights 接口中的综合 IQ；价格、耗时和
+ * 综合成本从已同步的 intelligence points 取值，二者按 model+effort 对齐。
+ */
+function supplementRecommendationGroups(
+  payload: CodexRadarData['recommendations'] | undefined,
+  metricsPoints: CodexRadarIntelligencePoint[],
+): CodexRadarRecommendationGroup[] {
+  const groups = Array.isArray(payload?.recommendations) ? payload.recommendations : []
+  const rawComprehensivePoints = payload?.['comprehensive_points']
+  const comprehensivePoints = Array.isArray(rawComprehensivePoints)
+    ? rawComprehensivePoints.filter(isEligibleRecommendationModel)
+    : []
+
+  const metricsByKey = new Map<string, CodexRadarIntelligencePoint>()
+  for (const point of metricsPoints) {
+    if (point && typeof point === 'object') metricsByKey.set(recommendationIdentity(point), point)
+  }
+
+  const canonicalIQ = new Map<string, number>()
+  for (const point of comprehensivePoints) {
+    const iq = finiteNumber(point.iq)
+    if (iq != null) canonicalIQ.set(recommendationIdentity(point), iq)
+  }
+
+  const candidates = comprehensivePoints.map((point) => {
+    const metrics = metricsByKey.get(recommendationIdentity(point))
+    const averageCost = finiteNumber(metrics?.average_price_usd) ?? finiteNumber(point.average_cost_usd)
+    const averageMinutes = finiteNumber(metrics?.average_minutes) ?? finiteNumber(point.average_duration_minutes)
+    const combinedCost = finiteNumber(metrics?.combined_cost_index) ?? finiteNumber(point['combined_cost_index'])
+    return {
+      ...point,
+      average_cost_usd: averageCost ?? undefined,
+      average_duration_minutes: averageMinutes ?? undefined,
+      combined_cost_index: combinedCost ?? undefined,
+    }
+  })
+
+  const rankedCandidates = (categoryKey: string) => {
+    const eligible = candidates.filter((item) => {
+      const iq = finiteNumber(item.iq)
+      if (iq == null) return false
+      if (categoryKey === 'daily-development') return iq >= 90 && finiteNumber(item.average_duration_minutes) != null
+      if (categoryKey === 'background-automation') return Math.round(iq) >= 80 && finiteNumber(item.average_cost_usd) != null
+      if (categoryKey === 'long-running-agents' || categoryKey === 'lobster-tasks') {
+        return iq >= 55 && finiteNumber(item['combined_cost_index']) != null
+      }
+      return true
+    })
+
+    if (categoryKey === 'daily-development') {
+      return eligible.sort((left, right) => (
+        (finiteNumber(left.average_duration_minutes) ?? Number.POSITIVE_INFINITY)
+        - (finiteNumber(right.average_duration_minutes) ?? Number.POSITIVE_INFINITY)
+        || (finiteNumber(left['combined_cost_index']) ?? Number.POSITIVE_INFINITY)
+          - (finiteNumber(right['combined_cost_index']) ?? Number.POSITIVE_INFINITY)
+        || (finiteNumber(right.iq) ?? 0) - (finiteNumber(left.iq) ?? 0)
+      ))
+    }
+    if (categoryKey === 'background-automation') {
+      return eligible.sort((left, right) => (
+        (finiteNumber(left.average_cost_usd) ?? Number.POSITIVE_INFINITY)
+        - (finiteNumber(right.average_cost_usd) ?? Number.POSITIVE_INFINITY)
+        || (finiteNumber(right.iq) ?? 0) - (finiteNumber(left.iq) ?? 0)
+      ))
+    }
+    if (categoryKey === 'long-running-agents' || categoryKey === 'lobster-tasks') {
+      return eligible.sort((left, right) => (
+        (finiteNumber(left['combined_cost_index']) ?? Number.POSITIVE_INFINITY)
+        - (finiteNumber(right['combined_cost_index']) ?? Number.POSITIVE_INFINITY)
+        || (finiteNumber(right.iq) ?? 0) - (finiteNumber(left.iq) ?? 0)
+      ))
+    }
+    return eligible.sort((left, right) => (
+      (finiteNumber(right.iq) ?? 0) - (finiteNumber(left.iq) ?? 0)
+      || (finiteNumber(left['combined_cost_index']) ?? Number.POSITIVE_INFINITY)
+        - (finiteNumber(right['combined_cost_index']) ?? Number.POSITIVE_INFINITY)
+    ))
+  }
+
+  return groups.map((group) => {
+    const categoryKey = normalizedRecommendationKey(group.key || group['id'])
+    const rawItemsValue = group.items || group['models'] || group['recommendations']
+    const rawItems = Array.isArray(rawItemsValue) ? rawItemsValue : []
+    const items = rawItems
+      .filter(isEligibleRecommendationModel)
+      .map((item) => {
+        const iq = canonicalIQ.get(recommendationIdentity(item))
+        return iq == null ? item : { ...item, iq }
+      })
+    const seen = new Set(items.map(recommendationIdentity))
+    for (const candidate of rankedCandidates(categoryKey)) {
+      if (items.length >= 2) break
+      const identity = recommendationIdentity(candidate)
+      if (seen.has(identity)) continue
+      items.push(candidate)
+      seen.add(identity)
+    }
+    return { ...group, items: items.slice(0, 2) }
+  })
+}
 
 /** 识别模型所属系列：gpt 系列合并为 Sol/Terra/Luna/5.5 行，其余模型各自成行。 */
 function familyInfo(model: unknown): FamilyInfo {

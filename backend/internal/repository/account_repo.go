@@ -1192,6 +1192,64 @@ func (r *accountRepository) ListByGroup(ctx context.Context, groupID int64) ([]s
 	return accounts, nil
 }
 
+// ListProbeCandidatesByGroupIDAndPlatform returns accounts that a recovery
+// probe is allowed to test. Normal scheduling deliberately excludes error and
+// unschedulable accounts; recovery probing must include probe-owned failures,
+// otherwise an account can never recover after the probe marked it unusable.
+// Explicitly disabled/deleted accounts remain excluded.
+func (r *accountRepository) ListProbeCandidatesByGroupIDAndPlatform(ctx context.Context, groupID int64, platform string) ([]service.Account, error) {
+	probeManagedError := dbpredicate.Account(func(s *entsql.Selector) {
+		s.Where(sqljson.ValueEQ(dbaccount.FieldExtra, true, sqljson.Path(service.Sub2APIProbeManagedAccountStatusExtraKey)))
+	})
+	runtimeRecoverableError := dbpredicate.Account(func(s *entsql.Selector) {
+		s.Where(sqljson.ValueEQ(dbaccount.FieldExtra, true, sqljson.Path(service.Sub2APIRuntimeRecoverableAccountErrorExtraKey)))
+	})
+	probeOwnedError := dbaccount.And(
+		dbaccount.StatusEQ(service.StatusError),
+		dbaccount.Or(
+			probeManagedError,
+			runtimeRecoverableError,
+		),
+	)
+	// An active account with schedulable=false is an explicit administrator
+	// stop and must not be re-enabled by a recovery probe. Probe-owned error
+	// rows are the only intentional exception because their status transition
+	// carries one of the ownership markers above.
+	activeSchedulable := dbaccount.And(
+		dbaccount.StatusEQ(service.StatusActive),
+		dbaccount.SchedulableEQ(true),
+	)
+	q := r.client.AccountGroup.Query().
+		Where(
+			dbaccountgroup.GroupIDEQ(groupID),
+			dbaccountgroup.HasAccountWith(
+				dbaccount.DeletedAtIsNil(),
+				dbaccount.PlatformEQ(platform),
+				dbaccount.Or(activeSchedulable, probeOwnedError),
+			),
+		).
+		Order(dbent.Asc(dbaccountgroup.FieldPriority), dbent.Asc(dbaccountgroup.FieldAccountID)).
+		WithAccount()
+	accountGroups, err := q.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	accounts := make([]*dbent.Account, 0, len(accountGroups))
+	seen := make(map[int64]struct{}, len(accountGroups))
+	for _, accountGroup := range accountGroups {
+		account := accountGroup.Edges.Account
+		if account == nil {
+			continue
+		}
+		if _, exists := seen[account.ID]; exists {
+			continue
+		}
+		seen[account.ID] = struct{}{}
+		accounts = append(accounts, account)
+	}
+	return r.accountsToService(ctx, accounts)
+}
+
 func (r *accountRepository) ListActive(ctx context.Context) ([]service.Account, error) {
 	accounts, err := r.client.Account.Query().
 		Where(dbaccount.StatusEQ(service.StatusActive)).

@@ -44,12 +44,19 @@ var (
 )
 
 const (
-	MaxAPIKeyCredentialBytes     = 128
-	defaultAuthLookupConcurrency = 64
-	defaultNegativeAuthCacheSize = 16384
-	apiKeyMaxErrorsPerHour       = 20
-	apiKeyLastUsedMinTouch       = 30 * time.Second
-	apiKeySortCurrentConcurrency = "current_concurrency"
+	MaxAPIKeyCredentialBytes                 = 128
+	defaultAuthLookupConcurrency             = 64
+	defaultNegativeAuthCacheSize             = 16384
+	apiKeyMaxErrorsPerHour                   = 20
+	apiKeyLastUsedMinTouch                   = 30 * time.Second
+	apiKeySortCurrentConcurrency             = "current_concurrency"
+	SmartGroupDefaultFailureThreshold        = 3
+	SmartGroupDefaultRecoveryIntervalSeconds = 15 * 60
+	SmartGroupMinFailureThreshold            = 1
+	SmartGroupMaxFailureThreshold            = 20
+	SmartGroupMinRecoveryIntervalSeconds     = 60
+	SmartGroupMaxRecoveryIntervalSeconds     = 24 * 60 * 60
+	SmartGroupMaxCandidates                  = 10
 	// DB 写失败后的短退避，避免请求路径持续同步重试造成写风暴与高延迟。
 	apiKeyLastUsedFailBackoff = 5 * time.Second
 )
@@ -75,6 +82,9 @@ type APIKeyUpdateFields struct {
 	RateLimitUsage bool
 	// IPRules 覆盖 ip_whitelist 与 ip_blacklist。
 	IPRules bool
+	// SmartGroupConfig updates the opt-in candidate list and policy, and resets
+	// runtime counters so stale health from the previous policy cannot trigger a switch.
+	SmartGroupConfig bool
 }
 
 // IsEmpty 报告该次 Update 是否不写任何列。
@@ -209,11 +219,15 @@ type APIKeyAuthCacheInvalidator interface {
 
 // CreateAPIKeyRequest 创建API Key请求
 type CreateAPIKeyRequest struct {
-	Name        string   `json:"name"`
-	GroupID     *int64   `json:"group_id"`
-	CustomKey   *string  `json:"custom_key"`   // 可选的自定义key
-	IPWhitelist []string `json:"ip_whitelist"` // IP 白名单
-	IPBlacklist []string `json:"ip_blacklist"` // IP 黑名单
+	Name                              string   `json:"name"`
+	GroupID                           *int64   `json:"group_id"`
+	CustomKey                         *string  `json:"custom_key"`   // 可选的自定义key
+	IPWhitelist                       []string `json:"ip_whitelist"` // IP 白名单
+	IPBlacklist                       []string `json:"ip_blacklist"` // IP 黑名单
+	SmartGroupEnabled                 bool     `json:"smart_group_enabled"`
+	SmartGroupIDs                     []int64  `json:"smart_group_ids"`
+	SmartGroupFailureThreshold        int      `json:"smart_group_failure_threshold"`
+	SmartGroupRecoveryIntervalSeconds int      `json:"smart_group_recovery_interval_seconds"`
 
 	// Quota fields
 	Quota         float64 `json:"quota"`           // Quota limit in USD (0 = unlimited)
@@ -227,11 +241,15 @@ type CreateAPIKeyRequest struct {
 
 // UpdateAPIKeyRequest 更新API Key请求
 type UpdateAPIKeyRequest struct {
-	Name        *string   `json:"name"`
-	GroupID     *int64    `json:"group_id"`
-	Status      *string   `json:"status"`
-	IPWhitelist *[]string `json:"ip_whitelist"` // IP 白名单（nil 不修改，空数组清空）
-	IPBlacklist *[]string `json:"ip_blacklist"` // IP 黑名单（nil 不修改，空数组清空）
+	Name                              *string   `json:"name"`
+	GroupID                           *int64    `json:"group_id"`
+	Status                            *string   `json:"status"`
+	IPWhitelist                       *[]string `json:"ip_whitelist"` // IP 白名单（nil 不修改，空数组清空）
+	IPBlacklist                       *[]string `json:"ip_blacklist"` // IP 黑名单（nil 不修改，空数组清空）
+	SmartGroupEnabled                 *bool     `json:"smart_group_enabled"`
+	SmartGroupIDs                     *[]int64  `json:"smart_group_ids"`
+	SmartGroupFailureThreshold        *int      `json:"smart_group_failure_threshold"`
+	SmartGroupRecoveryIntervalSeconds *int      `json:"smart_group_recovery_interval_seconds"`
 
 	// Quota fields
 	Quota           *float64   `json:"quota"`       // Quota limit in USD (nil = no change, 0 = unlimited)
@@ -262,6 +280,11 @@ func validateCreateAPIKeyRequest(req CreateAPIKeyRequest) error {
 	if req.ExpiresInDays != nil && *req.ExpiresInDays <= 0 {
 		return infraerrors.BadRequest("API_KEY_EXPIRY_INVALID", "expires_in_days must be greater than zero")
 	}
+	if req.SmartGroupEnabled {
+		if err := validateSmartGroupPolicy(req.SmartGroupFailureThreshold, req.SmartGroupRecoveryIntervalSeconds); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -272,6 +295,28 @@ func validateUpdateAPIKeyRequest(req UpdateAPIKeyRequest) error {
 				return err
 			}
 		}
+	}
+	if req.SmartGroupFailureThreshold != nil && (*req.SmartGroupFailureThreshold < SmartGroupMinFailureThreshold || *req.SmartGroupFailureThreshold > SmartGroupMaxFailureThreshold) {
+		return infraerrors.BadRequest("SMART_GROUP_FAILURE_THRESHOLD_INVALID", "smart group failure threshold must be between 1 and 20")
+	}
+	if req.SmartGroupRecoveryIntervalSeconds != nil && (*req.SmartGroupRecoveryIntervalSeconds < SmartGroupMinRecoveryIntervalSeconds || *req.SmartGroupRecoveryIntervalSeconds > SmartGroupMaxRecoveryIntervalSeconds) {
+		return infraerrors.BadRequest("SMART_GROUP_RECOVERY_INTERVAL_INVALID", "smart group recovery interval must be between 60 and 86400 seconds")
+	}
+	return nil
+}
+
+func validateSmartGroupPolicy(failureThreshold, recoveryIntervalSeconds int) error {
+	if failureThreshold == 0 {
+		failureThreshold = SmartGroupDefaultFailureThreshold
+	}
+	if recoveryIntervalSeconds == 0 {
+		recoveryIntervalSeconds = SmartGroupDefaultRecoveryIntervalSeconds
+	}
+	if failureThreshold < SmartGroupMinFailureThreshold || failureThreshold > SmartGroupMaxFailureThreshold {
+		return infraerrors.BadRequest("SMART_GROUP_FAILURE_THRESHOLD_INVALID", "smart group failure threshold must be between 1 and 20")
+	}
+	if recoveryIntervalSeconds < SmartGroupMinRecoveryIntervalSeconds || recoveryIntervalSeconds > SmartGroupMaxRecoveryIntervalSeconds {
+		return infraerrors.BadRequest("SMART_GROUP_RECOVERY_INTERVAL_INVALID", "smart group recovery interval must be between 60 and 86400 seconds")
 	}
 	return nil
 }
@@ -482,8 +527,9 @@ func (s *APIKeyService) Create(ctx context.Context, userID int64, req CreateAPIK
 		}
 	}
 
-	// 验证分组权限（如果指定了分组）
-	if req.GroupID != nil {
+	// 固定分组模式直接验证当前分组。智能分组模式由候选组归一化统一验证，
+	// 并始终选择最低实际倍率的候选组作为初始路由。
+	if !req.SmartGroupEnabled && req.GroupID != nil {
 		group, err := s.groupRepo.GetByID(ctx, *req.GroupID)
 		if err != nil {
 			return nil, fmt.Errorf("get group: %w", err)
@@ -493,6 +539,18 @@ func (s *APIKeyService) Create(ctx context.Context, userID int64, req CreateAPIK
 		if !s.canUserBindGroup(ctx, user, group) {
 			return nil, ErrGroupNotAllowed
 		}
+	}
+
+	failureThreshold, recoveryInterval := applySmartGroupDefaults(req.SmartGroupFailureThreshold, req.SmartGroupRecoveryIntervalSeconds)
+	if req.SmartGroupEnabled {
+		req.SmartGroupIDs, err = s.normalizeSmartGroupCandidates(ctx, user, req.SmartGroupIDs)
+		if err != nil {
+			return nil, err
+		}
+		selected := req.SmartGroupIDs[0]
+		req.GroupID = &selected
+	} else {
+		req.SmartGroupIDs = []int64{}
 	}
 
 	var key string
@@ -532,19 +590,24 @@ func (s *APIKeyService) Create(ctx context.Context, userID int64, req CreateAPIK
 
 	// 创建API Key记录
 	apiKey := &APIKey{
-		UserID:      userID,
-		Key:         key,
-		Name:        html.EscapeString(req.Name),
-		GroupID:     req.GroupID,
-		Status:      StatusActive,
-		IPWhitelist: req.IPWhitelist,
-		IPBlacklist: req.IPBlacklist,
-		Quota:       req.Quota,
-		QuotaUsed:   0,
-		RateLimit5h: req.RateLimit5h,
-		RateLimit1d: req.RateLimit1d,
-		RateLimit7d: req.RateLimit7d,
+		UserID:                            userID,
+		Key:                               key,
+		Name:                              html.EscapeString(req.Name),
+		GroupID:                           req.GroupID,
+		Status:                            StatusActive,
+		IPWhitelist:                       req.IPWhitelist,
+		IPBlacklist:                       req.IPBlacklist,
+		Quota:                             req.Quota,
+		QuotaUsed:                         0,
+		RateLimit5h:                       req.RateLimit5h,
+		RateLimit1d:                       req.RateLimit1d,
+		RateLimit7d:                       req.RateLimit7d,
+		SmartGroupEnabled:                 req.SmartGroupEnabled,
+		SmartGroupIDs:                     req.SmartGroupIDs,
+		SmartGroupFailureThreshold:        failureThreshold,
+		SmartGroupRecoveryIntervalSeconds: recoveryInterval,
 	}
+	resetSmartGroupRuntime(apiKey)
 
 	// Set expiration time if specified
 	if req.ExpiresInDays != nil && *req.ExpiresInDays > 0 {
@@ -790,6 +853,19 @@ func (s *APIKeyService) Update(ctx context.Context, id int64, userID int64, req 
 	// 下面若干分支会顺带把 Status 改回 active（配额扩容、清除过期等），
 	// 所以用原始值比对来决定是否写 status，而不是只看 req.Status。
 	originalStatus := apiKey.Status
+	smartConfigRequested := req.SmartGroupEnabled != nil || req.SmartGroupIDs != nil ||
+		req.SmartGroupFailureThreshold != nil || req.SmartGroupRecoveryIntervalSeconds != nil
+	nextSmartGroupEnabled := apiKey.SmartGroupEnabled
+	if req.SmartGroupEnabled != nil {
+		nextSmartGroupEnabled = *req.SmartGroupEnabled
+	}
+	var updateUser *User
+	if smartConfigRequested || req.GroupID != nil {
+		updateUser, err = s.userRepo.GetByID(ctx, userID)
+		if err != nil {
+			return nil, fmt.Errorf("get user: %w", err)
+		}
+	}
 
 	// 更新字段
 	if req.Name != nil {
@@ -797,24 +873,68 @@ func (s *APIKeyService) Update(ctx context.Context, id int64, userID int64, req 
 		fields.Name = true
 	}
 
-	if req.GroupID != nil {
+	if req.GroupID != nil && !nextSmartGroupEnabled {
 		// 验证分组权限
-		user, err := s.userRepo.GetByID(ctx, userID)
-		if err != nil {
-			return nil, fmt.Errorf("get user: %w", err)
-		}
-
 		group, err := s.groupRepo.GetByID(ctx, *req.GroupID)
 		if err != nil {
 			return nil, fmt.Errorf("get group: %w", err)
 		}
 
-		if !s.canUserBindGroup(ctx, user, group) {
+		if !s.canUserBindGroup(ctx, updateUser, group) {
 			return nil, ErrGroupNotAllowed
 		}
 
 		apiKey.GroupID = req.GroupID
 		fields.GroupID = true
+	} else if req.GroupID != nil && !smartConfigRequested && apiKey.GroupID != nil && *req.GroupID != *apiKey.GroupID {
+		return nil, ErrSmartGroupManualSwitchForbidden
+	}
+
+	if smartConfigRequested {
+		enabled := apiKey.SmartGroupEnabled
+		if req.SmartGroupEnabled != nil {
+			enabled = *req.SmartGroupEnabled
+		}
+		groupIDs := append([]int64(nil), apiKey.SmartGroupIDs...)
+		if req.SmartGroupIDs != nil {
+			groupIDs = append([]int64(nil), (*req.SmartGroupIDs)...)
+		}
+		failureThreshold := apiKey.SmartGroupFailureThreshold
+		if req.SmartGroupFailureThreshold != nil {
+			failureThreshold = *req.SmartGroupFailureThreshold
+		}
+		recoveryInterval := apiKey.SmartGroupRecoveryIntervalSeconds
+		if req.SmartGroupRecoveryIntervalSeconds != nil {
+			recoveryInterval = *req.SmartGroupRecoveryIntervalSeconds
+		}
+		failureThreshold, recoveryInterval = applySmartGroupDefaults(failureThreshold, recoveryInterval)
+		if err := validateSmartGroupPolicy(failureThreshold, recoveryInterval); err != nil {
+			return nil, err
+		}
+
+		if enabled {
+			groupIDs, err = s.normalizeSmartGroupCandidates(ctx, updateUser, groupIDs)
+			if err != nil {
+				return nil, err
+			}
+			// Updating smart-group candidates is an explicit routing choice. Make
+			// the newly sorted candidate #1 the real active route immediately;
+			// health probing is reserved for subsequent real user requests.
+			selected := groupIDs[0]
+			if apiKey.GroupID == nil || *apiKey.GroupID != selected {
+				apiKey.GroupID = &selected
+				fields.GroupID = true
+			}
+		} else {
+			groupIDs = []int64{}
+		}
+
+		apiKey.SmartGroupEnabled = enabled
+		apiKey.SmartGroupIDs = groupIDs
+		apiKey.SmartGroupFailureThreshold = failureThreshold
+		apiKey.SmartGroupRecoveryIntervalSeconds = recoveryInterval
+		resetSmartGroupRuntime(apiKey)
+		fields.SmartGroupConfig = true
 	}
 
 	if req.Status != nil {

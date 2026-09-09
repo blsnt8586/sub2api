@@ -46,6 +46,9 @@ func RegisterAdminRoutes(
 		// 账号管理
 		registerAccountRoutes(admin, h, stepUpAuth)
 
+		// 账号定时测试计划（账号管理弹窗使用）
+		registerScheduledTestRoutes(admin, h)
+
 		// Sub2API Provider 管理
 		registerSub2APIProviderRoutes(admin, h)
 
@@ -365,6 +368,7 @@ func registerAccountRoutes(admin *gin.RouterGroup, h *handler.Handlers, stepUpAu
 		accounts.POST("/upstream-billing-probe/batch", h.Admin.Account.ProbeUpstreamBillingBatch)
 		accounts.GET("/ollama-cloud-usage/settings", h.Admin.Account.GetOllamaCloudUsageSettings)
 		accounts.PUT("/ollama-cloud-usage/settings", h.Admin.Account.UpdateOllamaCloudUsageSettings)
+		accounts.GET("/:id/scheduled-test-plans", h.Admin.ScheduledTest.ListByAccount)
 		accounts.GET("/:id", h.Admin.Account.GetByID)
 		accounts.POST("", h.Admin.Account.Create)
 		accounts.POST("/:id/duplicate", h.Admin.Account.Duplicate)
@@ -426,6 +430,19 @@ func registerAccountRoutes(admin *gin.RouterGroup, h *handler.Handlers, stepUpAu
 		accounts.POST("/exchange-setup-token-code", h.Admin.OAuth.ExchangeSetupTokenCode)
 		accounts.POST("/cookie-auth", h.Admin.OAuth.CookieAuth)
 		accounts.POST("/setup-token-cookie-auth", h.Admin.OAuth.SetupTokenCookieAuth)
+	}
+}
+
+// registerScheduledTestRoutes registers CRUD and result endpoints for account
+// scheduled-test plans.  The account-scoped list endpoint lives alongside the
+// account routes above; mutations and result history use the plan ID scope.
+func registerScheduledTestRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
+	plans := admin.Group("/scheduled-test-plans")
+	{
+		plans.POST("", h.Admin.ScheduledTest.Create)
+		plans.PUT("/:id", h.Admin.ScheduledTest.Update)
+		plans.DELETE("/:id", h.Admin.ScheduledTest.Delete)
+		plans.GET("/:id/results", h.Admin.ScheduledTest.ListResults)
 	}
 }
 

@@ -47,6 +47,41 @@ func (APIKey) Fields() []ent.Field {
 		field.String("status").
 			MaxLen(20).
 			Default(domain.StatusActive),
+		field.Bool("smart_group_enabled").
+			Default(false).
+			Comment("Enable automatic failover and cost recovery across selected API key groups"),
+		field.JSON("smart_group_ids", []int64{}).
+			Default([]int64{}).
+			SchemaType(map[string]string{dialect.Postgres: "jsonb"}).
+			Comment("Candidate group IDs for API key smart routing"),
+		field.Int("smart_group_failure_threshold").
+			Default(3).
+			Comment("Consecutive upstream failures before probing a replacement group"),
+		field.Int("smart_group_recovery_interval_seconds").
+			Default(900).
+			Comment("Healthy duration before probing a cheaper group"),
+		field.Int("smart_group_consecutive_failures").
+			Default(0).
+			Comment("Runtime consecutive upstream failure counter for the active group"),
+		field.Time("smart_group_healthy_since").
+			Optional().
+			Nillable(),
+		field.Time("smart_group_last_probe_at").
+			Optional().
+			Nillable(),
+		field.Time("smart_group_last_switch_at").
+			Optional().
+			Nillable(),
+		field.Time("smart_group_probe_lease_until").
+			Optional().
+			Nillable().
+			Comment("Cross-instance lease preventing duplicate smart-group probes"),
+		field.String("smart_group_last_switch_reason").
+			MaxLen(32).
+			Default(""),
+		field.String("smart_group_last_error").
+			SchemaType(map[string]string{dialect.Postgres: "text"}).
+			Default(""),
 		field.Time("last_used_at").
 			Optional().
 			Nillable().

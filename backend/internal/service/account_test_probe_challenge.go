@@ -153,7 +153,13 @@ func createAccountTestOpenAIResponsesPayload(ctx context.Context, modelID string
 	content := input[0]["content"].([]map[string]any)
 	content[0]["text"] = prompt
 	payload["instructions"] = accountProbeChallengeSystem
-	payload["max_output_tokens"] = maxTokens
+	// [CUSTOM][TEMP-UPSTREAM-COMPAT] ChatGPT Codex 的 gpt-6-astra 当前会以
+	// `Unsupported parameter: max_output_tokens` 拒绝该字段。账号测试只发送一道
+	// 极短算术题，Astra OAuth 探测省略这个不兼容字段即可，其他平台/模型继续
+	// 保留低成本 token 上限。上游账号测试接入通用 rejected-field retry 后删除。
+	if !(isOAuth && isOpenAIGPT6AstraModel(modelID)) {
+		payload["max_output_tokens"] = maxTokens
+	}
 	return payload
 }
 

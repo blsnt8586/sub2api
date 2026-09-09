@@ -57,4 +57,6 @@ func TestGrokImagineAspectRatioFromSize(t *testing.T) {
 	require.Equal(t, "3:4", grokImagineAspectRatioFromSize("1152x1536"))
 	require.Equal(t, "4:3", grokImagineAspectRatioFromSize("1536x1152"))
 	require.Equal(t, "16:9", grokImagineAspectRatioFromSize("1792x1024"))
+	require.Equal(t, "21:9", grokImagineAspectRatioFromSize("2100x900"))
+	require.Equal(t, "5:2", grokImagineAspectRatioFromSize("2500x1000"))
 }

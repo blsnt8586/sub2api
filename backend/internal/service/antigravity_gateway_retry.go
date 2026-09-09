@@ -1207,6 +1207,13 @@ func (s *AntigravityGatewayService) handleUpstreamError(
 	if !account.ShouldHandleErrorCode(statusCode) {
 		return nil
 	}
+	if isConfiguredCustomAccountError(account, statusCode) {
+		MarkOpsCustomAccountError(ctx, account.ID, statusCode)
+		if s.rateLimitService != nil {
+			s.rateLimitService.HandleUpstreamError(ctx, account, statusCode, headers, body)
+		}
+		return nil
+	}
 	// 模型级限流处理（优先）
 	result := s.handleModelRateLimit(&handleModelRateLimitParams{
 		ctx:             ctx,

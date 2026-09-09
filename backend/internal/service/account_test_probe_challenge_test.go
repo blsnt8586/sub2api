@@ -146,6 +146,24 @@ func TestAccountProbeChallengeUsesCompactPromptAndReasoningBudget(t *testing.T) 
 	require.Equal(t, accountProbeChallengeStandardMaxTokens, accountProbeMaxTokensForModel("gemini-2.5-flash"))
 }
 
+func TestAccountProbeChallengeOmitsRejectedAstraOAuthTokenLimit(t *testing.T) {
+	t.Parallel()
+
+	oauthCtx, oauthState := fixedAccountProbeChallengeContext()
+	oauthPayload := createAccountTestOpenAIResponsesPayload(oauthCtx, "gpt-6-astra", true)
+	require.NotContains(t, oauthPayload, "max_output_tokens")
+	require.Equal(t, accountProbeChallengeSystem, oauthPayload["instructions"])
+	require.True(t, oauthState.Applied)
+
+	apiKeyCtx, _ := fixedAccountProbeChallengeContext()
+	apiKeyPayload := createAccountTestOpenAIResponsesPayload(apiKeyCtx, "gpt-6-astra", false)
+	require.Contains(t, apiKeyPayload, "max_output_tokens")
+
+	otherOAuthCtx, _ := fixedAccountProbeChallengeContext()
+	otherOAuthPayload := createAccountTestOpenAIResponsesPayload(otherOAuthCtx, "gpt-5.6-sol", true)
+	require.Contains(t, otherOAuthPayload, "max_output_tokens")
+}
+
 func TestAccountProbeChallengeDoesNotChangeOrdinaryAccountTests(t *testing.T) {
 	t.Parallel()
 

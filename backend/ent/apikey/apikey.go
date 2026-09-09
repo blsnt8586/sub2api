@@ -31,6 +31,28 @@ const (
 	FieldGroupID = "group_id"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
+	// FieldSmartGroupEnabled holds the string denoting the smart_group_enabled field in the database.
+	FieldSmartGroupEnabled = "smart_group_enabled"
+	// FieldSmartGroupIds holds the string denoting the smart_group_ids field in the database.
+	FieldSmartGroupIds = "smart_group_ids"
+	// FieldSmartGroupFailureThreshold holds the string denoting the smart_group_failure_threshold field in the database.
+	FieldSmartGroupFailureThreshold = "smart_group_failure_threshold"
+	// FieldSmartGroupRecoveryIntervalSeconds holds the string denoting the smart_group_recovery_interval_seconds field in the database.
+	FieldSmartGroupRecoveryIntervalSeconds = "smart_group_recovery_interval_seconds"
+	// FieldSmartGroupConsecutiveFailures holds the string denoting the smart_group_consecutive_failures field in the database.
+	FieldSmartGroupConsecutiveFailures = "smart_group_consecutive_failures"
+	// FieldSmartGroupHealthySince holds the string denoting the smart_group_healthy_since field in the database.
+	FieldSmartGroupHealthySince = "smart_group_healthy_since"
+	// FieldSmartGroupLastProbeAt holds the string denoting the smart_group_last_probe_at field in the database.
+	FieldSmartGroupLastProbeAt = "smart_group_last_probe_at"
+	// FieldSmartGroupLastSwitchAt holds the string denoting the smart_group_last_switch_at field in the database.
+	FieldSmartGroupLastSwitchAt = "smart_group_last_switch_at"
+	// FieldSmartGroupProbeLeaseUntil holds the string denoting the smart_group_probe_lease_until field in the database.
+	FieldSmartGroupProbeLeaseUntil = "smart_group_probe_lease_until"
+	// FieldSmartGroupLastSwitchReason holds the string denoting the smart_group_last_switch_reason field in the database.
+	FieldSmartGroupLastSwitchReason = "smart_group_last_switch_reason"
+	// FieldSmartGroupLastError holds the string denoting the smart_group_last_error field in the database.
+	FieldSmartGroupLastError = "smart_group_last_error"
 	// FieldLastUsedAt holds the string denoting the last_used_at field in the database.
 	FieldLastUsedAt = "last_used_at"
 	// FieldIPWhitelist holds the string denoting the ip_whitelist field in the database.
@@ -103,6 +125,17 @@ var Columns = []string{
 	FieldName,
 	FieldGroupID,
 	FieldStatus,
+	FieldSmartGroupEnabled,
+	FieldSmartGroupIds,
+	FieldSmartGroupFailureThreshold,
+	FieldSmartGroupRecoveryIntervalSeconds,
+	FieldSmartGroupConsecutiveFailures,
+	FieldSmartGroupHealthySince,
+	FieldSmartGroupLastProbeAt,
+	FieldSmartGroupLastSwitchAt,
+	FieldSmartGroupProbeLeaseUntil,
+	FieldSmartGroupLastSwitchReason,
+	FieldSmartGroupLastError,
 	FieldLastUsedAt,
 	FieldIPWhitelist,
 	FieldIPBlacklist,
@@ -152,6 +185,22 @@ var (
 	DefaultStatus string
 	// StatusValidator is a validator for the "status" field. It is called by the builders before save.
 	StatusValidator func(string) error
+	// DefaultSmartGroupEnabled holds the default value on creation for the "smart_group_enabled" field.
+	DefaultSmartGroupEnabled bool
+	// DefaultSmartGroupIds holds the default value on creation for the "smart_group_ids" field.
+	DefaultSmartGroupIds []int64
+	// DefaultSmartGroupFailureThreshold holds the default value on creation for the "smart_group_failure_threshold" field.
+	DefaultSmartGroupFailureThreshold int
+	// DefaultSmartGroupRecoveryIntervalSeconds holds the default value on creation for the "smart_group_recovery_interval_seconds" field.
+	DefaultSmartGroupRecoveryIntervalSeconds int
+	// DefaultSmartGroupConsecutiveFailures holds the default value on creation for the "smart_group_consecutive_failures" field.
+	DefaultSmartGroupConsecutiveFailures int
+	// DefaultSmartGroupLastSwitchReason holds the default value on creation for the "smart_group_last_switch_reason" field.
+	DefaultSmartGroupLastSwitchReason string
+	// SmartGroupLastSwitchReasonValidator is a validator for the "smart_group_last_switch_reason" field. It is called by the builders before save.
+	SmartGroupLastSwitchReasonValidator func(string) error
+	// DefaultSmartGroupLastError holds the default value on creation for the "smart_group_last_error" field.
+	DefaultSmartGroupLastError string
 	// DefaultQuota holds the default value on creation for the "quota" field.
 	DefaultQuota float64
 	// DefaultQuotaUsed holds the default value on creation for the "quota_used" field.
@@ -216,6 +265,56 @@ func ByGroupID(opts ...sql.OrderTermOption) OrderOption {
 // ByStatus orders the results by the status field.
 func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldStatus, opts...).ToFunc()
+}
+
+// BySmartGroupEnabled orders the results by the smart_group_enabled field.
+func BySmartGroupEnabled(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSmartGroupEnabled, opts...).ToFunc()
+}
+
+// BySmartGroupFailureThreshold orders the results by the smart_group_failure_threshold field.
+func BySmartGroupFailureThreshold(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSmartGroupFailureThreshold, opts...).ToFunc()
+}
+
+// BySmartGroupRecoveryIntervalSeconds orders the results by the smart_group_recovery_interval_seconds field.
+func BySmartGroupRecoveryIntervalSeconds(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSmartGroupRecoveryIntervalSeconds, opts...).ToFunc()
+}
+
+// BySmartGroupConsecutiveFailures orders the results by the smart_group_consecutive_failures field.
+func BySmartGroupConsecutiveFailures(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSmartGroupConsecutiveFailures, opts...).ToFunc()
+}
+
+// BySmartGroupHealthySince orders the results by the smart_group_healthy_since field.
+func BySmartGroupHealthySince(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSmartGroupHealthySince, opts...).ToFunc()
+}
+
+// BySmartGroupLastProbeAt orders the results by the smart_group_last_probe_at field.
+func BySmartGroupLastProbeAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSmartGroupLastProbeAt, opts...).ToFunc()
+}
+
+// BySmartGroupLastSwitchAt orders the results by the smart_group_last_switch_at field.
+func BySmartGroupLastSwitchAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSmartGroupLastSwitchAt, opts...).ToFunc()
+}
+
+// BySmartGroupProbeLeaseUntil orders the results by the smart_group_probe_lease_until field.
+func BySmartGroupProbeLeaseUntil(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSmartGroupProbeLeaseUntil, opts...).ToFunc()
+}
+
+// BySmartGroupLastSwitchReason orders the results by the smart_group_last_switch_reason field.
+func BySmartGroupLastSwitchReason(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSmartGroupLastSwitchReason, opts...).ToFunc()
+}
+
+// BySmartGroupLastError orders the results by the smart_group_last_error field.
+func BySmartGroupLastError(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSmartGroupLastError, opts...).ToFunc()
 }
 
 // ByLastUsedAt orders the results by the last_used_at field.

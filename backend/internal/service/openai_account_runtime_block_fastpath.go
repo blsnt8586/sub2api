@@ -94,6 +94,17 @@ func isOpenAIAccount(account *Account) bool {
 // handleOpenAIAccountUpstreamError expects canonicalModel to be the model used
 // for scheduling after applying account mapping exactly once.
 func (s *OpenAIGatewayService) handleOpenAIAccountUpstreamError(ctx context.Context, account *Account, statusCode int, headers http.Header, responseBody []byte, canonicalModel ...string) bool {
+	// An explicitly selected Account Management custom error code is an
+	// account-level decision. Apply it before protocol-specific shortcuts such
+	// as model-not-found or image capability handling, and carry the match to
+	// API-key smart-group observation even when the rate-limit service is absent.
+	if isConfiguredCustomAccountError(account, statusCode) {
+		MarkOpsCustomAccountError(ctx, account.ID, statusCode)
+		if s != nil && s.rateLimitService != nil {
+			return s.rateLimitService.HandleUpstreamError(ctx, account, statusCode, headers, responseBody)
+		}
+		return true
+	}
 	if account != nil && account.Platform == PlatformGrok && isGrokContentPolicyRejection(statusCode, responseBody) {
 		return false
 	}

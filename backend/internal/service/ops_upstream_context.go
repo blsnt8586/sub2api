@@ -224,6 +224,15 @@ func markOpsStreamError(c *gin.Context, streamErr OpsStreamError) {
 			errorsForRequest, _ = value.([]OpsStreamError)
 		}
 		if len(errorsForRequest) > 0 && errorsForRequest[len(errorsForRequest)-1].Turn == streamErr.Turn {
+			// A retry attempt may have emitted a non-terminal stream error before
+			// the request was finally exhausted. Upgrade that same turn when the
+			// terminal path marks it as a real failure, while preserving the first
+			// error message and upstream details.
+			if streamErr.CountTowardsSLA && !errorsForRequest[len(errorsForRequest)-1].CountTowardsSLA {
+				errorsForRequest[len(errorsForRequest)-1].CountTowardsSLA = true
+				c.Set(OpsStreamErrorsKey, errorsForRequest)
+				c.Set(OpsStreamErrorKey, errorsForRequest[len(errorsForRequest)-1])
+			}
 			return
 		}
 		errorsForRequest = append(errorsForRequest, streamErr)
@@ -234,7 +243,11 @@ func markOpsStreamError(c *gin.Context, streamErr OpsStreamError) {
 		c.Set(OpsStreamErrorKey, streamErr)
 		return
 	}
-	if _, exists := c.Get(OpsStreamErrorKey); exists {
+	if existing, exists := GetOpsStreamError(c); exists {
+		if streamErr.CountTowardsSLA && !existing.CountTowardsSLA {
+			existing.CountTowardsSLA = true
+			c.Set(OpsStreamErrorKey, existing)
+		}
 		return
 	}
 	c.Set(OpsStreamErrorKey, streamErr)

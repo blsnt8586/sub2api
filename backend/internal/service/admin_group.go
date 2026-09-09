@@ -1168,6 +1168,18 @@ func (s *adminServiceImpl) DeleteGroup(ctx context.Context, id int64) error {
 	if err != nil {
 		return err
 	}
+	// Remove the deleted group from smart API-key candidate lists. This is an
+	// optional repository extension to preserve compatibility with lightweight
+	// test/dynamic repositories; the production Ent repository implements it.
+	if cleaner, ok := s.apiKeyRepo.(interface {
+		RemoveSmartGroupCandidateByGroupID(context.Context, int64) ([]string, error)
+	}); ok {
+		cleanedKeys, cleanErr := cleaner.RemoveSmartGroupCandidateByGroupID(ctx, id)
+		if cleanErr != nil {
+			return fmt.Errorf("remove deleted group from smart api keys: %w", cleanErr)
+		}
+		groupKeys = append(groupKeys, cleanedKeys...)
+	}
 	// 注意：user_group_rate_multipliers 表通过外键 ON DELETE CASCADE 自动清理
 
 	// 事务成功后，异步失效受影响用户的订阅缓存

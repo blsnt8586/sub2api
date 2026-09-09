@@ -1,7 +1,9 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -163,6 +165,42 @@ func newUsageLogRepositoryWithSQL(client *dbent.Client, sqlq sqlExecutor) *usage
 	repo.bestEffortRecent = gocache.New(usageLogBestEffortRecentTTL, time.Minute)
 	return repo
 }
+
+// FindGrokVideoUsageAccountID restores async task affinity after the Redis
+// binding is unavailable. The lookup is scoped to the same user and API key and
+// only accepts usage rows whose concrete account is still a Grok account.
+func (r *usageLogRepository) FindGrokVideoUsageAccountID(ctx context.Context, requestID string, userID, apiKeyID, groupID int64) (int64, error) {
+	requestID = strings.TrimSpace(requestID)
+	if r == nil || r.sql == nil || requestID == "" || userID <= 0 || apiKeyID <= 0 {
+		return 0, service.ErrStickySessionNotFound
+	}
+	stableRequestID := service.StableGrokVideoBillingRequestID(requestID)
+	var accountID int64
+	err := scanSingleRow(ctx, r.sql, `
+		SELECT ul.account_id
+		FROM usage_logs ul
+		JOIN accounts a ON a.id = ul.account_id
+		WHERE ul.user_id = $1
+		  AND ul.api_key_id = $2
+		  AND (ul.request_id = $3 OR ul.request_id = $4 OR ul.upstream_request_id = $3)
+		  AND (ul.billing_mode = 'video' OR ul.video_count > 0)
+		  AND a.platform = 'grok'
+		  AND ($5 = 0 OR ul.group_id = $5)
+		ORDER BY ul.id DESC
+		LIMIT 1`, []any{userID, apiKeyID, requestID, stableRequestID, groupID}, &accountID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return 0, service.ErrStickySessionNotFound
+	}
+	if err != nil {
+		return 0, err
+	}
+	if accountID <= 0 {
+		return 0, service.ErrStickySessionNotFound
+	}
+	return accountID, nil
+}
+
+var _ service.GrokVideoUsageOwnerRepository = (*usageLogRepository)(nil)
 
 func buildWhere(conditions []string) string {
 	if len(conditions) == 0 {

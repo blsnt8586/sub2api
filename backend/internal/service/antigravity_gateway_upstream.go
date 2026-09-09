@@ -90,8 +90,9 @@ func (s *AntigravityGatewayService) ForwardUpstream(ctx context.Context, c *gin.
 	if resp.StatusCode >= 400 {
 		respBody := s.readUpstreamErrorBody(resp)
 
-		// 429 错误时标记账号限流
-		if resp.StatusCode == http.StatusTooManyRequests {
+		// Preserve the existing 429 handling and also honor an administrator's
+		// explicit account-level custom error code on this compatibility path.
+		if resp.StatusCode == http.StatusTooManyRequests || isConfiguredCustomAccountError(account, resp.StatusCode) {
 			s.handleUpstreamError(ctx, prefix, account, resp.StatusCode, resp.Header, respBody, originalModel, 0, "", false)
 		}
 

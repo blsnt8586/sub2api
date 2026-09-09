@@ -1417,6 +1417,30 @@ func openAIStreamFailureStatus(payload []byte, message string) int {
 	return http.StatusBadGateway
 }
 
+// openAIStreamDeclaredStatus extracts an explicit HTTP status carried inside a
+// response.failed/error event. The normal stream classifier intentionally
+// collapses unknown statuses to 502, but account custom-error policies may
+// deliberately select any concrete upstream status such as 400 or 404.
+func openAIStreamDeclaredStatus(payload []byte) int {
+	if len(bytes.TrimSpace(payload)) == 0 || !gjson.ValidBytes(payload) {
+		return 0
+	}
+	for _, path := range []string{
+		"response.error.status_code",
+		"response.error.status",
+		"error.status_code",
+		"error.status",
+		"status_code",
+		"status",
+	} {
+		status := int(gjson.GetBytes(payload, path).Int())
+		if status >= 100 && status <= 599 {
+			return status
+		}
+	}
+	return 0
+}
+
 // openAIStreamCredentialAuthFailure distinguishes credential failures from
 // request/content permission denials carried inside an HTTP 200 stream. Do not
 // infer credential health from free-form 403 messages: providers also use
@@ -1610,6 +1634,16 @@ func (s *OpenAIGatewayService) handleOpenAIStreamTerminalAccountSideEffects(
 	headers http.Header,
 	canonicalModel ...string,
 ) (int, bool) {
+	if account != nil {
+		if declaredStatus := openAIStreamDeclaredStatus(payload); isConfiguredCustomAccountError(account, declaredStatus) {
+			ctx := context.Background()
+			if c != nil && c.Request != nil {
+				ctx = c.Request.Context()
+			}
+			MarkOpsCustomAccountError(ctx, account.ID, declaredStatus)
+			return declaredStatus, s.handleOpenAIAccountUpstreamError(ctx, account, declaredStatus, headers, payload, firstNonEmpty(canonicalModel...))
+		}
+	}
 	statusCode := openAIStreamFailureStatus(payload, message)
 	switch statusCode {
 	case http.StatusForbidden:

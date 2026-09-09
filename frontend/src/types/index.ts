@@ -752,6 +752,16 @@ export interface ApiKey {
   name: string
   group_id: number | null
   status: 'active' | 'inactive' | 'quota_exhausted' | 'expired'
+  smart_group_enabled: boolean
+  smart_group_ids: number[]
+  smart_group_failure_threshold: number
+  smart_group_recovery_interval_seconds: number
+  smart_group_consecutive_failures: number
+  smart_group_healthy_since: string | null
+  smart_group_last_probe_at: string | null
+  smart_group_last_switch_at: string | null
+  smart_group_last_switch_reason: 'failure' | 'cost_recovery' | ''
+  smart_group_last_error: string
   ip_whitelist: string[]
   ip_blacklist: string[]
   last_used_at: string | null
@@ -777,6 +787,17 @@ export interface ApiKey {
   reset_7d_at: string | null
 }
 
+export interface SmartGroupSwitchLog {
+  id: number
+  api_key_id: number
+  from_group_id: number
+  from_group_name: string
+  to_group_id: number
+  to_group_name: string
+  reason: 'failure' | 'cost_recovery' | string
+  switched_at: string
+}
+
 export interface CreateApiKeyRequest {
   name: string
   group_id?: number | null
@@ -788,6 +809,10 @@ export interface CreateApiKeyRequest {
   rate_limit_5h?: number
   rate_limit_1d?: number
   rate_limit_7d?: number
+  smart_group_enabled?: boolean
+  smart_group_ids?: number[]
+  smart_group_failure_threshold?: number
+  smart_group_recovery_interval_seconds?: number
 }
 
 export interface UpdateApiKeyRequest {
@@ -803,6 +828,10 @@ export interface UpdateApiKeyRequest {
   rate_limit_1d?: number
   rate_limit_7d?: number
   reset_rate_limit_usage?: boolean
+  smart_group_enabled?: boolean
+  smart_group_ids?: number[]
+  smart_group_failure_threshold?: number
+  smart_group_recovery_interval_seconds?: number
 }
 
 export interface CreateGroupRequest {

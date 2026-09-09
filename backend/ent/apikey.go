@@ -36,6 +36,28 @@ type APIKey struct {
 	GroupID *int64 `json:"group_id,omitempty"`
 	// Status holds the value of the "status" field.
 	Status string `json:"status,omitempty"`
+	// Enable automatic failover and cost recovery across selected API key groups
+	SmartGroupEnabled bool `json:"smart_group_enabled,omitempty"`
+	// Candidate group IDs for API key smart routing
+	SmartGroupIds []int64 `json:"smart_group_ids,omitempty"`
+	// Consecutive upstream failures before probing a replacement group
+	SmartGroupFailureThreshold int `json:"smart_group_failure_threshold,omitempty"`
+	// Healthy duration before probing a cheaper group
+	SmartGroupRecoveryIntervalSeconds int `json:"smart_group_recovery_interval_seconds,omitempty"`
+	// Runtime consecutive upstream failure counter for the active group
+	SmartGroupConsecutiveFailures int `json:"smart_group_consecutive_failures,omitempty"`
+	// SmartGroupHealthySince holds the value of the "smart_group_healthy_since" field.
+	SmartGroupHealthySince *time.Time `json:"smart_group_healthy_since,omitempty"`
+	// SmartGroupLastProbeAt holds the value of the "smart_group_last_probe_at" field.
+	SmartGroupLastProbeAt *time.Time `json:"smart_group_last_probe_at,omitempty"`
+	// SmartGroupLastSwitchAt holds the value of the "smart_group_last_switch_at" field.
+	SmartGroupLastSwitchAt *time.Time `json:"smart_group_last_switch_at,omitempty"`
+	// Cross-instance lease preventing duplicate smart-group probes
+	SmartGroupProbeLeaseUntil *time.Time `json:"smart_group_probe_lease_until,omitempty"`
+	// SmartGroupLastSwitchReason holds the value of the "smart_group_last_switch_reason" field.
+	SmartGroupLastSwitchReason string `json:"smart_group_last_switch_reason,omitempty"`
+	// SmartGroupLastError holds the value of the "smart_group_last_error" field.
+	SmartGroupLastError string `json:"smart_group_last_error,omitempty"`
 	// Last usage time of this API key
 	LastUsedAt *time.Time `json:"last_used_at,omitempty"`
 	// Allowed IPs/CIDRs, e.g. ["192.168.1.100", "10.0.0.0/8"]
@@ -121,15 +143,17 @@ func (*APIKey) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case apikey.FieldIPWhitelist, apikey.FieldIPBlacklist:
+		case apikey.FieldSmartGroupIds, apikey.FieldIPWhitelist, apikey.FieldIPBlacklist:
 			values[i] = new([]byte)
+		case apikey.FieldSmartGroupEnabled:
+			values[i] = new(sql.NullBool)
 		case apikey.FieldQuota, apikey.FieldQuotaUsed, apikey.FieldRateLimit5h, apikey.FieldRateLimit1d, apikey.FieldRateLimit7d, apikey.FieldUsage5h, apikey.FieldUsage1d, apikey.FieldUsage7d:
 			values[i] = new(sql.NullFloat64)
-		case apikey.FieldID, apikey.FieldUserID, apikey.FieldGroupID:
+		case apikey.FieldID, apikey.FieldUserID, apikey.FieldGroupID, apikey.FieldSmartGroupFailureThreshold, apikey.FieldSmartGroupRecoveryIntervalSeconds, apikey.FieldSmartGroupConsecutiveFailures:
 			values[i] = new(sql.NullInt64)
-		case apikey.FieldKey, apikey.FieldName, apikey.FieldStatus:
+		case apikey.FieldKey, apikey.FieldName, apikey.FieldStatus, apikey.FieldSmartGroupLastSwitchReason, apikey.FieldSmartGroupLastError:
 			values[i] = new(sql.NullString)
-		case apikey.FieldCreatedAt, apikey.FieldUpdatedAt, apikey.FieldDeletedAt, apikey.FieldLastUsedAt, apikey.FieldExpiresAt, apikey.FieldWindow5hStart, apikey.FieldWindow1dStart, apikey.FieldWindow7dStart:
+		case apikey.FieldCreatedAt, apikey.FieldUpdatedAt, apikey.FieldDeletedAt, apikey.FieldSmartGroupHealthySince, apikey.FieldSmartGroupLastProbeAt, apikey.FieldSmartGroupLastSwitchAt, apikey.FieldSmartGroupProbeLeaseUntil, apikey.FieldLastUsedAt, apikey.FieldExpiresAt, apikey.FieldWindow5hStart, apikey.FieldWindow1dStart, apikey.FieldWindow7dStart:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -201,6 +225,78 @@ func (_m *APIKey) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field status", values[i])
 			} else if value.Valid {
 				_m.Status = value.String
+			}
+		case apikey.FieldSmartGroupEnabled:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field smart_group_enabled", values[i])
+			} else if value.Valid {
+				_m.SmartGroupEnabled = value.Bool
+			}
+		case apikey.FieldSmartGroupIds:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field smart_group_ids", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.SmartGroupIds); err != nil {
+					return fmt.Errorf("unmarshal field smart_group_ids: %w", err)
+				}
+			}
+		case apikey.FieldSmartGroupFailureThreshold:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field smart_group_failure_threshold", values[i])
+			} else if value.Valid {
+				_m.SmartGroupFailureThreshold = int(value.Int64)
+			}
+		case apikey.FieldSmartGroupRecoveryIntervalSeconds:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field smart_group_recovery_interval_seconds", values[i])
+			} else if value.Valid {
+				_m.SmartGroupRecoveryIntervalSeconds = int(value.Int64)
+			}
+		case apikey.FieldSmartGroupConsecutiveFailures:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field smart_group_consecutive_failures", values[i])
+			} else if value.Valid {
+				_m.SmartGroupConsecutiveFailures = int(value.Int64)
+			}
+		case apikey.FieldSmartGroupHealthySince:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field smart_group_healthy_since", values[i])
+			} else if value.Valid {
+				_m.SmartGroupHealthySince = new(time.Time)
+				*_m.SmartGroupHealthySince = value.Time
+			}
+		case apikey.FieldSmartGroupLastProbeAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field smart_group_last_probe_at", values[i])
+			} else if value.Valid {
+				_m.SmartGroupLastProbeAt = new(time.Time)
+				*_m.SmartGroupLastProbeAt = value.Time
+			}
+		case apikey.FieldSmartGroupLastSwitchAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field smart_group_last_switch_at", values[i])
+			} else if value.Valid {
+				_m.SmartGroupLastSwitchAt = new(time.Time)
+				*_m.SmartGroupLastSwitchAt = value.Time
+			}
+		case apikey.FieldSmartGroupProbeLeaseUntil:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field smart_group_probe_lease_until", values[i])
+			} else if value.Valid {
+				_m.SmartGroupProbeLeaseUntil = new(time.Time)
+				*_m.SmartGroupProbeLeaseUntil = value.Time
+			}
+		case apikey.FieldSmartGroupLastSwitchReason:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field smart_group_last_switch_reason", values[i])
+			} else if value.Valid {
+				_m.SmartGroupLastSwitchReason = value.String
+			}
+		case apikey.FieldSmartGroupLastError:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field smart_group_last_error", values[i])
+			} else if value.Valid {
+				_m.SmartGroupLastError = value.String
 			}
 		case apikey.FieldLastUsedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -379,6 +475,47 @@ func (_m *APIKey) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(_m.Status)
+	builder.WriteString(", ")
+	builder.WriteString("smart_group_enabled=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SmartGroupEnabled))
+	builder.WriteString(", ")
+	builder.WriteString("smart_group_ids=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SmartGroupIds))
+	builder.WriteString(", ")
+	builder.WriteString("smart_group_failure_threshold=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SmartGroupFailureThreshold))
+	builder.WriteString(", ")
+	builder.WriteString("smart_group_recovery_interval_seconds=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SmartGroupRecoveryIntervalSeconds))
+	builder.WriteString(", ")
+	builder.WriteString("smart_group_consecutive_failures=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SmartGroupConsecutiveFailures))
+	builder.WriteString(", ")
+	if v := _m.SmartGroupHealthySince; v != nil {
+		builder.WriteString("smart_group_healthy_since=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.SmartGroupLastProbeAt; v != nil {
+		builder.WriteString("smart_group_last_probe_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.SmartGroupLastSwitchAt; v != nil {
+		builder.WriteString("smart_group_last_switch_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.SmartGroupProbeLeaseUntil; v != nil {
+		builder.WriteString("smart_group_probe_lease_until=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("smart_group_last_switch_reason=")
+	builder.WriteString(_m.SmartGroupLastSwitchReason)
+	builder.WriteString(", ")
+	builder.WriteString("smart_group_last_error=")
+	builder.WriteString(_m.SmartGroupLastError)
 	builder.WriteString(", ")
 	if v := _m.LastUsedAt; v != nil {
 		builder.WriteString("last_used_at=")

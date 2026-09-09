@@ -172,6 +172,23 @@ func TestResponsesFailoverExhaustedAfterForwardedTerminalMarksOpsWithoutDuplicat
 	require.Equal(t, 1, strings.Count(heartbeatRecorder.Body.String(), "event: response.failed"))
 }
 
+func TestOpenAIFinalStreamingUpstreamFailureCountsTowardsSmartGroup(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	recorder := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(recorder)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/responses", nil)
+
+	(&OpenAIGatewayHandler{}).handleFailoverExhausted(c, &service.UpstreamFailoverError{
+		StatusCode:   http.StatusServiceUnavailable,
+		ResponseBody: []byte(`{"error":{"message":"upstream unavailable"}}`),
+	}, true)
+
+	streamErr, ok := service.GetOpsStreamError(c)
+	require.True(t, ok)
+	require.True(t, streamErr.CountTowardsSLA, "terminal upstream failure must be visible to smart-group observation")
+	require.Equal(t, http.StatusBadGateway, streamErr.IntendedStatus)
+}
+
 func TestGatewayChatInferenceExhaustionRestoresRetryAfter(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	recorder := httptest.NewRecorder()

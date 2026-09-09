@@ -95,6 +95,56 @@ func Status(v string) predicate.APIKey {
 	return predicate.APIKey(sql.FieldEQ(FieldStatus, v))
 }
 
+// SmartGroupEnabled applies equality check predicate on the "smart_group_enabled" field. It's identical to SmartGroupEnabledEQ.
+func SmartGroupEnabled(v bool) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldSmartGroupEnabled, v))
+}
+
+// SmartGroupFailureThreshold applies equality check predicate on the "smart_group_failure_threshold" field. It's identical to SmartGroupFailureThresholdEQ.
+func SmartGroupFailureThreshold(v int) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldSmartGroupFailureThreshold, v))
+}
+
+// SmartGroupRecoveryIntervalSeconds applies equality check predicate on the "smart_group_recovery_interval_seconds" field. It's identical to SmartGroupRecoveryIntervalSecondsEQ.
+func SmartGroupRecoveryIntervalSeconds(v int) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldSmartGroupRecoveryIntervalSeconds, v))
+}
+
+// SmartGroupConsecutiveFailures applies equality check predicate on the "smart_group_consecutive_failures" field. It's identical to SmartGroupConsecutiveFailuresEQ.
+func SmartGroupConsecutiveFailures(v int) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldSmartGroupConsecutiveFailures, v))
+}
+
+// SmartGroupHealthySince applies equality check predicate on the "smart_group_healthy_since" field. It's identical to SmartGroupHealthySinceEQ.
+func SmartGroupHealthySince(v time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldSmartGroupHealthySince, v))
+}
+
+// SmartGroupLastProbeAt applies equality check predicate on the "smart_group_last_probe_at" field. It's identical to SmartGroupLastProbeAtEQ.
+func SmartGroupLastProbeAt(v time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldSmartGroupLastProbeAt, v))
+}
+
+// SmartGroupLastSwitchAt applies equality check predicate on the "smart_group_last_switch_at" field. It's identical to SmartGroupLastSwitchAtEQ.
+func SmartGroupLastSwitchAt(v time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldSmartGroupLastSwitchAt, v))
+}
+
+// SmartGroupProbeLeaseUntil applies equality check predicate on the "smart_group_probe_lease_until" field. It's identical to SmartGroupProbeLeaseUntilEQ.
+func SmartGroupProbeLeaseUntil(v time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldSmartGroupProbeLeaseUntil, v))
+}
+
+// SmartGroupLastSwitchReason applies equality check predicate on the "smart_group_last_switch_reason" field. It's identical to SmartGroupLastSwitchReasonEQ.
+func SmartGroupLastSwitchReason(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldSmartGroupLastSwitchReason, v))
+}
+
+// SmartGroupLastError applies equality check predicate on the "smart_group_last_error" field. It's identical to SmartGroupLastErrorEQ.
+func SmartGroupLastError(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldSmartGroupLastError, v))
+}
+
 // LastUsedAt applies equality check predicate on the "last_used_at" field. It's identical to LastUsedAtEQ.
 func LastUsedAt(v time.Time) predicate.APIKey {
 	return predicate.APIKey(sql.FieldEQ(FieldLastUsedAt, v))
@@ -533,6 +583,466 @@ func StatusEqualFold(v string) predicate.APIKey {
 // StatusContainsFold applies the ContainsFold predicate on the "status" field.
 func StatusContainsFold(v string) predicate.APIKey {
 	return predicate.APIKey(sql.FieldContainsFold(FieldStatus, v))
+}
+
+// SmartGroupEnabledEQ applies the EQ predicate on the "smart_group_enabled" field.
+func SmartGroupEnabledEQ(v bool) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldSmartGroupEnabled, v))
+}
+
+// SmartGroupEnabledNEQ applies the NEQ predicate on the "smart_group_enabled" field.
+func SmartGroupEnabledNEQ(v bool) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNEQ(FieldSmartGroupEnabled, v))
+}
+
+// SmartGroupFailureThresholdEQ applies the EQ predicate on the "smart_group_failure_threshold" field.
+func SmartGroupFailureThresholdEQ(v int) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldSmartGroupFailureThreshold, v))
+}
+
+// SmartGroupFailureThresholdNEQ applies the NEQ predicate on the "smart_group_failure_threshold" field.
+func SmartGroupFailureThresholdNEQ(v int) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNEQ(FieldSmartGroupFailureThreshold, v))
+}
+
+// SmartGroupFailureThresholdIn applies the In predicate on the "smart_group_failure_threshold" field.
+func SmartGroupFailureThresholdIn(vs ...int) predicate.APIKey {
+	return predicate.APIKey(sql.FieldIn(FieldSmartGroupFailureThreshold, vs...))
+}
+
+// SmartGroupFailureThresholdNotIn applies the NotIn predicate on the "smart_group_failure_threshold" field.
+func SmartGroupFailureThresholdNotIn(vs ...int) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNotIn(FieldSmartGroupFailureThreshold, vs...))
+}
+
+// SmartGroupFailureThresholdGT applies the GT predicate on the "smart_group_failure_threshold" field.
+func SmartGroupFailureThresholdGT(v int) predicate.APIKey {
+	return predicate.APIKey(sql.FieldGT(FieldSmartGroupFailureThreshold, v))
+}
+
+// SmartGroupFailureThresholdGTE applies the GTE predicate on the "smart_group_failure_threshold" field.
+func SmartGroupFailureThresholdGTE(v int) predicate.APIKey {
+	return predicate.APIKey(sql.FieldGTE(FieldSmartGroupFailureThreshold, v))
+}
+
+// SmartGroupFailureThresholdLT applies the LT predicate on the "smart_group_failure_threshold" field.
+func SmartGroupFailureThresholdLT(v int) predicate.APIKey {
+	return predicate.APIKey(sql.FieldLT(FieldSmartGroupFailureThreshold, v))
+}
+
+// SmartGroupFailureThresholdLTE applies the LTE predicate on the "smart_group_failure_threshold" field.
+func SmartGroupFailureThresholdLTE(v int) predicate.APIKey {
+	return predicate.APIKey(sql.FieldLTE(FieldSmartGroupFailureThreshold, v))
+}
+
+// SmartGroupRecoveryIntervalSecondsEQ applies the EQ predicate on the "smart_group_recovery_interval_seconds" field.
+func SmartGroupRecoveryIntervalSecondsEQ(v int) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldSmartGroupRecoveryIntervalSeconds, v))
+}
+
+// SmartGroupRecoveryIntervalSecondsNEQ applies the NEQ predicate on the "smart_group_recovery_interval_seconds" field.
+func SmartGroupRecoveryIntervalSecondsNEQ(v int) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNEQ(FieldSmartGroupRecoveryIntervalSeconds, v))
+}
+
+// SmartGroupRecoveryIntervalSecondsIn applies the In predicate on the "smart_group_recovery_interval_seconds" field.
+func SmartGroupRecoveryIntervalSecondsIn(vs ...int) predicate.APIKey {
+	return predicate.APIKey(sql.FieldIn(FieldSmartGroupRecoveryIntervalSeconds, vs...))
+}
+
+// SmartGroupRecoveryIntervalSecondsNotIn applies the NotIn predicate on the "smart_group_recovery_interval_seconds" field.
+func SmartGroupRecoveryIntervalSecondsNotIn(vs ...int) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNotIn(FieldSmartGroupRecoveryIntervalSeconds, vs...))
+}
+
+// SmartGroupRecoveryIntervalSecondsGT applies the GT predicate on the "smart_group_recovery_interval_seconds" field.
+func SmartGroupRecoveryIntervalSecondsGT(v int) predicate.APIKey {
+	return predicate.APIKey(sql.FieldGT(FieldSmartGroupRecoveryIntervalSeconds, v))
+}
+
+// SmartGroupRecoveryIntervalSecondsGTE applies the GTE predicate on the "smart_group_recovery_interval_seconds" field.
+func SmartGroupRecoveryIntervalSecondsGTE(v int) predicate.APIKey {
+	return predicate.APIKey(sql.FieldGTE(FieldSmartGroupRecoveryIntervalSeconds, v))
+}
+
+// SmartGroupRecoveryIntervalSecondsLT applies the LT predicate on the "smart_group_recovery_interval_seconds" field.
+func SmartGroupRecoveryIntervalSecondsLT(v int) predicate.APIKey {
+	return predicate.APIKey(sql.FieldLT(FieldSmartGroupRecoveryIntervalSeconds, v))
+}
+
+// SmartGroupRecoveryIntervalSecondsLTE applies the LTE predicate on the "smart_group_recovery_interval_seconds" field.
+func SmartGroupRecoveryIntervalSecondsLTE(v int) predicate.APIKey {
+	return predicate.APIKey(sql.FieldLTE(FieldSmartGroupRecoveryIntervalSeconds, v))
+}
+
+// SmartGroupConsecutiveFailuresEQ applies the EQ predicate on the "smart_group_consecutive_failures" field.
+func SmartGroupConsecutiveFailuresEQ(v int) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldSmartGroupConsecutiveFailures, v))
+}
+
+// SmartGroupConsecutiveFailuresNEQ applies the NEQ predicate on the "smart_group_consecutive_failures" field.
+func SmartGroupConsecutiveFailuresNEQ(v int) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNEQ(FieldSmartGroupConsecutiveFailures, v))
+}
+
+// SmartGroupConsecutiveFailuresIn applies the In predicate on the "smart_group_consecutive_failures" field.
+func SmartGroupConsecutiveFailuresIn(vs ...int) predicate.APIKey {
+	return predicate.APIKey(sql.FieldIn(FieldSmartGroupConsecutiveFailures, vs...))
+}
+
+// SmartGroupConsecutiveFailuresNotIn applies the NotIn predicate on the "smart_group_consecutive_failures" field.
+func SmartGroupConsecutiveFailuresNotIn(vs ...int) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNotIn(FieldSmartGroupConsecutiveFailures, vs...))
+}
+
+// SmartGroupConsecutiveFailuresGT applies the GT predicate on the "smart_group_consecutive_failures" field.
+func SmartGroupConsecutiveFailuresGT(v int) predicate.APIKey {
+	return predicate.APIKey(sql.FieldGT(FieldSmartGroupConsecutiveFailures, v))
+}
+
+// SmartGroupConsecutiveFailuresGTE applies the GTE predicate on the "smart_group_consecutive_failures" field.
+func SmartGroupConsecutiveFailuresGTE(v int) predicate.APIKey {
+	return predicate.APIKey(sql.FieldGTE(FieldSmartGroupConsecutiveFailures, v))
+}
+
+// SmartGroupConsecutiveFailuresLT applies the LT predicate on the "smart_group_consecutive_failures" field.
+func SmartGroupConsecutiveFailuresLT(v int) predicate.APIKey {
+	return predicate.APIKey(sql.FieldLT(FieldSmartGroupConsecutiveFailures, v))
+}
+
+// SmartGroupConsecutiveFailuresLTE applies the LTE predicate on the "smart_group_consecutive_failures" field.
+func SmartGroupConsecutiveFailuresLTE(v int) predicate.APIKey {
+	return predicate.APIKey(sql.FieldLTE(FieldSmartGroupConsecutiveFailures, v))
+}
+
+// SmartGroupHealthySinceEQ applies the EQ predicate on the "smart_group_healthy_since" field.
+func SmartGroupHealthySinceEQ(v time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldSmartGroupHealthySince, v))
+}
+
+// SmartGroupHealthySinceNEQ applies the NEQ predicate on the "smart_group_healthy_since" field.
+func SmartGroupHealthySinceNEQ(v time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNEQ(FieldSmartGroupHealthySince, v))
+}
+
+// SmartGroupHealthySinceIn applies the In predicate on the "smart_group_healthy_since" field.
+func SmartGroupHealthySinceIn(vs ...time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldIn(FieldSmartGroupHealthySince, vs...))
+}
+
+// SmartGroupHealthySinceNotIn applies the NotIn predicate on the "smart_group_healthy_since" field.
+func SmartGroupHealthySinceNotIn(vs ...time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNotIn(FieldSmartGroupHealthySince, vs...))
+}
+
+// SmartGroupHealthySinceGT applies the GT predicate on the "smart_group_healthy_since" field.
+func SmartGroupHealthySinceGT(v time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldGT(FieldSmartGroupHealthySince, v))
+}
+
+// SmartGroupHealthySinceGTE applies the GTE predicate on the "smart_group_healthy_since" field.
+func SmartGroupHealthySinceGTE(v time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldGTE(FieldSmartGroupHealthySince, v))
+}
+
+// SmartGroupHealthySinceLT applies the LT predicate on the "smart_group_healthy_since" field.
+func SmartGroupHealthySinceLT(v time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldLT(FieldSmartGroupHealthySince, v))
+}
+
+// SmartGroupHealthySinceLTE applies the LTE predicate on the "smart_group_healthy_since" field.
+func SmartGroupHealthySinceLTE(v time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldLTE(FieldSmartGroupHealthySince, v))
+}
+
+// SmartGroupHealthySinceIsNil applies the IsNil predicate on the "smart_group_healthy_since" field.
+func SmartGroupHealthySinceIsNil() predicate.APIKey {
+	return predicate.APIKey(sql.FieldIsNull(FieldSmartGroupHealthySince))
+}
+
+// SmartGroupHealthySinceNotNil applies the NotNil predicate on the "smart_group_healthy_since" field.
+func SmartGroupHealthySinceNotNil() predicate.APIKey {
+	return predicate.APIKey(sql.FieldNotNull(FieldSmartGroupHealthySince))
+}
+
+// SmartGroupLastProbeAtEQ applies the EQ predicate on the "smart_group_last_probe_at" field.
+func SmartGroupLastProbeAtEQ(v time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldSmartGroupLastProbeAt, v))
+}
+
+// SmartGroupLastProbeAtNEQ applies the NEQ predicate on the "smart_group_last_probe_at" field.
+func SmartGroupLastProbeAtNEQ(v time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNEQ(FieldSmartGroupLastProbeAt, v))
+}
+
+// SmartGroupLastProbeAtIn applies the In predicate on the "smart_group_last_probe_at" field.
+func SmartGroupLastProbeAtIn(vs ...time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldIn(FieldSmartGroupLastProbeAt, vs...))
+}
+
+// SmartGroupLastProbeAtNotIn applies the NotIn predicate on the "smart_group_last_probe_at" field.
+func SmartGroupLastProbeAtNotIn(vs ...time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNotIn(FieldSmartGroupLastProbeAt, vs...))
+}
+
+// SmartGroupLastProbeAtGT applies the GT predicate on the "smart_group_last_probe_at" field.
+func SmartGroupLastProbeAtGT(v time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldGT(FieldSmartGroupLastProbeAt, v))
+}
+
+// SmartGroupLastProbeAtGTE applies the GTE predicate on the "smart_group_last_probe_at" field.
+func SmartGroupLastProbeAtGTE(v time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldGTE(FieldSmartGroupLastProbeAt, v))
+}
+
+// SmartGroupLastProbeAtLT applies the LT predicate on the "smart_group_last_probe_at" field.
+func SmartGroupLastProbeAtLT(v time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldLT(FieldSmartGroupLastProbeAt, v))
+}
+
+// SmartGroupLastProbeAtLTE applies the LTE predicate on the "smart_group_last_probe_at" field.
+func SmartGroupLastProbeAtLTE(v time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldLTE(FieldSmartGroupLastProbeAt, v))
+}
+
+// SmartGroupLastProbeAtIsNil applies the IsNil predicate on the "smart_group_last_probe_at" field.
+func SmartGroupLastProbeAtIsNil() predicate.APIKey {
+	return predicate.APIKey(sql.FieldIsNull(FieldSmartGroupLastProbeAt))
+}
+
+// SmartGroupLastProbeAtNotNil applies the NotNil predicate on the "smart_group_last_probe_at" field.
+func SmartGroupLastProbeAtNotNil() predicate.APIKey {
+	return predicate.APIKey(sql.FieldNotNull(FieldSmartGroupLastProbeAt))
+}
+
+// SmartGroupLastSwitchAtEQ applies the EQ predicate on the "smart_group_last_switch_at" field.
+func SmartGroupLastSwitchAtEQ(v time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldSmartGroupLastSwitchAt, v))
+}
+
+// SmartGroupLastSwitchAtNEQ applies the NEQ predicate on the "smart_group_last_switch_at" field.
+func SmartGroupLastSwitchAtNEQ(v time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNEQ(FieldSmartGroupLastSwitchAt, v))
+}
+
+// SmartGroupLastSwitchAtIn applies the In predicate on the "smart_group_last_switch_at" field.
+func SmartGroupLastSwitchAtIn(vs ...time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldIn(FieldSmartGroupLastSwitchAt, vs...))
+}
+
+// SmartGroupLastSwitchAtNotIn applies the NotIn predicate on the "smart_group_last_switch_at" field.
+func SmartGroupLastSwitchAtNotIn(vs ...time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNotIn(FieldSmartGroupLastSwitchAt, vs...))
+}
+
+// SmartGroupLastSwitchAtGT applies the GT predicate on the "smart_group_last_switch_at" field.
+func SmartGroupLastSwitchAtGT(v time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldGT(FieldSmartGroupLastSwitchAt, v))
+}
+
+// SmartGroupLastSwitchAtGTE applies the GTE predicate on the "smart_group_last_switch_at" field.
+func SmartGroupLastSwitchAtGTE(v time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldGTE(FieldSmartGroupLastSwitchAt, v))
+}
+
+// SmartGroupLastSwitchAtLT applies the LT predicate on the "smart_group_last_switch_at" field.
+func SmartGroupLastSwitchAtLT(v time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldLT(FieldSmartGroupLastSwitchAt, v))
+}
+
+// SmartGroupLastSwitchAtLTE applies the LTE predicate on the "smart_group_last_switch_at" field.
+func SmartGroupLastSwitchAtLTE(v time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldLTE(FieldSmartGroupLastSwitchAt, v))
+}
+
+// SmartGroupLastSwitchAtIsNil applies the IsNil predicate on the "smart_group_last_switch_at" field.
+func SmartGroupLastSwitchAtIsNil() predicate.APIKey {
+	return predicate.APIKey(sql.FieldIsNull(FieldSmartGroupLastSwitchAt))
+}
+
+// SmartGroupLastSwitchAtNotNil applies the NotNil predicate on the "smart_group_last_switch_at" field.
+func SmartGroupLastSwitchAtNotNil() predicate.APIKey {
+	return predicate.APIKey(sql.FieldNotNull(FieldSmartGroupLastSwitchAt))
+}
+
+// SmartGroupProbeLeaseUntilEQ applies the EQ predicate on the "smart_group_probe_lease_until" field.
+func SmartGroupProbeLeaseUntilEQ(v time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldSmartGroupProbeLeaseUntil, v))
+}
+
+// SmartGroupProbeLeaseUntilNEQ applies the NEQ predicate on the "smart_group_probe_lease_until" field.
+func SmartGroupProbeLeaseUntilNEQ(v time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNEQ(FieldSmartGroupProbeLeaseUntil, v))
+}
+
+// SmartGroupProbeLeaseUntilIn applies the In predicate on the "smart_group_probe_lease_until" field.
+func SmartGroupProbeLeaseUntilIn(vs ...time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldIn(FieldSmartGroupProbeLeaseUntil, vs...))
+}
+
+// SmartGroupProbeLeaseUntilNotIn applies the NotIn predicate on the "smart_group_probe_lease_until" field.
+func SmartGroupProbeLeaseUntilNotIn(vs ...time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNotIn(FieldSmartGroupProbeLeaseUntil, vs...))
+}
+
+// SmartGroupProbeLeaseUntilGT applies the GT predicate on the "smart_group_probe_lease_until" field.
+func SmartGroupProbeLeaseUntilGT(v time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldGT(FieldSmartGroupProbeLeaseUntil, v))
+}
+
+// SmartGroupProbeLeaseUntilGTE applies the GTE predicate on the "smart_group_probe_lease_until" field.
+func SmartGroupProbeLeaseUntilGTE(v time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldGTE(FieldSmartGroupProbeLeaseUntil, v))
+}
+
+// SmartGroupProbeLeaseUntilLT applies the LT predicate on the "smart_group_probe_lease_until" field.
+func SmartGroupProbeLeaseUntilLT(v time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldLT(FieldSmartGroupProbeLeaseUntil, v))
+}
+
+// SmartGroupProbeLeaseUntilLTE applies the LTE predicate on the "smart_group_probe_lease_until" field.
+func SmartGroupProbeLeaseUntilLTE(v time.Time) predicate.APIKey {
+	return predicate.APIKey(sql.FieldLTE(FieldSmartGroupProbeLeaseUntil, v))
+}
+
+// SmartGroupProbeLeaseUntilIsNil applies the IsNil predicate on the "smart_group_probe_lease_until" field.
+func SmartGroupProbeLeaseUntilIsNil() predicate.APIKey {
+	return predicate.APIKey(sql.FieldIsNull(FieldSmartGroupProbeLeaseUntil))
+}
+
+// SmartGroupProbeLeaseUntilNotNil applies the NotNil predicate on the "smart_group_probe_lease_until" field.
+func SmartGroupProbeLeaseUntilNotNil() predicate.APIKey {
+	return predicate.APIKey(sql.FieldNotNull(FieldSmartGroupProbeLeaseUntil))
+}
+
+// SmartGroupLastSwitchReasonEQ applies the EQ predicate on the "smart_group_last_switch_reason" field.
+func SmartGroupLastSwitchReasonEQ(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldSmartGroupLastSwitchReason, v))
+}
+
+// SmartGroupLastSwitchReasonNEQ applies the NEQ predicate on the "smart_group_last_switch_reason" field.
+func SmartGroupLastSwitchReasonNEQ(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNEQ(FieldSmartGroupLastSwitchReason, v))
+}
+
+// SmartGroupLastSwitchReasonIn applies the In predicate on the "smart_group_last_switch_reason" field.
+func SmartGroupLastSwitchReasonIn(vs ...string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldIn(FieldSmartGroupLastSwitchReason, vs...))
+}
+
+// SmartGroupLastSwitchReasonNotIn applies the NotIn predicate on the "smart_group_last_switch_reason" field.
+func SmartGroupLastSwitchReasonNotIn(vs ...string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNotIn(FieldSmartGroupLastSwitchReason, vs...))
+}
+
+// SmartGroupLastSwitchReasonGT applies the GT predicate on the "smart_group_last_switch_reason" field.
+func SmartGroupLastSwitchReasonGT(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldGT(FieldSmartGroupLastSwitchReason, v))
+}
+
+// SmartGroupLastSwitchReasonGTE applies the GTE predicate on the "smart_group_last_switch_reason" field.
+func SmartGroupLastSwitchReasonGTE(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldGTE(FieldSmartGroupLastSwitchReason, v))
+}
+
+// SmartGroupLastSwitchReasonLT applies the LT predicate on the "smart_group_last_switch_reason" field.
+func SmartGroupLastSwitchReasonLT(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldLT(FieldSmartGroupLastSwitchReason, v))
+}
+
+// SmartGroupLastSwitchReasonLTE applies the LTE predicate on the "smart_group_last_switch_reason" field.
+func SmartGroupLastSwitchReasonLTE(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldLTE(FieldSmartGroupLastSwitchReason, v))
+}
+
+// SmartGroupLastSwitchReasonContains applies the Contains predicate on the "smart_group_last_switch_reason" field.
+func SmartGroupLastSwitchReasonContains(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldContains(FieldSmartGroupLastSwitchReason, v))
+}
+
+// SmartGroupLastSwitchReasonHasPrefix applies the HasPrefix predicate on the "smart_group_last_switch_reason" field.
+func SmartGroupLastSwitchReasonHasPrefix(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldHasPrefix(FieldSmartGroupLastSwitchReason, v))
+}
+
+// SmartGroupLastSwitchReasonHasSuffix applies the HasSuffix predicate on the "smart_group_last_switch_reason" field.
+func SmartGroupLastSwitchReasonHasSuffix(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldHasSuffix(FieldSmartGroupLastSwitchReason, v))
+}
+
+// SmartGroupLastSwitchReasonEqualFold applies the EqualFold predicate on the "smart_group_last_switch_reason" field.
+func SmartGroupLastSwitchReasonEqualFold(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEqualFold(FieldSmartGroupLastSwitchReason, v))
+}
+
+// SmartGroupLastSwitchReasonContainsFold applies the ContainsFold predicate on the "smart_group_last_switch_reason" field.
+func SmartGroupLastSwitchReasonContainsFold(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldContainsFold(FieldSmartGroupLastSwitchReason, v))
+}
+
+// SmartGroupLastErrorEQ applies the EQ predicate on the "smart_group_last_error" field.
+func SmartGroupLastErrorEQ(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEQ(FieldSmartGroupLastError, v))
+}
+
+// SmartGroupLastErrorNEQ applies the NEQ predicate on the "smart_group_last_error" field.
+func SmartGroupLastErrorNEQ(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNEQ(FieldSmartGroupLastError, v))
+}
+
+// SmartGroupLastErrorIn applies the In predicate on the "smart_group_last_error" field.
+func SmartGroupLastErrorIn(vs ...string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldIn(FieldSmartGroupLastError, vs...))
+}
+
+// SmartGroupLastErrorNotIn applies the NotIn predicate on the "smart_group_last_error" field.
+func SmartGroupLastErrorNotIn(vs ...string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldNotIn(FieldSmartGroupLastError, vs...))
+}
+
+// SmartGroupLastErrorGT applies the GT predicate on the "smart_group_last_error" field.
+func SmartGroupLastErrorGT(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldGT(FieldSmartGroupLastError, v))
+}
+
+// SmartGroupLastErrorGTE applies the GTE predicate on the "smart_group_last_error" field.
+func SmartGroupLastErrorGTE(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldGTE(FieldSmartGroupLastError, v))
+}
+
+// SmartGroupLastErrorLT applies the LT predicate on the "smart_group_last_error" field.
+func SmartGroupLastErrorLT(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldLT(FieldSmartGroupLastError, v))
+}
+
+// SmartGroupLastErrorLTE applies the LTE predicate on the "smart_group_last_error" field.
+func SmartGroupLastErrorLTE(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldLTE(FieldSmartGroupLastError, v))
+}
+
+// SmartGroupLastErrorContains applies the Contains predicate on the "smart_group_last_error" field.
+func SmartGroupLastErrorContains(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldContains(FieldSmartGroupLastError, v))
+}
+
+// SmartGroupLastErrorHasPrefix applies the HasPrefix predicate on the "smart_group_last_error" field.
+func SmartGroupLastErrorHasPrefix(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldHasPrefix(FieldSmartGroupLastError, v))
+}
+
+// SmartGroupLastErrorHasSuffix applies the HasSuffix predicate on the "smart_group_last_error" field.
+func SmartGroupLastErrorHasSuffix(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldHasSuffix(FieldSmartGroupLastError, v))
+}
+
+// SmartGroupLastErrorEqualFold applies the EqualFold predicate on the "smart_group_last_error" field.
+func SmartGroupLastErrorEqualFold(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldEqualFold(FieldSmartGroupLastError, v))
+}
+
+// SmartGroupLastErrorContainsFold applies the ContainsFold predicate on the "smart_group_last_error" field.
+func SmartGroupLastErrorContainsFold(v string) predicate.APIKey {
+	return predicate.APIKey(sql.FieldContainsFold(FieldSmartGroupLastError, v))
 }
 
 // LastUsedAtEQ applies the EQ predicate on the "last_used_at" field.

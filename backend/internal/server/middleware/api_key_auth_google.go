@@ -22,7 +22,11 @@ func APIKeyAuthGoogle(apiKeyService *service.APIKeyService, cfg *config.Config) 
 // {"error":{"code":401,"message":"...","status":"UNAUTHENTICATED"}}
 //
 // It is intended for Gemini native endpoints (/v1beta) to match Gemini SDK expectations.
-func APIKeyAuthWithSubscriptionGoogle(apiKeyService *service.APIKeyService, subscriptionService *service.SubscriptionService, cfg *config.Config) gin.HandlerFunc {
+func APIKeyAuthWithSubscriptionGoogle(apiKeyService *service.APIKeyService, subscriptionService *service.SubscriptionService, cfg *config.Config, smartGroupServices ...*service.APIKeySmartGroupService) gin.HandlerFunc {
+	var smartGroupService *service.APIKeySmartGroupService
+	if len(smartGroupServices) > 0 {
+		smartGroupService = smartGroupServices[0]
+	}
 	return func(c *gin.Context) {
 		if rejectInvalidAuthAbuse(c, apiKeyService) {
 			abortWithGoogleError(c, 429, "Too many invalid authentication attempts; retry later")
@@ -113,6 +117,7 @@ func APIKeyAuthWithSubscriptionGoogle(apiKeyService *service.APIKeyService, subs
 			abortWithGoogleError(c, 401, "User account is not active")
 			return
 		}
+		c.Request = c.Request.WithContext(service.WithOpsCustomAccountErrorTracking(c.Request.Context()))
 		if code, message, ok := validateAPIKeyGroupAvailable(apiKey); !ok {
 			service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonAPIKeyGroupUnavailable)
 			if code == "GROUP_DELETED" {
@@ -121,6 +126,9 @@ func APIKeyAuthWithSubscriptionGoogle(apiKeyService *service.APIKeyService, subs
 				MarkIngressRejected(c, IngressRejectGroupDisabled)
 			}
 			abortWithGoogleError(c, 403, message)
+			if smartGroupService != nil {
+				smartGroupService.SubmitOutcome(apiKey, false, "active group is unavailable")
+			}
 			return
 		}
 		// 专属分组授权校验：用户对该专属分组的授权被撤销后应拒绝（与主中间件一致，防止越权）。
@@ -128,6 +136,9 @@ func APIKeyAuthWithSubscriptionGoogle(apiKeyService *service.APIKeyService, subs
 			service.MarkOpsClientBusinessLimited(c, service.OpsClientBusinessLimitedReasonAPIKeyGroupUnavailable)
 			MarkIngressRejected(c, IngressRejectGroupNotAllowed)
 			abortWithGoogleError(c, 403, "API Key 所属专属分组不再允许当前用户使用")
+			if smartGroupService != nil {
+				smartGroupService.SubmitOutcome(apiKey, false, "active group is no longer allowed")
+			}
 			return
 		}
 
@@ -142,6 +153,7 @@ func APIKeyAuthWithSubscriptionGoogle(apiKeyService *service.APIKeyService, subs
 			setGroupContext(c, apiKey.Group)
 			_ = apiKeyService.TouchLastUsed(c.Request.Context(), apiKey.ID)
 			c.Next()
+			observeAPIKeySmartGroupOutcome(c, apiKey, smartGroupService)
 			return
 		}
 
@@ -215,6 +227,7 @@ func APIKeyAuthWithSubscriptionGoogle(apiKeyService *service.APIKeyService, subs
 		setGroupContext(c, apiKey.Group)
 		_ = apiKeyService.TouchLastUsed(c.Request.Context(), apiKey.ID)
 		c.Next()
+		observeAPIKeySmartGroupOutcome(c, apiKey, smartGroupService)
 	}
 }
 

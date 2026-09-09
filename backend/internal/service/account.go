@@ -6,6 +6,7 @@ import (
 	"errors"
 	"hash/fnv"
 	"log/slog"
+	"math"
 	"net/url"
 	"reflect"
 	"sort"
@@ -1248,16 +1249,68 @@ func (a *Account) GetCustomErrorCodes() []int {
 	if !ok || raw == nil {
 		return nil
 	}
-	if arr, ok := raw.([]any); ok {
-		result := make([]int, 0, len(arr))
-		for _, v := range arr {
-			if f, ok := v.(float64); ok {
-				result = append(result, int(f))
+	arr, ok := raw.([]any)
+	if !ok {
+		switch values := raw.(type) {
+		case []int:
+			arr = make([]any, len(values))
+			for i, value := range values {
+				arr[i] = value
 			}
+		case []int64:
+			arr = make([]any, len(values))
+			for i, value := range values {
+				arr[i] = value
+			}
+		case []float64:
+			arr = make([]any, len(values))
+			for i, value := range values {
+				arr[i] = value
+			}
+		default:
+			return nil
 		}
-		return result
 	}
-	return nil
+	result := make([]int, 0, len(arr))
+	seen := make(map[int]struct{}, len(arr))
+	for _, value := range arr {
+		var code int
+		switch number := value.(type) {
+		case float64:
+			if math.IsNaN(number) || math.IsInf(number, 0) || math.Trunc(number) != number {
+				continue
+			}
+			code = int(number)
+		case int:
+			code = number
+		case int64:
+			code = int(number)
+		case json.Number:
+			parsed, err := number.Int64()
+			if err != nil {
+				continue
+			}
+			code = int(parsed)
+		case string:
+			parsed, err := strconv.Atoi(strings.TrimSpace(number))
+			if err != nil {
+				continue
+			}
+			code = parsed
+		default:
+			continue
+		}
+		if code < 100 || code > 599 {
+			continue
+		}
+		if _, exists := seen[code]; exists {
+			continue
+		}
+		seen[code] = struct{}{}
+		result = append(result, code)
+	}
+	sort.Ints(result)
+	return result
 }
 
 func (a *Account) ShouldHandleErrorCode(statusCode int) bool {

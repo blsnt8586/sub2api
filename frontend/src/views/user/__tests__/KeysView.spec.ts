@@ -7,6 +7,9 @@ import KeysView from '../KeysView.vue'
 
 const {
   listKeys,
+  listSmartGroupLogs,
+  createKey,
+  updateKey,
   getPublicSettings,
   getDashboardApiKeysUsage,
   getAvailableGroups,
@@ -18,6 +21,9 @@ const {
   nextStep,
 } = vi.hoisted(() => ({
   listKeys: vi.fn(),
+  listSmartGroupLogs: vi.fn(),
+  createKey: vi.fn(),
+  updateKey: vi.fn(),
   getPublicSettings: vi.fn(),
   getDashboardApiKeysUsage: vi.fn(),
   getAvailableGroups: vi.fn(),
@@ -42,6 +48,41 @@ const messages: Record<string, string> = {
   'keys.created': 'Created',
   'keys.expiresAt': 'Expires',
   'keys.group': 'Group',
+  'keys.smartGroupColumn': 'Routing group',
+	'keys.routingModeLabel': 'Routing mode',
+	'keys.fixedRouting': 'Fixed group',
+	'keys.fixedGroupBadge': 'Fixed',
+	'keys.smartRouting': 'Smart groups',
+	'keys.fixedGroupDescription': 'Always use one group.',
+	'keys.smartGroupDescription': 'Automatically fail over.',
+	'keys.platformLabel': 'Platform',
+	'keys.selectPlatform': 'Select a platform',
+	'keys.selectPlatformFirst': 'Select a platform first',
+	'keys.platformGroupCount': '{count} groups',
+	'keys.smartGroupCandidates': 'Candidate groups',
+	'keys.smartGroupCandidatesHint': 'Sorted by rate.',
+	'keys.smartGroupFailureThreshold': 'Consecutive failures',
+	'keys.smartGroupFailureThresholdHint': 'Failure threshold.',
+	'keys.smartGroupRecoveryMinutes': 'Stable check interval',
+	'keys.smartGroupRecoveryMinutesHint': 'Recovery interval.',
+	'keys.smartGroupSettings': 'Smart group settings',
+	'keys.smartGroupBadge': 'Smart {count}',
+	'keys.smartGroupRuntimeHint': 'Smart runtime',
+	'keys.smartGroupPrimaryLabel': 'Preferred route',
+	'keys.smartGroupPrimaryHint': 'No. 1 is sorted by effective multiplier.',
+	'keys.smartGroupSwitchLogs': 'Smart switch logs',
+	'keys.smartGroupSwitchLogsShort': 'Switch logs',
+	'keys.smartGroupSwitchLogsDescription': 'Only recent logs.',
+	'keys.smartGroupNoSwitchLogs': 'No smart switches.',
+	'keys.smartGroupSwitchLogsLoadFailed': 'Failed to load logs',
+	'keys.smartGroupSwitchReasonFailure': 'Failure failover',
+	'keys.smartGroupSwitchReasonCostRecovery': 'Cost recovery',
+	'keys.keyUpdatedSuccess': 'API key updated successfully',
+	'keys.clickToManageSmartGroup': 'Manage smart groups',
+	'keys.clickToChangeGroup': 'Change group',
+	'keys.fixedGroupLabel': 'Fixed group',
+	'keys.selectGroup': 'Select a group',
+	'keys.searchGroup': 'Search groups',
   'keys.id': 'ID',
   'keys.currentConcurrency': 'Current Concurrency',
   'keys.lastUsedAt': 'Last Used',
@@ -58,8 +99,9 @@ const messages: Record<string, string> = {
 vi.mock('@/api', () => ({
   keysAPI: {
     list: listKeys,
-    create: vi.fn(),
-    update: vi.fn(),
+    listSmartGroupLogs,
+    create: createKey,
+    update: updateKey,
     delete: vi.fn(),
     toggleStatus: vi.fn(),
   },
@@ -100,7 +142,13 @@ vi.mock('vue-i18n', async () => {
   return {
     ...actual,
     useI18n: () => ({
-      t: (key: string) => messages[key] ?? key,
+      t: (key: string, params?: Record<string, unknown>) => {
+        let message = messages[key] ?? key
+        for (const [name, value] of Object.entries(params ?? {})) {
+          message = message.replace(`{${name}}`, String(value))
+        }
+        return message
+      },
     }),
   }
 })
@@ -110,8 +158,18 @@ const createApiKey = (): ApiKey => ({
   user_id: 1,
   key: 'sk-test-key',
   name: 'test-key',
-  group_id: null,
-  status: 'active',
+	  group_id: null,
+	  status: 'active',
+	  smart_group_enabled: false,
+	  smart_group_ids: [],
+	  smart_group_failure_threshold: 3,
+	  smart_group_recovery_interval_seconds: 900,
+	  smart_group_consecutive_failures: 0,
+	  smart_group_healthy_since: null,
+	  smart_group_last_probe_at: null,
+	  smart_group_last_switch_at: null,
+	  smart_group_last_switch_reason: '',
+	  smart_group_last_error: '',
   ip_whitelist: [],
   ip_blacklist: [],
   last_used_at: null,
@@ -170,9 +228,13 @@ const DataTableStub = {
           <slot name="cell-id" :value="row.id" :row="row" />
         </div>
         <slot name="cell-name" :value="row.name" :row="row" />
+		<div data-test="group-cell">
+		  <slot name="cell-group" :value="row.group" :row="row" />
+		</div>
         <div data-test="current-concurrency">
           <slot name="cell-current_concurrency" :value="row.current_concurrency" :row="row" />
         </div>
+        <slot name="cell-actions" :row="row" />
         <div
           v-if="columns.some((col) => col.key === 'last_used_ip')"
           data-test="last-used-ip"
@@ -215,6 +277,18 @@ const IconStub = {
   template: '<span data-test="icon">{{ name }}</span>',
 }
 
+const BaseDialogStub = {
+	name: 'BaseDialog',
+	props: ['show', 'title'],
+	template: `
+		<section v-if="show" data-test="base-dialog">
+			<h2>{{ title }}</h2>
+			<slot />
+			<slot name="footer" />
+		</section>
+	`,
+}
+
 const mountView = async () => {
   const wrapper = mount(KeysView, {
     global: {
@@ -223,7 +297,7 @@ const mountView = async () => {
         TablePageLayout: TablePageLayoutStub,
         DataTable: DataTableStub,
         Pagination: PaginationStub,
-        BaseDialog: true,
+		BaseDialog: BaseDialogStub,
         ConfirmDialog: true,
         EmptyState: true,
         Select: SelectStub,
@@ -261,6 +335,9 @@ describe('user KeysView column settings', () => {
     localStorage.clear()
 
     listKeys.mockReset()
+    listSmartGroupLogs.mockReset()
+    createKey.mockReset()
+    updateKey.mockReset()
     getPublicSettings.mockReset()
     getDashboardApiKeysUsage.mockReset()
     getAvailableGroups.mockReset()
@@ -278,10 +355,13 @@ describe('user KeysView column settings', () => {
       page_size: 20,
       pages: 1,
     })
+	createKey.mockResolvedValue(createApiKey())
+	updateKey.mockResolvedValue(createApiKey())
     getPublicSettings.mockResolvedValue({})
     getDashboardApiKeysUsage.mockResolvedValue({ stats: {} })
     getAvailableGroups.mockResolvedValue([])
     getUserGroupRates.mockResolvedValue({})
+    listSmartGroupLogs.mockResolvedValue([])
     isCurrentStep.mockReturnValue(false)
   })
 
@@ -438,4 +518,235 @@ describe('user KeysView column settings', () => {
       expect.objectContaining({ signal: expect.any(AbortSignal) })
     )
   })
+
+	it('selects one platform first and creates smart routing from its lowest-rate group', async () => {
+		getAvailableGroups.mockResolvedValue([
+			{
+				id: 11,
+				name: 'OpenAI standard',
+				description: null,
+				platform: 'openai',
+				rate_multiplier: 0.2,
+				peak_rate_enabled: false,
+				peak_start: '',
+				peak_end: '',
+				peak_rate_multiplier: 1,
+				subscription_type: 'standard',
+			},
+			{
+				id: 12,
+				name: 'OpenAI economy',
+				description: null,
+				platform: 'openai',
+				rate_multiplier: 0.1,
+				peak_rate_enabled: false,
+				peak_start: '',
+				peak_end: '',
+				peak_rate_multiplier: 1,
+				subscription_type: 'standard',
+			},
+			{
+				id: 21,
+				name: 'Claude',
+				description: null,
+				platform: 'anthropic',
+				rate_multiplier: 0.05,
+				peak_rate_enabled: false,
+				peak_start: '',
+				peak_end: '',
+				peak_rate_multiplier: 1,
+				subscription_type: 'standard',
+			},
+		])
+		const wrapper = await mountView()
+
+		await wrapper.get('button[data-tour="keys-create-btn"]').trigger('click')
+		await nextTick()
+		const platformSelect = wrapper.findAllComponents({ name: 'Select' }).find(
+			(component) => component.attributes('data-test') === 'key-platform-select'
+		)
+		expect(platformSelect).toBeTruthy()
+		await platformSelect!.vm.$emit('update:modelValue', 'openai')
+		await nextTick()
+
+		const fixedGroupSelect = wrapper.findAllComponents({ name: 'Select' }).find(
+			(component) => component.attributes('data-test') === 'key-group-select'
+		)
+		expect(fixedGroupSelect?.props('options').map((option: { value: number }) => option.value)).toEqual([11, 12])
+
+		await wrapper.get('[data-test="routing-mode-smart"]').trigger('click')
+		await nextTick()
+		const candidates = wrapper.findAll('[data-test="smart-group-option"]')
+		expect(candidates).toHaveLength(2)
+		expect(candidates.map((candidate) => candidate.attributes('data-platform'))).toEqual(['openai', 'openai'])
+
+		await wrapper.get('[data-test="smart-group-option"][data-group-id="11"]').trigger('click')
+		await wrapper.get('[data-test="smart-group-option"][data-group-id="12"]').trigger('click')
+		await wrapper.get('input[required]').setValue('smart-openai')
+		await wrapper.get('form#key-form').trigger('submit')
+		await flushPromises()
+
+		expect(createKey).toHaveBeenCalledTimes(1)
+		const createArgs = createKey.mock.calls[0]
+		expect(createArgs[1]).toBe(12)
+		expect(createArgs[8]).toEqual({
+			smart_group_enabled: true,
+			smart_group_ids: [12, 11],
+			smart_group_failure_threshold: 3,
+			smart_group_recovery_interval_seconds: 900,
+		})
+	})
+
+	it('opens smart routing settings instead of the fixed-group dropdown', async () => {
+		const openAIGroup = {
+			id: 11,
+			name: 'OpenAI standard',
+			description: null,
+			platform: 'openai',
+			rate_multiplier: 0.2,
+			peak_rate_enabled: false,
+			peak_start: '',
+			peak_end: '',
+			peak_rate_multiplier: 1,
+			subscription_type: 'standard',
+		}
+		getAvailableGroups.mockResolvedValue([
+			openAIGroup,
+			{ ...openAIGroup, id: 12, name: 'OpenAI economy', rate_multiplier: 0.1 },
+		])
+		listKeys.mockResolvedValue({
+			items: [{
+				...createApiKey(),
+				group_id: 11,
+				group: openAIGroup,
+				smart_group_enabled: true,
+				smart_group_ids: [12, 11],
+			}],
+			total: 1,
+			page: 1,
+			page_size: 20,
+			pages: 1,
+		})
+		const wrapper = await mountView()
+
+		await wrapper.get('[data-test="key-group-control"][data-routing-mode="smart"]').trigger('click')
+		await nextTick()
+
+		expect(wrapper.get('[data-test="base-dialog"] h2').text()).toBe('Smart group settings')
+		expect(wrapper.find('[data-test="fixed-group-quick-option"]').exists()).toBe(false)
+		expect(wrapper.find('input[required]').exists()).toBe(false)
+		expect(wrapper.findAll('[data-test="smart-group-option"]')).toHaveLength(2)
+		expect(wrapper.get('[data-test="smart-group-option"][data-group-id="11"]').attributes('disabled')).toBeUndefined()
+		expect(wrapper.get('[data-test="smart-group-primary-label"]').text()).toContain('Preferred route')
+	})
+
+	it('updates the active route to the new cheapest candidate without probing', async () => {
+		const openAIGroup = {
+			id: 11,
+			name: 'OpenAI standard',
+			description: null,
+			platform: 'openai',
+			rate_multiplier: 0.2,
+			peak_rate_enabled: false,
+			peak_start: '',
+			peak_end: '',
+			peak_rate_multiplier: 1,
+			subscription_type: 'standard',
+		}
+		getAvailableGroups.mockResolvedValue([
+			openAIGroup,
+			{ ...openAIGroup, id: 12, name: 'OpenAI economy', rate_multiplier: 0.1 },
+			{ ...openAIGroup, id: 13, name: 'OpenAI premium', rate_multiplier: 0.3 },
+		])
+		listKeys.mockResolvedValue({
+			items: [{
+				...createApiKey(),
+				group_id: 11,
+				group: openAIGroup,
+				smart_group_enabled: true,
+				smart_group_ids: [11, 13],
+			}],
+			total: 1,
+			page: 1,
+			page_size: 20,
+			pages: 1,
+		})
+		listKeys.mockResolvedValueOnce({
+			items: [{
+				...createApiKey(),
+				group_id: 11,
+				group: openAIGroup,
+				smart_group_enabled: true,
+				smart_group_ids: [11, 13],
+			}],
+			total: 1,
+			page: 1,
+			page_size: 20,
+			pages: 1,
+		})
+		listKeys.mockResolvedValue({
+			items: [{
+				...createApiKey(),
+				group_id: 12,
+				group: { ...openAIGroup, id: 12, name: 'OpenAI economy', rate_multiplier: 0.1 },
+				smart_group_enabled: true,
+				smart_group_ids: [12, 11, 13],
+			}],
+			total: 1,
+			page: 1,
+			page_size: 20,
+			pages: 1,
+		})
+		const wrapper = await mountView()
+
+		await wrapper.get('[data-test="key-group-control"][data-routing-mode="smart"]').trigger('click')
+		await nextTick()
+		await wrapper.get('[data-test="smart-group-option"][data-group-id="12"]').trigger('click')
+		await wrapper.get('form#key-form').trigger('submit')
+		await flushPromises()
+
+		expect(updateKey).toHaveBeenCalledWith(1, expect.objectContaining({
+			group_id: 12,
+			smart_group_enabled: true,
+			smart_group_ids: [12, 11, 13],
+		}))
+		expect(showSuccess).toHaveBeenCalledWith('API key updated successfully')
+		expect(wrapper.findComponent({ name: 'GroupBadge' }).attributes('name')).toBe('OpenAI economy')
+	})
+
+	it('shows smart switch logs only for smart keys and loads the recent history', async () => {
+		listKeys.mockResolvedValue({
+			items: [{
+				...createApiKey(),
+				smart_group_enabled: true,
+				smart_group_ids: [12, 11],
+			}],
+			total: 1,
+			page: 1,
+			page_size: 20,
+			pages: 1,
+		})
+		listSmartGroupLogs.mockResolvedValue([
+			{
+				id: 9,
+				api_key_id: 1,
+				from_group_id: 11,
+				from_group_name: 'OpenAI standard',
+				to_group_id: 12,
+				to_group_name: 'OpenAI economy',
+				reason: 'failure',
+				switched_at: '2026-09-05T12:00:00Z',
+			},
+		])
+		const wrapper = await mountView()
+
+		expect(wrapper.get('[data-test="smart-group-logs-button"]').text()).toContain('Switch logs')
+		await wrapper.get('[data-test="smart-group-logs-button"]').trigger('click')
+		await flushPromises()
+
+		expect(listSmartGroupLogs).toHaveBeenCalledWith(1)
+		expect(wrapper.get('[data-test="base-dialog"]').text()).toContain('OpenAI standard')
+		expect(wrapper.get('[data-test="base-dialog"]').text()).toContain('OpenAI economy')
+		expect(wrapper.get('[data-test="base-dialog"]').text()).toContain('Failure failover')
+	})
 })

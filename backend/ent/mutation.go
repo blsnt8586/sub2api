@@ -122,51 +122,66 @@ const (
 // APIKeyMutation represents an operation that mutates the APIKey nodes in the graph.
 type APIKeyMutation struct {
 	config
-	op                 Op
-	typ                string
-	id                 *int64
-	created_at         *time.Time
-	updated_at         *time.Time
-	deleted_at         *time.Time
-	key                *string
-	name               *string
-	status             *string
-	last_used_at       *time.Time
-	ip_whitelist       *[]string
-	appendip_whitelist []string
-	ip_blacklist       *[]string
-	appendip_blacklist []string
-	quota              *float64
-	addquota           *float64
-	quota_used         *float64
-	addquota_used      *float64
-	expires_at         *time.Time
-	rate_limit_5h      *float64
-	addrate_limit_5h   *float64
-	rate_limit_1d      *float64
-	addrate_limit_1d   *float64
-	rate_limit_7d      *float64
-	addrate_limit_7d   *float64
-	usage_5h           *float64
-	addusage_5h        *float64
-	usage_1d           *float64
-	addusage_1d        *float64
-	usage_7d           *float64
-	addusage_7d        *float64
-	window_5h_start    *time.Time
-	window_1d_start    *time.Time
-	window_7d_start    *time.Time
-	clearedFields      map[string]struct{}
-	user               *int64
-	cleareduser        bool
-	group              *int64
-	clearedgroup       bool
-	usage_logs         map[int64]struct{}
-	removedusage_logs  map[int64]struct{}
-	clearedusage_logs  bool
-	done               bool
-	oldValue           func(context.Context) (*APIKey, error)
-	predicates         []predicate.APIKey
+	op                                       Op
+	typ                                      string
+	id                                       *int64
+	created_at                               *time.Time
+	updated_at                               *time.Time
+	deleted_at                               *time.Time
+	key                                      *string
+	name                                     *string
+	status                                   *string
+	smart_group_enabled                      *bool
+	smart_group_ids                          *[]int64
+	appendsmart_group_ids                    []int64
+	smart_group_failure_threshold            *int
+	addsmart_group_failure_threshold         *int
+	smart_group_recovery_interval_seconds    *int
+	addsmart_group_recovery_interval_seconds *int
+	smart_group_consecutive_failures         *int
+	addsmart_group_consecutive_failures      *int
+	smart_group_healthy_since                *time.Time
+	smart_group_last_probe_at                *time.Time
+	smart_group_last_switch_at               *time.Time
+	smart_group_probe_lease_until            *time.Time
+	smart_group_last_switch_reason           *string
+	smart_group_last_error                   *string
+	last_used_at                             *time.Time
+	ip_whitelist                             *[]string
+	appendip_whitelist                       []string
+	ip_blacklist                             *[]string
+	appendip_blacklist                       []string
+	quota                                    *float64
+	addquota                                 *float64
+	quota_used                               *float64
+	addquota_used                            *float64
+	expires_at                               *time.Time
+	rate_limit_5h                            *float64
+	addrate_limit_5h                         *float64
+	rate_limit_1d                            *float64
+	addrate_limit_1d                         *float64
+	rate_limit_7d                            *float64
+	addrate_limit_7d                         *float64
+	usage_5h                                 *float64
+	addusage_5h                              *float64
+	usage_1d                                 *float64
+	addusage_1d                              *float64
+	usage_7d                                 *float64
+	addusage_7d                              *float64
+	window_5h_start                          *time.Time
+	window_1d_start                          *time.Time
+	window_7d_start                          *time.Time
+	clearedFields                            map[string]struct{}
+	user                                     *int64
+	cleareduser                              bool
+	group                                    *int64
+	clearedgroup                             bool
+	usage_logs                               map[int64]struct{}
+	removedusage_logs                        map[int64]struct{}
+	clearedusage_logs                        bool
+	done                                     bool
+	oldValue                                 func(context.Context) (*APIKey, error)
+	predicates                               []predicate.APIKey
 }
 
 var _ ent.Mutation = (*APIKeyMutation)(nil)
@@ -579,6 +594,529 @@ func (m *APIKeyMutation) OldStatus(ctx context.Context) (v string, err error) {
 // ResetStatus resets all changes to the "status" field.
 func (m *APIKeyMutation) ResetStatus() {
 	m.status = nil
+}
+
+// SetSmartGroupEnabled sets the "smart_group_enabled" field.
+func (m *APIKeyMutation) SetSmartGroupEnabled(b bool) {
+	m.smart_group_enabled = &b
+}
+
+// SmartGroupEnabled returns the value of the "smart_group_enabled" field in the mutation.
+func (m *APIKeyMutation) SmartGroupEnabled() (r bool, exists bool) {
+	v := m.smart_group_enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSmartGroupEnabled returns the old "smart_group_enabled" field's value of the APIKey entity.
+// If the APIKey object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *APIKeyMutation) OldSmartGroupEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSmartGroupEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSmartGroupEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSmartGroupEnabled: %w", err)
+	}
+	return oldValue.SmartGroupEnabled, nil
+}
+
+// ResetSmartGroupEnabled resets all changes to the "smart_group_enabled" field.
+func (m *APIKeyMutation) ResetSmartGroupEnabled() {
+	m.smart_group_enabled = nil
+}
+
+// SetSmartGroupIds sets the "smart_group_ids" field.
+func (m *APIKeyMutation) SetSmartGroupIds(i []int64) {
+	m.smart_group_ids = &i
+	m.appendsmart_group_ids = nil
+}
+
+// SmartGroupIds returns the value of the "smart_group_ids" field in the mutation.
+func (m *APIKeyMutation) SmartGroupIds() (r []int64, exists bool) {
+	v := m.smart_group_ids
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSmartGroupIds returns the old "smart_group_ids" field's value of the APIKey entity.
+// If the APIKey object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *APIKeyMutation) OldSmartGroupIds(ctx context.Context) (v []int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSmartGroupIds is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSmartGroupIds requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSmartGroupIds: %w", err)
+	}
+	return oldValue.SmartGroupIds, nil
+}
+
+// AppendSmartGroupIds adds i to the "smart_group_ids" field.
+func (m *APIKeyMutation) AppendSmartGroupIds(i []int64) {
+	m.appendsmart_group_ids = append(m.appendsmart_group_ids, i...)
+}
+
+// AppendedSmartGroupIds returns the list of values that were appended to the "smart_group_ids" field in this mutation.
+func (m *APIKeyMutation) AppendedSmartGroupIds() ([]int64, bool) {
+	if len(m.appendsmart_group_ids) == 0 {
+		return nil, false
+	}
+	return m.appendsmart_group_ids, true
+}
+
+// ResetSmartGroupIds resets all changes to the "smart_group_ids" field.
+func (m *APIKeyMutation) ResetSmartGroupIds() {
+	m.smart_group_ids = nil
+	m.appendsmart_group_ids = nil
+}
+
+// SetSmartGroupFailureThreshold sets the "smart_group_failure_threshold" field.
+func (m *APIKeyMutation) SetSmartGroupFailureThreshold(i int) {
+	m.smart_group_failure_threshold = &i
+	m.addsmart_group_failure_threshold = nil
+}
+
+// SmartGroupFailureThreshold returns the value of the "smart_group_failure_threshold" field in the mutation.
+func (m *APIKeyMutation) SmartGroupFailureThreshold() (r int, exists bool) {
+	v := m.smart_group_failure_threshold
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSmartGroupFailureThreshold returns the old "smart_group_failure_threshold" field's value of the APIKey entity.
+// If the APIKey object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *APIKeyMutation) OldSmartGroupFailureThreshold(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSmartGroupFailureThreshold is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSmartGroupFailureThreshold requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSmartGroupFailureThreshold: %w", err)
+	}
+	return oldValue.SmartGroupFailureThreshold, nil
+}
+
+// AddSmartGroupFailureThreshold adds i to the "smart_group_failure_threshold" field.
+func (m *APIKeyMutation) AddSmartGroupFailureThreshold(i int) {
+	if m.addsmart_group_failure_threshold != nil {
+		*m.addsmart_group_failure_threshold += i
+	} else {
+		m.addsmart_group_failure_threshold = &i
+	}
+}
+
+// AddedSmartGroupFailureThreshold returns the value that was added to the "smart_group_failure_threshold" field in this mutation.
+func (m *APIKeyMutation) AddedSmartGroupFailureThreshold() (r int, exists bool) {
+	v := m.addsmart_group_failure_threshold
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSmartGroupFailureThreshold resets all changes to the "smart_group_failure_threshold" field.
+func (m *APIKeyMutation) ResetSmartGroupFailureThreshold() {
+	m.smart_group_failure_threshold = nil
+	m.addsmart_group_failure_threshold = nil
+}
+
+// SetSmartGroupRecoveryIntervalSeconds sets the "smart_group_recovery_interval_seconds" field.
+func (m *APIKeyMutation) SetSmartGroupRecoveryIntervalSeconds(i int) {
+	m.smart_group_recovery_interval_seconds = &i
+	m.addsmart_group_recovery_interval_seconds = nil
+}
+
+// SmartGroupRecoveryIntervalSeconds returns the value of the "smart_group_recovery_interval_seconds" field in the mutation.
+func (m *APIKeyMutation) SmartGroupRecoveryIntervalSeconds() (r int, exists bool) {
+	v := m.smart_group_recovery_interval_seconds
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSmartGroupRecoveryIntervalSeconds returns the old "smart_group_recovery_interval_seconds" field's value of the APIKey entity.
+// If the APIKey object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *APIKeyMutation) OldSmartGroupRecoveryIntervalSeconds(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSmartGroupRecoveryIntervalSeconds is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSmartGroupRecoveryIntervalSeconds requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSmartGroupRecoveryIntervalSeconds: %w", err)
+	}
+	return oldValue.SmartGroupRecoveryIntervalSeconds, nil
+}
+
+// AddSmartGroupRecoveryIntervalSeconds adds i to the "smart_group_recovery_interval_seconds" field.
+func (m *APIKeyMutation) AddSmartGroupRecoveryIntervalSeconds(i int) {
+	if m.addsmart_group_recovery_interval_seconds != nil {
+		*m.addsmart_group_recovery_interval_seconds += i
+	} else {
+		m.addsmart_group_recovery_interval_seconds = &i
+	}
+}
+
+// AddedSmartGroupRecoveryIntervalSeconds returns the value that was added to the "smart_group_recovery_interval_seconds" field in this mutation.
+func (m *APIKeyMutation) AddedSmartGroupRecoveryIntervalSeconds() (r int, exists bool) {
+	v := m.addsmart_group_recovery_interval_seconds
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSmartGroupRecoveryIntervalSeconds resets all changes to the "smart_group_recovery_interval_seconds" field.
+func (m *APIKeyMutation) ResetSmartGroupRecoveryIntervalSeconds() {
+	m.smart_group_recovery_interval_seconds = nil
+	m.addsmart_group_recovery_interval_seconds = nil
+}
+
+// SetSmartGroupConsecutiveFailures sets the "smart_group_consecutive_failures" field.
+func (m *APIKeyMutation) SetSmartGroupConsecutiveFailures(i int) {
+	m.smart_group_consecutive_failures = &i
+	m.addsmart_group_consecutive_failures = nil
+}
+
+// SmartGroupConsecutiveFailures returns the value of the "smart_group_consecutive_failures" field in the mutation.
+func (m *APIKeyMutation) SmartGroupConsecutiveFailures() (r int, exists bool) {
+	v := m.smart_group_consecutive_failures
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSmartGroupConsecutiveFailures returns the old "smart_group_consecutive_failures" field's value of the APIKey entity.
+// If the APIKey object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *APIKeyMutation) OldSmartGroupConsecutiveFailures(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSmartGroupConsecutiveFailures is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSmartGroupConsecutiveFailures requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSmartGroupConsecutiveFailures: %w", err)
+	}
+	return oldValue.SmartGroupConsecutiveFailures, nil
+}
+
+// AddSmartGroupConsecutiveFailures adds i to the "smart_group_consecutive_failures" field.
+func (m *APIKeyMutation) AddSmartGroupConsecutiveFailures(i int) {
+	if m.addsmart_group_consecutive_failures != nil {
+		*m.addsmart_group_consecutive_failures += i
+	} else {
+		m.addsmart_group_consecutive_failures = &i
+	}
+}
+
+// AddedSmartGroupConsecutiveFailures returns the value that was added to the "smart_group_consecutive_failures" field in this mutation.
+func (m *APIKeyMutation) AddedSmartGroupConsecutiveFailures() (r int, exists bool) {
+	v := m.addsmart_group_consecutive_failures
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSmartGroupConsecutiveFailures resets all changes to the "smart_group_consecutive_failures" field.
+func (m *APIKeyMutation) ResetSmartGroupConsecutiveFailures() {
+	m.smart_group_consecutive_failures = nil
+	m.addsmart_group_consecutive_failures = nil
+}
+
+// SetSmartGroupHealthySince sets the "smart_group_healthy_since" field.
+func (m *APIKeyMutation) SetSmartGroupHealthySince(t time.Time) {
+	m.smart_group_healthy_since = &t
+}
+
+// SmartGroupHealthySince returns the value of the "smart_group_healthy_since" field in the mutation.
+func (m *APIKeyMutation) SmartGroupHealthySince() (r time.Time, exists bool) {
+	v := m.smart_group_healthy_since
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSmartGroupHealthySince returns the old "smart_group_healthy_since" field's value of the APIKey entity.
+// If the APIKey object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *APIKeyMutation) OldSmartGroupHealthySince(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSmartGroupHealthySince is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSmartGroupHealthySince requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSmartGroupHealthySince: %w", err)
+	}
+	return oldValue.SmartGroupHealthySince, nil
+}
+
+// ClearSmartGroupHealthySince clears the value of the "smart_group_healthy_since" field.
+func (m *APIKeyMutation) ClearSmartGroupHealthySince() {
+	m.smart_group_healthy_since = nil
+	m.clearedFields[apikey.FieldSmartGroupHealthySince] = struct{}{}
+}
+
+// SmartGroupHealthySinceCleared returns if the "smart_group_healthy_since" field was cleared in this mutation.
+func (m *APIKeyMutation) SmartGroupHealthySinceCleared() bool {
+	_, ok := m.clearedFields[apikey.FieldSmartGroupHealthySince]
+	return ok
+}
+
+// ResetSmartGroupHealthySince resets all changes to the "smart_group_healthy_since" field.
+func (m *APIKeyMutation) ResetSmartGroupHealthySince() {
+	m.smart_group_healthy_since = nil
+	delete(m.clearedFields, apikey.FieldSmartGroupHealthySince)
+}
+
+// SetSmartGroupLastProbeAt sets the "smart_group_last_probe_at" field.
+func (m *APIKeyMutation) SetSmartGroupLastProbeAt(t time.Time) {
+	m.smart_group_last_probe_at = &t
+}
+
+// SmartGroupLastProbeAt returns the value of the "smart_group_last_probe_at" field in the mutation.
+func (m *APIKeyMutation) SmartGroupLastProbeAt() (r time.Time, exists bool) {
+	v := m.smart_group_last_probe_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSmartGroupLastProbeAt returns the old "smart_group_last_probe_at" field's value of the APIKey entity.
+// If the APIKey object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *APIKeyMutation) OldSmartGroupLastProbeAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSmartGroupLastProbeAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSmartGroupLastProbeAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSmartGroupLastProbeAt: %w", err)
+	}
+	return oldValue.SmartGroupLastProbeAt, nil
+}
+
+// ClearSmartGroupLastProbeAt clears the value of the "smart_group_last_probe_at" field.
+func (m *APIKeyMutation) ClearSmartGroupLastProbeAt() {
+	m.smart_group_last_probe_at = nil
+	m.clearedFields[apikey.FieldSmartGroupLastProbeAt] = struct{}{}
+}
+
+// SmartGroupLastProbeAtCleared returns if the "smart_group_last_probe_at" field was cleared in this mutation.
+func (m *APIKeyMutation) SmartGroupLastProbeAtCleared() bool {
+	_, ok := m.clearedFields[apikey.FieldSmartGroupLastProbeAt]
+	return ok
+}
+
+// ResetSmartGroupLastProbeAt resets all changes to the "smart_group_last_probe_at" field.
+func (m *APIKeyMutation) ResetSmartGroupLastProbeAt() {
+	m.smart_group_last_probe_at = nil
+	delete(m.clearedFields, apikey.FieldSmartGroupLastProbeAt)
+}
+
+// SetSmartGroupLastSwitchAt sets the "smart_group_last_switch_at" field.
+func (m *APIKeyMutation) SetSmartGroupLastSwitchAt(t time.Time) {
+	m.smart_group_last_switch_at = &t
+}
+
+// SmartGroupLastSwitchAt returns the value of the "smart_group_last_switch_at" field in the mutation.
+func (m *APIKeyMutation) SmartGroupLastSwitchAt() (r time.Time, exists bool) {
+	v := m.smart_group_last_switch_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSmartGroupLastSwitchAt returns the old "smart_group_last_switch_at" field's value of the APIKey entity.
+// If the APIKey object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *APIKeyMutation) OldSmartGroupLastSwitchAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSmartGroupLastSwitchAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSmartGroupLastSwitchAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSmartGroupLastSwitchAt: %w", err)
+	}
+	return oldValue.SmartGroupLastSwitchAt, nil
+}
+
+// ClearSmartGroupLastSwitchAt clears the value of the "smart_group_last_switch_at" field.
+func (m *APIKeyMutation) ClearSmartGroupLastSwitchAt() {
+	m.smart_group_last_switch_at = nil
+	m.clearedFields[apikey.FieldSmartGroupLastSwitchAt] = struct{}{}
+}
+
+// SmartGroupLastSwitchAtCleared returns if the "smart_group_last_switch_at" field was cleared in this mutation.
+func (m *APIKeyMutation) SmartGroupLastSwitchAtCleared() bool {
+	_, ok := m.clearedFields[apikey.FieldSmartGroupLastSwitchAt]
+	return ok
+}
+
+// ResetSmartGroupLastSwitchAt resets all changes to the "smart_group_last_switch_at" field.
+func (m *APIKeyMutation) ResetSmartGroupLastSwitchAt() {
+	m.smart_group_last_switch_at = nil
+	delete(m.clearedFields, apikey.FieldSmartGroupLastSwitchAt)
+}
+
+// SetSmartGroupProbeLeaseUntil sets the "smart_group_probe_lease_until" field.
+func (m *APIKeyMutation) SetSmartGroupProbeLeaseUntil(t time.Time) {
+	m.smart_group_probe_lease_until = &t
+}
+
+// SmartGroupProbeLeaseUntil returns the value of the "smart_group_probe_lease_until" field in the mutation.
+func (m *APIKeyMutation) SmartGroupProbeLeaseUntil() (r time.Time, exists bool) {
+	v := m.smart_group_probe_lease_until
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSmartGroupProbeLeaseUntil returns the old "smart_group_probe_lease_until" field's value of the APIKey entity.
+// If the APIKey object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *APIKeyMutation) OldSmartGroupProbeLeaseUntil(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSmartGroupProbeLeaseUntil is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSmartGroupProbeLeaseUntil requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSmartGroupProbeLeaseUntil: %w", err)
+	}
+	return oldValue.SmartGroupProbeLeaseUntil, nil
+}
+
+// ClearSmartGroupProbeLeaseUntil clears the value of the "smart_group_probe_lease_until" field.
+func (m *APIKeyMutation) ClearSmartGroupProbeLeaseUntil() {
+	m.smart_group_probe_lease_until = nil
+	m.clearedFields[apikey.FieldSmartGroupProbeLeaseUntil] = struct{}{}
+}
+
+// SmartGroupProbeLeaseUntilCleared returns if the "smart_group_probe_lease_until" field was cleared in this mutation.
+func (m *APIKeyMutation) SmartGroupProbeLeaseUntilCleared() bool {
+	_, ok := m.clearedFields[apikey.FieldSmartGroupProbeLeaseUntil]
+	return ok
+}
+
+// ResetSmartGroupProbeLeaseUntil resets all changes to the "smart_group_probe_lease_until" field.
+func (m *APIKeyMutation) ResetSmartGroupProbeLeaseUntil() {
+	m.smart_group_probe_lease_until = nil
+	delete(m.clearedFields, apikey.FieldSmartGroupProbeLeaseUntil)
+}
+
+// SetSmartGroupLastSwitchReason sets the "smart_group_last_switch_reason" field.
+func (m *APIKeyMutation) SetSmartGroupLastSwitchReason(s string) {
+	m.smart_group_last_switch_reason = &s
+}
+
+// SmartGroupLastSwitchReason returns the value of the "smart_group_last_switch_reason" field in the mutation.
+func (m *APIKeyMutation) SmartGroupLastSwitchReason() (r string, exists bool) {
+	v := m.smart_group_last_switch_reason
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSmartGroupLastSwitchReason returns the old "smart_group_last_switch_reason" field's value of the APIKey entity.
+// If the APIKey object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *APIKeyMutation) OldSmartGroupLastSwitchReason(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSmartGroupLastSwitchReason is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSmartGroupLastSwitchReason requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSmartGroupLastSwitchReason: %w", err)
+	}
+	return oldValue.SmartGroupLastSwitchReason, nil
+}
+
+// ResetSmartGroupLastSwitchReason resets all changes to the "smart_group_last_switch_reason" field.
+func (m *APIKeyMutation) ResetSmartGroupLastSwitchReason() {
+	m.smart_group_last_switch_reason = nil
+}
+
+// SetSmartGroupLastError sets the "smart_group_last_error" field.
+func (m *APIKeyMutation) SetSmartGroupLastError(s string) {
+	m.smart_group_last_error = &s
+}
+
+// SmartGroupLastError returns the value of the "smart_group_last_error" field in the mutation.
+func (m *APIKeyMutation) SmartGroupLastError() (r string, exists bool) {
+	v := m.smart_group_last_error
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSmartGroupLastError returns the old "smart_group_last_error" field's value of the APIKey entity.
+// If the APIKey object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *APIKeyMutation) OldSmartGroupLastError(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSmartGroupLastError is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSmartGroupLastError requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSmartGroupLastError: %w", err)
+	}
+	return oldValue.SmartGroupLastError, nil
+}
+
+// ResetSmartGroupLastError resets all changes to the "smart_group_last_error" field.
+func (m *APIKeyMutation) ResetSmartGroupLastError() {
+	m.smart_group_last_error = nil
 }
 
 // SetLastUsedAt sets the "last_used_at" field.
@@ -1546,7 +2084,7 @@ func (m *APIKeyMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *APIKeyMutation) Fields() []string {
-	fields := make([]string, 0, 23)
+	fields := make([]string, 0, 34)
 	if m.created_at != nil {
 		fields = append(fields, apikey.FieldCreatedAt)
 	}
@@ -1570,6 +2108,39 @@ func (m *APIKeyMutation) Fields() []string {
 	}
 	if m.status != nil {
 		fields = append(fields, apikey.FieldStatus)
+	}
+	if m.smart_group_enabled != nil {
+		fields = append(fields, apikey.FieldSmartGroupEnabled)
+	}
+	if m.smart_group_ids != nil {
+		fields = append(fields, apikey.FieldSmartGroupIds)
+	}
+	if m.smart_group_failure_threshold != nil {
+		fields = append(fields, apikey.FieldSmartGroupFailureThreshold)
+	}
+	if m.smart_group_recovery_interval_seconds != nil {
+		fields = append(fields, apikey.FieldSmartGroupRecoveryIntervalSeconds)
+	}
+	if m.smart_group_consecutive_failures != nil {
+		fields = append(fields, apikey.FieldSmartGroupConsecutiveFailures)
+	}
+	if m.smart_group_healthy_since != nil {
+		fields = append(fields, apikey.FieldSmartGroupHealthySince)
+	}
+	if m.smart_group_last_probe_at != nil {
+		fields = append(fields, apikey.FieldSmartGroupLastProbeAt)
+	}
+	if m.smart_group_last_switch_at != nil {
+		fields = append(fields, apikey.FieldSmartGroupLastSwitchAt)
+	}
+	if m.smart_group_probe_lease_until != nil {
+		fields = append(fields, apikey.FieldSmartGroupProbeLeaseUntil)
+	}
+	if m.smart_group_last_switch_reason != nil {
+		fields = append(fields, apikey.FieldSmartGroupLastSwitchReason)
+	}
+	if m.smart_group_last_error != nil {
+		fields = append(fields, apikey.FieldSmartGroupLastError)
 	}
 	if m.last_used_at != nil {
 		fields = append(fields, apikey.FieldLastUsedAt)
@@ -1640,6 +2211,28 @@ func (m *APIKeyMutation) Field(name string) (ent.Value, bool) {
 		return m.GroupID()
 	case apikey.FieldStatus:
 		return m.Status()
+	case apikey.FieldSmartGroupEnabled:
+		return m.SmartGroupEnabled()
+	case apikey.FieldSmartGroupIds:
+		return m.SmartGroupIds()
+	case apikey.FieldSmartGroupFailureThreshold:
+		return m.SmartGroupFailureThreshold()
+	case apikey.FieldSmartGroupRecoveryIntervalSeconds:
+		return m.SmartGroupRecoveryIntervalSeconds()
+	case apikey.FieldSmartGroupConsecutiveFailures:
+		return m.SmartGroupConsecutiveFailures()
+	case apikey.FieldSmartGroupHealthySince:
+		return m.SmartGroupHealthySince()
+	case apikey.FieldSmartGroupLastProbeAt:
+		return m.SmartGroupLastProbeAt()
+	case apikey.FieldSmartGroupLastSwitchAt:
+		return m.SmartGroupLastSwitchAt()
+	case apikey.FieldSmartGroupProbeLeaseUntil:
+		return m.SmartGroupProbeLeaseUntil()
+	case apikey.FieldSmartGroupLastSwitchReason:
+		return m.SmartGroupLastSwitchReason()
+	case apikey.FieldSmartGroupLastError:
+		return m.SmartGroupLastError()
 	case apikey.FieldLastUsedAt:
 		return m.LastUsedAt()
 	case apikey.FieldIPWhitelist:
@@ -1695,6 +2288,28 @@ func (m *APIKeyMutation) OldField(ctx context.Context, name string) (ent.Value, 
 		return m.OldGroupID(ctx)
 	case apikey.FieldStatus:
 		return m.OldStatus(ctx)
+	case apikey.FieldSmartGroupEnabled:
+		return m.OldSmartGroupEnabled(ctx)
+	case apikey.FieldSmartGroupIds:
+		return m.OldSmartGroupIds(ctx)
+	case apikey.FieldSmartGroupFailureThreshold:
+		return m.OldSmartGroupFailureThreshold(ctx)
+	case apikey.FieldSmartGroupRecoveryIntervalSeconds:
+		return m.OldSmartGroupRecoveryIntervalSeconds(ctx)
+	case apikey.FieldSmartGroupConsecutiveFailures:
+		return m.OldSmartGroupConsecutiveFailures(ctx)
+	case apikey.FieldSmartGroupHealthySince:
+		return m.OldSmartGroupHealthySince(ctx)
+	case apikey.FieldSmartGroupLastProbeAt:
+		return m.OldSmartGroupLastProbeAt(ctx)
+	case apikey.FieldSmartGroupLastSwitchAt:
+		return m.OldSmartGroupLastSwitchAt(ctx)
+	case apikey.FieldSmartGroupProbeLeaseUntil:
+		return m.OldSmartGroupProbeLeaseUntil(ctx)
+	case apikey.FieldSmartGroupLastSwitchReason:
+		return m.OldSmartGroupLastSwitchReason(ctx)
+	case apikey.FieldSmartGroupLastError:
+		return m.OldSmartGroupLastError(ctx)
 	case apikey.FieldLastUsedAt:
 		return m.OldLastUsedAt(ctx)
 	case apikey.FieldIPWhitelist:
@@ -1789,6 +2404,83 @@ func (m *APIKeyMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetStatus(v)
+		return nil
+	case apikey.FieldSmartGroupEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSmartGroupEnabled(v)
+		return nil
+	case apikey.FieldSmartGroupIds:
+		v, ok := value.([]int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSmartGroupIds(v)
+		return nil
+	case apikey.FieldSmartGroupFailureThreshold:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSmartGroupFailureThreshold(v)
+		return nil
+	case apikey.FieldSmartGroupRecoveryIntervalSeconds:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSmartGroupRecoveryIntervalSeconds(v)
+		return nil
+	case apikey.FieldSmartGroupConsecutiveFailures:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSmartGroupConsecutiveFailures(v)
+		return nil
+	case apikey.FieldSmartGroupHealthySince:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSmartGroupHealthySince(v)
+		return nil
+	case apikey.FieldSmartGroupLastProbeAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSmartGroupLastProbeAt(v)
+		return nil
+	case apikey.FieldSmartGroupLastSwitchAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSmartGroupLastSwitchAt(v)
+		return nil
+	case apikey.FieldSmartGroupProbeLeaseUntil:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSmartGroupProbeLeaseUntil(v)
+		return nil
+	case apikey.FieldSmartGroupLastSwitchReason:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSmartGroupLastSwitchReason(v)
+		return nil
+	case apikey.FieldSmartGroupLastError:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSmartGroupLastError(v)
 		return nil
 	case apikey.FieldLastUsedAt:
 		v, ok := value.(time.Time)
@@ -1903,6 +2595,15 @@ func (m *APIKeyMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *APIKeyMutation) AddedFields() []string {
 	var fields []string
+	if m.addsmart_group_failure_threshold != nil {
+		fields = append(fields, apikey.FieldSmartGroupFailureThreshold)
+	}
+	if m.addsmart_group_recovery_interval_seconds != nil {
+		fields = append(fields, apikey.FieldSmartGroupRecoveryIntervalSeconds)
+	}
+	if m.addsmart_group_consecutive_failures != nil {
+		fields = append(fields, apikey.FieldSmartGroupConsecutiveFailures)
+	}
 	if m.addquota != nil {
 		fields = append(fields, apikey.FieldQuota)
 	}
@@ -1935,6 +2636,12 @@ func (m *APIKeyMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *APIKeyMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
+	case apikey.FieldSmartGroupFailureThreshold:
+		return m.AddedSmartGroupFailureThreshold()
+	case apikey.FieldSmartGroupRecoveryIntervalSeconds:
+		return m.AddedSmartGroupRecoveryIntervalSeconds()
+	case apikey.FieldSmartGroupConsecutiveFailures:
+		return m.AddedSmartGroupConsecutiveFailures()
 	case apikey.FieldQuota:
 		return m.AddedQuota()
 	case apikey.FieldQuotaUsed:
@@ -1960,6 +2667,27 @@ func (m *APIKeyMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *APIKeyMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case apikey.FieldSmartGroupFailureThreshold:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSmartGroupFailureThreshold(v)
+		return nil
+	case apikey.FieldSmartGroupRecoveryIntervalSeconds:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSmartGroupRecoveryIntervalSeconds(v)
+		return nil
+	case apikey.FieldSmartGroupConsecutiveFailures:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSmartGroupConsecutiveFailures(v)
+		return nil
 	case apikey.FieldQuota:
 		v, ok := value.(float64)
 		if !ok {
@@ -2030,6 +2758,18 @@ func (m *APIKeyMutation) ClearedFields() []string {
 	if m.FieldCleared(apikey.FieldGroupID) {
 		fields = append(fields, apikey.FieldGroupID)
 	}
+	if m.FieldCleared(apikey.FieldSmartGroupHealthySince) {
+		fields = append(fields, apikey.FieldSmartGroupHealthySince)
+	}
+	if m.FieldCleared(apikey.FieldSmartGroupLastProbeAt) {
+		fields = append(fields, apikey.FieldSmartGroupLastProbeAt)
+	}
+	if m.FieldCleared(apikey.FieldSmartGroupLastSwitchAt) {
+		fields = append(fields, apikey.FieldSmartGroupLastSwitchAt)
+	}
+	if m.FieldCleared(apikey.FieldSmartGroupProbeLeaseUntil) {
+		fields = append(fields, apikey.FieldSmartGroupProbeLeaseUntil)
+	}
 	if m.FieldCleared(apikey.FieldLastUsedAt) {
 		fields = append(fields, apikey.FieldLastUsedAt)
 	}
@@ -2070,6 +2810,18 @@ func (m *APIKeyMutation) ClearField(name string) error {
 		return nil
 	case apikey.FieldGroupID:
 		m.ClearGroupID()
+		return nil
+	case apikey.FieldSmartGroupHealthySince:
+		m.ClearSmartGroupHealthySince()
+		return nil
+	case apikey.FieldSmartGroupLastProbeAt:
+		m.ClearSmartGroupLastProbeAt()
+		return nil
+	case apikey.FieldSmartGroupLastSwitchAt:
+		m.ClearSmartGroupLastSwitchAt()
+		return nil
+	case apikey.FieldSmartGroupProbeLeaseUntil:
+		m.ClearSmartGroupProbeLeaseUntil()
 		return nil
 	case apikey.FieldLastUsedAt:
 		m.ClearLastUsedAt()
@@ -2123,6 +2875,39 @@ func (m *APIKeyMutation) ResetField(name string) error {
 		return nil
 	case apikey.FieldStatus:
 		m.ResetStatus()
+		return nil
+	case apikey.FieldSmartGroupEnabled:
+		m.ResetSmartGroupEnabled()
+		return nil
+	case apikey.FieldSmartGroupIds:
+		m.ResetSmartGroupIds()
+		return nil
+	case apikey.FieldSmartGroupFailureThreshold:
+		m.ResetSmartGroupFailureThreshold()
+		return nil
+	case apikey.FieldSmartGroupRecoveryIntervalSeconds:
+		m.ResetSmartGroupRecoveryIntervalSeconds()
+		return nil
+	case apikey.FieldSmartGroupConsecutiveFailures:
+		m.ResetSmartGroupConsecutiveFailures()
+		return nil
+	case apikey.FieldSmartGroupHealthySince:
+		m.ResetSmartGroupHealthySince()
+		return nil
+	case apikey.FieldSmartGroupLastProbeAt:
+		m.ResetSmartGroupLastProbeAt()
+		return nil
+	case apikey.FieldSmartGroupLastSwitchAt:
+		m.ResetSmartGroupLastSwitchAt()
+		return nil
+	case apikey.FieldSmartGroupProbeLeaseUntil:
+		m.ResetSmartGroupProbeLeaseUntil()
+		return nil
+	case apikey.FieldSmartGroupLastSwitchReason:
+		m.ResetSmartGroupLastSwitchReason()
+		return nil
+	case apikey.FieldSmartGroupLastError:
+		m.ResetSmartGroupLastError()
 		return nil
 	case apikey.FieldLastUsedAt:
 		m.ResetLastUsedAt()

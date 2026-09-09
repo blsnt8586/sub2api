@@ -4,7 +4,7 @@
  */
 
 import { apiClient } from './client'
-import type { ApiKey, CreateApiKeyRequest, UpdateApiKeyRequest, PaginatedResponse } from '@/types'
+import type { ApiKey, CreateApiKeyRequest, UpdateApiKeyRequest, PaginatedResponse, SmartGroupSwitchLog } from '@/types'
 
 /**
  * List all API keys for current user
@@ -46,6 +46,14 @@ export async function getById(id: number): Promise<ApiKey> {
 }
 
 /**
+ * List successful automatic smart-group route changes from the last three days.
+ */
+export async function listSmartGroupLogs(id: number): Promise<SmartGroupSwitchLog[]> {
+  const { data } = await apiClient.get<SmartGroupSwitchLog[]>(`/keys/${id}/smart-group-logs`)
+  return data
+}
+
+/**
  * Create new API key
  * @param name - Key name
  * @param groupId - Optional group ID
@@ -65,7 +73,13 @@ export async function create(
   ipBlacklist?: string[],
   quota?: number,
   expiresInDays?: number,
-  rateLimitData?: { rate_limit_5h?: number; rate_limit_1d?: number; rate_limit_7d?: number }
+  rateLimitData?: { rate_limit_5h?: number; rate_limit_1d?: number; rate_limit_7d?: number },
+  smartGroupData?: {
+    smart_group_enabled: boolean
+    smart_group_ids: number[]
+    smart_group_failure_threshold: number
+    smart_group_recovery_interval_seconds: number
+  }
 ): Promise<ApiKey> {
   const payload: CreateApiKeyRequest = { name }
   if (groupId !== undefined) {
@@ -94,6 +108,9 @@ export async function create(
   }
   if (rateLimitData?.rate_limit_7d && rateLimitData.rate_limit_7d > 0) {
     payload.rate_limit_7d = rateLimitData.rate_limit_7d
+  }
+  if (smartGroupData) {
+    Object.assign(payload, smartGroupData)
   }
 
   const { data } = await apiClient.post<ApiKey>('/keys', payload)
@@ -134,6 +151,7 @@ export async function toggleStatus(id: number, status: 'active' | 'inactive'): P
 export const keysAPI = {
   list,
   getById,
+  listSmartGroupLogs,
   create,
   update,
   delete: deleteKey,

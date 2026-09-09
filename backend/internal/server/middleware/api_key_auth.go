@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
@@ -22,6 +23,10 @@ func NewAPIKeyAuthMiddleware(apiKeyService *service.APIKeyService, subscriptionS
 	return APIKeyAuthMiddleware(apiKeyAuthWithSubscription(apiKeyService, subscriptionService, cfg))
 }
 
+func apiKeyAuthWithSubscription(apiKeyService *service.APIKeyService, subscriptionService *service.SubscriptionService, cfg *config.Config) gin.HandlerFunc {
+	return apiKeyAuthWithSubscriptionAndSmartGroups(apiKeyService, subscriptionService, nil, cfg)
+}
+
 // apiKeyAuthWithSubscription API Key认证中间件（支持订阅验证）
 //
 // 中间件职责分为两层：
@@ -33,7 +38,7 @@ func NewAPIKeyAuthMiddleware(apiKeyService *service.APIKeyService, subscriptionS
 // usage 允许过期/配额耗尽的 Key 查询自身用量，billing 用于读取当前 Key 的倍率配置，
 // canvas/model-caps 返回与 Key 无关的静态能力表（前端启动时据此渲染参数面板），
 // 异步生图查询允许已耗尽额度的 Key 拉取自身任务结果。
-func apiKeyAuthWithSubscription(apiKeyService *service.APIKeyService, subscriptionService *service.SubscriptionService, cfg *config.Config) gin.HandlerFunc {
+func apiKeyAuthWithSubscriptionAndSmartGroups(apiKeyService *service.APIKeyService, subscriptionService *service.SubscriptionService, smartGroupService *service.APIKeySmartGroupService, cfg *config.Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// ── 1. 提取 API Key ──────────────────────────────────────────
 		if rejectInvalidAuthAbuse(c, apiKeyService) {
@@ -160,12 +165,19 @@ func apiKeyAuthWithSubscription(apiKeyService *service.APIKeyService, subscripti
 			return
 		}
 		if abortIfAPIKeyGroupUnavailable(c, apiKey) {
+			if smartGroupService != nil {
+				smartGroupService.SubmitOutcome(apiKey, false, "active group is unavailable")
+			}
 			return
 		}
 		if abortIfAPIKeyGroupNotAllowed(c, apiKey) {
+			if smartGroupService != nil {
+				smartGroupService.SubmitOutcome(apiKey, false, "active group is no longer allowed")
+			}
 			return
 		}
 		ctx := context.WithValue(c.Request.Context(), ctxkey.UserID, apiKey.User.ID)
+		ctx = service.WithOpsCustomAccountErrorTracking(ctx)
 		c.Request = c.Request.WithContext(ctx)
 		billingInfoRequest := c.Request.URL.Path == "/v1/sub2api/billing"
 		// Async image task polling only reads data that already belongs to the
@@ -194,6 +206,7 @@ func apiKeyAuthWithSubscription(apiKeyService *service.APIKeyService, subscripti
 				_ = apiKeyService.TouchLastUsed(c.Request.Context(), apiKey.ID)
 			}
 			c.Next()
+			observeAPIKeySmartGroupOutcome(c, apiKey, smartGroupService)
 			return
 		}
 
@@ -293,6 +306,125 @@ func apiKeyAuthWithSubscription(apiKeyService *service.APIKeyService, subscripti
 		}
 
 		c.Next()
+		observeAPIKeySmartGroupOutcome(c, apiKey, smartGroupService)
+	}
+}
+
+func observeAPIKeySmartGroupOutcome(c *gin.Context, apiKey *service.APIKey, smartGroupService *service.APIKeySmartGroupService) {
+	if c == nil || apiKey == nil || smartGroupService == nil || !apiKey.SmartGroupEnabled || !isSmartGroupObservedRequest(c.Request) {
+		return
+	}
+	if service.HasOpsClientBusinessLimited(c) {
+		return
+	}
+
+	streamErrors := service.GetOpsStreamErrors(c)
+	if len(streamErrors) > 0 {
+		_, _, customAccountErrorMatched := service.GetOpsCustomAccountError(c.Request.Context())
+		if message, failed := smartGroupStreamFailure(streamErrors, customAccountErrorMatched); failed {
+			smartGroupService.SubmitOutcome(apiKey, false, message)
+		}
+		return
+	}
+
+	status := c.Writer.Status()
+	if status == http.StatusSwitchingProtocols || (status >= 200 && status < 300) {
+		if smartGroupService.ShouldObserveSuccess(apiKey, time.Now()) {
+			smartGroupService.SubmitOutcome(apiKey, true, "")
+		}
+		return
+	}
+
+	// Account Management may explicitly classify a non-standard upstream
+	// status (for example 400 or 404) as an account error. That decision is
+	// carried through the request context by RateLimitService; honor it here
+	// without treating every upstream 4xx as a smart-group failure.
+	if accountID, customStatus, matched := service.GetOpsCustomAccountError(c.Request.Context()); matched {
+		message := fmt.Sprintf("account %d custom error status %d", accountID, customStatus)
+		if value, ok := c.Get(service.OpsUpstreamErrorMessageKey); ok {
+			if text, ok := value.(string); ok && strings.TrimSpace(text) != "" {
+				message = text
+			}
+		}
+		smartGroupService.SubmitOutcome(apiKey, false, message)
+		return
+	}
+
+	upstreamStatus, hasUpstreamStatus := smartGroupUpstreamStatus(c)
+	if status == http.StatusBadGateway || status == http.StatusServiceUnavailable || status == http.StatusGatewayTimeout ||
+		(hasUpstreamStatus && smartGroupFailureStatus(upstreamStatus)) {
+		message := "upstream request failed"
+		if value, ok := c.Get(service.OpsUpstreamErrorMessageKey); ok {
+			if text, ok := value.(string); ok && strings.TrimSpace(text) != "" {
+				message = text
+			}
+		}
+		smartGroupService.SubmitOutcome(apiKey, false, message)
+	}
+}
+
+func smartGroupStreamFailure(streamErrors []service.OpsStreamError, customAccountErrorMatched bool) (string, bool) {
+	for _, streamErr := range streamErrors {
+		if !streamErr.CountTowardsSLA {
+			continue
+		}
+		// A stream may already be committed as HTTP 200 when the final upstream
+		// failure is emitted in-band. An explicitly matched account custom error
+		// is authoritative even when its 400/404 status is outside the generic
+		// smart-group failure set. Intermediate failures followed by a successful
+		// failover do not create a CountTowardsSLA stream error and are ignored.
+		if smartGroupFailureStatus(streamErr.IntendedStatus) || customAccountErrorMatched {
+			return streamErr.Message, true
+		}
+	}
+	return "", false
+}
+
+func isSmartGroupObservedRequest(r *http.Request) bool {
+	if r == nil || r.URL == nil {
+		return false
+	}
+	path := strings.ToLower(strings.TrimRight(r.URL.Path, "/"))
+	for _, marker := range []string{"/usage", "/models", "/count_tokens", "/sub2api/billing", "/model-caps", "/tasks/"} {
+		if strings.Contains(path, marker) {
+			return false
+		}
+	}
+	if strings.HasSuffix(path, "/async") || r.Method == http.MethodHead || r.Method == http.MethodOptions || r.Method == http.MethodDelete {
+		return false
+	}
+	if r.Method == http.MethodGet && path != "/v1/responses" && path != "/responses" {
+		return false
+	}
+	return true
+}
+
+func smartGroupFailureStatus(status int) bool {
+	// These are considered failures only after the request has passed API-key
+	// authentication and, for upstream errors, the Ops context identifies the
+	// source. Local policy/permission failures are filtered by
+	// HasOpsClientBusinessLimited before this helper is called.
+	return status == http.StatusUnauthorized ||
+		status == http.StatusPaymentRequired ||
+		status == http.StatusForbidden ||
+		status == http.StatusTooManyRequests ||
+		status >= 500
+}
+
+func smartGroupUpstreamStatus(c *gin.Context) (int, bool) {
+	value, ok := c.Get(service.OpsUpstreamStatusCodeKey)
+	if !ok {
+		return 0, false
+	}
+	switch typed := value.(type) {
+	case int:
+		return typed, true
+	case int64:
+		return int(typed), true
+	case float64:
+		return int(typed), true
+	default:
+		return 0, false
 	}
 }
 

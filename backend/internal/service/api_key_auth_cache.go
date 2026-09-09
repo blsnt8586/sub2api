@@ -26,6 +26,17 @@ type APIKeyAuthSnapshot struct {
 	RateLimit5h float64 `json:"rate_limit_5h"`
 	RateLimit1d float64 `json:"rate_limit_1d"`
 	RateLimit7d float64 `json:"rate_limit_7d"`
+
+	SmartGroupEnabled                 bool       `json:"smart_group_enabled"`
+	SmartGroupIDs                     []int64    `json:"smart_group_ids,omitempty"`
+	SmartGroupFailureThreshold        int        `json:"smart_group_failure_threshold"`
+	SmartGroupRecoveryIntervalSeconds int        `json:"smart_group_recovery_interval_seconds"`
+	SmartGroupConsecutiveFailures     int        `json:"smart_group_consecutive_failures"`
+	SmartGroupHealthySince            *time.Time `json:"smart_group_healthy_since,omitempty"`
+	SmartGroupLastProbeAt             *time.Time `json:"smart_group_last_probe_at,omitempty"`
+	SmartGroupLastSwitchAt            *time.Time `json:"smart_group_last_switch_at,omitempty"`
+	SmartGroupLastSwitchReason        string     `json:"smart_group_last_switch_reason,omitempty"`
+	SmartGroupLastError               string     `json:"smart_group_last_error,omitempty"`
 }
 
 // APIKeyAuthUserSnapshot 用户快照

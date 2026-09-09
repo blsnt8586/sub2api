@@ -1158,13 +1158,17 @@ func TestPrepareGrokImageEditNormalizesOfficialImageObjects(t *testing.T) {
 	}
 }
 
-func TestPrepareGrokImageEditRejectsMoreThanThreeSources(t *testing.T) {
-	body := []byte(`{"images":["https://example.com/1.png","https://example.com/2.png","https://example.com/3.png","https://example.com/4.png"]}`)
+func TestPrepareGrokImageEditAcceptsFiveAndRejectsSixSources(t *testing.T) {
+	five := []byte(`{"images":["https://example.com/1.png","https://example.com/2.png","https://example.com/3.png","https://example.com/4.png","https://example.com/5.png"]}`)
+	out, _, err := prepareGrokMediaForwardBody(GrokMediaEndpointImagesEdits, five, "application/json")
+	require.NoError(t, err)
+	require.Len(t, gjson.GetBytes(out, "images").Array(), 5)
 
-	out, _, err := prepareGrokMediaForwardBody(GrokMediaEndpointImagesEdits, body, "application/json")
+	six := []byte(`{"images":["https://example.com/1.png","https://example.com/2.png","https://example.com/3.png","https://example.com/4.png","https://example.com/5.png","https://example.com/6.png"]}`)
+	out, _, err = prepareGrokMediaForwardBody(GrokMediaEndpointImagesEdits, six, "application/json")
 	require.Error(t, err)
 	require.Nil(t, out)
-	require.Contains(t, err.Error(), "maximum of 3 source images")
+	require.Contains(t, err.Error(), "maximum of 5 source images")
 }
 
 func TestNormalizeGrokMediaModelForEndpoint(t *testing.T) {
@@ -1492,6 +1496,8 @@ func TestForwardGrokMediaImagesEditMultipartPreservesExplicitGeometry(t *testing
 	require.NoError(t, writer.WriteField("size", "1024x1024"))
 	require.NoError(t, writer.WriteField("resolution", "2k"))
 	require.NoError(t, writer.WriteField("aspect_ratio", "16:9"))
+	require.NoError(t, writer.WriteField("quality", "medium"))
+	require.NoError(t, writer.WriteField("response_format", "b64_json"))
 	partHeader := textproto.MIMEHeader{}
 	partHeader.Set("Content-Disposition", `form-data; name="image"; filename="input.png"`)
 	partHeader.Set("Content-Type", "image/png")
@@ -1529,8 +1535,33 @@ func TestForwardGrokMediaImagesEditMultipartPreservesExplicitGeometry(t *testing
 	require.False(t, gjson.GetBytes(upstream.lastBody, "size").Exists())
 	require.Equal(t, "2k", gjson.GetBytes(upstream.lastBody, "resolution").String())
 	require.Equal(t, "16:9", gjson.GetBytes(upstream.lastBody, "aspect_ratio").String())
+	require.Equal(t, "medium", gjson.GetBytes(upstream.lastBody, "quality").String())
+	require.Equal(t, "b64_json", gjson.GetBytes(upstream.lastBody, "response_format").String())
 	require.Equal(t, ImageBillingSize1K, result.ImageSize)
 	require.Equal(t, "1024x1024", result.ImageInputSize)
+}
+
+func TestPrepareGrokImageEditMultipartUsesOnlyImagesForMultipleSources(t *testing.T) {
+	var buf bytes.Buffer
+	writer := multipart.NewWriter(&buf)
+	require.NoError(t, writer.WriteField("model", "grok-imagine-image-quality"))
+	for index := 0; index < 2; index++ {
+		partHeader := textproto.MIMEHeader{}
+		partHeader.Set("Content-Disposition", fmt.Sprintf(`form-data; name="image"; filename="input-%d.png"`, index))
+		partHeader.Set("Content-Type", "image/png")
+		part, err := writer.CreatePart(partHeader)
+		require.NoError(t, err)
+		_, err = part.Write([]byte{0x89, 0x50, 0x4e, 0x47, byte(index)})
+		require.NoError(t, err)
+	}
+	require.NoError(t, writer.Close())
+
+	out, contentType, err := prepareGrokMediaForwardBody(GrokMediaEndpointImagesEdits, buf.Bytes(), writer.FormDataContentType())
+	require.NoError(t, err)
+	require.Equal(t, "application/json", contentType)
+	require.False(t, gjson.GetBytes(out, "image").Exists())
+	require.Len(t, gjson.GetBytes(out, "images").Array(), 2)
+	require.Len(t, ParseGrokMediaRequest(contentType, out).InputImageURLs, 2)
 }
 
 func TestForwardGrokMediaVideoGenerationReturnsUsageAndResponseID(t *testing.T) {
@@ -1828,6 +1859,45 @@ func TestGrokMediaVideoRequestBindingIsScopedToUserAndAPIKey(t *testing.T) {
 	accountID, err = svc.ResolveGrokMediaVideoRequestAccount(ctx, &groupID, "video-request-123", userID, apiKeyID+1)
 	require.Error(t, err)
 	require.Zero(t, accountID)
+}
+
+type grokVideoStickyMissCache struct{ stubGatewayCache }
+
+func (c *grokVideoStickyMissCache) GetSessionAccountID(context.Context, int64, string) (int64, error) {
+	return 0, ErrStickySessionNotFound
+}
+
+type grokVideoUsageOwnerRepoStub struct {
+	UsageLogRepository
+	accountID int64
+	err       error
+	requestID string
+	userID    int64
+	apiKeyID  int64
+	groupID   int64
+}
+
+func (r *grokVideoUsageOwnerRepoStub) FindGrokVideoUsageAccountID(_ context.Context, requestID string, userID, apiKeyID, groupID int64) (int64, error) {
+	r.requestID, r.userID, r.apiKeyID, r.groupID = requestID, userID, apiKeyID, groupID
+	return r.accountID, r.err
+}
+
+func TestResolveGrokMediaVideoRequestAccountRecoversFromDurableUsage(t *testing.T) {
+	cache := &grokVideoStickyMissCache{}
+	repo := &grokVideoUsageOwnerRepoStub{accountID: 63}
+	svc := &OpenAIGatewayService{cache: cache, usageLogRepo: repo}
+	groupID := int64(7)
+
+	accountID, err := svc.ResolveGrokMediaVideoRequestAccount(context.Background(), &groupID, "paid-video-request", 41, 51)
+	require.NoError(t, err)
+	require.Equal(t, int64(63), accountID)
+	require.Equal(t, "paid-video-request", repo.requestID)
+	require.Equal(t, int64(41), repo.userID)
+	require.Equal(t, int64(51), repo.apiKeyID)
+	require.Equal(t, groupID, repo.groupID)
+
+	cacheKey := svc.openAISessionCacheKey(GrokMediaVideoRequestSessionHash("paid-video-request", 41, 51))
+	require.Equal(t, int64(63), cache.sessionBindings[cacheKey], "durable recovery should warm Redis affinity")
 }
 
 func TestForwardGrokMedia429ReconcilesRateLimitBeforeCustomErrorBypass(t *testing.T) {

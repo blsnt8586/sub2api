@@ -31,6 +31,19 @@ func TestSafeUpstreamURL(t *testing.T) {
 	}
 }
 
+func TestMarkOpsStreamFailureUpgradesPreviouslyWrittenFinalError(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	MarkOpsStreamError(c, "upstream_error", "upstream unavailable", 502)
+
+	MarkOpsStreamFailure(c, "upstream_error", "", "terminal upstream failure", 502)
+
+	streamErr, ok := GetOpsStreamError(c)
+	require.True(t, ok)
+	require.True(t, streamErr.CountTowardsSLA)
+	require.Equal(t, "upstream unavailable", streamErr.Message, "upgrade must preserve the original upstream message")
+}
+
 func TestOpsUpstreamErrorEventKeepsExplicitProxySnapshotPerAttempt(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())

@@ -486,6 +486,25 @@ func (s *OpenAIGatewayService) handleErrorResponse(
 ) (*OpenAIForwardResult, error) {
 	body := s.readUpstreamErrorBody(resp)
 	body = s.redactAgentIdentitySensitiveBody(ctx, account, body)
+	customAccountErrorHandled := false
+	customAccountErrorShouldDisable := false
+	if isConfiguredCustomAccountError(account, resp.StatusCode) {
+		// Account Management's explicit error-code policy has precedence over
+		// response passthrough and protocol-specific shortcuts. Otherwise a
+		// configured 400/404 could be returned to the client without updating
+		// either the real account state or the API-key smart-group counter.
+		customAccountErrorHandled = true
+		customAccountErrorShouldDisable = s.handleOpenAIAccountUpstreamError(ctx, account, resp.StatusCode, resp.Header, body, requestedModel...)
+		if customAccountErrorShouldDisable {
+			return nil, newOpenAIUpstreamFailoverError(
+				resp.StatusCode,
+				resp.Header,
+				body,
+				strings.TrimSpace(extractUpstreamErrorMessage(body)),
+				false,
+			)
+		}
+	}
 
 	// cyber_policy 硬阻断：透传上游原始错误体给客户端（不重包成通用 502），不冷却账号。
 	// 当前请求恒透传（需求1）；标记供 handler 事后写风控/邮件。400 cyber 不可 failover
@@ -631,7 +650,10 @@ func (s *OpenAIGatewayService) handleErrorResponse(
 		reqModel, _, _ = extractOpenAIRequestMetaFromBody(requestBody)
 		reqModel = canonicalOpenAIAccountSchedulingModel(account, reqModel)
 	}
-	shouldDisable := s.handleOpenAIAccountUpstreamError(ctx, account, resp.StatusCode, resp.Header, body, reqModel)
+	shouldDisable := customAccountErrorShouldDisable
+	if !customAccountErrorHandled {
+		shouldDisable = s.handleOpenAIAccountUpstreamError(ctx, account, resp.StatusCode, resp.Header, body, reqModel)
+	}
 	kind := "http_error"
 	if shouldDisable {
 		kind = "failover"
@@ -736,7 +758,25 @@ func (s *OpenAIGatewayService) handleCompatErrorResponse(
 	requestedModel ...string,
 ) (*OpenAIForwardResult, error) {
 	body := s.readUpstreamErrorBody(resp)
-	body = s.redactAgentIdentitySensitiveBody(context.Background(), account, body)
+	requestCtx := context.Background()
+	if c != nil && c.Request != nil {
+		requestCtx = c.Request.Context()
+	}
+	body = s.redactAgentIdentitySensitiveBody(requestCtx, account, body)
+	customAccountErrorHandled := false
+	customAccountErrorShouldDisable := false
+	if isConfiguredCustomAccountError(account, resp.StatusCode) {
+		customAccountErrorHandled = true
+		customAccountErrorShouldDisable = s.handleOpenAIAccountUpstreamError(requestCtx, account, resp.StatusCode, resp.Header, body, requestedModel...)
+		if customAccountErrorShouldDisable {
+			return nil, &UpstreamFailoverError{
+				StatusCode:             resp.StatusCode,
+				ResponseBody:           body,
+				ResponseHeaders:        resp.Header.Clone(),
+				RetryableOnSameAccount: false,
+			}
+		}
+	}
 
 	// cyber_policy：兼容路径（Chat Completions / Anthropic）以各自格式回写错误，
 	// 不原样透传 responses 格式的 cyber body（否则对下游格式不合法）。cyber 是上游网络
@@ -828,9 +868,12 @@ func (s *OpenAIGatewayService) handleCompatErrorResponse(
 	if len(requestedModel) > 0 {
 		modelForCooldown = requestedModel[0]
 	}
-	shouldDisable := s.handleOpenAIAccountUpstreamError(
-		c.Request.Context(), account, resp.StatusCode, resp.Header, body, modelForCooldown,
-	)
+	shouldDisable := customAccountErrorShouldDisable
+	if !customAccountErrorHandled {
+		shouldDisable = s.handleOpenAIAccountUpstreamError(
+			requestCtx, account, resp.StatusCode, resp.Header, body, modelForCooldown,
+		)
+	}
 	kind := "http_error"
 	if shouldDisable {
 		kind = "failover"

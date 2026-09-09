@@ -134,6 +134,203 @@ func (_u *APIKeyUpdate) SetNillableStatus(v *string) *APIKeyUpdate {
 	return _u
 }
 
+// SetSmartGroupEnabled sets the "smart_group_enabled" field.
+func (_u *APIKeyUpdate) SetSmartGroupEnabled(v bool) *APIKeyUpdate {
+	_u.mutation.SetSmartGroupEnabled(v)
+	return _u
+}
+
+// SetNillableSmartGroupEnabled sets the "smart_group_enabled" field if the given value is not nil.
+func (_u *APIKeyUpdate) SetNillableSmartGroupEnabled(v *bool) *APIKeyUpdate {
+	if v != nil {
+		_u.SetSmartGroupEnabled(*v)
+	}
+	return _u
+}
+
+// SetSmartGroupIds sets the "smart_group_ids" field.
+func (_u *APIKeyUpdate) SetSmartGroupIds(v []int64) *APIKeyUpdate {
+	_u.mutation.SetSmartGroupIds(v)
+	return _u
+}
+
+// AppendSmartGroupIds appends value to the "smart_group_ids" field.
+func (_u *APIKeyUpdate) AppendSmartGroupIds(v []int64) *APIKeyUpdate {
+	_u.mutation.AppendSmartGroupIds(v)
+	return _u
+}
+
+// SetSmartGroupFailureThreshold sets the "smart_group_failure_threshold" field.
+func (_u *APIKeyUpdate) SetSmartGroupFailureThreshold(v int) *APIKeyUpdate {
+	_u.mutation.ResetSmartGroupFailureThreshold()
+	_u.mutation.SetSmartGroupFailureThreshold(v)
+	return _u
+}
+
+// SetNillableSmartGroupFailureThreshold sets the "smart_group_failure_threshold" field if the given value is not nil.
+func (_u *APIKeyUpdate) SetNillableSmartGroupFailureThreshold(v *int) *APIKeyUpdate {
+	if v != nil {
+		_u.SetSmartGroupFailureThreshold(*v)
+	}
+	return _u
+}
+
+// AddSmartGroupFailureThreshold adds value to the "smart_group_failure_threshold" field.
+func (_u *APIKeyUpdate) AddSmartGroupFailureThreshold(v int) *APIKeyUpdate {
+	_u.mutation.AddSmartGroupFailureThreshold(v)
+	return _u
+}
+
+// SetSmartGroupRecoveryIntervalSeconds sets the "smart_group_recovery_interval_seconds" field.
+func (_u *APIKeyUpdate) SetSmartGroupRecoveryIntervalSeconds(v int) *APIKeyUpdate {
+	_u.mutation.ResetSmartGroupRecoveryIntervalSeconds()
+	_u.mutation.SetSmartGroupRecoveryIntervalSeconds(v)
+	return _u
+}
+
+// SetNillableSmartGroupRecoveryIntervalSeconds sets the "smart_group_recovery_interval_seconds" field if the given value is not nil.
+func (_u *APIKeyUpdate) SetNillableSmartGroupRecoveryIntervalSeconds(v *int) *APIKeyUpdate {
+	if v != nil {
+		_u.SetSmartGroupRecoveryIntervalSeconds(*v)
+	}
+	return _u
+}
+
+// AddSmartGroupRecoveryIntervalSeconds adds value to the "smart_group_recovery_interval_seconds" field.
+func (_u *APIKeyUpdate) AddSmartGroupRecoveryIntervalSeconds(v int) *APIKeyUpdate {
+	_u.mutation.AddSmartGroupRecoveryIntervalSeconds(v)
+	return _u
+}
+
+// SetSmartGroupConsecutiveFailures sets the "smart_group_consecutive_failures" field.
+func (_u *APIKeyUpdate) SetSmartGroupConsecutiveFailures(v int) *APIKeyUpdate {
+	_u.mutation.ResetSmartGroupConsecutiveFailures()
+	_u.mutation.SetSmartGroupConsecutiveFailures(v)
+	return _u
+}
+
+// SetNillableSmartGroupConsecutiveFailures sets the "smart_group_consecutive_failures" field if the given value is not nil.
+func (_u *APIKeyUpdate) SetNillableSmartGroupConsecutiveFailures(v *int) *APIKeyUpdate {
+	if v != nil {
+		_u.SetSmartGroupConsecutiveFailures(*v)
+	}
+	return _u
+}
+
+// AddSmartGroupConsecutiveFailures adds value to the "smart_group_consecutive_failures" field.
+func (_u *APIKeyUpdate) AddSmartGroupConsecutiveFailures(v int) *APIKeyUpdate {
+	_u.mutation.AddSmartGroupConsecutiveFailures(v)
+	return _u
+}
+
+// SetSmartGroupHealthySince sets the "smart_group_healthy_since" field.
+func (_u *APIKeyUpdate) SetSmartGroupHealthySince(v time.Time) *APIKeyUpdate {
+	_u.mutation.SetSmartGroupHealthySince(v)
+	return _u
+}
+
+// SetNillableSmartGroupHealthySince sets the "smart_group_healthy_since" field if the given value is not nil.
+func (_u *APIKeyUpdate) SetNillableSmartGroupHealthySince(v *time.Time) *APIKeyUpdate {
+	if v != nil {
+		_u.SetSmartGroupHealthySince(*v)
+	}
+	return _u
+}
+
+// ClearSmartGroupHealthySince clears the value of the "smart_group_healthy_since" field.
+func (_u *APIKeyUpdate) ClearSmartGroupHealthySince() *APIKeyUpdate {
+	_u.mutation.ClearSmartGroupHealthySince()
+	return _u
+}
+
+// SetSmartGroupLastProbeAt sets the "smart_group_last_probe_at" field.
+func (_u *APIKeyUpdate) SetSmartGroupLastProbeAt(v time.Time) *APIKeyUpdate {
+	_u.mutation.SetSmartGroupLastProbeAt(v)
+	return _u
+}
+
+// SetNillableSmartGroupLastProbeAt sets the "smart_group_last_probe_at" field if the given value is not nil.
+func (_u *APIKeyUpdate) SetNillableSmartGroupLastProbeAt(v *time.Time) *APIKeyUpdate {
+	if v != nil {
+		_u.SetSmartGroupLastProbeAt(*v)
+	}
+	return _u
+}
+
+// ClearSmartGroupLastProbeAt clears the value of the "smart_group_last_probe_at" field.
+func (_u *APIKeyUpdate) ClearSmartGroupLastProbeAt() *APIKeyUpdate {
+	_u.mutation.ClearSmartGroupLastProbeAt()
+	return _u
+}
+
+// SetSmartGroupLastSwitchAt sets the "smart_group_last_switch_at" field.
+func (_u *APIKeyUpdate) SetSmartGroupLastSwitchAt(v time.Time) *APIKeyUpdate {
+	_u.mutation.SetSmartGroupLastSwitchAt(v)
+	return _u
+}
+
+// SetNillableSmartGroupLastSwitchAt sets the "smart_group_last_switch_at" field if the given value is not nil.
+func (_u *APIKeyUpdate) SetNillableSmartGroupLastSwitchAt(v *time.Time) *APIKeyUpdate {
+	if v != nil {
+		_u.SetSmartGroupLastSwitchAt(*v)
+	}
+	return _u
+}
+
+// ClearSmartGroupLastSwitchAt clears the value of the "smart_group_last_switch_at" field.
+func (_u *APIKeyUpdate) ClearSmartGroupLastSwitchAt() *APIKeyUpdate {
+	_u.mutation.ClearSmartGroupLastSwitchAt()
+	return _u
+}
+
+// SetSmartGroupProbeLeaseUntil sets the "smart_group_probe_lease_until" field.
+func (_u *APIKeyUpdate) SetSmartGroupProbeLeaseUntil(v time.Time) *APIKeyUpdate {
+	_u.mutation.SetSmartGroupProbeLeaseUntil(v)
+	return _u
+}
+
+// SetNillableSmartGroupProbeLeaseUntil sets the "smart_group_probe_lease_until" field if the given value is not nil.
+func (_u *APIKeyUpdate) SetNillableSmartGroupProbeLeaseUntil(v *time.Time) *APIKeyUpdate {
+	if v != nil {
+		_u.SetSmartGroupProbeLeaseUntil(*v)
+	}
+	return _u
+}
+
+// ClearSmartGroupProbeLeaseUntil clears the value of the "smart_group_probe_lease_until" field.
+func (_u *APIKeyUpdate) ClearSmartGroupProbeLeaseUntil() *APIKeyUpdate {
+	_u.mutation.ClearSmartGroupProbeLeaseUntil()
+	return _u
+}
+
+// SetSmartGroupLastSwitchReason sets the "smart_group_last_switch_reason" field.
+func (_u *APIKeyUpdate) SetSmartGroupLastSwitchReason(v string) *APIKeyUpdate {
+	_u.mutation.SetSmartGroupLastSwitchReason(v)
+	return _u
+}
+
+// SetNillableSmartGroupLastSwitchReason sets the "smart_group_last_switch_reason" field if the given value is not nil.
+func (_u *APIKeyUpdate) SetNillableSmartGroupLastSwitchReason(v *string) *APIKeyUpdate {
+	if v != nil {
+		_u.SetSmartGroupLastSwitchReason(*v)
+	}
+	return _u
+}
+
+// SetSmartGroupLastError sets the "smart_group_last_error" field.
+func (_u *APIKeyUpdate) SetSmartGroupLastError(v string) *APIKeyUpdate {
+	_u.mutation.SetSmartGroupLastError(v)
+	return _u
+}
+
+// SetNillableSmartGroupLastError sets the "smart_group_last_error" field if the given value is not nil.
+func (_u *APIKeyUpdate) SetNillableSmartGroupLastError(v *string) *APIKeyUpdate {
+	if v != nil {
+		_u.SetSmartGroupLastError(*v)
+	}
+	return _u
+}
+
 // SetLastUsedAt sets the "last_used_at" field.
 func (_u *APIKeyUpdate) SetLastUsedAt(v time.Time) *APIKeyUpdate {
 	_u.mutation.SetLastUsedAt(v)
@@ -560,6 +757,11 @@ func (_u *APIKeyUpdate) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "APIKey.status": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.SmartGroupLastSwitchReason(); ok {
+		if err := apikey.SmartGroupLastSwitchReasonValidator(v); err != nil {
+			return &ValidationError{Name: "smart_group_last_switch_reason", err: fmt.Errorf(`ent: validator failed for field "APIKey.smart_group_last_switch_reason": %w`, err)}
+		}
+	}
 	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "APIKey.user"`)
 	}
@@ -595,6 +797,65 @@ func (_u *APIKeyUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(apikey.FieldStatus, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.SmartGroupEnabled(); ok {
+		_spec.SetField(apikey.FieldSmartGroupEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.SmartGroupIds(); ok {
+		_spec.SetField(apikey.FieldSmartGroupIds, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedSmartGroupIds(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, apikey.FieldSmartGroupIds, value)
+		})
+	}
+	if value, ok := _u.mutation.SmartGroupFailureThreshold(); ok {
+		_spec.SetField(apikey.FieldSmartGroupFailureThreshold, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSmartGroupFailureThreshold(); ok {
+		_spec.AddField(apikey.FieldSmartGroupFailureThreshold, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.SmartGroupRecoveryIntervalSeconds(); ok {
+		_spec.SetField(apikey.FieldSmartGroupRecoveryIntervalSeconds, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSmartGroupRecoveryIntervalSeconds(); ok {
+		_spec.AddField(apikey.FieldSmartGroupRecoveryIntervalSeconds, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.SmartGroupConsecutiveFailures(); ok {
+		_spec.SetField(apikey.FieldSmartGroupConsecutiveFailures, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSmartGroupConsecutiveFailures(); ok {
+		_spec.AddField(apikey.FieldSmartGroupConsecutiveFailures, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.SmartGroupHealthySince(); ok {
+		_spec.SetField(apikey.FieldSmartGroupHealthySince, field.TypeTime, value)
+	}
+	if _u.mutation.SmartGroupHealthySinceCleared() {
+		_spec.ClearField(apikey.FieldSmartGroupHealthySince, field.TypeTime)
+	}
+	if value, ok := _u.mutation.SmartGroupLastProbeAt(); ok {
+		_spec.SetField(apikey.FieldSmartGroupLastProbeAt, field.TypeTime, value)
+	}
+	if _u.mutation.SmartGroupLastProbeAtCleared() {
+		_spec.ClearField(apikey.FieldSmartGroupLastProbeAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.SmartGroupLastSwitchAt(); ok {
+		_spec.SetField(apikey.FieldSmartGroupLastSwitchAt, field.TypeTime, value)
+	}
+	if _u.mutation.SmartGroupLastSwitchAtCleared() {
+		_spec.ClearField(apikey.FieldSmartGroupLastSwitchAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.SmartGroupProbeLeaseUntil(); ok {
+		_spec.SetField(apikey.FieldSmartGroupProbeLeaseUntil, field.TypeTime, value)
+	}
+	if _u.mutation.SmartGroupProbeLeaseUntilCleared() {
+		_spec.ClearField(apikey.FieldSmartGroupProbeLeaseUntil, field.TypeTime)
+	}
+	if value, ok := _u.mutation.SmartGroupLastSwitchReason(); ok {
+		_spec.SetField(apikey.FieldSmartGroupLastSwitchReason, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.SmartGroupLastError(); ok {
+		_spec.SetField(apikey.FieldSmartGroupLastError, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.LastUsedAt(); ok {
 		_spec.SetField(apikey.FieldLastUsedAt, field.TypeTime, value)
@@ -917,6 +1178,203 @@ func (_u *APIKeyUpdateOne) SetStatus(v string) *APIKeyUpdateOne {
 func (_u *APIKeyUpdateOne) SetNillableStatus(v *string) *APIKeyUpdateOne {
 	if v != nil {
 		_u.SetStatus(*v)
+	}
+	return _u
+}
+
+// SetSmartGroupEnabled sets the "smart_group_enabled" field.
+func (_u *APIKeyUpdateOne) SetSmartGroupEnabled(v bool) *APIKeyUpdateOne {
+	_u.mutation.SetSmartGroupEnabled(v)
+	return _u
+}
+
+// SetNillableSmartGroupEnabled sets the "smart_group_enabled" field if the given value is not nil.
+func (_u *APIKeyUpdateOne) SetNillableSmartGroupEnabled(v *bool) *APIKeyUpdateOne {
+	if v != nil {
+		_u.SetSmartGroupEnabled(*v)
+	}
+	return _u
+}
+
+// SetSmartGroupIds sets the "smart_group_ids" field.
+func (_u *APIKeyUpdateOne) SetSmartGroupIds(v []int64) *APIKeyUpdateOne {
+	_u.mutation.SetSmartGroupIds(v)
+	return _u
+}
+
+// AppendSmartGroupIds appends value to the "smart_group_ids" field.
+func (_u *APIKeyUpdateOne) AppendSmartGroupIds(v []int64) *APIKeyUpdateOne {
+	_u.mutation.AppendSmartGroupIds(v)
+	return _u
+}
+
+// SetSmartGroupFailureThreshold sets the "smart_group_failure_threshold" field.
+func (_u *APIKeyUpdateOne) SetSmartGroupFailureThreshold(v int) *APIKeyUpdateOne {
+	_u.mutation.ResetSmartGroupFailureThreshold()
+	_u.mutation.SetSmartGroupFailureThreshold(v)
+	return _u
+}
+
+// SetNillableSmartGroupFailureThreshold sets the "smart_group_failure_threshold" field if the given value is not nil.
+func (_u *APIKeyUpdateOne) SetNillableSmartGroupFailureThreshold(v *int) *APIKeyUpdateOne {
+	if v != nil {
+		_u.SetSmartGroupFailureThreshold(*v)
+	}
+	return _u
+}
+
+// AddSmartGroupFailureThreshold adds value to the "smart_group_failure_threshold" field.
+func (_u *APIKeyUpdateOne) AddSmartGroupFailureThreshold(v int) *APIKeyUpdateOne {
+	_u.mutation.AddSmartGroupFailureThreshold(v)
+	return _u
+}
+
+// SetSmartGroupRecoveryIntervalSeconds sets the "smart_group_recovery_interval_seconds" field.
+func (_u *APIKeyUpdateOne) SetSmartGroupRecoveryIntervalSeconds(v int) *APIKeyUpdateOne {
+	_u.mutation.ResetSmartGroupRecoveryIntervalSeconds()
+	_u.mutation.SetSmartGroupRecoveryIntervalSeconds(v)
+	return _u
+}
+
+// SetNillableSmartGroupRecoveryIntervalSeconds sets the "smart_group_recovery_interval_seconds" field if the given value is not nil.
+func (_u *APIKeyUpdateOne) SetNillableSmartGroupRecoveryIntervalSeconds(v *int) *APIKeyUpdateOne {
+	if v != nil {
+		_u.SetSmartGroupRecoveryIntervalSeconds(*v)
+	}
+	return _u
+}
+
+// AddSmartGroupRecoveryIntervalSeconds adds value to the "smart_group_recovery_interval_seconds" field.
+func (_u *APIKeyUpdateOne) AddSmartGroupRecoveryIntervalSeconds(v int) *APIKeyUpdateOne {
+	_u.mutation.AddSmartGroupRecoveryIntervalSeconds(v)
+	return _u
+}
+
+// SetSmartGroupConsecutiveFailures sets the "smart_group_consecutive_failures" field.
+func (_u *APIKeyUpdateOne) SetSmartGroupConsecutiveFailures(v int) *APIKeyUpdateOne {
+	_u.mutation.ResetSmartGroupConsecutiveFailures()
+	_u.mutation.SetSmartGroupConsecutiveFailures(v)
+	return _u
+}
+
+// SetNillableSmartGroupConsecutiveFailures sets the "smart_group_consecutive_failures" field if the given value is not nil.
+func (_u *APIKeyUpdateOne) SetNillableSmartGroupConsecutiveFailures(v *int) *APIKeyUpdateOne {
+	if v != nil {
+		_u.SetSmartGroupConsecutiveFailures(*v)
+	}
+	return _u
+}
+
+// AddSmartGroupConsecutiveFailures adds value to the "smart_group_consecutive_failures" field.
+func (_u *APIKeyUpdateOne) AddSmartGroupConsecutiveFailures(v int) *APIKeyUpdateOne {
+	_u.mutation.AddSmartGroupConsecutiveFailures(v)
+	return _u
+}
+
+// SetSmartGroupHealthySince sets the "smart_group_healthy_since" field.
+func (_u *APIKeyUpdateOne) SetSmartGroupHealthySince(v time.Time) *APIKeyUpdateOne {
+	_u.mutation.SetSmartGroupHealthySince(v)
+	return _u
+}
+
+// SetNillableSmartGroupHealthySince sets the "smart_group_healthy_since" field if the given value is not nil.
+func (_u *APIKeyUpdateOne) SetNillableSmartGroupHealthySince(v *time.Time) *APIKeyUpdateOne {
+	if v != nil {
+		_u.SetSmartGroupHealthySince(*v)
+	}
+	return _u
+}
+
+// ClearSmartGroupHealthySince clears the value of the "smart_group_healthy_since" field.
+func (_u *APIKeyUpdateOne) ClearSmartGroupHealthySince() *APIKeyUpdateOne {
+	_u.mutation.ClearSmartGroupHealthySince()
+	return _u
+}
+
+// SetSmartGroupLastProbeAt sets the "smart_group_last_probe_at" field.
+func (_u *APIKeyUpdateOne) SetSmartGroupLastProbeAt(v time.Time) *APIKeyUpdateOne {
+	_u.mutation.SetSmartGroupLastProbeAt(v)
+	return _u
+}
+
+// SetNillableSmartGroupLastProbeAt sets the "smart_group_last_probe_at" field if the given value is not nil.
+func (_u *APIKeyUpdateOne) SetNillableSmartGroupLastProbeAt(v *time.Time) *APIKeyUpdateOne {
+	if v != nil {
+		_u.SetSmartGroupLastProbeAt(*v)
+	}
+	return _u
+}
+
+// ClearSmartGroupLastProbeAt clears the value of the "smart_group_last_probe_at" field.
+func (_u *APIKeyUpdateOne) ClearSmartGroupLastProbeAt() *APIKeyUpdateOne {
+	_u.mutation.ClearSmartGroupLastProbeAt()
+	return _u
+}
+
+// SetSmartGroupLastSwitchAt sets the "smart_group_last_switch_at" field.
+func (_u *APIKeyUpdateOne) SetSmartGroupLastSwitchAt(v time.Time) *APIKeyUpdateOne {
+	_u.mutation.SetSmartGroupLastSwitchAt(v)
+	return _u
+}
+
+// SetNillableSmartGroupLastSwitchAt sets the "smart_group_last_switch_at" field if the given value is not nil.
+func (_u *APIKeyUpdateOne) SetNillableSmartGroupLastSwitchAt(v *time.Time) *APIKeyUpdateOne {
+	if v != nil {
+		_u.SetSmartGroupLastSwitchAt(*v)
+	}
+	return _u
+}
+
+// ClearSmartGroupLastSwitchAt clears the value of the "smart_group_last_switch_at" field.
+func (_u *APIKeyUpdateOne) ClearSmartGroupLastSwitchAt() *APIKeyUpdateOne {
+	_u.mutation.ClearSmartGroupLastSwitchAt()
+	return _u
+}
+
+// SetSmartGroupProbeLeaseUntil sets the "smart_group_probe_lease_until" field.
+func (_u *APIKeyUpdateOne) SetSmartGroupProbeLeaseUntil(v time.Time) *APIKeyUpdateOne {
+	_u.mutation.SetSmartGroupProbeLeaseUntil(v)
+	return _u
+}
+
+// SetNillableSmartGroupProbeLeaseUntil sets the "smart_group_probe_lease_until" field if the given value is not nil.
+func (_u *APIKeyUpdateOne) SetNillableSmartGroupProbeLeaseUntil(v *time.Time) *APIKeyUpdateOne {
+	if v != nil {
+		_u.SetSmartGroupProbeLeaseUntil(*v)
+	}
+	return _u
+}
+
+// ClearSmartGroupProbeLeaseUntil clears the value of the "smart_group_probe_lease_until" field.
+func (_u *APIKeyUpdateOne) ClearSmartGroupProbeLeaseUntil() *APIKeyUpdateOne {
+	_u.mutation.ClearSmartGroupProbeLeaseUntil()
+	return _u
+}
+
+// SetSmartGroupLastSwitchReason sets the "smart_group_last_switch_reason" field.
+func (_u *APIKeyUpdateOne) SetSmartGroupLastSwitchReason(v string) *APIKeyUpdateOne {
+	_u.mutation.SetSmartGroupLastSwitchReason(v)
+	return _u
+}
+
+// SetNillableSmartGroupLastSwitchReason sets the "smart_group_last_switch_reason" field if the given value is not nil.
+func (_u *APIKeyUpdateOne) SetNillableSmartGroupLastSwitchReason(v *string) *APIKeyUpdateOne {
+	if v != nil {
+		_u.SetSmartGroupLastSwitchReason(*v)
+	}
+	return _u
+}
+
+// SetSmartGroupLastError sets the "smart_group_last_error" field.
+func (_u *APIKeyUpdateOne) SetSmartGroupLastError(v string) *APIKeyUpdateOne {
+	_u.mutation.SetSmartGroupLastError(v)
+	return _u
+}
+
+// SetNillableSmartGroupLastError sets the "smart_group_last_error" field if the given value is not nil.
+func (_u *APIKeyUpdateOne) SetNillableSmartGroupLastError(v *string) *APIKeyUpdateOne {
+	if v != nil {
+		_u.SetSmartGroupLastError(*v)
 	}
 	return _u
 }
@@ -1360,6 +1818,11 @@ func (_u *APIKeyUpdateOne) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "APIKey.status": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.SmartGroupLastSwitchReason(); ok {
+		if err := apikey.SmartGroupLastSwitchReasonValidator(v); err != nil {
+			return &ValidationError{Name: "smart_group_last_switch_reason", err: fmt.Errorf(`ent: validator failed for field "APIKey.smart_group_last_switch_reason": %w`, err)}
+		}
+	}
 	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "APIKey.user"`)
 	}
@@ -1412,6 +1875,65 @@ func (_u *APIKeyUpdateOne) sqlSave(ctx context.Context) (_node *APIKey, err erro
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(apikey.FieldStatus, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.SmartGroupEnabled(); ok {
+		_spec.SetField(apikey.FieldSmartGroupEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.SmartGroupIds(); ok {
+		_spec.SetField(apikey.FieldSmartGroupIds, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedSmartGroupIds(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, apikey.FieldSmartGroupIds, value)
+		})
+	}
+	if value, ok := _u.mutation.SmartGroupFailureThreshold(); ok {
+		_spec.SetField(apikey.FieldSmartGroupFailureThreshold, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSmartGroupFailureThreshold(); ok {
+		_spec.AddField(apikey.FieldSmartGroupFailureThreshold, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.SmartGroupRecoveryIntervalSeconds(); ok {
+		_spec.SetField(apikey.FieldSmartGroupRecoveryIntervalSeconds, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSmartGroupRecoveryIntervalSeconds(); ok {
+		_spec.AddField(apikey.FieldSmartGroupRecoveryIntervalSeconds, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.SmartGroupConsecutiveFailures(); ok {
+		_spec.SetField(apikey.FieldSmartGroupConsecutiveFailures, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedSmartGroupConsecutiveFailures(); ok {
+		_spec.AddField(apikey.FieldSmartGroupConsecutiveFailures, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.SmartGroupHealthySince(); ok {
+		_spec.SetField(apikey.FieldSmartGroupHealthySince, field.TypeTime, value)
+	}
+	if _u.mutation.SmartGroupHealthySinceCleared() {
+		_spec.ClearField(apikey.FieldSmartGroupHealthySince, field.TypeTime)
+	}
+	if value, ok := _u.mutation.SmartGroupLastProbeAt(); ok {
+		_spec.SetField(apikey.FieldSmartGroupLastProbeAt, field.TypeTime, value)
+	}
+	if _u.mutation.SmartGroupLastProbeAtCleared() {
+		_spec.ClearField(apikey.FieldSmartGroupLastProbeAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.SmartGroupLastSwitchAt(); ok {
+		_spec.SetField(apikey.FieldSmartGroupLastSwitchAt, field.TypeTime, value)
+	}
+	if _u.mutation.SmartGroupLastSwitchAtCleared() {
+		_spec.ClearField(apikey.FieldSmartGroupLastSwitchAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.SmartGroupProbeLeaseUntil(); ok {
+		_spec.SetField(apikey.FieldSmartGroupProbeLeaseUntil, field.TypeTime, value)
+	}
+	if _u.mutation.SmartGroupProbeLeaseUntilCleared() {
+		_spec.ClearField(apikey.FieldSmartGroupProbeLeaseUntil, field.TypeTime)
+	}
+	if value, ok := _u.mutation.SmartGroupLastSwitchReason(); ok {
+		_spec.SetField(apikey.FieldSmartGroupLastSwitchReason, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.SmartGroupLastError(); ok {
+		_spec.SetField(apikey.FieldSmartGroupLastError, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.LastUsedAt(); ok {
 		_spec.SetField(apikey.FieldLastUsedAt, field.TypeTime, value)

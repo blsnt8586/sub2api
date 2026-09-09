@@ -44,6 +44,8 @@ export interface CodexRadarIntelligencePoint {
 export interface CodexRadarData {
   recommendations?: {
     recommendations?: CodexRadarRecommendationGroup[]
+    /** 综合 IQ 候选，源站在分类不足两条时用它补位。 */
+    comprehensive_points?: CodexRadarRecommendationItem[]
     [key: string]: unknown
   }
   /** 「软件工程能力」（deep-swe 基准）数据。 */

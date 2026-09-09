@@ -149,6 +149,20 @@ func (s *OpenAIGatewayService) handleCanvasVideoErrorResponse(
 	requestedModel string,
 ) (*OpenAIForwardResult, error) {
 	body := s.readUpstreamErrorBody(resp)
+	customAccountErrorHandled := false
+	customAccountErrorShouldDisable := false
+	if isConfiguredCustomAccountError(account, resp.StatusCode) {
+		customAccountErrorHandled = true
+		customAccountErrorShouldDisable = s.handleOpenAIAccountUpstreamError(ctx, account, resp.StatusCode, resp.Header, body, requestedModel)
+		if customAccountErrorShouldDisable {
+			return nil, &UpstreamFailoverError{
+				StatusCode:             resp.StatusCode,
+				ResponseBody:           body,
+				ResponseHeaders:        resp.Header.Clone(),
+				RetryableOnSameAccount: false,
+			}
+		}
+	}
 	upstreamMsg := sanitizeUpstreamErrorMessage(strings.TrimSpace(extractUpstreamErrorMessage(body)))
 	if upstreamMsg == "" {
 		upstreamMsg = fmt.Sprintf("canvas upstream returned status %d", resp.StatusCode)
@@ -194,7 +208,9 @@ func (s *OpenAIGatewayService) handleCanvasVideoErrorResponse(
 		return nil, fmt.Errorf("upstream error: %d (not in custom error codes) message=%s", resp.StatusCode, upstreamMsg)
 	}
 
-	s.handleOpenAIAccountUpstreamError(ctx, account, resp.StatusCode, resp.Header, body, requestedModel)
+	if !customAccountErrorHandled {
+		s.handleOpenAIAccountUpstreamError(ctx, account, resp.StatusCode, resp.Header, body, requestedModel)
+	}
 	kind := "http_error"
 	if s.shouldFailoverUpstreamError(resp.StatusCode) {
 		kind = "failover"

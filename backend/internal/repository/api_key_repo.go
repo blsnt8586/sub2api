@@ -55,7 +55,18 @@ func (r *apiKeyRepository) Create(ctx context.Context, key *service.APIKey) erro
 		SetNillableExpiresAt(key.ExpiresAt).
 		SetRateLimit5h(key.RateLimit5h).
 		SetRateLimit1d(key.RateLimit1d).
-		SetRateLimit7d(key.RateLimit7d)
+		SetRateLimit7d(key.RateLimit7d).
+		SetSmartGroupEnabled(key.SmartGroupEnabled).
+		SetSmartGroupIds(key.SmartGroupIDs).
+		SetSmartGroupFailureThreshold(key.SmartGroupFailureThreshold).
+		SetSmartGroupRecoveryIntervalSeconds(key.SmartGroupRecoveryIntervalSeconds).
+		SetSmartGroupConsecutiveFailures(key.SmartGroupConsecutiveFailures).
+		SetNillableSmartGroupHealthySince(key.SmartGroupHealthySince).
+		SetNillableSmartGroupLastProbeAt(key.SmartGroupLastProbeAt).
+		SetNillableSmartGroupLastSwitchAt(key.SmartGroupLastSwitchAt).
+		SetNillableSmartGroupProbeLeaseUntil(key.SmartGroupProbeLeaseUntil).
+		SetSmartGroupLastSwitchReason(key.SmartGroupLastSwitchReason).
+		SetSmartGroupLastError(key.SmartGroupLastError)
 
 	if len(key.IPWhitelist) > 0 {
 		builder.SetIPWhitelist(key.IPWhitelist)
@@ -144,6 +155,17 @@ func (r *apiKeyRepository) GetByKeyForAuth(ctx context.Context, key string) (*se
 			apikey.FieldRateLimit5h,
 			apikey.FieldRateLimit1d,
 			apikey.FieldRateLimit7d,
+			apikey.FieldSmartGroupEnabled,
+			apikey.FieldSmartGroupIds,
+			apikey.FieldSmartGroupFailureThreshold,
+			apikey.FieldSmartGroupRecoveryIntervalSeconds,
+			apikey.FieldSmartGroupConsecutiveFailures,
+			apikey.FieldSmartGroupHealthySince,
+			apikey.FieldSmartGroupLastProbeAt,
+			apikey.FieldSmartGroupLastSwitchAt,
+			apikey.FieldSmartGroupProbeLeaseUntil,
+			apikey.FieldSmartGroupLastSwitchReason,
+			apikey.FieldSmartGroupLastError,
 		).
 		WithUser(func(q *dbent.UserQuery) {
 			q.Select(
@@ -309,6 +331,24 @@ func (r *apiKeyRepository) Update(ctx context.Context, key *service.APIKey, fiel
 			builder.SetGroupID(*key.GroupID)
 		} else {
 			builder.ClearGroupID()
+		}
+	}
+	if fields.SmartGroupConfig {
+		builder.
+			SetSmartGroupEnabled(key.SmartGroupEnabled).
+			SetSmartGroupIds(key.SmartGroupIDs).
+			SetSmartGroupFailureThreshold(key.SmartGroupFailureThreshold).
+			SetSmartGroupRecoveryIntervalSeconds(key.SmartGroupRecoveryIntervalSeconds).
+			SetSmartGroupConsecutiveFailures(0).
+			ClearSmartGroupLastProbeAt().
+			ClearSmartGroupLastSwitchAt().
+			ClearSmartGroupProbeLeaseUntil().
+			SetSmartGroupLastSwitchReason("").
+			SetSmartGroupLastError("")
+		if key.SmartGroupHealthySince != nil {
+			builder.SetSmartGroupHealthySince(*key.SmartGroupHealthySince)
+		} else {
+			builder.ClearSmartGroupHealthySince()
 		}
 	}
 
@@ -721,6 +761,62 @@ func (r *apiKeyRepository) ClearGroupIDByGroupID(ctx context.Context, groupID in
 	return int64(n), err
 }
 
+// RemoveSmartGroupCandidateByGroupID removes a deleted group from every API
+// key's smart candidate list. Keys whose active group is deleted, or whose
+// candidate list falls below two groups, are disabled from smart routing and
+// their active group is cleared. It returns all affected key strings so the
+// caller can invalidate auth caches.
+func (r *apiKeyRepository) RemoveSmartGroupCandidateByGroupID(ctx context.Context, groupID int64) ([]string, error) {
+	rows, err := r.sql.QueryContext(ctx, `
+		WITH affected AS (
+			SELECT id,
+			       key,
+			       group_id,
+			       COALESCE((
+			           SELECT jsonb_agg(value ORDER BY ord)
+			             FROM jsonb_array_elements(smart_group_ids) WITH ORDINALITY AS items(value, ord)
+			            WHERE value <> to_jsonb($1::bigint)
+			       ), '[]'::jsonb) AS remaining_ids
+			  FROM api_keys
+			 WHERE deleted_at IS NULL
+			   AND (group_id = $1 OR smart_group_ids @> to_jsonb(ARRAY[$1::bigint]))
+		)
+		UPDATE api_keys AS k
+		   SET group_id = CASE WHEN affected.group_id = $1 THEN NULL ELSE k.group_id END,
+		       smart_group_ids = affected.remaining_ids,
+		       smart_group_enabled = CASE
+		           WHEN affected.group_id = $1 OR jsonb_array_length(affected.remaining_ids) < 2 THEN FALSE
+		           ELSE k.smart_group_enabled
+		       END,
+		       smart_group_consecutive_failures = 0,
+		       smart_group_healthy_since = NULL,
+		       smart_group_last_probe_at = NULL,
+		       smart_group_last_switch_at = NULL,
+		       smart_group_probe_lease_until = NULL,
+		       smart_group_last_switch_reason = '',
+		       smart_group_last_error = '',
+		       updated_at = NOW()
+		  FROM affected
+		 WHERE k.id = affected.id
+		RETURNING k.key`, groupID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	keys := make([]string, 0)
+	for rows.Next() {
+		var key string
+		if err := rows.Scan(&key); err != nil {
+			return nil, err
+		}
+		keys = append(keys, key)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return keys, nil
+}
+
 // UpdateGroupIDByUserAndGroup 将用户下绑定 oldGroupID 的所有 Key 迁移到 newGroupID
 func (r *apiKeyRepository) UpdateGroupIDByUserAndGroup(ctx context.Context, userID, oldGroupID, newGroupID int64) (int64, error) {
 	client := clientFromContext(ctx, r.client)
@@ -878,29 +974,40 @@ func apiKeyEntityToService(m *dbent.APIKey) *service.APIKey {
 		return nil
 	}
 	out := &service.APIKey{
-		ID:            m.ID,
-		UserID:        m.UserID,
-		Key:           m.Key,
-		Name:          m.Name,
-		Status:        m.Status,
-		IPWhitelist:   m.IPWhitelist,
-		IPBlacklist:   m.IPBlacklist,
-		LastUsedAt:    m.LastUsedAt,
-		CreatedAt:     m.CreatedAt,
-		UpdatedAt:     m.UpdatedAt,
-		GroupID:       m.GroupID,
-		Quota:         m.Quota,
-		QuotaUsed:     m.QuotaUsed,
-		ExpiresAt:     m.ExpiresAt,
-		RateLimit5h:   m.RateLimit5h,
-		RateLimit1d:   m.RateLimit1d,
-		RateLimit7d:   m.RateLimit7d,
-		Usage5h:       m.Usage5h,
-		Usage1d:       m.Usage1d,
-		Usage7d:       m.Usage7d,
-		Window5hStart: m.Window5hStart,
-		Window1dStart: m.Window1dStart,
-		Window7dStart: m.Window7dStart,
+		ID:                                m.ID,
+		UserID:                            m.UserID,
+		Key:                               m.Key,
+		Name:                              m.Name,
+		Status:                            m.Status,
+		IPWhitelist:                       m.IPWhitelist,
+		IPBlacklist:                       m.IPBlacklist,
+		LastUsedAt:                        m.LastUsedAt,
+		CreatedAt:                         m.CreatedAt,
+		UpdatedAt:                         m.UpdatedAt,
+		GroupID:                           m.GroupID,
+		Quota:                             m.Quota,
+		QuotaUsed:                         m.QuotaUsed,
+		ExpiresAt:                         m.ExpiresAt,
+		RateLimit5h:                       m.RateLimit5h,
+		RateLimit1d:                       m.RateLimit1d,
+		RateLimit7d:                       m.RateLimit7d,
+		Usage5h:                           m.Usage5h,
+		Usage1d:                           m.Usage1d,
+		Usage7d:                           m.Usage7d,
+		Window5hStart:                     m.Window5hStart,
+		Window1dStart:                     m.Window1dStart,
+		Window7dStart:                     m.Window7dStart,
+		SmartGroupEnabled:                 m.SmartGroupEnabled,
+		SmartGroupIDs:                     m.SmartGroupIds,
+		SmartGroupFailureThreshold:        m.SmartGroupFailureThreshold,
+		SmartGroupRecoveryIntervalSeconds: m.SmartGroupRecoveryIntervalSeconds,
+		SmartGroupConsecutiveFailures:     m.SmartGroupConsecutiveFailures,
+		SmartGroupHealthySince:            m.SmartGroupHealthySince,
+		SmartGroupLastProbeAt:             m.SmartGroupLastProbeAt,
+		SmartGroupLastSwitchAt:            m.SmartGroupLastSwitchAt,
+		SmartGroupProbeLeaseUntil:         m.SmartGroupProbeLeaseUntil,
+		SmartGroupLastSwitchReason:        m.SmartGroupLastSwitchReason,
+		SmartGroupLastError:               m.SmartGroupLastError,
 	}
 	if m.Edges.User != nil {
 		out.User = userEntityToService(m.Edges.User)

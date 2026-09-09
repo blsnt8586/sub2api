@@ -113,6 +113,152 @@ func (_c *APIKeyCreate) SetNillableStatus(v *string) *APIKeyCreate {
 	return _c
 }
 
+// SetSmartGroupEnabled sets the "smart_group_enabled" field.
+func (_c *APIKeyCreate) SetSmartGroupEnabled(v bool) *APIKeyCreate {
+	_c.mutation.SetSmartGroupEnabled(v)
+	return _c
+}
+
+// SetNillableSmartGroupEnabled sets the "smart_group_enabled" field if the given value is not nil.
+func (_c *APIKeyCreate) SetNillableSmartGroupEnabled(v *bool) *APIKeyCreate {
+	if v != nil {
+		_c.SetSmartGroupEnabled(*v)
+	}
+	return _c
+}
+
+// SetSmartGroupIds sets the "smart_group_ids" field.
+func (_c *APIKeyCreate) SetSmartGroupIds(v []int64) *APIKeyCreate {
+	_c.mutation.SetSmartGroupIds(v)
+	return _c
+}
+
+// SetSmartGroupFailureThreshold sets the "smart_group_failure_threshold" field.
+func (_c *APIKeyCreate) SetSmartGroupFailureThreshold(v int) *APIKeyCreate {
+	_c.mutation.SetSmartGroupFailureThreshold(v)
+	return _c
+}
+
+// SetNillableSmartGroupFailureThreshold sets the "smart_group_failure_threshold" field if the given value is not nil.
+func (_c *APIKeyCreate) SetNillableSmartGroupFailureThreshold(v *int) *APIKeyCreate {
+	if v != nil {
+		_c.SetSmartGroupFailureThreshold(*v)
+	}
+	return _c
+}
+
+// SetSmartGroupRecoveryIntervalSeconds sets the "smart_group_recovery_interval_seconds" field.
+func (_c *APIKeyCreate) SetSmartGroupRecoveryIntervalSeconds(v int) *APIKeyCreate {
+	_c.mutation.SetSmartGroupRecoveryIntervalSeconds(v)
+	return _c
+}
+
+// SetNillableSmartGroupRecoveryIntervalSeconds sets the "smart_group_recovery_interval_seconds" field if the given value is not nil.
+func (_c *APIKeyCreate) SetNillableSmartGroupRecoveryIntervalSeconds(v *int) *APIKeyCreate {
+	if v != nil {
+		_c.SetSmartGroupRecoveryIntervalSeconds(*v)
+	}
+	return _c
+}
+
+// SetSmartGroupConsecutiveFailures sets the "smart_group_consecutive_failures" field.
+func (_c *APIKeyCreate) SetSmartGroupConsecutiveFailures(v int) *APIKeyCreate {
+	_c.mutation.SetSmartGroupConsecutiveFailures(v)
+	return _c
+}
+
+// SetNillableSmartGroupConsecutiveFailures sets the "smart_group_consecutive_failures" field if the given value is not nil.
+func (_c *APIKeyCreate) SetNillableSmartGroupConsecutiveFailures(v *int) *APIKeyCreate {
+	if v != nil {
+		_c.SetSmartGroupConsecutiveFailures(*v)
+	}
+	return _c
+}
+
+// SetSmartGroupHealthySince sets the "smart_group_healthy_since" field.
+func (_c *APIKeyCreate) SetSmartGroupHealthySince(v time.Time) *APIKeyCreate {
+	_c.mutation.SetSmartGroupHealthySince(v)
+	return _c
+}
+
+// SetNillableSmartGroupHealthySince sets the "smart_group_healthy_since" field if the given value is not nil.
+func (_c *APIKeyCreate) SetNillableSmartGroupHealthySince(v *time.Time) *APIKeyCreate {
+	if v != nil {
+		_c.SetSmartGroupHealthySince(*v)
+	}
+	return _c
+}
+
+// SetSmartGroupLastProbeAt sets the "smart_group_last_probe_at" field.
+func (_c *APIKeyCreate) SetSmartGroupLastProbeAt(v time.Time) *APIKeyCreate {
+	_c.mutation.SetSmartGroupLastProbeAt(v)
+	return _c
+}
+
+// SetNillableSmartGroupLastProbeAt sets the "smart_group_last_probe_at" field if the given value is not nil.
+func (_c *APIKeyCreate) SetNillableSmartGroupLastProbeAt(v *time.Time) *APIKeyCreate {
+	if v != nil {
+		_c.SetSmartGroupLastProbeAt(*v)
+	}
+	return _c
+}
+
+// SetSmartGroupLastSwitchAt sets the "smart_group_last_switch_at" field.
+func (_c *APIKeyCreate) SetSmartGroupLastSwitchAt(v time.Time) *APIKeyCreate {
+	_c.mutation.SetSmartGroupLastSwitchAt(v)
+	return _c
+}
+
+// SetNillableSmartGroupLastSwitchAt sets the "smart_group_last_switch_at" field if the given value is not nil.
+func (_c *APIKeyCreate) SetNillableSmartGroupLastSwitchAt(v *time.Time) *APIKeyCreate {
+	if v != nil {
+		_c.SetSmartGroupLastSwitchAt(*v)
+	}
+	return _c
+}
+
+// SetSmartGroupProbeLeaseUntil sets the "smart_group_probe_lease_until" field.
+func (_c *APIKeyCreate) SetSmartGroupProbeLeaseUntil(v time.Time) *APIKeyCreate {
+	_c.mutation.SetSmartGroupProbeLeaseUntil(v)
+	return _c
+}
+
+// SetNillableSmartGroupProbeLeaseUntil sets the "smart_group_probe_lease_until" field if the given value is not nil.
+func (_c *APIKeyCreate) SetNillableSmartGroupProbeLeaseUntil(v *time.Time) *APIKeyCreate {
+	if v != nil {
+		_c.SetSmartGroupProbeLeaseUntil(*v)
+	}
+	return _c
+}
+
+// SetSmartGroupLastSwitchReason sets the "smart_group_last_switch_reason" field.
+func (_c *APIKeyCreate) SetSmartGroupLastSwitchReason(v string) *APIKeyCreate {
+	_c.mutation.SetSmartGroupLastSwitchReason(v)
+	return _c
+}
+
+// SetNillableSmartGroupLastSwitchReason sets the "smart_group_last_switch_reason" field if the given value is not nil.
+func (_c *APIKeyCreate) SetNillableSmartGroupLastSwitchReason(v *string) *APIKeyCreate {
+	if v != nil {
+		_c.SetSmartGroupLastSwitchReason(*v)
+	}
+	return _c
+}
+
+// SetSmartGroupLastError sets the "smart_group_last_error" field.
+func (_c *APIKeyCreate) SetSmartGroupLastError(v string) *APIKeyCreate {
+	_c.mutation.SetSmartGroupLastError(v)
+	return _c
+}
+
+// SetNillableSmartGroupLastError sets the "smart_group_last_error" field if the given value is not nil.
+func (_c *APIKeyCreate) SetNillableSmartGroupLastError(v *string) *APIKeyCreate {
+	if v != nil {
+		_c.SetSmartGroupLastError(*v)
+	}
+	return _c
+}
+
 // SetLastUsedAt sets the "last_used_at" field.
 func (_c *APIKeyCreate) SetLastUsedAt(v time.Time) *APIKeyCreate {
 	_c.mutation.SetLastUsedAt(v)
@@ -387,6 +533,34 @@ func (_c *APIKeyCreate) defaults() error {
 		v := apikey.DefaultStatus
 		_c.mutation.SetStatus(v)
 	}
+	if _, ok := _c.mutation.SmartGroupEnabled(); !ok {
+		v := apikey.DefaultSmartGroupEnabled
+		_c.mutation.SetSmartGroupEnabled(v)
+	}
+	if _, ok := _c.mutation.SmartGroupIds(); !ok {
+		v := apikey.DefaultSmartGroupIds
+		_c.mutation.SetSmartGroupIds(v)
+	}
+	if _, ok := _c.mutation.SmartGroupFailureThreshold(); !ok {
+		v := apikey.DefaultSmartGroupFailureThreshold
+		_c.mutation.SetSmartGroupFailureThreshold(v)
+	}
+	if _, ok := _c.mutation.SmartGroupRecoveryIntervalSeconds(); !ok {
+		v := apikey.DefaultSmartGroupRecoveryIntervalSeconds
+		_c.mutation.SetSmartGroupRecoveryIntervalSeconds(v)
+	}
+	if _, ok := _c.mutation.SmartGroupConsecutiveFailures(); !ok {
+		v := apikey.DefaultSmartGroupConsecutiveFailures
+		_c.mutation.SetSmartGroupConsecutiveFailures(v)
+	}
+	if _, ok := _c.mutation.SmartGroupLastSwitchReason(); !ok {
+		v := apikey.DefaultSmartGroupLastSwitchReason
+		_c.mutation.SetSmartGroupLastSwitchReason(v)
+	}
+	if _, ok := _c.mutation.SmartGroupLastError(); !ok {
+		v := apikey.DefaultSmartGroupLastError
+		_c.mutation.SetSmartGroupLastError(v)
+	}
 	if _, ok := _c.mutation.Quota(); !ok {
 		v := apikey.DefaultQuota
 		_c.mutation.SetQuota(v)
@@ -456,6 +630,32 @@ func (_c *APIKeyCreate) check() error {
 		if err := apikey.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "APIKey.status": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.SmartGroupEnabled(); !ok {
+		return &ValidationError{Name: "smart_group_enabled", err: errors.New(`ent: missing required field "APIKey.smart_group_enabled"`)}
+	}
+	if _, ok := _c.mutation.SmartGroupIds(); !ok {
+		return &ValidationError{Name: "smart_group_ids", err: errors.New(`ent: missing required field "APIKey.smart_group_ids"`)}
+	}
+	if _, ok := _c.mutation.SmartGroupFailureThreshold(); !ok {
+		return &ValidationError{Name: "smart_group_failure_threshold", err: errors.New(`ent: missing required field "APIKey.smart_group_failure_threshold"`)}
+	}
+	if _, ok := _c.mutation.SmartGroupRecoveryIntervalSeconds(); !ok {
+		return &ValidationError{Name: "smart_group_recovery_interval_seconds", err: errors.New(`ent: missing required field "APIKey.smart_group_recovery_interval_seconds"`)}
+	}
+	if _, ok := _c.mutation.SmartGroupConsecutiveFailures(); !ok {
+		return &ValidationError{Name: "smart_group_consecutive_failures", err: errors.New(`ent: missing required field "APIKey.smart_group_consecutive_failures"`)}
+	}
+	if _, ok := _c.mutation.SmartGroupLastSwitchReason(); !ok {
+		return &ValidationError{Name: "smart_group_last_switch_reason", err: errors.New(`ent: missing required field "APIKey.smart_group_last_switch_reason"`)}
+	}
+	if v, ok := _c.mutation.SmartGroupLastSwitchReason(); ok {
+		if err := apikey.SmartGroupLastSwitchReasonValidator(v); err != nil {
+			return &ValidationError{Name: "smart_group_last_switch_reason", err: fmt.Errorf(`ent: validator failed for field "APIKey.smart_group_last_switch_reason": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.SmartGroupLastError(); !ok {
+		return &ValidationError{Name: "smart_group_last_error", err: errors.New(`ent: missing required field "APIKey.smart_group_last_error"`)}
 	}
 	if _, ok := _c.mutation.Quota(); !ok {
 		return &ValidationError{Name: "quota", err: errors.New(`ent: missing required field "APIKey.quota"`)}
@@ -534,6 +734,50 @@ func (_c *APIKeyCreate) createSpec() (*APIKey, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(apikey.FieldStatus, field.TypeString, value)
 		_node.Status = value
+	}
+	if value, ok := _c.mutation.SmartGroupEnabled(); ok {
+		_spec.SetField(apikey.FieldSmartGroupEnabled, field.TypeBool, value)
+		_node.SmartGroupEnabled = value
+	}
+	if value, ok := _c.mutation.SmartGroupIds(); ok {
+		_spec.SetField(apikey.FieldSmartGroupIds, field.TypeJSON, value)
+		_node.SmartGroupIds = value
+	}
+	if value, ok := _c.mutation.SmartGroupFailureThreshold(); ok {
+		_spec.SetField(apikey.FieldSmartGroupFailureThreshold, field.TypeInt, value)
+		_node.SmartGroupFailureThreshold = value
+	}
+	if value, ok := _c.mutation.SmartGroupRecoveryIntervalSeconds(); ok {
+		_spec.SetField(apikey.FieldSmartGroupRecoveryIntervalSeconds, field.TypeInt, value)
+		_node.SmartGroupRecoveryIntervalSeconds = value
+	}
+	if value, ok := _c.mutation.SmartGroupConsecutiveFailures(); ok {
+		_spec.SetField(apikey.FieldSmartGroupConsecutiveFailures, field.TypeInt, value)
+		_node.SmartGroupConsecutiveFailures = value
+	}
+	if value, ok := _c.mutation.SmartGroupHealthySince(); ok {
+		_spec.SetField(apikey.FieldSmartGroupHealthySince, field.TypeTime, value)
+		_node.SmartGroupHealthySince = &value
+	}
+	if value, ok := _c.mutation.SmartGroupLastProbeAt(); ok {
+		_spec.SetField(apikey.FieldSmartGroupLastProbeAt, field.TypeTime, value)
+		_node.SmartGroupLastProbeAt = &value
+	}
+	if value, ok := _c.mutation.SmartGroupLastSwitchAt(); ok {
+		_spec.SetField(apikey.FieldSmartGroupLastSwitchAt, field.TypeTime, value)
+		_node.SmartGroupLastSwitchAt = &value
+	}
+	if value, ok := _c.mutation.SmartGroupProbeLeaseUntil(); ok {
+		_spec.SetField(apikey.FieldSmartGroupProbeLeaseUntil, field.TypeTime, value)
+		_node.SmartGroupProbeLeaseUntil = &value
+	}
+	if value, ok := _c.mutation.SmartGroupLastSwitchReason(); ok {
+		_spec.SetField(apikey.FieldSmartGroupLastSwitchReason, field.TypeString, value)
+		_node.SmartGroupLastSwitchReason = value
+	}
+	if value, ok := _c.mutation.SmartGroupLastError(); ok {
+		_spec.SetField(apikey.FieldSmartGroupLastError, field.TypeString, value)
+		_node.SmartGroupLastError = value
 	}
 	if value, ok := _c.mutation.LastUsedAt(); ok {
 		_spec.SetField(apikey.FieldLastUsedAt, field.TypeTime, value)
@@ -790,6 +1034,180 @@ func (u *APIKeyUpsert) SetStatus(v string) *APIKeyUpsert {
 // UpdateStatus sets the "status" field to the value that was provided on create.
 func (u *APIKeyUpsert) UpdateStatus() *APIKeyUpsert {
 	u.SetExcluded(apikey.FieldStatus)
+	return u
+}
+
+// SetSmartGroupEnabled sets the "smart_group_enabled" field.
+func (u *APIKeyUpsert) SetSmartGroupEnabled(v bool) *APIKeyUpsert {
+	u.Set(apikey.FieldSmartGroupEnabled, v)
+	return u
+}
+
+// UpdateSmartGroupEnabled sets the "smart_group_enabled" field to the value that was provided on create.
+func (u *APIKeyUpsert) UpdateSmartGroupEnabled() *APIKeyUpsert {
+	u.SetExcluded(apikey.FieldSmartGroupEnabled)
+	return u
+}
+
+// SetSmartGroupIds sets the "smart_group_ids" field.
+func (u *APIKeyUpsert) SetSmartGroupIds(v []int64) *APIKeyUpsert {
+	u.Set(apikey.FieldSmartGroupIds, v)
+	return u
+}
+
+// UpdateSmartGroupIds sets the "smart_group_ids" field to the value that was provided on create.
+func (u *APIKeyUpsert) UpdateSmartGroupIds() *APIKeyUpsert {
+	u.SetExcluded(apikey.FieldSmartGroupIds)
+	return u
+}
+
+// SetSmartGroupFailureThreshold sets the "smart_group_failure_threshold" field.
+func (u *APIKeyUpsert) SetSmartGroupFailureThreshold(v int) *APIKeyUpsert {
+	u.Set(apikey.FieldSmartGroupFailureThreshold, v)
+	return u
+}
+
+// UpdateSmartGroupFailureThreshold sets the "smart_group_failure_threshold" field to the value that was provided on create.
+func (u *APIKeyUpsert) UpdateSmartGroupFailureThreshold() *APIKeyUpsert {
+	u.SetExcluded(apikey.FieldSmartGroupFailureThreshold)
+	return u
+}
+
+// AddSmartGroupFailureThreshold adds v to the "smart_group_failure_threshold" field.
+func (u *APIKeyUpsert) AddSmartGroupFailureThreshold(v int) *APIKeyUpsert {
+	u.Add(apikey.FieldSmartGroupFailureThreshold, v)
+	return u
+}
+
+// SetSmartGroupRecoveryIntervalSeconds sets the "smart_group_recovery_interval_seconds" field.
+func (u *APIKeyUpsert) SetSmartGroupRecoveryIntervalSeconds(v int) *APIKeyUpsert {
+	u.Set(apikey.FieldSmartGroupRecoveryIntervalSeconds, v)
+	return u
+}
+
+// UpdateSmartGroupRecoveryIntervalSeconds sets the "smart_group_recovery_interval_seconds" field to the value that was provided on create.
+func (u *APIKeyUpsert) UpdateSmartGroupRecoveryIntervalSeconds() *APIKeyUpsert {
+	u.SetExcluded(apikey.FieldSmartGroupRecoveryIntervalSeconds)
+	return u
+}
+
+// AddSmartGroupRecoveryIntervalSeconds adds v to the "smart_group_recovery_interval_seconds" field.
+func (u *APIKeyUpsert) AddSmartGroupRecoveryIntervalSeconds(v int) *APIKeyUpsert {
+	u.Add(apikey.FieldSmartGroupRecoveryIntervalSeconds, v)
+	return u
+}
+
+// SetSmartGroupConsecutiveFailures sets the "smart_group_consecutive_failures" field.
+func (u *APIKeyUpsert) SetSmartGroupConsecutiveFailures(v int) *APIKeyUpsert {
+	u.Set(apikey.FieldSmartGroupConsecutiveFailures, v)
+	return u
+}
+
+// UpdateSmartGroupConsecutiveFailures sets the "smart_group_consecutive_failures" field to the value that was provided on create.
+func (u *APIKeyUpsert) UpdateSmartGroupConsecutiveFailures() *APIKeyUpsert {
+	u.SetExcluded(apikey.FieldSmartGroupConsecutiveFailures)
+	return u
+}
+
+// AddSmartGroupConsecutiveFailures adds v to the "smart_group_consecutive_failures" field.
+func (u *APIKeyUpsert) AddSmartGroupConsecutiveFailures(v int) *APIKeyUpsert {
+	u.Add(apikey.FieldSmartGroupConsecutiveFailures, v)
+	return u
+}
+
+// SetSmartGroupHealthySince sets the "smart_group_healthy_since" field.
+func (u *APIKeyUpsert) SetSmartGroupHealthySince(v time.Time) *APIKeyUpsert {
+	u.Set(apikey.FieldSmartGroupHealthySince, v)
+	return u
+}
+
+// UpdateSmartGroupHealthySince sets the "smart_group_healthy_since" field to the value that was provided on create.
+func (u *APIKeyUpsert) UpdateSmartGroupHealthySince() *APIKeyUpsert {
+	u.SetExcluded(apikey.FieldSmartGroupHealthySince)
+	return u
+}
+
+// ClearSmartGroupHealthySince clears the value of the "smart_group_healthy_since" field.
+func (u *APIKeyUpsert) ClearSmartGroupHealthySince() *APIKeyUpsert {
+	u.SetNull(apikey.FieldSmartGroupHealthySince)
+	return u
+}
+
+// SetSmartGroupLastProbeAt sets the "smart_group_last_probe_at" field.
+func (u *APIKeyUpsert) SetSmartGroupLastProbeAt(v time.Time) *APIKeyUpsert {
+	u.Set(apikey.FieldSmartGroupLastProbeAt, v)
+	return u
+}
+
+// UpdateSmartGroupLastProbeAt sets the "smart_group_last_probe_at" field to the value that was provided on create.
+func (u *APIKeyUpsert) UpdateSmartGroupLastProbeAt() *APIKeyUpsert {
+	u.SetExcluded(apikey.FieldSmartGroupLastProbeAt)
+	return u
+}
+
+// ClearSmartGroupLastProbeAt clears the value of the "smart_group_last_probe_at" field.
+func (u *APIKeyUpsert) ClearSmartGroupLastProbeAt() *APIKeyUpsert {
+	u.SetNull(apikey.FieldSmartGroupLastProbeAt)
+	return u
+}
+
+// SetSmartGroupLastSwitchAt sets the "smart_group_last_switch_at" field.
+func (u *APIKeyUpsert) SetSmartGroupLastSwitchAt(v time.Time) *APIKeyUpsert {
+	u.Set(apikey.FieldSmartGroupLastSwitchAt, v)
+	return u
+}
+
+// UpdateSmartGroupLastSwitchAt sets the "smart_group_last_switch_at" field to the value that was provided on create.
+func (u *APIKeyUpsert) UpdateSmartGroupLastSwitchAt() *APIKeyUpsert {
+	u.SetExcluded(apikey.FieldSmartGroupLastSwitchAt)
+	return u
+}
+
+// ClearSmartGroupLastSwitchAt clears the value of the "smart_group_last_switch_at" field.
+func (u *APIKeyUpsert) ClearSmartGroupLastSwitchAt() *APIKeyUpsert {
+	u.SetNull(apikey.FieldSmartGroupLastSwitchAt)
+	return u
+}
+
+// SetSmartGroupProbeLeaseUntil sets the "smart_group_probe_lease_until" field.
+func (u *APIKeyUpsert) SetSmartGroupProbeLeaseUntil(v time.Time) *APIKeyUpsert {
+	u.Set(apikey.FieldSmartGroupProbeLeaseUntil, v)
+	return u
+}
+
+// UpdateSmartGroupProbeLeaseUntil sets the "smart_group_probe_lease_until" field to the value that was provided on create.
+func (u *APIKeyUpsert) UpdateSmartGroupProbeLeaseUntil() *APIKeyUpsert {
+	u.SetExcluded(apikey.FieldSmartGroupProbeLeaseUntil)
+	return u
+}
+
+// ClearSmartGroupProbeLeaseUntil clears the value of the "smart_group_probe_lease_until" field.
+func (u *APIKeyUpsert) ClearSmartGroupProbeLeaseUntil() *APIKeyUpsert {
+	u.SetNull(apikey.FieldSmartGroupProbeLeaseUntil)
+	return u
+}
+
+// SetSmartGroupLastSwitchReason sets the "smart_group_last_switch_reason" field.
+func (u *APIKeyUpsert) SetSmartGroupLastSwitchReason(v string) *APIKeyUpsert {
+	u.Set(apikey.FieldSmartGroupLastSwitchReason, v)
+	return u
+}
+
+// UpdateSmartGroupLastSwitchReason sets the "smart_group_last_switch_reason" field to the value that was provided on create.
+func (u *APIKeyUpsert) UpdateSmartGroupLastSwitchReason() *APIKeyUpsert {
+	u.SetExcluded(apikey.FieldSmartGroupLastSwitchReason)
+	return u
+}
+
+// SetSmartGroupLastError sets the "smart_group_last_error" field.
+func (u *APIKeyUpsert) SetSmartGroupLastError(v string) *APIKeyUpsert {
+	u.Set(apikey.FieldSmartGroupLastError, v)
+	return u
+}
+
+// UpdateSmartGroupLastError sets the "smart_group_last_error" field to the value that was provided on create.
+func (u *APIKeyUpsert) UpdateSmartGroupLastError() *APIKeyUpsert {
+	u.SetExcluded(apikey.FieldSmartGroupLastError)
 	return u
 }
 
@@ -1217,6 +1635,209 @@ func (u *APIKeyUpsertOne) SetStatus(v string) *APIKeyUpsertOne {
 func (u *APIKeyUpsertOne) UpdateStatus() *APIKeyUpsertOne {
 	return u.Update(func(s *APIKeyUpsert) {
 		s.UpdateStatus()
+	})
+}
+
+// SetSmartGroupEnabled sets the "smart_group_enabled" field.
+func (u *APIKeyUpsertOne) SetSmartGroupEnabled(v bool) *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetSmartGroupEnabled(v)
+	})
+}
+
+// UpdateSmartGroupEnabled sets the "smart_group_enabled" field to the value that was provided on create.
+func (u *APIKeyUpsertOne) UpdateSmartGroupEnabled() *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateSmartGroupEnabled()
+	})
+}
+
+// SetSmartGroupIds sets the "smart_group_ids" field.
+func (u *APIKeyUpsertOne) SetSmartGroupIds(v []int64) *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetSmartGroupIds(v)
+	})
+}
+
+// UpdateSmartGroupIds sets the "smart_group_ids" field to the value that was provided on create.
+func (u *APIKeyUpsertOne) UpdateSmartGroupIds() *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateSmartGroupIds()
+	})
+}
+
+// SetSmartGroupFailureThreshold sets the "smart_group_failure_threshold" field.
+func (u *APIKeyUpsertOne) SetSmartGroupFailureThreshold(v int) *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetSmartGroupFailureThreshold(v)
+	})
+}
+
+// AddSmartGroupFailureThreshold adds v to the "smart_group_failure_threshold" field.
+func (u *APIKeyUpsertOne) AddSmartGroupFailureThreshold(v int) *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.AddSmartGroupFailureThreshold(v)
+	})
+}
+
+// UpdateSmartGroupFailureThreshold sets the "smart_group_failure_threshold" field to the value that was provided on create.
+func (u *APIKeyUpsertOne) UpdateSmartGroupFailureThreshold() *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateSmartGroupFailureThreshold()
+	})
+}
+
+// SetSmartGroupRecoveryIntervalSeconds sets the "smart_group_recovery_interval_seconds" field.
+func (u *APIKeyUpsertOne) SetSmartGroupRecoveryIntervalSeconds(v int) *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetSmartGroupRecoveryIntervalSeconds(v)
+	})
+}
+
+// AddSmartGroupRecoveryIntervalSeconds adds v to the "smart_group_recovery_interval_seconds" field.
+func (u *APIKeyUpsertOne) AddSmartGroupRecoveryIntervalSeconds(v int) *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.AddSmartGroupRecoveryIntervalSeconds(v)
+	})
+}
+
+// UpdateSmartGroupRecoveryIntervalSeconds sets the "smart_group_recovery_interval_seconds" field to the value that was provided on create.
+func (u *APIKeyUpsertOne) UpdateSmartGroupRecoveryIntervalSeconds() *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateSmartGroupRecoveryIntervalSeconds()
+	})
+}
+
+// SetSmartGroupConsecutiveFailures sets the "smart_group_consecutive_failures" field.
+func (u *APIKeyUpsertOne) SetSmartGroupConsecutiveFailures(v int) *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetSmartGroupConsecutiveFailures(v)
+	})
+}
+
+// AddSmartGroupConsecutiveFailures adds v to the "smart_group_consecutive_failures" field.
+func (u *APIKeyUpsertOne) AddSmartGroupConsecutiveFailures(v int) *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.AddSmartGroupConsecutiveFailures(v)
+	})
+}
+
+// UpdateSmartGroupConsecutiveFailures sets the "smart_group_consecutive_failures" field to the value that was provided on create.
+func (u *APIKeyUpsertOne) UpdateSmartGroupConsecutiveFailures() *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateSmartGroupConsecutiveFailures()
+	})
+}
+
+// SetSmartGroupHealthySince sets the "smart_group_healthy_since" field.
+func (u *APIKeyUpsertOne) SetSmartGroupHealthySince(v time.Time) *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetSmartGroupHealthySince(v)
+	})
+}
+
+// UpdateSmartGroupHealthySince sets the "smart_group_healthy_since" field to the value that was provided on create.
+func (u *APIKeyUpsertOne) UpdateSmartGroupHealthySince() *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateSmartGroupHealthySince()
+	})
+}
+
+// ClearSmartGroupHealthySince clears the value of the "smart_group_healthy_since" field.
+func (u *APIKeyUpsertOne) ClearSmartGroupHealthySince() *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.ClearSmartGroupHealthySince()
+	})
+}
+
+// SetSmartGroupLastProbeAt sets the "smart_group_last_probe_at" field.
+func (u *APIKeyUpsertOne) SetSmartGroupLastProbeAt(v time.Time) *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetSmartGroupLastProbeAt(v)
+	})
+}
+
+// UpdateSmartGroupLastProbeAt sets the "smart_group_last_probe_at" field to the value that was provided on create.
+func (u *APIKeyUpsertOne) UpdateSmartGroupLastProbeAt() *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateSmartGroupLastProbeAt()
+	})
+}
+
+// ClearSmartGroupLastProbeAt clears the value of the "smart_group_last_probe_at" field.
+func (u *APIKeyUpsertOne) ClearSmartGroupLastProbeAt() *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.ClearSmartGroupLastProbeAt()
+	})
+}
+
+// SetSmartGroupLastSwitchAt sets the "smart_group_last_switch_at" field.
+func (u *APIKeyUpsertOne) SetSmartGroupLastSwitchAt(v time.Time) *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetSmartGroupLastSwitchAt(v)
+	})
+}
+
+// UpdateSmartGroupLastSwitchAt sets the "smart_group_last_switch_at" field to the value that was provided on create.
+func (u *APIKeyUpsertOne) UpdateSmartGroupLastSwitchAt() *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateSmartGroupLastSwitchAt()
+	})
+}
+
+// ClearSmartGroupLastSwitchAt clears the value of the "smart_group_last_switch_at" field.
+func (u *APIKeyUpsertOne) ClearSmartGroupLastSwitchAt() *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.ClearSmartGroupLastSwitchAt()
+	})
+}
+
+// SetSmartGroupProbeLeaseUntil sets the "smart_group_probe_lease_until" field.
+func (u *APIKeyUpsertOne) SetSmartGroupProbeLeaseUntil(v time.Time) *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetSmartGroupProbeLeaseUntil(v)
+	})
+}
+
+// UpdateSmartGroupProbeLeaseUntil sets the "smart_group_probe_lease_until" field to the value that was provided on create.
+func (u *APIKeyUpsertOne) UpdateSmartGroupProbeLeaseUntil() *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateSmartGroupProbeLeaseUntil()
+	})
+}
+
+// ClearSmartGroupProbeLeaseUntil clears the value of the "smart_group_probe_lease_until" field.
+func (u *APIKeyUpsertOne) ClearSmartGroupProbeLeaseUntil() *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.ClearSmartGroupProbeLeaseUntil()
+	})
+}
+
+// SetSmartGroupLastSwitchReason sets the "smart_group_last_switch_reason" field.
+func (u *APIKeyUpsertOne) SetSmartGroupLastSwitchReason(v string) *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetSmartGroupLastSwitchReason(v)
+	})
+}
+
+// UpdateSmartGroupLastSwitchReason sets the "smart_group_last_switch_reason" field to the value that was provided on create.
+func (u *APIKeyUpsertOne) UpdateSmartGroupLastSwitchReason() *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateSmartGroupLastSwitchReason()
+	})
+}
+
+// SetSmartGroupLastError sets the "smart_group_last_error" field.
+func (u *APIKeyUpsertOne) SetSmartGroupLastError(v string) *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetSmartGroupLastError(v)
+	})
+}
+
+// UpdateSmartGroupLastError sets the "smart_group_last_error" field to the value that was provided on create.
+func (u *APIKeyUpsertOne) UpdateSmartGroupLastError() *APIKeyUpsertOne {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateSmartGroupLastError()
 	})
 }
 
@@ -1855,6 +2476,209 @@ func (u *APIKeyUpsertBulk) SetStatus(v string) *APIKeyUpsertBulk {
 func (u *APIKeyUpsertBulk) UpdateStatus() *APIKeyUpsertBulk {
 	return u.Update(func(s *APIKeyUpsert) {
 		s.UpdateStatus()
+	})
+}
+
+// SetSmartGroupEnabled sets the "smart_group_enabled" field.
+func (u *APIKeyUpsertBulk) SetSmartGroupEnabled(v bool) *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetSmartGroupEnabled(v)
+	})
+}
+
+// UpdateSmartGroupEnabled sets the "smart_group_enabled" field to the value that was provided on create.
+func (u *APIKeyUpsertBulk) UpdateSmartGroupEnabled() *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateSmartGroupEnabled()
+	})
+}
+
+// SetSmartGroupIds sets the "smart_group_ids" field.
+func (u *APIKeyUpsertBulk) SetSmartGroupIds(v []int64) *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetSmartGroupIds(v)
+	})
+}
+
+// UpdateSmartGroupIds sets the "smart_group_ids" field to the value that was provided on create.
+func (u *APIKeyUpsertBulk) UpdateSmartGroupIds() *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateSmartGroupIds()
+	})
+}
+
+// SetSmartGroupFailureThreshold sets the "smart_group_failure_threshold" field.
+func (u *APIKeyUpsertBulk) SetSmartGroupFailureThreshold(v int) *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetSmartGroupFailureThreshold(v)
+	})
+}
+
+// AddSmartGroupFailureThreshold adds v to the "smart_group_failure_threshold" field.
+func (u *APIKeyUpsertBulk) AddSmartGroupFailureThreshold(v int) *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.AddSmartGroupFailureThreshold(v)
+	})
+}
+
+// UpdateSmartGroupFailureThreshold sets the "smart_group_failure_threshold" field to the value that was provided on create.
+func (u *APIKeyUpsertBulk) UpdateSmartGroupFailureThreshold() *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateSmartGroupFailureThreshold()
+	})
+}
+
+// SetSmartGroupRecoveryIntervalSeconds sets the "smart_group_recovery_interval_seconds" field.
+func (u *APIKeyUpsertBulk) SetSmartGroupRecoveryIntervalSeconds(v int) *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetSmartGroupRecoveryIntervalSeconds(v)
+	})
+}
+
+// AddSmartGroupRecoveryIntervalSeconds adds v to the "smart_group_recovery_interval_seconds" field.
+func (u *APIKeyUpsertBulk) AddSmartGroupRecoveryIntervalSeconds(v int) *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.AddSmartGroupRecoveryIntervalSeconds(v)
+	})
+}
+
+// UpdateSmartGroupRecoveryIntervalSeconds sets the "smart_group_recovery_interval_seconds" field to the value that was provided on create.
+func (u *APIKeyUpsertBulk) UpdateSmartGroupRecoveryIntervalSeconds() *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateSmartGroupRecoveryIntervalSeconds()
+	})
+}
+
+// SetSmartGroupConsecutiveFailures sets the "smart_group_consecutive_failures" field.
+func (u *APIKeyUpsertBulk) SetSmartGroupConsecutiveFailures(v int) *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetSmartGroupConsecutiveFailures(v)
+	})
+}
+
+// AddSmartGroupConsecutiveFailures adds v to the "smart_group_consecutive_failures" field.
+func (u *APIKeyUpsertBulk) AddSmartGroupConsecutiveFailures(v int) *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.AddSmartGroupConsecutiveFailures(v)
+	})
+}
+
+// UpdateSmartGroupConsecutiveFailures sets the "smart_group_consecutive_failures" field to the value that was provided on create.
+func (u *APIKeyUpsertBulk) UpdateSmartGroupConsecutiveFailures() *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateSmartGroupConsecutiveFailures()
+	})
+}
+
+// SetSmartGroupHealthySince sets the "smart_group_healthy_since" field.
+func (u *APIKeyUpsertBulk) SetSmartGroupHealthySince(v time.Time) *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetSmartGroupHealthySince(v)
+	})
+}
+
+// UpdateSmartGroupHealthySince sets the "smart_group_healthy_since" field to the value that was provided on create.
+func (u *APIKeyUpsertBulk) UpdateSmartGroupHealthySince() *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateSmartGroupHealthySince()
+	})
+}
+
+// ClearSmartGroupHealthySince clears the value of the "smart_group_healthy_since" field.
+func (u *APIKeyUpsertBulk) ClearSmartGroupHealthySince() *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.ClearSmartGroupHealthySince()
+	})
+}
+
+// SetSmartGroupLastProbeAt sets the "smart_group_last_probe_at" field.
+func (u *APIKeyUpsertBulk) SetSmartGroupLastProbeAt(v time.Time) *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetSmartGroupLastProbeAt(v)
+	})
+}
+
+// UpdateSmartGroupLastProbeAt sets the "smart_group_last_probe_at" field to the value that was provided on create.
+func (u *APIKeyUpsertBulk) UpdateSmartGroupLastProbeAt() *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateSmartGroupLastProbeAt()
+	})
+}
+
+// ClearSmartGroupLastProbeAt clears the value of the "smart_group_last_probe_at" field.
+func (u *APIKeyUpsertBulk) ClearSmartGroupLastProbeAt() *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.ClearSmartGroupLastProbeAt()
+	})
+}
+
+// SetSmartGroupLastSwitchAt sets the "smart_group_last_switch_at" field.
+func (u *APIKeyUpsertBulk) SetSmartGroupLastSwitchAt(v time.Time) *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetSmartGroupLastSwitchAt(v)
+	})
+}
+
+// UpdateSmartGroupLastSwitchAt sets the "smart_group_last_switch_at" field to the value that was provided on create.
+func (u *APIKeyUpsertBulk) UpdateSmartGroupLastSwitchAt() *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateSmartGroupLastSwitchAt()
+	})
+}
+
+// ClearSmartGroupLastSwitchAt clears the value of the "smart_group_last_switch_at" field.
+func (u *APIKeyUpsertBulk) ClearSmartGroupLastSwitchAt() *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.ClearSmartGroupLastSwitchAt()
+	})
+}
+
+// SetSmartGroupProbeLeaseUntil sets the "smart_group_probe_lease_until" field.
+func (u *APIKeyUpsertBulk) SetSmartGroupProbeLeaseUntil(v time.Time) *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetSmartGroupProbeLeaseUntil(v)
+	})
+}
+
+// UpdateSmartGroupProbeLeaseUntil sets the "smart_group_probe_lease_until" field to the value that was provided on create.
+func (u *APIKeyUpsertBulk) UpdateSmartGroupProbeLeaseUntil() *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateSmartGroupProbeLeaseUntil()
+	})
+}
+
+// ClearSmartGroupProbeLeaseUntil clears the value of the "smart_group_probe_lease_until" field.
+func (u *APIKeyUpsertBulk) ClearSmartGroupProbeLeaseUntil() *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.ClearSmartGroupProbeLeaseUntil()
+	})
+}
+
+// SetSmartGroupLastSwitchReason sets the "smart_group_last_switch_reason" field.
+func (u *APIKeyUpsertBulk) SetSmartGroupLastSwitchReason(v string) *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetSmartGroupLastSwitchReason(v)
+	})
+}
+
+// UpdateSmartGroupLastSwitchReason sets the "smart_group_last_switch_reason" field to the value that was provided on create.
+func (u *APIKeyUpsertBulk) UpdateSmartGroupLastSwitchReason() *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateSmartGroupLastSwitchReason()
+	})
+}
+
+// SetSmartGroupLastError sets the "smart_group_last_error" field.
+func (u *APIKeyUpsertBulk) SetSmartGroupLastError(v string) *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.SetSmartGroupLastError(v)
+	})
+}
+
+// UpdateSmartGroupLastError sets the "smart_group_last_error" field to the value that was provided on create.
+func (u *APIKeyUpsertBulk) UpdateSmartGroupLastError() *APIKeyUpsertBulk {
+	return u.Update(func(s *APIKeyUpsert) {
+		s.UpdateSmartGroupLastError()
 	})
 }
 

@@ -23,6 +23,7 @@ fork 在上游之上叠加了三大功能块，外加一层解耦重构：
 | F. Codex 雷达（第三方数据代理） | 代理缓存第三方站点 codexradar.com 的 Codex 观测数据，用户+管理员共用页面，带第三方来源免责说明 | 极低（全新增文件 + opt-in 功能开关，零上游钩子） |
 | G. 首页整体重构（2026-07 提交 `0f60c3edd`） | `HomeView.vue` 全量重写为深空网关风格：明暗双主题（默认亮色）、canvas 波形/星尘/剖半点阵地球、Base URL 复制组件、SDK 兼容徽章、终端三 Tab、FAQ；`landing.ts`(zh/en) 新增大量 key；`site_subtitle` 支持 JSON 多语言；router `scrollBehavior` 刷新不恢复滚动位置 | **高（HomeView.vue 与上游完全分叉，同步时保留本 fork 版本）** |
 | H. 分组动态定价（已移除） | 历史 fork 功能；当前使用上游原生静态 `rate_multiplier` | 已退役（保留兼容迁移） |
+| I. Codex Astra 临时兼容补丁 | 无效自定义 UA 回退时保留运行时同步版本；Astra OAuth 账号探测省略上游拒绝的 `max_output_tokens` | **临时、低（上游等价修复后删除并采用上游）** |
 
 > 注：**Grok 平台是上游自带**，非本 fork 新增。fork 唯一新增的平台是**即梦（jimeng）**。
 
@@ -498,6 +499,46 @@ cd backend && make build            # 产出 backend/bin/server
 ### F.5 恢复要点（换机/重装）
 
 全部为新增文件 + opt-in 开关，上游同步几乎不冲突。若 `wire_gen.go` 被 `make generate` 覆盖，只需重新补 `codexRadarService`（用 `ProvideCodexRadarService(settingService, configConfig)`）/`codexRadarHandler` 两行构造 + `ProvideHandlers` 传参（见 F.3）——不涉及 `provideCleanup`。功能默认关闭，启用入口：系统设置 > 功能开关 > Codex 雷达。定时预热仅在开关开启时拉取第三方，每小时整点一次（时区取 `config.timezone`，默认 Asia/Shanghai），缓存 TTL 同为 1 小时。
+
+---
+
+## 五之四、Codex Astra 临时兼容补丁（功能块 I）
+
+> **临时补丁，优先收敛回上游。** 2026-09-06 在生产账号上验证：
+> `gpt-6-astra` 使用 `version=0.146.0` 会返回“requires a newer version of Codex”，
+> 使用 `0.153.4` 可正常返回 200；同时 ChatGPT Codex Astra 会拒绝账号探针携带的
+> `max_output_tokens`。上游实现以下等价行为后，删除本节补丁并采用上游代码。
+
+### I.1 无效 UA 不得拖低自动同步版本
+
+- 文件：`backend/internal/service/setting_gateway_runtime.go`
+- 锚点：`[CUSTOM][TEMP-UPSTREAM-COMPAT]`
+- 行为：管理员填写无法解析的完整 UA（例如仅填写 `codex`）时，丢弃无效 UA 外形，
+  但继续用“面板版本 → 自动同步版本 → 编译期版本”的生效版本构造标准 Codex UA。
+- 原问题：无效 UA 会让后续身份收口把 `User-Agent` 和 `version` 一起退回编译期
+  `0.146.0`，即使面板与自动同步均已是 `0.153.4`，Astra 仍会误报客户端过旧。
+- 回归测试：`TestGetOpenAICodexCanonicalUserAgentRebuildsPanelUAVersion/非_Codex_形态使用运行时版本构造标准身份`。
+
+### I.2 Astra OAuth 账号探测省略不兼容 token 上限
+
+- 文件：`backend/internal/service/account_test_probe_challenge.go`
+- 锚点：`[CUSTOM][TEMP-UPSTREAM-COMPAT]`
+- 行为：仅对 `isOAuth && gpt-6-astra` 的紧凑账号探测省略 `max_output_tokens`；
+  其他模型和 API Key 请求仍保留探针 token 上限，不改变真实网关转发。
+- 原问题：Astra 的 ChatGPT Codex `/responses` 当前返回
+  `Unsupported parameter: max_output_tokens`；真实网关已有 rejected-field retry，
+  账号测试路径尚未接入该兼容循环。
+- 回归测试：`TestAccountProbeChallengeOmitsRejectedAstraOAuthTokenLimit`。
+
+### I.3 上游同步时的替换条件
+
+每次合并 `upstream/main` 时检查上游是否同时满足：
+
+1. 自定义 UA 无效时仍使用当前运行时/自动同步 Codex 版本，而不是编译期旧版本；
+2. OpenAI OAuth 账号测试对 Astra 不发送 `max_output_tokens`，或收到明确字段拒绝后安全重试。
+
+若两项均已覆盖，删除上述两个 `[CUSTOM][TEMP-UPSTREAM-COMPAT]` 分支及对应本地测试，
+保留上游测试与实现；若只覆盖一项，仅删除对应项。不要长期维护与上游重复的分支。
 
 ---
 

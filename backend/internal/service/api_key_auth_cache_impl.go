@@ -20,7 +20,7 @@ import (
 // canvas 分组/语音搜索计费一直回退到分组全局价直到缓存自然过期。[CUSTOM+upstream]
 // v24: OpenAI Fast policy fields (force/free) are present in the snapshot.
 // v25: Retire dynamic group pricing and force cached effective rates to reload.
-const apiKeyAuthSnapshotVersion = 25
+const apiKeyAuthSnapshotVersion = 26
 
 type apiKeyAuthCacheConfig struct {
 	l1Size        int
@@ -342,20 +342,30 @@ func (s *APIKeyService) snapshotFromAPIKey(ctx context.Context, apiKey *APIKey) 
 		return nil
 	}
 	snapshot := &APIKeyAuthSnapshot{
-		Version:     apiKeyAuthSnapshotVersion,
-		APIKeyID:    apiKey.ID,
-		UserID:      apiKey.UserID,
-		GroupID:     apiKey.GroupID,
-		Name:        apiKey.Name,
-		Status:      apiKey.Status,
-		IPWhitelist: apiKey.IPWhitelist,
-		IPBlacklist: apiKey.IPBlacklist,
-		Quota:       apiKey.Quota,
-		QuotaUsed:   apiKey.QuotaUsed,
-		ExpiresAt:   apiKey.ExpiresAt,
-		RateLimit5h: apiKey.RateLimit5h,
-		RateLimit1d: apiKey.RateLimit1d,
-		RateLimit7d: apiKey.RateLimit7d,
+		Version:                           apiKeyAuthSnapshotVersion,
+		APIKeyID:                          apiKey.ID,
+		UserID:                            apiKey.UserID,
+		GroupID:                           apiKey.GroupID,
+		Name:                              apiKey.Name,
+		Status:                            apiKey.Status,
+		IPWhitelist:                       apiKey.IPWhitelist,
+		IPBlacklist:                       apiKey.IPBlacklist,
+		Quota:                             apiKey.Quota,
+		QuotaUsed:                         apiKey.QuotaUsed,
+		ExpiresAt:                         apiKey.ExpiresAt,
+		RateLimit5h:                       apiKey.RateLimit5h,
+		RateLimit1d:                       apiKey.RateLimit1d,
+		RateLimit7d:                       apiKey.RateLimit7d,
+		SmartGroupEnabled:                 apiKey.SmartGroupEnabled,
+		SmartGroupIDs:                     apiKey.SmartGroupIDs,
+		SmartGroupFailureThreshold:        apiKey.SmartGroupFailureThreshold,
+		SmartGroupRecoveryIntervalSeconds: apiKey.SmartGroupRecoveryIntervalSeconds,
+		SmartGroupConsecutiveFailures:     apiKey.SmartGroupConsecutiveFailures,
+		SmartGroupHealthySince:            apiKey.SmartGroupHealthySince,
+		SmartGroupLastProbeAt:             apiKey.SmartGroupLastProbeAt,
+		SmartGroupLastSwitchAt:            apiKey.SmartGroupLastSwitchAt,
+		SmartGroupLastSwitchReason:        apiKey.SmartGroupLastSwitchReason,
+		SmartGroupLastError:               apiKey.SmartGroupLastError,
 		User: APIKeyAuthUserSnapshot{
 			ID:                         apiKey.User.ID,
 			Status:                     apiKey.User.Status,
@@ -453,20 +463,30 @@ func (s *APIKeyService) snapshotToAPIKey(key string, snapshot *APIKeyAuthSnapsho
 		return nil
 	}
 	apiKey := &APIKey{
-		ID:          snapshot.APIKeyID,
-		UserID:      snapshot.UserID,
-		GroupID:     snapshot.GroupID,
-		Key:         key,
-		Name:        snapshot.Name,
-		Status:      snapshot.Status,
-		IPWhitelist: snapshot.IPWhitelist,
-		IPBlacklist: snapshot.IPBlacklist,
-		Quota:       snapshot.Quota,
-		QuotaUsed:   snapshot.QuotaUsed,
-		ExpiresAt:   snapshot.ExpiresAt,
-		RateLimit5h: snapshot.RateLimit5h,
-		RateLimit1d: snapshot.RateLimit1d,
-		RateLimit7d: snapshot.RateLimit7d,
+		ID:                                snapshot.APIKeyID,
+		UserID:                            snapshot.UserID,
+		GroupID:                           snapshot.GroupID,
+		Key:                               key,
+		Name:                              snapshot.Name,
+		Status:                            snapshot.Status,
+		IPWhitelist:                       snapshot.IPWhitelist,
+		IPBlacklist:                       snapshot.IPBlacklist,
+		Quota:                             snapshot.Quota,
+		QuotaUsed:                         snapshot.QuotaUsed,
+		ExpiresAt:                         snapshot.ExpiresAt,
+		RateLimit5h:                       snapshot.RateLimit5h,
+		RateLimit1d:                       snapshot.RateLimit1d,
+		RateLimit7d:                       snapshot.RateLimit7d,
+		SmartGroupEnabled:                 snapshot.SmartGroupEnabled,
+		SmartGroupIDs:                     snapshot.SmartGroupIDs,
+		SmartGroupFailureThreshold:        snapshot.SmartGroupFailureThreshold,
+		SmartGroupRecoveryIntervalSeconds: snapshot.SmartGroupRecoveryIntervalSeconds,
+		SmartGroupConsecutiveFailures:     snapshot.SmartGroupConsecutiveFailures,
+		SmartGroupHealthySince:            snapshot.SmartGroupHealthySince,
+		SmartGroupLastProbeAt:             snapshot.SmartGroupLastProbeAt,
+		SmartGroupLastSwitchAt:            snapshot.SmartGroupLastSwitchAt,
+		SmartGroupLastSwitchReason:        snapshot.SmartGroupLastSwitchReason,
+		SmartGroupLastError:               snapshot.SmartGroupLastError,
 		User: &User{
 			ID:                         snapshot.User.ID,
 			Status:                     snapshot.User.Status,

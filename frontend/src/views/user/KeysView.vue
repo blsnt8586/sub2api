@@ -138,8 +138,10 @@
               <button
                 :ref="(el) => setGroupButtonRef(row.id, el)"
                 @click="openGroupSelector(row)"
+                data-test="key-group-control"
+                :data-routing-mode="row.smart_group_enabled ? 'smart' : 'fixed'"
                 class="-mx-2 -my-1 flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1 transition-all duration-200 hover:bg-gray-100 dark:hover:bg-dark-700"
-                :title="t('keys.clickToChangeGroup')"
+                :title="row.smart_group_enabled ? t('keys.clickToManageSmartGroup') : t('keys.clickToChangeGroup')"
               >
                 <GroupBadge
                   v-if="row.group"
@@ -156,7 +158,17 @@
                 <span v-else class="text-sm text-gray-400 dark:text-dark-500">{{
                   t('keys.noGroup')
                 }}</span>
-                <span class="text-xs text-gray-500 dark:text-gray-400">{{ t('keys.selectGroup') }}</span>
+                <span
+                  v-if="row.smart_group_enabled"
+                  class="inline-flex items-center gap-1 rounded bg-blue-50 px-1.5 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-blue-200 dark:bg-blue-900/25 dark:text-blue-300 dark:ring-blue-800"
+                  :title="t('keys.smartGroupRuntimeHint', { count: row.smart_group_ids.length, failures: row.smart_group_consecutive_failures, threshold: row.smart_group_failure_threshold })"
+                >
+                  <Icon name="swap" size="xs" />
+                  {{ t('keys.smartGroupBadge', { count: row.smart_group_ids.length }) }}
+                </span>
+				<span v-if="!row.smart_group_enabled" class="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-600 dark:bg-dark-600 dark:text-gray-300">
+				  {{ t('keys.fixedGroupBadge') }}
+				</span>
                 <svg
                   class="h-3.5 w-3.5 text-gray-400 opacity-60 transition-opacity group-hover/dropdown:opacity-100"
                   fill="none"
@@ -379,6 +391,17 @@
                 <Icon name="terminal" size="sm" />
                 <span class="text-xs">{{ t('keys.useKey') }}</span>
               </button>
+              <!-- Smart-group switch history (only available for smart routing) -->
+              <button
+                v-if="row.smart_group_enabled"
+                @click="openSmartGroupLogs(row)"
+                class="flex flex-col items-center gap-0.5 rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-violet-50 hover:text-violet-600 dark:hover:bg-violet-900/20 dark:hover:text-violet-400"
+                :title="t('keys.smartGroupSwitchLogs')"
+                data-test="smart-group-logs-button"
+              >
+                <Icon name="clock" size="sm" />
+                <span class="text-xs">{{ t('keys.smartGroupSwitchLogsShort') }}</span>
+              </button>
               <!-- Import to CC Switch Button -->
               <button
                 v-if="!publicSettings?.hide_ccs_import_button"
@@ -447,12 +470,12 @@
     <!-- Create/Edit Modal -->
     <BaseDialog
       :show="showCreateModal || showEditModal"
-      :title="showEditModal ? t('keys.editKey') : t('keys.createKey')"
+      :title="smartGroupOnlyEdit ? t('keys.smartGroupSettings') : showEditModal ? t('keys.editKey') : t('keys.createKey')"
       width="normal"
       @close="closeModals"
     >
       <form id="key-form" @submit.prevent="handleSubmit" class="space-y-5">
-        <div>
+        <div v-if="!smartGroupOnlyEdit">
           <label class="input-label">{{ t('keys.nameLabel') }}</label>
           <input
             v-model="formData.name"
@@ -464,16 +487,90 @@
           />
         </div>
 
-        <div>
-          <label class="input-label">{{ t('keys.groupLabel') }}</label>
-          <Select
-            v-model="formData.group_id"
-            :options="groupOptions"
-            :placeholder="t('keys.selectGroup')"
-            :searchable="true"
-            :search-placeholder="t('keys.searchGroup')"
-            data-tour="key-form-group"
-          >
+		<div class="space-y-4">
+		  <div>
+		    <label class="input-label">{{ t('keys.routingModeLabel') }}</label>
+		    <div class="grid grid-cols-2 gap-1 rounded-lg bg-gray-100 p-1 dark:bg-dark-700" role="group" :aria-label="t('keys.routingModeLabel')">
+		      <button
+		        type="button"
+		        data-test="routing-mode-fixed"
+		        :aria-pressed="!formData.smart_group_enabled"
+		        @click="setRoutingMode(false)"
+		        :class="[
+		          'min-h-10 rounded-md px-3 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
+		          !formData.smart_group_enabled
+		            ? 'bg-white text-gray-900 shadow-sm dark:bg-dark-600 dark:text-white'
+		            : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white'
+		        ]"
+		      >
+		        {{ t('keys.fixedRouting') }}
+		      </button>
+		      <button
+		        type="button"
+		        data-test="routing-mode-smart"
+		        :aria-pressed="formData.smart_group_enabled"
+		        @click="setRoutingMode(true)"
+		        :class="[
+		          'min-h-10 rounded-md px-3 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
+		          formData.smart_group_enabled
+		            ? 'bg-white text-primary-700 shadow-sm dark:bg-dark-600 dark:text-primary-300'
+		            : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white'
+		        ]"
+		      >
+		        {{ t('keys.smartRouting') }}
+		      </button>
+		    </div>
+		    <p class="input-hint">
+		      {{ formData.smart_group_enabled ? t('keys.smartGroupDescription') : t('keys.fixedGroupDescription') }}
+		    </p>
+		  </div>
+
+		  <div>
+		    <label class="input-label">{{ t('keys.platformLabel') }}</label>
+		    <Select
+		      :model-value="formData.platform"
+		      :options="platformOptions"
+		      :placeholder="t('keys.selectPlatform')"
+		      :searchable="false"
+		      :aria-label="t('keys.platformLabel')"
+		      data-test="key-platform-select"
+		      @update:model-value="onPlatformChange"
+		    >
+		      <template #selected="{ option }">
+		        <span v-if="option" class="flex items-center gap-2 text-sm font-medium">
+		          <PlatformIcon :platform="(option as unknown as PlatformOption).value" size="md" />
+		          {{ (option as unknown as PlatformOption).label }}
+		        </span>
+		        <span v-else class="text-gray-400">{{ t('keys.selectPlatform') }}</span>
+		      </template>
+		      <template #option="{ option }">
+		        <div class="flex w-full items-center justify-between gap-3">
+		          <span class="flex items-center gap-2 font-medium">
+		            <PlatformIcon :platform="(option as unknown as PlatformOption).value" size="md" />
+		            {{ (option as unknown as PlatformOption).label }}
+		          </span>
+		          <span class="text-xs tabular-nums text-gray-500 dark:text-gray-400">
+		            {{ t('keys.platformGroupCount', { count: (option as unknown as PlatformOption).groupCount }) }}
+		          </span>
+		        </div>
+		      </template>
+		    </Select>
+		  </div>
+
+		  <div v-if="!formData.smart_group_enabled">
+		    <label class="input-label">{{ t('keys.fixedGroupLabel') }}</label>
+		  <Select
+		    :model-value="formData.group_id"
+		    :options="fixedGroupOptions"
+		    :placeholder="formData.platform ? t('keys.selectGroup') : t('keys.selectPlatformFirst')"
+		    :disabled="!formData.platform"
+		    :searchable="true"
+		    :search-placeholder="t('keys.searchGroup')"
+		    :aria-label="t('keys.fixedGroupLabel')"
+		    data-tour="key-form-group"
+		    data-test="key-group-select"
+		    @update:model-value="onFixedGroupChange"
+		  >
             <template #selected="{ option }">
               <GroupBadge
                 v-if="option"
@@ -504,10 +601,123 @@
                 :selected="selected"
               />
             </template>
-          </Select>
-        </div>
+		  </Select>
+		  </div>
 
-        <!-- Custom Key Section (only for create) -->
+		  <div v-else class="space-y-4 border-l-2 border-primary-200 pl-4 dark:border-primary-800">
+		    <div>
+		      <div class="mb-2 flex items-center justify-between gap-3">
+		        <label class="input-label mb-0">{{ t('keys.smartGroupCandidates') }}</label>
+		        <span class="text-xs tabular-nums text-gray-500 dark:text-gray-400">
+		          {{ formData.smart_group_ids.length }}/10
+		        </span>
+		      </div>
+		      <div class="max-h-64 space-y-1 overflow-y-auto rounded border border-gray-200 bg-gray-50 p-2 dark:border-dark-600 dark:bg-dark-800/60">
+		        <button
+		          v-for="option in smartGroupOptions"
+		          :key="option.value"
+		          type="button"
+		          data-test="smart-group-option"
+		          :data-group-id="option.value"
+		          :data-platform="option.platform"
+		          :disabled="isSmartGroupOptionDisabled(option)"
+		          :title="smartGroupPriority(option.value) === 1 ? t('keys.smartGroupPrimaryHint') : undefined"
+		          @click="toggleSmartGroupCandidate(option)"
+		          :class="[
+		            'flex min-h-12 w-full items-center gap-3 rounded px-2 py-2 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
+		            isSmartGroupSelected(option.value)
+		              ? 'bg-white ring-1 ring-primary-300 dark:bg-dark-700 dark:ring-primary-700'
+		              : 'hover:bg-white dark:hover:bg-dark-700',
+			            isSmartGroupOptionDisabled(option)
+			                ? 'cursor-not-allowed opacity-40'
+			                : 'cursor-pointer'
+		          ]"
+		        >
+		          <span
+		            :class="[
+		              'flex h-5 w-5 flex-none items-center justify-center rounded border',
+		              isSmartGroupSelected(option.value)
+		                ? 'border-primary-600 bg-primary-600 text-white'
+		                : 'border-gray-300 bg-white dark:border-dark-500 dark:bg-dark-700'
+		            ]"
+		          >
+		            <Icon v-if="isSmartGroupSelected(option.value)" name="check" size="xs" :stroke-width="2.5" />
+		          </span>
+		          <span
+		            v-if="smartGroupPriority(option.value) > 0"
+		            class="flex h-6 min-w-6 flex-none items-center justify-center rounded bg-primary-50 px-1 text-xs font-semibold tabular-nums text-primary-700 dark:bg-primary-900/30 dark:text-primary-300"
+		          >
+		            {{ smartGroupPriority(option.value) }}
+		          </span>
+		          <GroupOptionItem
+		            class="min-w-0 flex-1"
+		            :name="option.label"
+		            :platform="option.platform"
+		            :subscription-type="option.subscriptionType"
+		            :rate-multiplier="option.rate"
+		            :user-rate-multiplier="option.userRate"
+		            :peak-rate-enabled="option.peakRateEnabled"
+		            :peak-start="option.peakStart"
+		            :peak-end="option.peakEnd"
+		            :peak-rate-multiplier="option.peakRateMultiplier"
+		            :description="option.description"
+		            :selected="isSmartGroupSelected(option.value)"
+		            :show-checkmark="false"
+		          />
+			          <span
+			            v-if="smartGroupPriority(option.value) === 1"
+			            class="flex flex-none items-center gap-1 text-xs font-medium text-primary-700 dark:text-primary-300"
+			            data-test="smart-group-primary-label"
+			          >
+			            {{ t('keys.smartGroupPrimaryLabel') }}
+			          </span>
+		        </button>
+		        <p v-if="smartGroupOptions.length === 0" class="py-5 text-center text-sm text-gray-500 dark:text-gray-400">
+		          {{ formData.platform ? t('keys.smartGroupNoCandidates') : t('keys.selectPlatformFirst') }}
+		        </p>
+		      </div>
+		      <p class="input-hint">{{ t('keys.smartGroupCandidatesHint') }}</p>
+			      <p class="input-hint text-primary-700 dark:text-primary-300">
+			        {{ t('keys.smartGroupPrimaryHint') }}
+			      </p>
+		    </div>
+
+		    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+		      <div>
+		        <label class="input-label" for="smart-group-failure-threshold">{{ t('keys.smartGroupFailureThreshold') }}</label>
+		        <input
+		          id="smart-group-failure-threshold"
+		          v-model.number="formData.smart_group_failure_threshold"
+		          class="input tabular-nums"
+		          type="number"
+		          min="1"
+		          max="20"
+		          step="1"
+		        />
+		        <p class="input-hint">{{ t('keys.smartGroupFailureThresholdHint') }}</p>
+		      </div>
+		      <div>
+		        <label class="input-label" for="smart-group-recovery-minutes">{{ t('keys.smartGroupRecoveryMinutes') }}</label>
+		        <div class="relative">
+		          <input
+		            id="smart-group-recovery-minutes"
+		            v-model.number="formData.smart_group_recovery_minutes"
+		            class="input pr-14 tabular-nums"
+		            type="number"
+		            min="1"
+		            max="1440"
+		            step="1"
+		          />
+		          <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">{{ t('common.minutes') }}</span>
+		        </div>
+		        <p class="input-hint">{{ t('keys.smartGroupRecoveryMinutesHint') }}</p>
+		      </div>
+		    </div>
+		  </div>
+		</div>
+
+	      <template v-if="!smartGroupOnlyEdit">
+	        <!-- Custom Key Section (only for create) -->
         <div v-if="!showEditModal" class="space-y-3">
           <div class="flex items-center justify-between">
             <label class="input-label mb-0">{{ t('keys.customKeyLabel') }}</label>
@@ -550,7 +760,7 @@
         </div>
 
         <!-- IP Restriction Section -->
-        <div class="space-y-3">
+	        <div class="space-y-3">
           <div class="flex items-center justify-between">
             <label class="input-label mb-0">{{ t('keys.ipRestriction') }}</label>
             <button
@@ -905,9 +1115,10 @@
                 {{ formatDateTime(selectedKey.expires_at) }}
               </span>
             </div>
-          </div>
-        </div>
-      </form>
+	          </div>
+	        </div>
+	      </template>
+	      </form>
       <template #footer>
         <div class="flex justify-end gap-3">
           <button @click="closeModals" type="button" class="btn btn-secondary">
@@ -947,6 +1158,69 @@
                   ? t('common.update')
                   : t('common.create')
             }}
+          </button>
+        </div>
+      </template>
+    </BaseDialog>
+
+    <!-- Smart-group switch history -->
+    <BaseDialog
+      :show="showSmartGroupLogsDialog"
+      :title="t('keys.smartGroupSwitchLogs')"
+      width="normal"
+      @close="closeSmartGroupLogs"
+    >
+      <div class="space-y-4">
+        <div class="flex items-start gap-3 rounded-lg bg-violet-50 px-3 py-2.5 text-sm text-violet-800 dark:bg-violet-900/20 dark:text-violet-200">
+          <Icon name="clock" size="sm" class="mt-0.5 flex-none" />
+          <div>
+            <p class="font-medium">{{ smartGroupLogsKey?.name }}</p>
+            <p class="mt-0.5 text-xs text-violet-700/80 dark:text-violet-300/80">
+              {{ t('keys.smartGroupSwitchLogsDescription') }}
+            </p>
+          </div>
+        </div>
+
+        <div v-if="smartGroupLogsLoading" class="flex items-center justify-center py-10 text-sm text-gray-500 dark:text-gray-400">
+          <Icon name="refresh" size="sm" class="mr-2 animate-spin" />
+          {{ t('common.loading') }}
+        </div>
+        <div v-else-if="smartGroupLogs.length === 0" class="py-10 text-center text-sm text-gray-500 dark:text-gray-400">
+          {{ t('keys.smartGroupNoSwitchLogs') }}
+        </div>
+        <div v-else class="max-h-[26rem] overflow-y-auto rounded-lg border border-gray-200 dark:border-dark-600">
+          <div
+            v-for="log in smartGroupLogs"
+            :key="log.id"
+            class="border-b border-gray-100 px-3 py-3 last:border-b-0 dark:border-dark-700"
+          >
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <span class="text-xs tabular-nums text-gray-500 dark:text-gray-400">{{ formatDateTime(log.switched_at) }}</span>
+              <span
+                class="rounded-full px-2 py-0.5 text-xs font-medium"
+                :class="log.reason === 'failure'
+                  ? 'bg-amber-50 text-amber-700 dark:bg-amber-900/25 dark:text-amber-300'
+                  : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/25 dark:text-emerald-300'"
+              >
+                {{ smartGroupSwitchReasonLabel(log.reason) }}
+              </span>
+            </div>
+            <div class="mt-2 flex flex-wrap items-center gap-2 text-sm">
+              <span class="max-w-[13rem] truncate font-medium text-gray-700 dark:text-gray-200" :title="log.from_group_name">
+                {{ log.from_group_name || `#${log.from_group_id}` }}
+              </span>
+              <Icon name="arrowRight" size="sm" class="flex-none text-gray-400" />
+              <span class="max-w-[13rem] truncate font-medium text-gray-900 dark:text-white" :title="log.to_group_name">
+                {{ log.to_group_name || `#${log.to_group_id}` }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <div class="flex justify-end">
+          <button @click="closeSmartGroupLogs" type="button" class="btn btn-secondary">
+            {{ t('common.close') }}
           </button>
         </div>
       </template>
@@ -1079,6 +1353,8 @@
             v-for="option in filteredGroupOptions"
             :key="option.value ?? 'null'"
             @click="changeGroup(selectedKeyForGroup!, option.value)"
+			data-test="fixed-group-quick-option"
+			:data-platform="option.platform"
             :class="[
               'flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-sm transition-colors',
               'border-b border-gray-100 last:border-0 dark:border-dark-700',
@@ -1140,11 +1416,13 @@ import TablePageLayout from '@/components/layout/TablePageLayout.vue'
 	import EndpointPopover from '@/components/keys/EndpointPopover.vue'
 	import GroupBadge from '@/components/common/GroupBadge.vue'
 	import GroupOptionItem from '@/components/common/GroupOptionItem.vue'
-	import type { ApiKey, Group, PublicSettings, SubscriptionType, GroupPlatform, UpdateApiKeyRequest } from '@/types'
+	import PlatformIcon from '@/components/common/PlatformIcon.vue'
+	import type { ApiKey, Group, PublicSettings, SubscriptionType, GroupPlatform, UpdateApiKeyRequest, SmartGroupSwitchLog } from '@/types'
 import type { Column } from '@/components/common/types'
 import type { BatchApiKeyUsageStats } from '@/api/usage'
 import { formatDateTime } from '@/utils/format'
 import { maskApiKey } from '@/utils/maskApiKey'
+import { platformLabel } from '@/utils/platformColors'
 import {
   buildCcSwitchImportDeeplink,
   type CcSwitchClientType
@@ -1171,6 +1449,13 @@ interface GroupOption {
   platform: GroupPlatform
 }
 
+interface PlatformOption {
+  value: GroupPlatform
+  label: string
+  groupCount: number
+  disabled?: boolean
+}
+
 const appStore = useAppStore()
 const onboardingStore = useOnboardingStore()
 const { copyToClipboard: clipboardCopy } = useClipboard()
@@ -1179,7 +1464,7 @@ const allColumns = computed<Column[]>(() => [
   { key: 'name', label: t('common.name'), sortable: true },
   { key: 'id', label: t('keys.id'), sortable: true },
   { key: 'key', label: t('keys.apiKey'), sortable: false },
-  { key: 'group', label: t('keys.group'), sortable: false },
+	  { key: 'group', label: t('keys.smartGroupColumn'), sortable: false },
   { key: 'current_concurrency', label: t('keys.currentConcurrency'), sortable: true },
   { key: 'usage', label: t('keys.usage'), sortable: false },
   { key: 'rate_limit', label: t('keys.rateLimitColumn'), sortable: false },
@@ -1300,10 +1585,16 @@ const showDeleteDialog = ref(false)
 const showResetQuotaDialog = ref(false)
 const showResetRateLimitDialog = ref(false)
 const showUseKeyModal = ref(false)
+const showSmartGroupLogsDialog = ref(false)
 const showCcsClientSelect = ref(false)
 const showColumnDropdown = ref(false)
+const smartGroupOnlyEdit = ref(false)
 const pendingCcsRow = ref<ApiKey | null>(null)
 const selectedKey = ref<ApiKey | null>(null)
+const smartGroupLogsKey = ref<ApiKey | null>(null)
+const smartGroupLogs = ref<SmartGroupSwitchLog[]>([])
+const smartGroupLogsLoading = ref(false)
+let smartGroupLogsRequestID = 0
 const copiedKeyId = ref<number | null>(null)
 const groupSelectorKeyId = ref<number | null>(null)
 const publicSettings = ref<PublicSettings | null>(null)
@@ -1327,9 +1618,14 @@ const setGroupButtonRef = (keyId: number, el: Element | ComponentPublicInstance 
   }
 }
 
-const formData = ref({
-  name: '',
-  group_id: null as number | null,
+	const formData = ref({
+		  name: '',
+		  platform: null as GroupPlatform | null,
+		  group_id: null as number | null,
+	  smart_group_enabled: false,
+	  smart_group_ids: [] as number[],
+	  smart_group_failure_threshold: 3,
+	  smart_group_recovery_minutes: 15,
   status: 'active' as 'active' | 'inactive',
   use_custom_key: false,
   custom_key: '',
@@ -1424,12 +1720,126 @@ const groupOptions = computed(() =>
   }))
 )
 
+const platformOptions = computed(() => {
+	const counts = new Map<GroupPlatform, number>()
+	for (const option of groupOptions.value) {
+		if (formData.value.smart_group_enabled && (option.platform === 'composite' || option.platform === 'canvas')) {
+			continue
+		}
+		counts.set(option.platform, (counts.get(option.platform) ?? 0) + 1)
+	}
+	return [...counts.entries()]
+		.map(([value, groupCount]) => ({
+			value,
+			label: platformLabel(value),
+			groupCount,
+			disabled: formData.value.smart_group_enabled && groupCount < 2
+		}))
+		.sort((a, b) => a.label.localeCompare(b.label))
+})
+
+const fixedGroupOptions = computed(() => {
+	if (!formData.value.platform) return []
+	return groupOptions.value.filter((option) => option.platform === formData.value.platform)
+})
+
+const smartGroupOptions = computed(() =>
+	groupOptions.value
+		.filter((option) =>
+			option.platform !== 'composite' &&
+			option.platform !== 'canvas' &&
+			option.platform === formData.value.platform
+		)
+		.sort((a, b) => {
+			const aRate = a.userRate ?? a.rate
+			const bRate = b.userRate ?? b.rate
+			return aRate === bRate ? a.value - b.value : aRate - bRate
+		})
+)
+
+const selectedSmartGroupOptions = computed(() =>
+	smartGroupOptions.value.filter((option) => formData.value.smart_group_ids.includes(option.value))
+)
+
+const sortedSmartGroupIDs = computed(() =>
+	selectedSmartGroupOptions.value.map((option) => option.value)
+)
+
+const isSmartGroupSelected = (groupId: number) => formData.value.smart_group_ids.includes(groupId)
+
+const smartGroupPriority = (groupId: number) => {
+	const index = selectedSmartGroupOptions.value.findIndex((option) => option.value === groupId)
+	return index >= 0 ? index + 1 : 0
+}
+
+const isSmartGroupOptionDisabled = (option: GroupOption) => {
+	if (isSmartGroupSelected(option.value)) return false
+	if (formData.value.smart_group_ids.length >= 10) return true
+	return false
+}
+
+const syncSmartGroupActiveGroup = () => {
+	const first = selectedSmartGroupOptions.value[0]
+	if (!first) {
+		formData.value.group_id = null
+		return
+	}
+	// The first displayed candidate becomes the real active route after save.
+	// Saving changes the route but never performs an upstream probe.
+	formData.value.group_id = first.value
+}
+
+const setRoutingMode = (smartEnabled: boolean) => {
+	if (formData.value.smart_group_enabled === smartEnabled) return
+	formData.value.smart_group_enabled = smartEnabled
+	if (smartEnabled) {
+		const current = groupOptions.value.find((option) => option.value === formData.value.group_id)
+		if (current && current.platform !== 'composite' && current.platform !== 'canvas') {
+			formData.value.platform = current.platform
+			formData.value.smart_group_ids = [current.value]
+		} else {
+			if (current) formData.value.platform = null
+			formData.value.group_id = null
+			formData.value.smart_group_ids = []
+		}
+		syncSmartGroupActiveGroup()
+	} else {
+		formData.value.smart_group_ids = []
+	}
+}
+
+const onPlatformChange = (value: string | number | boolean | null) => {
+	const platform = value as GroupPlatform | null
+	if (formData.value.platform === platform) return
+	formData.value.platform = platform
+	formData.value.group_id = null
+	formData.value.smart_group_ids = []
+}
+
+const onFixedGroupChange = (value: string | number | boolean | null) => {
+	formData.value.group_id = typeof value === 'number' ? value : null
+}
+
+const toggleSmartGroupCandidate = (option: GroupOption) => {
+	if (isSmartGroupOptionDisabled(option)) return
+	if (isSmartGroupSelected(option.value)) {
+		formData.value.smart_group_ids = formData.value.smart_group_ids.filter((id) => id !== option.value)
+	} else {
+		formData.value.smart_group_ids = [...formData.value.smart_group_ids, option.value]
+	}
+	syncSmartGroupActiveGroup()
+}
+
 // Group dropdown search
 const groupSearchQuery = ref('')
 const filteredGroupOptions = computed(() => {
   const query = groupSearchQuery.value.trim().toLowerCase()
-  if (!query) return groupOptions.value
-  return groupOptions.value.filter((opt) => {
+	const currentPlatform = selectedKeyForGroup.value?.group?.platform
+	const samePlatformOptions = currentPlatform
+		? groupOptions.value.filter((option) => option.platform === currentPlatform)
+		: groupOptions.value
+	if (!query) return samePlatformOptions
+	return samePlatformOptions.filter((opt) => {
     return opt.label.toLowerCase().includes(query) ||
       (opt.description && opt.description.toLowerCase().includes(query))
   })
@@ -1539,6 +1949,41 @@ const closeUseKeyModal = () => {
   selectedKey.value = null
 }
 
+const openSmartGroupLogs = async (key: ApiKey) => {
+  const requestID = ++smartGroupLogsRequestID
+  smartGroupLogsKey.value = key
+  smartGroupLogs.value = []
+  smartGroupLogsLoading.value = true
+  showSmartGroupLogsDialog.value = true
+  try {
+    const logs = await keysAPI.listSmartGroupLogs(key.id)
+    if (requestID !== smartGroupLogsRequestID) return
+    smartGroupLogs.value = logs
+  } catch (error) {
+    if (requestID !== smartGroupLogsRequestID) return
+    console.error('Failed to load smart-group switch logs:', error)
+    appStore.showError(t('keys.smartGroupSwitchLogsLoadFailed'))
+  } finally {
+    if (requestID === smartGroupLogsRequestID) {
+      smartGroupLogsLoading.value = false
+    }
+  }
+}
+
+const closeSmartGroupLogs = () => {
+  smartGroupLogsRequestID++
+  showSmartGroupLogsDialog.value = false
+  smartGroupLogsKey.value = null
+  smartGroupLogs.value = []
+  smartGroupLogsLoading.value = false
+}
+
+const smartGroupSwitchReasonLabel = (reason: string) => {
+  if (reason === 'failure') return t('keys.smartGroupSwitchReasonFailure')
+  if (reason === 'cost_recovery') return t('keys.smartGroupSwitchReasonCostRecovery')
+  return reason
+}
+
 const handlePageChange = (page: number) => {
   pagination.value.page = page
   loadApiKeys()
@@ -1557,13 +2002,19 @@ const handleSort = (key: string, order: 'asc' | 'desc') => {
   loadApiKeys()
 }
 
-const editKey = (key: ApiKey) => {
+const editKey = (key: ApiKey, smartOnly = false) => {
   selectedKey.value = key
+  smartGroupOnlyEdit.value = smartOnly
   const hasIPRestriction = (key.ip_whitelist?.length > 0) || (key.ip_blacklist?.length > 0)
   const hasExpiration = !!key.expires_at
-  formData.value = {
-    name: key.name,
-    group_id: key.group_id,
+	  formData.value = {
+	    name: key.name,
+	    platform: key.group?.platform ?? groupOptions.value.find((option) => option.value === key.group_id)?.platform ?? null,
+	    group_id: key.group_id,
+	    smart_group_enabled: key.smart_group_enabled ?? false,
+	    smart_group_ids: (key.smart_group_ids ?? []).filter((id) => groupOptions.value.some((option) => option.value === id)),
+	    smart_group_failure_threshold: key.smart_group_failure_threshold || 3,
+	    smart_group_recovery_minutes: Math.max(1, Math.round((key.smart_group_recovery_interval_seconds || 900) / 60)),
     status: key.status === 'quota_exhausted' || key.status === 'expired' ? 'inactive' : key.status,
     use_custom_key: false,
     custom_key: '',
@@ -1597,6 +2048,12 @@ const toggleKeyStatus = async (key: ApiKey) => {
 }
 
 const openGroupSelector = (key: ApiKey) => {
+	if (key.smart_group_enabled) {
+		groupSelectorKeyId.value = null
+		dropdownPosition.value = null
+		editKey(key, true)
+		return
+	}
   if (groupSelectorKeyId.value === key.id) {
     groupSelectorKeyId.value = null
     dropdownPosition.value = null
@@ -1662,11 +2119,28 @@ const confirmDelete = (key: ApiKey) => {
 }
 
 const handleSubmit = async () => {
-  // Validate group_id is required
-  if (formData.value.group_id === null) {
-    appStore.showError(t('keys.groupRequired'))
-    return
-  }
+	if (formData.value.platform === null) {
+		appStore.showError(t('keys.platformRequired'))
+		return
+	}
+	if (formData.value.smart_group_enabled) {
+	    if (formData.value.smart_group_ids.length < 2) {
+	      appStore.showError(t('keys.smartGroupMinimum'))
+	      return
+	    }
+	    if (formData.value.smart_group_failure_threshold < 1 || formData.value.smart_group_failure_threshold > 20) {
+	      appStore.showError(t('keys.smartGroupFailureThresholdError'))
+	      return
+	    }
+	    if (formData.value.smart_group_recovery_minutes < 1 || formData.value.smart_group_recovery_minutes > 1440) {
+	      appStore.showError(t('keys.smartGroupRecoveryMinutesError'))
+	      return
+	    }
+	    syncSmartGroupActiveGroup()
+	} else if (formData.value.group_id === null) {
+		appStore.showError(t('keys.groupRequired'))
+		return
+	  }
 
   // Validate custom key if enabled
   if (!showEditModal.value && formData.value.use_custom_key) {
@@ -1717,23 +2191,32 @@ const handleSubmit = async () => {
 
   submitting.value = true
   try {
-    if (showEditModal.value && selectedKey.value) {
-      const updates: UpdateApiKeyRequest = {
-        name: formData.value.name,
-        group_id: formData.value.group_id,
-        ip_whitelist: ipWhitelist,
-        ip_blacklist: ipBlacklist,
-        quota: quota,
-        expires_at: expiresAt,
-        rate_limit_5h: rateLimitData.rate_limit_5h,
-        rate_limit_1d: rateLimitData.rate_limit_1d,
-        rate_limit_7d: rateLimitData.rate_limit_7d,
-      }
-      if (shouldSubmitEditStatus(selectedKey.value, formData.value.status)) {
-        updates.status = formData.value.status
-      }
-      await keysAPI.update(selectedKey.value.id, updates)
-      appStore.showSuccess(t('keys.keyUpdatedSuccess'))
+	    if (showEditModal.value && selectedKey.value) {
+		      const routingUpdates: UpdateApiKeyRequest = {
+	        group_id: formData.value.group_id,
+		        smart_group_enabled: formData.value.smart_group_enabled,
+		        smart_group_ids: formData.value.smart_group_enabled ? sortedSmartGroupIDs.value : [],
+		        smart_group_failure_threshold: formData.value.smart_group_failure_threshold,
+		        smart_group_recovery_interval_seconds: formData.value.smart_group_recovery_minutes * 60,
+		      }
+		      const updates: UpdateApiKeyRequest = smartGroupOnlyEdit.value
+		        ? routingUpdates
+		        : {
+		            ...routingUpdates,
+		            name: formData.value.name,
+		            ip_whitelist: ipWhitelist,
+		            ip_blacklist: ipBlacklist,
+		            quota: quota,
+		            expires_at: expiresAt,
+		            rate_limit_5h: rateLimitData.rate_limit_5h,
+		            rate_limit_1d: rateLimitData.rate_limit_1d,
+		            rate_limit_7d: rateLimitData.rate_limit_7d,
+		          }
+	      if (!smartGroupOnlyEdit.value && shouldSubmitEditStatus(selectedKey.value, formData.value.status)) {
+	        updates.status = formData.value.status
+	      }
+		      await keysAPI.update(selectedKey.value.id, updates)
+		      appStore.showSuccess(t('keys.keyUpdatedSuccess'))
     } else {
       const customKey = formData.value.use_custom_key ? formData.value.custom_key : undefined
       await keysAPI.create(
@@ -1743,8 +2226,14 @@ const handleSubmit = async () => {
         ipWhitelist,
         ipBlacklist,
         quota,
-        expiresInDays,
-        rateLimitData
+	        expiresInDays,
+	        rateLimitData,
+	        {
+	          smart_group_enabled: formData.value.smart_group_enabled,
+		          smart_group_ids: formData.value.smart_group_enabled ? sortedSmartGroupIDs.value : [],
+	          smart_group_failure_threshold: formData.value.smart_group_failure_threshold,
+	          smart_group_recovery_interval_seconds: formData.value.smart_group_recovery_minutes * 60
+	        }
       )
       appStore.showSuccess(t('keys.keyCreatedSuccess'))
       // Only advance tour if active, on submit step, and creation succeeded
@@ -1786,10 +2275,16 @@ const handleDelete = async () => {
 const closeModals = () => {
   showCreateModal.value = false
   showEditModal.value = false
-  selectedKey.value = null
-  formData.value = {
-    name: '',
-    group_id: null,
+	  selectedKey.value = null
+	  smartGroupOnlyEdit.value = false
+	  formData.value = {
+		    name: '',
+		    platform: null,
+		    group_id: null,
+	    smart_group_enabled: false,
+	    smart_group_ids: [],
+	    smart_group_failure_threshold: 3,
+	    smart_group_recovery_minutes: 15,
     status: 'active',
     use_custom_key: false,
     custom_key: '',

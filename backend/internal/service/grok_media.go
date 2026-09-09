@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mime"
@@ -33,7 +34,7 @@ const (
 	GrokMediaEndpointVideoContent      GrokMediaEndpoint = "video_content"
 
 	// Official xAI Imagine image-edit limit.
-	grokMediaMaxEditSourceImages = 3
+	grokMediaMaxEditSourceImages = 5
 )
 
 func (e GrokMediaEndpoint) RequiresRequestBody() bool {
@@ -61,6 +62,8 @@ type GrokMediaRequestInfo struct {
 	SizeTier        string
 	AspectRatio     string
 	ImageResolution string
+	ImageQuality    string
+	ResponseFormat  string
 	Resolution      string
 	DurationSeconds int
 	InputImageURLs  []string
@@ -131,6 +134,8 @@ func ParseGrokMediaRequest(contentType string, body []byte) GrokMediaRequestInfo
 	info.SizeTier = NormalizeImageBillingTierOrDefault(info.Size)
 	info.AspectRatio = strings.TrimSpace(info.AspectRatio)
 	info.ImageResolution = grokImagineImageResolution(info.ImageResolution)
+	info.ImageQuality = strings.ToLower(strings.TrimSpace(info.ImageQuality))
+	info.ResponseFormat = strings.ToLower(strings.TrimSpace(info.ResponseFormat))
 	info.Resolution = NormalizeVideoBillingResolutionOrDefault(info.Resolution)
 	info.DurationSeconds = NormalizeVideoBillingDurationSecondsOrDefault(info.DurationSeconds)
 	if info.N <= 0 {
@@ -147,6 +152,8 @@ func parseGrokMediaJSONRequest(body []byte, info *GrokMediaRequestInfo) {
 	info.Prompt = strings.TrimSpace(gjson.GetBytes(body, "prompt").String())
 	info.Size = strings.TrimSpace(gjson.GetBytes(body, "size").String())
 	info.AspectRatio = strings.TrimSpace(gjson.GetBytes(body, "aspect_ratio").String())
+	info.ImageQuality = strings.TrimSpace(gjson.GetBytes(body, "quality").String())
+	info.ResponseFormat = strings.TrimSpace(gjson.GetBytes(body, "response_format").String())
 	assignGrokMediaResolution(strings.TrimSpace(gjson.GetBytes(body, "resolution").String()), info)
 	if duration := gjson.GetBytes(body, "duration"); duration.Exists() && duration.Type == gjson.Number {
 		info.DurationSeconds = int(duration.Int())
@@ -264,6 +271,10 @@ func parseGrokMediaMultipartRequest(contentType string, body []byte, info *GrokM
 			info.AspectRatio = value
 		case "resolution":
 			assignGrokMediaResolution(value, info)
+		case "quality":
+			info.ImageQuality = value
+		case "response_format":
+			info.ResponseFormat = value
 		case "duration":
 			if duration, err := strconv.Atoi(value); err == nil {
 				info.DurationSeconds = duration
@@ -322,14 +333,56 @@ func (s *OpenAIGatewayService) ResolveGrokMediaVideoRequestAccount(
 	requestID string,
 	userID, apiKeyID int64,
 ) (int64, error) {
-	if s == nil || s.cache == nil {
-		return 0, fmt.Errorf("grok video request binding cache is unavailable")
+	if s == nil {
+		return 0, fmt.Errorf("grok video request binding service is unavailable")
 	}
 	cacheKey := s.openAISessionCacheKey(GrokMediaVideoRequestSessionHash(requestID, userID, apiKeyID))
 	if cacheKey == "" {
 		return 0, fmt.Errorf("grok video request binding is invalid")
 	}
-	return s.cache.GetSessionAccountID(ctx, derefGroupID(groupID), cacheKey)
+	cacheErr := error(ErrStickySessionNotFound)
+	if s.cache != nil {
+		accountID, err := s.cache.GetSessionAccountID(ctx, derefGroupID(groupID), cacheKey)
+		if err == nil && accountID > 0 {
+			return accountID, nil
+		}
+		cacheErr = err
+		if cacheErr == nil {
+			cacheErr = ErrStickySessionNotFound
+		}
+		if err != nil && !errors.Is(err, ErrStickySessionNotFound) {
+			return 0, err
+		}
+	}
+
+	// A completed Grok job is durably recorded with request_id=grok-video:{id}.
+	// Redis affinity is intentionally a fast path, not the sole ownership source:
+	// after a service restart/TTL expiry the user must still be able to retrieve a
+	// video that has already been generated and charged to this exact API key.
+	ownerLookup, ok := s.usageLogRepo.(GrokVideoUsageOwnerRepository)
+	if !ok || ownerLookup == nil {
+		return 0, cacheErr
+	}
+	accountID, err := ownerLookup.FindGrokVideoUsageAccountID(ctx, requestID, userID, apiKeyID, derefGroupID(groupID))
+	if err != nil || accountID <= 0 {
+		if err == nil {
+			err = ErrStickySessionNotFound
+		}
+		return 0, err
+	}
+	// Warm the 24-hour fast path again. Retrieval is still allowed if this
+	// best-effort write fails because the durable ownership check already passed.
+	if s.cache != nil {
+		_ = s.cache.SetSessionAccountID(ctx, derefGroupID(groupID), cacheKey, accountID, grokVideoPendingBillingTTL(s.cfg))
+	}
+	return accountID, nil
+}
+
+// GrokVideoUsageOwnerRepository is an optional durable lookup implemented by
+// the SQL usage repository. Keeping it separate from UsageLogRepository avoids
+// forcing unrelated analytics/test repositories to implement media affinity.
+type GrokVideoUsageOwnerRepository interface {
+	FindGrokVideoUsageAccountID(ctx context.Context, requestID string, userID, apiKeyID, groupID int64) (int64, error)
 }
 
 // GrokVideoPendingBilling is the create-time snapshot used when status polling
@@ -949,6 +1002,12 @@ func prepareGrokMediaForwardBody(endpoint GrokMediaEndpoint, body []byte, conten
 	if info.AspectRatio != "" {
 		payload["aspect_ratio"] = info.AspectRatio
 	}
+	if info.ImageQuality != "" {
+		payload["quality"] = info.ImageQuality
+	}
+	if info.ResponseFormat != "" {
+		payload["response_format"] = info.ResponseFormat
+	}
 
 	images := make([]map[string]string, 0, len(info.InputImageURLs)+len(info.Uploads))
 	for _, imageURL := range info.InputImageURLs {
@@ -966,11 +1025,13 @@ func prepareGrokMediaForwardBody(endpoint GrokMediaEndpoint, body []byte, conten
 	if len(images) > grokMediaMaxEditSourceImages {
 		return nil, "", fmt.Errorf("a maximum of %d source images is supported for image edits", grokMediaMaxEditSourceImages)
 	}
-	if len(images) > 0 {
+	if len(images) == 1 {
 		payload["image"] = images[0]
-		if len(images) > 1 {
-			payload["images"] = images
-		}
+	} else if len(images) > 1 {
+		// xAI's edit contract uses `image` for one source and `images` for
+		// multiple sources. Sending both duplicates the first reference during
+		// request parsing, moderation and usage accounting.
+		payload["images"] = images
 	}
 
 	maskImageURL := strings.TrimSpace(info.MaskImageURL)
@@ -1145,10 +1206,9 @@ func NormalizeGrokMediaModelForEndpoint(endpoint GrokMediaEndpoint, model string
 			return "grok-imagine-image-quality"
 		}
 	case GrokMediaEndpointVideosGenerations:
-		// xAI's 1.5 model is image-to-video only. Keep the requested model
-		// unchanged when the image is missing so the upstream returns its
-		// documented invalid-argument response instead of silently switching
-		// models and pricing.
+		// Current xAI video models support text-to-video and image-to-video.
+		// Preserve the exact requested model and let account mapping choose an
+		// upstream alias; never infer a protocol/model switch from image presence.
 		_ = hasInputImage
 	}
 	return model

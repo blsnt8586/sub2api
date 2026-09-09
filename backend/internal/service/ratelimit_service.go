@@ -298,6 +298,9 @@ func (s *RateLimitService) CheckErrorPolicy(ctx context.Context, account *Accoun
 	ctx = withTempUnschedulableModel(ctx, requestedModel)
 	if account.IsCustomErrorCodesEnabled() {
 		if account.ShouldHandleErrorCode(statusCode) {
+			if isConfiguredCustomAccountError(account, statusCode) {
+				MarkOpsCustomAccountError(ctx, account.ID, statusCode)
+			}
 			return ErrorPolicyMatched
 		}
 		slog.Info("account_error_code_skipped", "account_id", account.ID, "status_code", statusCode)
@@ -347,6 +350,9 @@ func (s *RateLimitService) HandleUpstreamError(ctx context.Context, account *Acc
 	if !account.ShouldHandleErrorCode(statusCode) {
 		slog.Info("account_error_code_skipped", "account_id", account.ID, "status_code", statusCode)
 		return false
+	}
+	if customErrorCodesExplicit && isConfiguredCustomAccountError(account, statusCode) {
+		MarkOpsCustomAccountError(ctx, account.ID, statusCode)
 	}
 
 	if statusCode == 529 {

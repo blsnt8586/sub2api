@@ -396,9 +396,12 @@ func (s *SettingService) GetOpenAICodexCanonicalUserAgent(ctx context.Context) s
 	if rebuilt := openai.SetCodexUserAgentVersion(ua, version); rebuilt != "" {
 		return rebuilt
 	}
-	// 非 `{client}/{version}` 形态：交给 PairCodexClientIdentity 判定，
-	// 推导不出官方身份时由收口整体回退规范身份。
-	return ua
+	// [CUSTOM][TEMP-UPSTREAM-COMPAT] 非 `{client}/{version}` 形态无法安全用作
+	// Codex 身份。只丢弃管理员填写的无效 UA 外形，仍使用面板/自动同步得到的
+	// 运行时版本构造标准身份；否则后续收口会连版本一起退回编译期常量，导致
+	// 已要求新客户端版本的模型（例如 gpt-6-astra）被上游拒绝。
+	// 上游提供等价的 invalid-UA + runtime-version fallback 后删除本地补丁。
+	return buildCodexCLIUserAgent(version)
 }
 
 var legacyClaudeCodeCodexWhitelistEntry = openai.AllowedClientEntry{
