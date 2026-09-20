@@ -294,7 +294,8 @@ func (s *SettingService) GetOpenAICodexUserAgent(ctx context.Context) string {
 			})
 			return fallback, nil
 		}
-		ua := strings.TrimSpace(value)
+		// Preserve invalid header bytes for canonical identity validation.
+		ua := strings.Trim(value, " \t")
 		if ua == "" {
 			ua = fallback
 		}
@@ -389,18 +390,13 @@ func (s *SettingService) GetOpenAICodexCanonicalUserAgent(ctx context.Context) s
 		return codexCLIUserAgent
 	}
 	version := s.GetOpenAICodexClientVersion(ctx)
-	ua := strings.TrimSpace(s.GetOpenAICodexUserAgent(ctx))
-	if ua == "" {
-		return buildCodexCLIUserAgent(version)
+	ua := s.GetOpenAICodexUserAgent(ctx)
+	if _, pairedUA, ok := openai.PairCodexClientIdentity(ua); ok {
+		if rebuilt := openai.SetCodexUserAgentVersion(pairedUA, version); rebuilt != "" {
+			return rebuilt
+		}
 	}
-	if rebuilt := openai.SetCodexUserAgentVersion(ua, version); rebuilt != "" {
-		return rebuilt
-	}
-	// [CUSTOM][TEMP-UPSTREAM-COMPAT] 非 `{client}/{version}` 形态无法安全用作
-	// Codex 身份。只丢弃管理员填写的无效 UA 外形，仍使用面板/自动同步得到的
-	// 运行时版本构造标准身份；否则后续收口会连版本一起退回编译期常量，导致
-	// 已要求新客户端版本的模型（例如 gpt-6-astra）被上游拒绝。
-	// 上游提供等价的 invalid-UA + runtime-version fallback 后删除本地补丁。
+	// Invalid fingerprints must not discard the independently resolved version.
 	return buildCodexCLIUserAgent(version)
 }
 

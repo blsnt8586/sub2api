@@ -511,6 +511,8 @@ cd backend && make build            # 产出 backend/bin/server
 
 ### I.1 无效 UA 不得拖低自动同步版本
 
+2026-09-20：上游 `2d37088bd` 已提供等价修复。本地临时分支已移除，采用上游身份校验和运行时版本回退；保留运行时版本回归测试。I.2 探针兼容仍保留。
+
 - 文件：`backend/internal/service/setting_gateway_runtime.go`
 - 锚点：`[CUSTOM][TEMP-UPSTREAM-COMPAT]`
 - 行为：管理员填写无法解析的完整 UA（例如仅填写 `codex`）时，丢弃无效 UA 外形，

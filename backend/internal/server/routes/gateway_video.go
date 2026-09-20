@@ -17,6 +17,21 @@ import (
 // Grok 视频行为完全保留，即梦作为增量平台叠加。[CUSTOM decoupling]
 //
 // 新增视频平台时仅需在此文件内的 handler 里追加 case，无需改 gateway.go。
+func seedanceWithCanvas(h *handler.Handlers) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if getGroupPlatform(c) != service.PlatformCanvas {
+			h.OpenAIGateway.SeedanceTasks(c)
+			return
+		}
+		if c.Request.Method == http.MethodPost {
+			h.OpenAIGateway.CanvasVideoCreation(c)
+			return
+		}
+		c.Params = append(c.Params, gin.Param{Key: "request_id", Value: c.Param("task_id")})
+		h.OpenAIGateway.CanvasVideoStatus(c)
+	}
+}
+
 func registerVideoRoutes(
 	gateway *gin.RouterGroup,
 	r *gin.Engine,
@@ -26,6 +41,7 @@ func registerVideoRoutes(
 	opsErrorLogger gin.HandlerFunc,
 	endpointNorm gin.HandlerFunc,
 	apiKeyAuth gin.HandlerFunc,
+	groupModelAllowlist gin.HandlerFunc,
 	compositeTarget gin.HandlerFunc,
 	requireGroup gin.HandlerFunc,
 ) {
@@ -123,28 +139,6 @@ func registerVideoRoutes(
 		videoUnsupported(c)
 	}
 
-	// seedanceTasksHandler 处理 POST /v1/contents/generations/tasks（Seedance/Ark Plan v3 原生接口）。
-	// infinite-canvas 等客户端对含 "seedance" 的模型走此路径；body 在 handler 层自动转换成
-	// AIV2API 风格后沿 jimeng 通道转发。仅限 jimeng 平台。[CUSTOM]
-	seedanceTasksHandler := func(c *gin.Context) {
-		if getGroupPlatform(c) == service.PlatformCanvas {
-			h.OpenAIGateway.CanvasVideoCreation(c)
-			return
-		}
-		videoUnsupported(c)
-	}
-
-	// seedanceTaskStatusHandler 处理 GET /v1/contents/generations/tasks/{id}（Seedance 状态查询）。
-	// 复用 canvas 状态处理器；normalizeCanvasVideoResponse 已补入 content.video_url，
-	// 使 infinite-canvas 的 Seedance 轮询路径能正确提取到视频 URL。[CUSTOM]
-	seedanceTaskStatusHandler := func(c *gin.Context) {
-		if getGroupPlatform(c) == service.PlatformCanvas {
-			h.OpenAIGateway.CanvasVideoStatus(c)
-			return
-		}
-		videoUnsupported(c)
-	}
-
 	// /v1 分组路由（middleware 已由 gateway RouterGroup 统一应用）。
 	// 路由集与上游 gateway.go 一致，尾部追加 jimeng cancel 与 Seedance 兼容路由。
 	gateway.POST("/videos", videoGenerationHandler)
@@ -161,24 +155,20 @@ func registerVideoRoutes(
 	gateway.GET("/videos/:request_id/content", videoContentHandler)
 	gateway.POST("/videos/:request_id/cancel", videoCancelHandler) // [CUSTOM] jimeng
 	gateway.DELETE("/videos/:request_id", videoDeleteHandler)
-	gateway.POST("/contents/generations/tasks", seedanceTasksHandler)
-	gateway.GET("/contents/generations/tasks/:request_id", seedanceTaskStatusHandler)
 
 	// 根路径别名（不带 /v1 前缀，需显式挂中间件）
-	r.POST("/videos", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, videoGenerationHandler)
-	r.POST("/videos/generations", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, videoGenerationHandler)
-	r.POST("/videos/edits", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, videoEditHandler)
-	r.POST("/videos/extensions", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, videoExtensionHandler)
-	r.GET("/videos/generations/:request_id/content", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, videoContentHandler)
-	r.GET("/videos/edits/:request_id/content", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, videoContentHandler)
-	r.GET("/videos/extensions/:request_id/content", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, videoContentHandler)
-	r.GET("/videos/generations/:request_id", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, videoStatusHandler)
-	r.GET("/videos/edits/:request_id", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, videoStatusHandler)
-	r.GET("/videos/extensions/:request_id", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, videoStatusHandler)
-	r.GET("/videos/:request_id", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, videoStatusHandler)
-	r.GET("/videos/:request_id/content", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, videoContentHandler)
-	r.POST("/videos/:request_id/cancel", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, videoCancelHandler) // [CUSTOM] jimeng
-	r.DELETE("/videos/:request_id", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, videoDeleteHandler)
-	r.POST("/contents/generations/tasks", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, seedanceTasksHandler)
-	r.GET("/contents/generations/tasks/:request_id", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, seedanceTaskStatusHandler)
+	r.POST("/videos", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, groupModelAllowlist, compositeTarget, requireGroup, videoGenerationHandler)
+	r.POST("/videos/generations", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, groupModelAllowlist, compositeTarget, requireGroup, videoGenerationHandler)
+	r.POST("/videos/edits", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, groupModelAllowlist, compositeTarget, requireGroup, videoEditHandler)
+	r.POST("/videos/extensions", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, groupModelAllowlist, compositeTarget, requireGroup, videoExtensionHandler)
+	r.GET("/videos/generations/:request_id/content", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, groupModelAllowlist, compositeTarget, requireGroup, videoContentHandler)
+	r.GET("/videos/edits/:request_id/content", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, groupModelAllowlist, compositeTarget, requireGroup, videoContentHandler)
+	r.GET("/videos/extensions/:request_id/content", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, groupModelAllowlist, compositeTarget, requireGroup, videoContentHandler)
+	r.GET("/videos/generations/:request_id", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, groupModelAllowlist, compositeTarget, requireGroup, videoStatusHandler)
+	r.GET("/videos/edits/:request_id", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, groupModelAllowlist, compositeTarget, requireGroup, videoStatusHandler)
+	r.GET("/videos/extensions/:request_id", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, groupModelAllowlist, compositeTarget, requireGroup, videoStatusHandler)
+	r.GET("/videos/:request_id", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, groupModelAllowlist, compositeTarget, requireGroup, videoStatusHandler)
+	r.GET("/videos/:request_id/content", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, groupModelAllowlist, compositeTarget, requireGroup, videoContentHandler)
+	r.POST("/videos/:request_id/cancel", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, groupModelAllowlist, compositeTarget, requireGroup, videoCancelHandler) // [CUSTOM] jimeng
+	r.DELETE("/videos/:request_id", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, groupModelAllowlist, compositeTarget, requireGroup, videoDeleteHandler)
 }

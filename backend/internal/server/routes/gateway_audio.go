@@ -19,6 +19,7 @@ func registerAudioRoutes(
 	opsErrorLogger gin.HandlerFunc,
 	endpointNorm gin.HandlerFunc,
 	apiKeyAuth gin.HandlerFunc,
+	groupModelAllowlist gin.HandlerFunc,
 	compositeTarget gin.HandlerFunc,
 	requireGroup gin.HandlerFunc,
 ) {
@@ -66,7 +67,7 @@ func registerAudioRoutes(
 	gateway.POST("/audio/:id/cancel", audioCancelHandler)
 
 	// 根路径别名（带完整中间件链）
-	r.POST("/audio/generations", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, audioGenerationHandler)
-	r.GET("/audio/:id", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, audioStatusHandler)
-	r.POST("/audio/:id/cancel", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, audioCancelHandler)
+	r.POST("/audio/generations", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, groupModelAllowlist, compositeTarget, requireGroup, audioGenerationHandler)
+	r.GET("/audio/:id", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, groupModelAllowlist, compositeTarget, requireGroup, audioStatusHandler)
+	r.POST("/audio/:id/cancel", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, groupModelAllowlist, compositeTarget, requireGroup, audioCancelHandler)
 }

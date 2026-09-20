@@ -43,6 +43,17 @@ func (r *apiKeyRepository) activeQuery() *dbent.APIKeyQuery {
 }
 
 func (r *apiKeyRepository) Create(ctx context.Context, key *service.APIKey) error {
+	// Fixed-group callers predate smart routing. Persist its neutral defaults
+	// rather than JSON null or zero policy values that violate the constraints.
+	if key.SmartGroupIDs == nil {
+		key.SmartGroupIDs = []int64{}
+	}
+	if key.SmartGroupFailureThreshold == 0 {
+		key.SmartGroupFailureThreshold = service.SmartGroupDefaultFailureThreshold
+	}
+	if key.SmartGroupRecoveryIntervalSeconds == 0 {
+		key.SmartGroupRecoveryIntervalSeconds = service.SmartGroupDefaultRecoveryIntervalSeconds
+	}
 	builder := r.client.APIKey.Create().
 		SetUserID(key.UserID).
 		SetKey(key.Key).

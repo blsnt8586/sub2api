@@ -32,6 +32,7 @@ func registerTaskRoutes(
 	opsErrorLogger gin.HandlerFunc,
 	endpointNorm gin.HandlerFunc,
 	apiKeyAuth gin.HandlerFunc,
+	groupModelAllowlist gin.HandlerFunc,
 	compositeTarget gin.HandlerFunc,
 	requireGroup gin.HandlerFunc,
 ) {
@@ -79,7 +80,7 @@ func registerTaskRoutes(
 	gateway.POST("/tasks/:id/cancel", tasksCancelHandler)
 
 	// 根路径别名（带完整中间件链）
-	r.POST("/tasks/images", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, tasksImageCreateHandler)
-	r.GET("/tasks/:id", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, tasksStatusHandler)
-	r.POST("/tasks/:id/cancel", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, compositeTarget, requireGroup, tasksCancelHandler)
+	r.POST("/tasks/images", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, groupModelAllowlist, compositeTarget, requireGroup, tasksImageCreateHandler)
+	r.GET("/tasks/:id", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, groupModelAllowlist, compositeTarget, requireGroup, tasksStatusHandler)
+	r.POST("/tasks/:id/cancel", bodyLimit, clientRequestID, opsErrorLogger, endpointNorm, apiKeyAuth, groupModelAllowlist, compositeTarget, requireGroup, tasksCancelHandler)
 }

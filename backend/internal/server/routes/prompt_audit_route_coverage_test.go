@@ -32,6 +32,12 @@ func TestEveryGatewayPOSTRouteIsClassifiedForPromptAuditCoverage(t *testing.T) {
 	for _, match := range matches {
 		actual[match[1]] = struct{}{}
 	}
+	// Root aliases may be registered through the shared middleware helper,
+	// including Seedance aliases expanded from a prefix loop.
+	rootPattern := regexp.MustCompile(`rootRoute\(http.MethodPost, (?:prefix\+)?"([^"]+)"`)
+	for _, match := range rootPattern.FindAllStringSubmatch(string(combined), -1) {
+		actual[match[1]] = struct{}{}
+	}
 
 	audited := map[string][]string{
 		"/messages":                   {"gateway_handler.go", "openai_gateway_handler.go"},
