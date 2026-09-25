@@ -9,6 +9,19 @@
 
 ---
 
+## 2026-09-25 上游同步记录（0.2.8）
+
+- 合并 `upstream/main` 至 `a3eb7ef30`，同步前提交 `a7a3aef68`；回退分支为 `backup/pre-upstream-20260925-a7a3aef68`。
+- 账号批量更新同时保留 OpenCode Go 用量身份清理与 fork 的 `ReleaseProbeOwnershipOnNormalStop`；代理过期切换保留 Provider 绑定迁移，并采用上游的并发状态复核。
+- 配额编辑器采用上游 `PLATFORM_QUOTA_PLATFORMS`，追加 Canvas，与后端 11 个允许平台对齐；回归覆盖 Canvas 和上游新增平台的限额保存。
+- Wire 重新生成，保留 Provider/智能分组服务及清理链路，同时接入 Claude Code 版本同步与 OpenCode Go 用量服务。Ent 重新生成无差异。
+- 首页、Canvas 路由/计费、Provider 扩展与全局提示词注入保留；Astra UA 已采用上游实现，紧凑探针的 token 上限兼容仍需保留。
+- 新增上游迁移 `239_channel_reasoning_effort_multipliers.sql`、`240_affiliate_ledger_operation_id.sql`。本次未启动生产服务或执行生产迁移。
+- 验证：后端 unit/integration 全包测试通过；前端 349 文件 / 2574 测试通过；`./build.sh`（i18n、类型检查、Vite、Go embed）通过。
+- golangci-lint v2.13.0（Go 1.27.0 构建）相对同步前检查为 0 新问题；全量仍有 22 项既有问题。前端 ESLint 有 7 项既有错误、8 项既有警告，本次未扩大清理范围。
+
+---
+
 ## 一、功能总览
 
 fork 在上游之上叠加了三大功能块，外加一层解耦重构：
