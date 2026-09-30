@@ -9,6 +9,19 @@
 
 ---
 
+## 2026-09-30 上游同步记录（0.2.11）
+
+- 合并 `upstream/main` 至 `42bc7f6cf`，新增 21 个上游提交；同步前提交 `9b66eac52`，回退分支 `backup/pre-upstream-0211-9b66eac52`。
+- API Key 创建限制与智能分组常量同时保留；Wire 重新生成，Claude 额度重置接入幂等协调器和 Redis 锁，保留 Provider、Codex Radar 和智能分组依赖。Ent 重新生成无差异，无新增数据库迁移。
+- 新默认配置：`billing.inflight_reservation.enabled=true`；`api_key_create.max_active_per_user=200`、`max_per_user_per_hour=60`。余额预留随异步计费任务释放；Canvas 继续走异步任务完成后的幂等计费，不为结果轮询增加预留。
+- 合入 GPT-6.1 Sol、Astra Ultrafast 模型能力/定价、远程 Codex 模型目录及 Claude 手动额度重置。保留 Canvas、Provider、全局提示词注入等二开。
+- 前端 351 文件 / 2651 项测试通过；完整 embed 构建通过，版本为 0.2.11；后端增量 golangci-lint 为 0 问题。前端 ESLint 仍是既有 7 错误、8 警告。
+- 首轮后端测试中阿里云验证码本地 HTTP 测试受当前代理环境影响；去除大小写 HTTP_PROXY/HTTPS_PROXY/ALL_PROXY 后对应 repository 单元和集成测试均通过。
+- 隔离代理后的 integration 全包命令通过；unit 各包已分轮通过，但隔离环境的全包复跑有一项既有 `TestValidateCreateParams_CheckModeMatrix` 因 `api.kimi.com` DNS 解析超时失败，随后该测试单独复核通过。未把分轮结果记为一次全包全绿。
+- 本次未执行远程推送、生产部署或生产数据库操作。
+
+---
+
 ## 2026-09-30 上游同步记录（0.2.10）
 
 - 合并 `upstream/main` 至 `a0f41f95a`，包含 0.2.10 版本提交之后的 Claude Code 降级分组修复；同步前提交 `f2f439041`，回退分支为 `backup/pre-upstream-20260930-f2f439041`。
