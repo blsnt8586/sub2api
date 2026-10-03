@@ -9,6 +9,16 @@
 
 ---
 
+## 2026-10-03 上游同步记录（0.2.13）
+
+- 合并 `upstream/main` 至 `b8dece900`，同步前提交 `40d6aaaca`；回退分支 `backup/pre-upstream-20261003-40d6aaaca`。
+- 上游新增 TypeSafe / Jev System One、充值优惠阶梯、API Key 删除后异步计费修复等。合并平台枚举、配额表单、账号默认 URL 和路由时，同时保留 fork 的 Canvas 与智能分组行为。
+- 修正上游 `241_add_typesafe_platform.sql` 的配额约束，使 TypeSafe 与已有 Canvas 配额均可写入；补全前端 TypeSafe 配色。Ent 与 Wire 已重新生成。
+- 核对 Canvas model-caps 路由、OpenAI 全局提示词钩子和 Provider Wire 装配仍在。未执行远程推送、生产部署或生产数据库迁移。
+- 验证：后端全量 unit/integration 测试通过；前端类型检查及 353 文件 / 2677 项测试通过；`./build.sh` 完整 embed 构建通过，版本 0.2.13。
+
+---
+
 ## 2026-09-30 上游同步记录（0.2.11）
 
 - 合并 `upstream/main` 至 `42bc7f6cf`，新增 21 个上游提交；同步前提交 `9b66eac52`，回退分支 `backup/pre-upstream-0211-9b66eac52`。

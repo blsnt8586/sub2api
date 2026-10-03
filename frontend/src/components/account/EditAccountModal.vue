@@ -4011,6 +4011,7 @@ const defaultBaseUrl = computed(() => {
   // 用户清空 Base URL 再保存就会把 canvas 账号的 base_url 静默改写成 Anthropic 地址。
   // 与 CreateAccountModal 的 canvas 默认值（空串）保持一致。
   if (props.account?.platform === 'canvas') return ''
+  if (props.account?.platform === 'typesafe') return 'https://api.typesafe.ai'
   // CN 供应商：按当前模式/协议回落到官方预设（清空输入框提交时使用），
   // 不能落到 anthropic 默认值（会被当 CC base 拼出错误端点）。
   if (
@@ -4460,6 +4461,8 @@ const syncFormFromAccount = (newAccount: Account | null) => {
           ? 'https://generativelanguage.googleapis.com'
           : newAccount.platform === 'grok'
             ? 'https://api.x.ai/v1'
+            : newAccount.platform === 'typesafe'
+              ? 'https://api.typesafe.ai'
             : newAccount.platform === 'kimi' ||
                 newAccount.platform === 'zhipu' ||
                 newAccount.platform === 'deepseek' ||
