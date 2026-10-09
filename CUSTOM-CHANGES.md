@@ -9,6 +9,15 @@
 
 ---
 
+## 2026-10-10 上游同步记录（0.2.15）
+
+- 合并 `upstream/main` 至 `3a6fd1c9d`，同步前提交 `89ec44820`；回退分支 `backup/pre-upstream-20261010-89ec44820`。
+- 吸收上游平台目录、Command Code/Cline、按模型协议路由和运维测试更新；保留 Canvas、Provider、智能分组、媒体计费和全局提示词注入。
+- 平台目录合并时补回 fork 的 Canvas 登记，使动态前端平台选择器与后端平台清单保持一致；保留 Canvas 账号测试、OpenCode 兼容默认端点和 quota 行为。
+- 验证：前端 `pnpm typecheck` 通过；后端目标 unit 包、server routes 与 migrations 测试通过。未执行推送、生产部署或生产数据库迁移。
+
+---
+
 ## 2026-10-03 上游同步记录（0.2.13）
 
 - 合并 `upstream/main` 至 `b8dece900`，同步前提交 `40d6aaaca`；回退分支 `backup/pre-upstream-20261003-40d6aaaca`。

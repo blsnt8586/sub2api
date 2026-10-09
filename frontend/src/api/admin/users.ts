@@ -335,6 +335,7 @@ export const PLATFORM_QUOTA_PLATFORMS = [
   'anthropic', 'openai', 'gemini', 'antigravity', 'grok', 'canvas',
   'kimi', 'zhipu', 'deepseek', 'minimax', 'opencode_go', 'typesafe',
 ] as const
+export const platformQuotaPlatforms = () => PLATFORM_QUOTA_PLATFORMS
 export type PlatformQuotaPlatform = typeof PLATFORM_QUOTA_PLATFORMS[number]
 export type PlatformQuotaWindow = 'daily' | 'weekly' | 'monthly'
 
