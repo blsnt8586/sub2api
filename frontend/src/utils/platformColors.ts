@@ -1,3 +1,4 @@
+import { getPlatformSpec, listPlatformIds } from '@/constants/platformCatalog'
 /**
  * Centralized platform color definitions.
  *
@@ -468,22 +469,8 @@ export function platformGradientSubtextClass(p: string): string {
 }
 
 export function platformLabel(p: string): string {
-  switch (p) {
-    case 'anthropic': return 'Anthropic'
-    case 'openai': return 'OpenAI'
-    case 'antigravity': return 'Antigravity'
-    case 'gemini': return 'Gemini'
-    case 'grok': return 'Grok'
-    case 'canvas': return 'Canvas'
-    case 'kimi': return 'Kimi'
-    case 'zhipu': return 'Zhipu GLM'
-    case 'deepseek': return 'DeepSeek'
-    case 'minimax': return 'MiniMax'
-    case 'opencode_go': return 'OpenCode'
-    case 'typesafe': return 'TypeSafe / Jev'
-    case 'composite': return 'Composite'
-    default: return p || 'API'
-  }
+  if (p === 'composite') return 'Composite'
+  return getPlatformSpec(p)?.display_name ?? (p || 'API')
 }
 
 // ── 平台权威枚举列表 ────────────────────────────────────────
@@ -492,23 +479,11 @@ export function platformLabel(p: string): string {
 // 所有平台下拉/多选/配额矩阵会自动包含新平台，无需逐个文件改。
 // 顺序即 UI 展示顺序。后端权威列表见 service/domain_constants.go AllowedQuotaPlatforms。
 // 不含 'composite'：它是分组级的复合平台，不能作为账号平台或配额维度。
-export const ALL_PLATFORMS: Platform[] = [
-  'anthropic',
-  'openai',
-  'gemini',
-  'antigravity',
-  'grok',
-  'canvas',
-  'kimi',
-  'zhipu',
-  'deepseek',
-  'minimax',
-  'opencode_go',
-]
+export const ALL_PLATFORMS: string[] = listPlatformIds()
 
 // PlatformSelectOption 是下拉/筛选组件使用的 { value, label } 结构。
 export interface PlatformSelectOption {
-  value: Platform
+  value: string
   label: string
 }
 

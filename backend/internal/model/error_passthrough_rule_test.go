@@ -8,6 +8,7 @@ import (
 
 func TestAllPlatformsIncludesEveryConcretePlatform(t *testing.T) {
 	require.ElementsMatch(t, []string{
+		"canvas",
 		"anthropic",
 		"openai",
 		"gemini",

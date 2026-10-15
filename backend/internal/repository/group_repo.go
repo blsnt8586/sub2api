@@ -182,6 +182,9 @@ func createGroupRecord(ctx context.Context, client *dbent.Client, groupIn *servi
 	if len(canvasModelPricing) > 0 {
 		builder = builder.SetCanvasModelPricing(canvasModelPricing)
 	}
+	if groupIn.I18n != nil {
+		builder = builder.SetI18n(groupIn.I18n)
+	}
 
 	created, err := builder.Save(ctx)
 	if err != nil {
@@ -483,6 +486,11 @@ func (r *groupRepository) Update(ctx context.Context, groupIn *service.Group) er
 	} else {
 		builder = builder.SetCanvasModelPricing(canvasModelPricing)
 	}
+	i18n := groupIn.I18n
+	if i18n == nil {
+		i18n = service.GroupI18n{}
+	}
+	builder = builder.SetI18n(i18n)
 
 	updated, err := builder.Save(ctx)
 	if err != nil {
@@ -1009,6 +1017,29 @@ func (r *groupRepository) deleteCascade(ctx context.Context, id int64, requireEm
 	// 5. Soft-delete group itself.
 	if _, err := txClient.Group.Delete().Where(group.IDEQ(id)).Exec(ctx); err != nil {
 		return nil, err
+	}
+	// Lock and validate the text value before using JSONB operators. A legacy
+	// malformed setting must not prevent deletion or be silently replaced.
+	var moderationValue string
+	err = scanSingleRow(ctx, exec, `SELECT value FROM settings WHERE key = $1 FOR UPDATE`,
+		[]any{service.SettingKeyContentModerationConfig}, &moderationValue)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return nil, err
+	}
+	// Keep the moderation scope in sync in the same transaction. Updating the
+	// setting row in SQL also serializes concurrent group deletions across nodes.
+	if err == nil && json.Valid([]byte(moderationValue)) {
+		if _, err := exec.ExecContext(ctx, `UPDATE settings
+		SET value = jsonb_set(value::jsonb, '{group_ids}',
+			(SELECT COALESCE(jsonb_agg(group_id ORDER BY ord), '[]'::jsonb)
+			 FROM jsonb_array_elements(value::jsonb->'group_ids') WITH ORDINALITY AS ids(group_id, ord)
+			 WHERE group_id <> to_jsonb($2::bigint)))::text,
+			updated_at = NOW()
+		WHERE key = $1 AND jsonb_typeof(value::jsonb->'group_ids') = 'array'
+			AND value::jsonb->'group_ids' @> jsonb_build_array($2::bigint)`,
+			service.SettingKeyContentModerationConfig, id); err != nil {
+			return nil, err
+		}
 	}
 
 	if tx != nil {

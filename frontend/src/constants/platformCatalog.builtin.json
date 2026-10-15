@@ -36,6 +36,12 @@
       "litellm_provider": "xai"
     },
     {
+      "id": "canvas",
+      "display_name": "Canvas",
+      "gateway": "openai",
+      "cn_provider": false
+    },
+    {
       "id": "kimi",
       "display_name": "Kimi",
       "gateway": "openai",
@@ -220,12 +226,6 @@
       }
     },
     {
-      "id": "canvas",
-      "display_name": "Canvas",
-      "gateway": "openai",
-      "cn_provider": false
-    },
-    {
       "id": "typesafe",
       "display_name": "TypeSafe / Jev",
       "gateway": "anthropic",
@@ -292,6 +292,7 @@
     "openai",
     "antigravity",
     "grok",
+    "canvas",
     "kimi",
     "zhipu",
     "deepseek",

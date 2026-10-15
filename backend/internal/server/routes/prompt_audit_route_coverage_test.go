@@ -63,6 +63,7 @@ func TestEveryGatewayPOSTRouteIsClassifiedForPromptAuditCoverage(t *testing.T) {
 		"/web_search":                 {"gateway_web_search.go"},
 		"/contents/generations/tasks": {"canvas_video.go"}, // [CUSTOM] Seedance/Ark Plan v3 视频生成
 		"/x_search":                   {"gateway_web_search.go"},
+		"/cachedContents":             {"gemini_cached_contents_handler.go"},
 	}
 	excluded := map[string]string{
 		"/messages/count_tokens":     "tokenization only; it does not execute a model request",
