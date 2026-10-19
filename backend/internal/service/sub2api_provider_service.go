@@ -479,9 +479,14 @@ func (s *Sub2APIProviderService) UpdateProvider(ctx context.Context, id int64, i
 		ClearTokenPair:        authUpdate.ClearTokenPair,
 		TokenPairUpdated:      authUpdate.TokenPairUpdated,
 		Status:                input.Status,
-		Notes:                 input.Notes,
-		ProxyID:               input.ProxyID,
-		RemoteCostDivisor:     input.RemoteCostDivisor,
+		Notes: func() *string {
+			if !input.NotesSet {
+				return nil
+			}
+			return input.Notes
+		}(),
+		ProxyID:           input.ProxyID,
+		RemoteCostDivisor: input.RemoteCostDivisor,
 	})
 
 	if err != nil {
@@ -756,6 +761,7 @@ type UpdateProviderInput struct {
 	RefreshToken      *string                 `json:"refresh_token,omitempty"`
 	Status            *string                 `json:"status,omitempty"`
 	Notes             *string                 `json:"notes,omitempty"`
+	NotesSet          bool                    `json:"-"`
 	ProxyID           OptionalProviderProxyID `json:"-"`
 	RemoteCostDivisor *float64                `json:"remote_cost_divisor,omitempty"`
 }
@@ -1579,8 +1585,8 @@ func (s *Sub2APIProviderService) syncRemoteGroups(ctx context.Context, provider 
 		gi, ok := byKeyID[*acc.ProviderAPIKeyID]
 		if !ok {
 			// The upstream key was removed or is no longer visible. Clear the
-				// cached remote group so pricing cannot keep charging from an obsolete
-				// procurement multiplier; the local account remains
+			// cached remote group so pricing cannot keep charging from an obsolete
+			// procurement multiplier; the local account remains
 			// linked and its probe can continue reporting the failure.
 			acc.RemoteGroupID = nil
 			acc.RemoteGroupName = nil

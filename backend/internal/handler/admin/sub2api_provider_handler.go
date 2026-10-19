@@ -228,6 +228,7 @@ func (h *Sub2APIProviderHandler) Update(c *gin.Context) {
 		RefreshToken: req.RefreshToken,
 		Status:       req.Status,
 		Notes:        req.Notes.Value,
+		NotesSet:     req.Notes.Set,
 		ProxyID: service.OptionalProviderProxyID{
 			Set:   req.ProxyID.Set,
 			Value: req.ProxyID.Value,
