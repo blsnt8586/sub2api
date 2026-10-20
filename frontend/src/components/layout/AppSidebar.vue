@@ -481,14 +481,6 @@ const PluginIcon = {
   render: () => h(Icon, { name: 'cube' })
 }
 
-// Unified entry for the media workspace (image/video canvas).
-// Keep it in the shared self-navigation list so both regular users and
-// administrators (under "My Account") can reach the same authenticated
-// /studio shell.
-const StudioIcon = {
-  render: () => h(Icon, { name: 'sparkles' })
-}
-
 const BellIcon = {
   render: () =>
     h(
@@ -748,7 +740,6 @@ function buildSelfNavItems(withDashboard: boolean): NavItem[] {
     items.push({ path: '/dashboard', label: t('nav.dashboard'), icon: DashboardIcon })
   }
   items.push(
-    { path: '/studio', label: t('nav.studio'), icon: StudioIcon },
     { path: '/keys', label: t('nav.apiKeys'), icon: KeyIcon },
     { path: '/batch-image', label: t('nav.batchImage'), icon: BatchImageIcon, hideInSimpleMode: true, featureFlag: flagBatchImageAccess },
     { path: '/usage', label: t('nav.usage'), icon: ChartIcon, hideInSimpleMode: true },

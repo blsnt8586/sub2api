@@ -37,11 +37,11 @@ import (
 )
 
 const (
-	// CodexRadarRecommendationsURL 是原站「站长推荐」数据接口。
+	// 以下三个旧接口仅保留兼容测试；默认数据源见 codexradar_bench.go。
+	// CodexRadarRecommendationsURL 是原站旧版「站长推荐」接口。
 	CodexRadarRecommendationsURL = "https://codexradar.com/api/radar-insights"
 	// CodexRadarIntelligenceURL 是原站「软件工程能力」（deep-swe 基准）数据接口。
-	// 注意：原站没有现成的「综合智能」接口——综合智能 = 本接口与视觉空间推理接口
-	// 按档位配对后合成（IQ 取等权几何平均，均值指标按样本数加权），合成在前端完成。
+	// 当前页面直接展示 RadarBench 150 分制数据，不再合成 IQ。
 	CodexRadarIntelligenceURL = "https://codexradar.com/api/intelligence-efficiency-metrics"
 	// CodexRadarVisualURL 是原站「视觉空间推理」（pompeii-adjacency 基准）数据接口。
 	CodexRadarVisualURL = "https://codexradar.com/api/visual-spatial-reasoning"
@@ -106,6 +106,7 @@ type CodexRadarService struct {
 	recommendationsURL string
 	intelligenceURL    string
 	visualURL          string
+	benchURL           string
 	ttl                time.Duration
 	minRetry           time.Duration
 
@@ -127,6 +128,7 @@ type CodexRadarService struct {
 // NewCodexRadarService 创建 Codex 雷达代理服务（wire 注入）。
 func NewCodexRadarService() *CodexRadarService {
 	return &CodexRadarService{
+		benchURL:           "https://codexradar.com",
 		httpClient:         &http.Client{Timeout: codexRadarFetchTimeout},
 		imageURL:           CodexRadarImageURL,
 		summaryURL:         CodexRadarSummaryURL,
@@ -297,9 +299,12 @@ func (s *CodexRadarService) forceRefresh(ctx context.Context) {
 	})
 }
 
-// fetch 拉取「站长推荐」「软件工程能力」「视觉空间推理」三个结构化接口，构造新快照。
+// fetch 默认拉取 RadarBench；benchURL 为空时保留旧结构化接口兼容路径。
 // 旧 imageURL/summaryURL 非空时保留兼容抓取，但默认服务不会设置它们。
 func (s *CodexRadarService) fetch(ctx context.Context, prev *codexRadarSnapshot) *codexRadarSnapshot {
+	if s.benchURL != "" {
+		return s.fetchBench(ctx, prev)
+	}
 	fetchCtx, cancel := context.WithTimeout(ctx, codexRadarFetchTimeout)
 	defer cancel()
 
@@ -388,6 +393,7 @@ func (s *CodexRadarService) get(ctx context.Context, url string, limit int64) (b
 		return nil, "", "", err
 	}
 	req.Header.Set("User-Agent", "sub2api-codexradar-proxy/1.0")
+	req.Header.Set("X-Radar-Bench-Selection", "user-selected-v1")
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
 		return nil, "", "", err
@@ -396,9 +402,12 @@ func (s *CodexRadarService) get(ctx context.Context, url string, limit int64) (b
 	if resp.StatusCode != http.StatusOK {
 		return nil, "", "", &codexRadarHTTPError{status: resp.StatusCode, url: url}
 	}
-	data, err := io.ReadAll(io.LimitReader(resp.Body, limit))
+	data, err := io.ReadAll(io.LimitReader(resp.Body, limit+1))
 	if err != nil {
 		return nil, "", "", err
+	}
+	if int64(len(data)) > limit {
+		return nil, "", "", io.ErrShortBuffer
 	}
 	return data, resp.Header.Get("Content-Type"), resp.Header.Get("ETag"), nil
 }
@@ -537,7 +546,7 @@ type CodexRadarDataResult struct {
 	Available       bool
 }
 
-// DataSnapshot 返回「站长推荐」「软件工程能力」「视觉空间推理」的原始 JSON，不触发网络。
+// DataSnapshot 返回缓存 JSON，不触发网络；RadarBench 使用 Intelligence 字段。
 func (s *CodexRadarService) DataSnapshot() CodexRadarDataResult {
 	snap, _ := s.cache.Load().(*codexRadarSnapshot)
 	if snap == nil || (len(snap.recommendationsBytes) == 0 && len(snap.intelligenceBytes) == 0) {

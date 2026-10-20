@@ -1,487 +1,198 @@
 <template>
   <AppLayout>
-    <div class="radar-page -m-4 min-h-[calc(100vh-4rem)] overflow-hidden bg-gradient-to-br from-slate-50 to-gray-100 text-gray-900 md:-m-6 lg:-m-8">
-      <div class="mx-auto w-full max-w-[1640px] px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
-        <div v-if="loading && !summary" class="flex min-h-64 items-center justify-center">
-          <LoadingSpinner />
-        </div>
-        <div v-else-if="loadFailed && !summary" class="radar-empty-state">
-          <Icon name="exclamationTriangle" size="lg" class="mx-auto text-amber-500" />
-          <p class="mt-3 text-sm text-gray-700">{{ t('codexRadar.loadError') }}</p>
-          <button type="button" class="radar-secondary-button mt-4" @click="reload">
-            {{ t('common.refresh') }}
+    <section class="radar-page" :aria-busy="loading">
+      <div class="radar-shell">
+        <header class="radar-header">
+          <div>
+            <p class="eyebrow">公开基准 · 150 分制</p>
+            <h1>雷达分 <span>· RadarBench</span></h1>
+            <p class="subtitle">64 道题覆盖软件工程、视觉空间、终端操作和科学研究</p>
+          </div>
+          <div class="toolbar">
+            <span v-if="data" class="sync-status">
+              <span class="status-dot" aria-hidden="true"></span>
+              {{ data.fresh }}/{{ data.expected }} 档 · {{ updatedAtLabel }}
+            </span>
+            <button class="toolbar-button" type="button" :disabled="loading" @click="reload">
+              <span aria-hidden="true">↻</span>{{ loading ? '读取中…' : '刷新' }}
+            </button>
+            <a class="toolbar-button source-button" href="https://codexradar.com/" target="_blank" rel="noopener noreferrer">
+              查看原站 <span aria-hidden="true">↗</span>
+            </a>
+          </div>
+        </header>
+
+        <nav class="dimension-tabs" aria-label="评分维度">
+          <button
+            v-for="tab in tabs"
+            :key="tab.key"
+            type="button"
+            :aria-pressed="selected === tab.key"
+            :class="{ selected: selected === tab.key }"
+            @click="selected = tab.key"
+          >
+            <span class="tab-mark" aria-hidden="true"></span>{{ tab.label }}
           </button>
-        </div>
-        <div v-else-if="!available" class="radar-empty-state">
-          <Icon name="chart" size="lg" class="mx-auto text-gray-400" />
-          <p class="mt-3 text-sm text-gray-600">{{ t('codexRadar.unavailable') }}</p>
-        </div>
+        </nav>
 
-        <template v-else>
-          <!-- 站长推荐：每组一张表格卡片（模型/档位 | IQ | 耗时 | 费用） -->
-          <section class="radar-panel" aria-labelledby="recommendations-heading">
-            <div class="radar-section-heading">
-              <div class="flex items-start gap-2.5">
-                <span class="radar-section-mark mt-1" aria-hidden="true"></span>
-                <div>
-                  <h2 id="recommendations-heading" class="text-xl font-bold tracking-tight text-gray-900 sm:text-2xl">{{ t('codexRadar.recommendations') }}</h2>
-                  <p class="mt-1.5 text-sm text-gray-500">{{ recommendationMeta }}</p>
-                </div>
-              </div>
-              <div class="flex flex-wrap items-center gap-2">
-                <div class="radar-update-chip">
-                  <span class="h-1.5 w-1.5 rounded-full bg-teal-500" aria-hidden="true"></span>
-                  <span>{{ fetchedAtLabel || t('codexRadar.hourly') }}</span>
-                </div>
-                <button
-                  type="button"
-                  class="radar-icon-button"
-                  :aria-label="t('codexRadar.refresh')"
-                  :title="t('codexRadar.refresh')"
-                  :disabled="loading"
-                  @click="reload"
-                >
-                  <Icon name="refresh" size="sm" :class="loading ? 'animate-spin' : ''" />
-                </button>
-                <a
-                  :href="sourceUrl"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="radar-source-link"
-                >
-                  {{ t('codexRadar.sourceLink') }}
-                  <Icon name="externalLink" size="xs" />
-                </a>
-              </div>
+        <p class="legend">
+          <span class="legend-bar" aria-hidden="true"></span>
+          分数越高代表已判分题目的完成度越高；费用与耗时只显示总分的 API 等价统计。
+        </p>
+
+        <p v-if="error" class="message error-message" role="alert">
+          数据读取失败，{{ data ? '已保留上次显示的数据。' : '请稍后重试。' }}
+        </p>
+        <p v-if="!data" class="message empty-message">
+          {{ loading ? '正在读取原站模型评分…' : '原站数据暂不可用，请稍后刷新。' }}
+        </p>
+
+        <div v-else class="radar-matrix" aria-label="模型推理档位评分矩阵">
+          <div class="matrix-heading" aria-hidden="true">
+            <span>模型 / 推理档位</span>
+            <span v-for="effort in efforts" :key="effort">{{ effort.toUpperCase() }}</span>
+          </div>
+
+          <div v-for="row in rows" :key="row.model" class="model-row">
+            <div class="model-name">
+              <strong>{{ modelLabel(row.model) }}</strong>
+              <span>{{ Object.keys(row.cells).length }}/{{ efforts.length }} 档位</span>
             </div>
 
-            <div v-if="recommendationGroups.length" class="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-4">
+            <template v-for="effort in efforts" :key="effort">
               <article
-                v-for="(group, groupIndex) in recommendationGroups"
-                :key="group.key || group.title || groupIndex"
-                class="rec-card"
-                :class="recommendationTheme(groupIndex)"
+                v-if="row.cells[effort]"
+                class="score-card"
+                :class="{ stale: isStale(row.cells[effort]), 'no-score': dimension(row.cells[effort]).score == null }"
               >
-                <h3 class="rec-card-header">{{ group.title || group.key }}</h3>
-                <div v-if="group.items?.length" class="rec-table">
-                  <div class="rec-row rec-head" aria-hidden="true">
-                    <span>{{ t('codexRadar.colModelEffort') }}</span>
-                    <span class="text-right">{{ t('codexRadar.iq') }}</span>
-                    <span class="text-right">{{ t('codexRadar.colDuration') }}</span>
-                    <span class="text-right">{{ t('codexRadar.colCost') }}</span>
-                  </div>
-                  <div
-                    v-for="item in group.items.slice(0, 2)"
-                    :key="`${item.model}-${item.effort}`"
-                    class="rec-row"
-                  >
-                    <span class="rec-model" :title="`${item.model || '-'} / ${item.effort || '-'}`">{{ displayName(item.model, item.effort) }}</span>
-                    <span class="rec-iq">{{ formatInteger(item.iq) }}</span>
-                    <span class="rec-time">{{ formatMinutes(item.average_duration_minutes) }}</span>
-                    <span class="rec-cost">{{ formatMoney(item.average_cost_usd) }}</span>
+                <div class="card-topline">
+                  <span class="effort-label">{{ effort }}</span>
+                  <span class="sample-count">{{ dimension(row.cells[effort]).graded_runs_count ?? '—' }} 题次</span>
+                </div>
+                <div class="score-line">
+                  <strong>{{ number(dimension(row.cells[effort]).score) }}</strong>
+                  <div v-if="selected === 'total'" class="metrics">
+                    <span>{{ money(metric(row.cells[effort], 'api_equivalent_usd')) }}</span>
+                    <span>{{ number(minutes(row.cells[effort])) }} 分钟</span>
                   </div>
                 </div>
-                <p v-else class="p-3 text-xs text-gray-500">{{ t('codexRadar.noData') }}</p>
+                <progress :value="scorePercent(dimension(row.cells[effort]).score)" max="100" aria-label="雷达分进度" />
+                <div class="card-meta">
+                  <span>覆盖 {{ dimension(row.cells[effort]).coverage ?? '—' }}/{{ dimension(row.cells[effort]).required_tasks ?? '—' }}</span>
+                  <span v-if="partialMetrics(row.cells[effort]) && selected === 'total'">部分样本</span>
+                  <span v-else-if="isStale(row.cells[effort])">待更新</span>
+                  <span v-else-if="isProvisional(row.cells[effort])">暂定</span>
+                </div>
               </article>
-            </div>
-            <div v-else class="radar-empty-inline">
-              {{ t('codexRadar.noData') }}
-            </div>
-          </section>
+              <div v-else class="missing-card" aria-label="暂无此档位数据">—</div>
+            </template>
+          </div>
+        </div>
 
-          <!-- 综合智能：按档位对齐的网格，一行一个模型系列 -->
-          <section class="radar-panel mt-4" aria-labelledby="intelligence-heading">
-            <div class="flex flex-col gap-3 border-b border-gray-200 pb-4 sm:flex-row sm:items-end sm:justify-between">
-              <div class="flex items-start gap-2.5">
-                <span class="radar-section-mark mt-1" aria-hidden="true"></span>
-                <div>
-                  <h2 id="intelligence-heading" class="text-xl font-bold tracking-tight text-gray-900 sm:text-2xl">{{ t('codexRadar.intelligence') }}</h2>
-                  <p class="mt-1.5 text-sm text-gray-500">{{ t('codexRadar.intelligenceHint') }}</p>
-                </div>
-              </div>
-              <div class="flex flex-wrap items-center gap-3 text-sm text-gray-500">
-                <span class="font-medium">{{ openaiPoints.length }} {{ t('codexRadar.samples') }}</span>
-                <span class="hidden h-4 w-px bg-gray-200 sm:block" aria-hidden="true"></span>
-                <span>{{ intelligenceMeta }}</span>
-                <span class="hidden h-4 w-px bg-gray-200 sm:block" aria-hidden="true"></span>
-                <a :href="sourceUrl" target="_blank" rel="noopener noreferrer" class="font-medium text-teal-600 transition-colors hover:text-teal-500">
-                  {{ t('codexRadar.sourceLink') }} <Icon name="externalLink" size="xs" class="inline" />
-                </a>
-              </div>
-            </div>
-
-            <div v-if="intelligenceRows.length" class="mt-4 space-y-3">
-              <div v-for="row in intelligenceRows" :key="row.key" class="intel-row">
-                <article
-                  v-for="cell in row.cells"
-                  :key="`${cell.point.model}-${cell.point.effort}`"
-                  class="intel-card"
-                  :class="row.theme"
-                  :style="cell.column ? { '--intel-col': String(cell.column) } : undefined"
-                >
-                  <div class="intel-main">
-                    <span class="intel-name" :title="`${cell.point.model || '-'} / ${cell.point.effort || '-'}`">{{ cell.label }}</span>
-                    <div class="intel-iq-row">
-                      <span class="intel-iq">{{ formatInteger(cell.point.iq) }}</span>
-                      <span class="intel-samples">{{ formatInteger(cell.point.runs_24h) }}</span>
-                    </div>
-                  </div>
-                  <div class="intel-side">
-                    <span class="intel-price">{{ formatMoney(cell.point.average_price_usd) }}</span>
-                    <span class="intel-time">{{ formatMinutes(cell.point.average_minutes) }}</span>
-                  </div>
-                </article>
-              </div>
-            </div>
-            <div v-else class="radar-empty-inline">
-              {{ t('codexRadar.noData') }}
-            </div>
-          </section>
-        </template>
-
-        <footer class="flex flex-wrap items-center justify-between gap-3 px-1 pt-5 text-xs text-gray-500">
-          <span>{{ attribution }}</span>
-          <a :href="sourceUrl" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-gray-600 transition-colors hover:text-teal-600">
-            {{ t('codexRadar.sourceLink') }} <Icon name="externalLink" size="xs" />
-          </a>
+        <footer class="radar-footer">
+          <span>数据来自 Codex 雷达 codexradar.com · 每小时同步 · 读取时间以卡片数据为准</span>
+          <span>分项不提供独立费用与耗时</span>
         </footer>
       </div>
-    </div>
+    </section>
   </AppLayout>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { useI18n } from 'vue-i18n'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import AppLayout from '@/components/layout/AppLayout.vue'
-import Icon from '@/components/icons/Icon.vue'
-import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
-import { useAppStore } from '@/stores/app'
-import {
-  getCodexRadarSummary,
-  type CodexRadarData,
-  type CodexRadarIntelligencePoint,
-  type CodexRadarRecommendationItem,
-  type CodexRadarRecommendationGroup,
-  type CodexRadarSummary,
-} from '@/api/codexradar'
+import { getCodexRadarSummary } from '@/api/codexradar'
+import { parseRadarBench, type BenchDimension, type BenchMetric, type BenchPoint } from '@/utils/radarBench'
 
-interface FamilyInfo {
-  key: string
-  label: string
-  order: number
-  theme: string
-}
-
-interface IntelligenceCell {
-  point: CodexRadarIntelligencePoint
-  /** 1~6 对应 ultra→low 档位列；0 = 未知档位，自动排布。 */
-  column: number
-  label: string
-}
-
-interface IntelligenceRow {
-  key: string
-  theme: string
-  cells: IntelligenceCell[]
-}
-
-/** 档位列顺序（与 codexradar.com 一致，从贵到便宜）。 */
-const EFFORT_COLUMNS = ['ultra', 'max', 'xhigh', 'high', 'medium', 'low']
-
-const { t } = useI18n()
-const appStore = useAppStore()
-const summary = ref<CodexRadarSummary | null>(null)
+const data = ref<ReturnType<typeof parseRadarBench>>(null)
 const loading = ref(false)
-const loadFailed = ref(false)
+const error = ref(false)
+const selected = ref('total')
+const now = ref(Date.now())
 let refreshTimer: ReturnType<typeof setInterval> | undefined
 
-const data = computed<CodexRadarData>(() => (summary.value?.data || {}) as CodexRadarData)
-/** 软件工程能力（deep-swe 基准）原始数据。 */
-const softwarePoints = computed<CodexRadarIntelligencePoint[]>(() => data.value.intelligence?.points || [])
-/** 视觉空间推理（pompeii-adjacency 基准）原始数据；旧缓存可能缺失。 */
-const visualPoints = computed<CodexRadarIntelligencePoint[]>(() => data.value.visual?.points || [])
+const efforts = ['ultra', 'max', 'xhigh', 'high', 'medium', 'low']
+const tabs = [
+  { key: 'total', label: '总雷达分' },
+  { key: 'deepswe', label: '软件工程' },
+  { key: 'pompeii', label: '视觉空间推理' },
+  { key: 'tb4', label: '终端与系统操作' },
+  { key: 'science', label: '科学研究' },
+]
 
-/**
- * 原站的站长推荐不是简单展示 radar-insights 返回的 items：当某个分类不足
- * 两条时，原站会用同一份综合 IQ 与指标数据补位到两条，再按分类规则排序。
- * 后端保持原始数据代理，这里在展示层复刻该规则，避免源站当天样本不足时出现
- * 空卡片/单条卡片，也避免把任何候选写回上游或本地数据库。
- */
-const recommendationGroups = computed<CodexRadarRecommendationGroup[]>(() => (
-  supplementRecommendationGroups(data.value.recommendations, softwarePoints.value)
-))
-
-/**
- * 综合智能（复刻原站合成算法）：两基准按「模型|档位」配对，只纳入两个维度均有
- * 有效成绩的档位；IQ 取等权几何平均，价格/耗时按各自样本数加权平均，运行次数相加。
- * visual 数据缺失（旧缓存/抓取失败）时降级展示软件工程数据，保证页面可用。
- */
-const comprehensivePoints = computed<CodexRadarIntelligencePoint[]>(() => {
-  const visualByKey = new Map(visualPoints.value.map(point => [`${point.model}|${point.effort}`, point]))
-  if (!visualByKey.size) return softwarePoints.value
-  const merged: CodexRadarIntelligencePoint[] = []
-  for (const software of softwarePoints.value) {
-    const visual = visualByKey.get(`${software.model}|${software.effort}`)
-    const softwareIq = finiteNumber(software.iq)
-    const visualIq = finiteNumber(visual?.iq)
-    if (!visual || softwareIq == null || visualIq == null || softwareIq < 0 || visualIq < 0) continue
-    merged.push({
-      model: software.model,
-      effort: software.effort,
-      iq: Math.sqrt(softwareIq * visualIq),
-      average_price_usd: weightedMetric(software, visual, 'average_price_usd', 'price_samples') ?? undefined,
-      average_minutes: weightedMetric(software, visual, 'average_minutes', 'duration_samples') ?? undefined,
-      runs_24h: summedMetric(software, visual, 'runs_24h') ?? undefined,
-      runs_48h: summedMetric(software, visual, 'runs_48h') ?? undefined,
-      runs_total: summedMetric(software, visual, 'runs_total') ?? undefined,
-    })
+const rows = computed(() => {
+  const grouped = new Map<string, Record<string, BenchPoint>>()
+  for (const point of data.value?.points ?? []) {
+    if (!grouped.has(point.model)) grouped.set(point.model, {})
+    grouped.get(point.model)![point.effort] = point
   }
-  return merged.length ? merged : softwarePoints.value
+  const order = ['gpt-6-astra', 'gpt-6.1-sol', 'gpt-6-sol', 'gpt-5.6-sol', 'gpt-6-luna', 'gpt-5.6-luna']
+  return [...grouped]
+    .map(([model, cells]) => ({ model, cells }))
+    .sort((left, right) => (order.indexOf(left.model) < 0 ? 99 : order.indexOf(left.model)) - (order.indexOf(right.model) < 0 ? 99 : order.indexOf(right.model)))
 })
 
-/** 只展示 OpenAI（gpt-*）系列，过滤掉第三方对比模型。 */
-const openaiPoints = computed(() => comprehensivePoints.value.filter(point => String(point.model || '').toLowerCase().includes('gpt')))
-const available = computed(() => Boolean(summary.value?.available && (recommendationGroups.value.length || softwarePoints.value.length)))
-const sourceUrl = computed(() => summary.value?.source || 'https://codexradar.com/')
-const attribution = computed(() => summary.value?.attribution || t('codexRadar.source'))
-const fetchedAtLabel = computed(() => {
-  const raw = summary.value?.fetched_at
-  if (!raw) return ''
-  const date = new Date(raw)
-  return Number.isNaN(date.getTime()) ? '' : date.toLocaleString()
-})
-const recommendationMeta = computed(() => {
-  const raw = data.value.recommendations as Record<string, unknown> | undefined
-  const timestamp = typeof raw?.source_updated_at === 'string' ? raw.source_updated_at : ''
-  return timestamp ? t('codexRadar.updatedAt', { time: new Date(timestamp).toLocaleString() }) : t('codexRadar.hourly')
-})
-const intelligenceMeta = computed(() => {
-  const raw = data.value.intelligence as Record<string, unknown> | undefined
-  const timestamp = typeof raw?.source_updated_at === 'string' ? raw.source_updated_at : ''
-  return timestamp ? t('codexRadar.updatedAt', { time: new Date(timestamp).toLocaleString() }) : t('codexRadar.hourly')
+const updatedAtLabel = computed(() => {
+  const timestamp = data.value?.points.find(point => point.observed_at && Number.isFinite(Date.parse(point.observed_at)))?.observed_at
+  if (!timestamp) return '缓存数据'
+  return new Intl.DateTimeFormat('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(timestamp))
 })
 
-/** 原站站长推荐允许参与补位的 Codex 模型。 */
-const CODEX_STATION_MODELS = new Set([
-  'gpt-5.6-sol',
-  'gpt-5.6-terra',
-  'gpt-5.6-luna',
-  'gpt-5.5',
-  'deepseek-v4-flash',
-  'deepseek-v4-pro',
-])
-
-function recommendationIdentity(item: { model?: unknown; effort?: unknown }): string {
-  return `${String(item.model || '').toLowerCase()}|${String(item.effort || '').toLowerCase()}`
+function dimension(point: BenchPoint): BenchDimension {
+  return selected.value === 'total' ? point : point.source_scores?.[selected.value] ?? {}
 }
 
-function isEligibleRecommendationModel(item: unknown): item is CodexRadarRecommendationItem {
-  if (!item || typeof item !== 'object') return false
-  const model = String((item as { model?: unknown }).model || '').trim().toLowerCase()
-  // 原站会将 DeepSeek 留在雷达数据中，但站长推荐明确不纳入它们。
-  return CODEX_STATION_MODELS.has(model) && !model.startsWith('deepseek')
+function metric(point: BenchPoint, key: string): number | null {
+  const value: BenchMetric | undefined = point.statistics?.metrics?.[key]
+  return value && value.known_samples > 0 && Number.isFinite(value.known_total) ? value.known_total / value.known_samples : null
 }
 
-function normalizedRecommendationKey(key: unknown): string {
-  return String(key || '').trim().toLowerCase().replace(/_/g, '-')
+function minutes(point: BenchPoint): number | null {
+  const elapsed = metric(point, 'elapsed_ms')
+  return elapsed == null ? null : elapsed / 60000
 }
 
-/**
- * 按原站分类规则生成候选排序，并在原始 items 不足两条时补位。
- * `comprehensive_points` 是 radar-insights 接口中的综合 IQ；价格、耗时和
- * 综合成本从已同步的 intelligence points 取值，二者按 model+effort 对齐。
- */
-function supplementRecommendationGroups(
-  payload: CodexRadarData['recommendations'] | undefined,
-  metricsPoints: CodexRadarIntelligencePoint[],
-): CodexRadarRecommendationGroup[] {
-  const groups = Array.isArray(payload?.recommendations) ? payload.recommendations : []
-  const rawComprehensivePoints = payload?.['comprehensive_points']
-  const comprehensivePoints = Array.isArray(rawComprehensivePoints)
-    ? rawComprehensivePoints.filter(isEligibleRecommendationModel)
-    : []
-
-  const metricsByKey = new Map<string, CodexRadarIntelligencePoint>()
-  for (const point of metricsPoints) {
-    if (point && typeof point === 'object') metricsByKey.set(recommendationIdentity(point), point)
-  }
-
-  const canonicalIQ = new Map<string, number>()
-  for (const point of comprehensivePoints) {
-    const iq = finiteNumber(point.iq)
-    if (iq != null) canonicalIQ.set(recommendationIdentity(point), iq)
-  }
-
-  const candidates = comprehensivePoints.map((point) => {
-    const metrics = metricsByKey.get(recommendationIdentity(point))
-    const averageCost = finiteNumber(metrics?.average_price_usd) ?? finiteNumber(point.average_cost_usd)
-    const averageMinutes = finiteNumber(metrics?.average_minutes) ?? finiteNumber(point.average_duration_minutes)
-    const combinedCost = finiteNumber(metrics?.combined_cost_index) ?? finiteNumber(point['combined_cost_index'])
-    return {
-      ...point,
-      average_cost_usd: averageCost ?? undefined,
-      average_duration_minutes: averageMinutes ?? undefined,
-      combined_cost_index: combinedCost ?? undefined,
-    }
-  })
-
-  const rankedCandidates = (categoryKey: string) => {
-    const eligible = candidates.filter((item) => {
-      const iq = finiteNumber(item.iq)
-      if (iq == null) return false
-      if (categoryKey === 'daily-development') return iq >= 90 && finiteNumber(item.average_duration_minutes) != null
-      if (categoryKey === 'background-automation') return Math.round(iq) >= 80 && finiteNumber(item.average_cost_usd) != null
-      if (categoryKey === 'long-running-agents' || categoryKey === 'lobster-tasks') {
-        return iq >= 55 && finiteNumber(item['combined_cost_index']) != null
-      }
-      return true
-    })
-
-    if (categoryKey === 'daily-development') {
-      return eligible.sort((left, right) => (
-        (finiteNumber(left.average_duration_minutes) ?? Number.POSITIVE_INFINITY)
-        - (finiteNumber(right.average_duration_minutes) ?? Number.POSITIVE_INFINITY)
-        || (finiteNumber(left['combined_cost_index']) ?? Number.POSITIVE_INFINITY)
-          - (finiteNumber(right['combined_cost_index']) ?? Number.POSITIVE_INFINITY)
-        || (finiteNumber(right.iq) ?? 0) - (finiteNumber(left.iq) ?? 0)
-      ))
-    }
-    if (categoryKey === 'background-automation') {
-      return eligible.sort((left, right) => (
-        (finiteNumber(left.average_cost_usd) ?? Number.POSITIVE_INFINITY)
-        - (finiteNumber(right.average_cost_usd) ?? Number.POSITIVE_INFINITY)
-        || (finiteNumber(right.iq) ?? 0) - (finiteNumber(left.iq) ?? 0)
-      ))
-    }
-    if (categoryKey === 'long-running-agents' || categoryKey === 'lobster-tasks') {
-      return eligible.sort((left, right) => (
-        (finiteNumber(left['combined_cost_index']) ?? Number.POSITIVE_INFINITY)
-        - (finiteNumber(right['combined_cost_index']) ?? Number.POSITIVE_INFINITY)
-        || (finiteNumber(right.iq) ?? 0) - (finiteNumber(left.iq) ?? 0)
-      ))
-    }
-    return eligible.sort((left, right) => (
-      (finiteNumber(right.iq) ?? 0) - (finiteNumber(left.iq) ?? 0)
-      || (finiteNumber(left['combined_cost_index']) ?? Number.POSITIVE_INFINITY)
-        - (finiteNumber(right['combined_cost_index']) ?? Number.POSITIVE_INFINITY)
-    ))
-  }
-
-  return groups.map((group) => {
-    const categoryKey = normalizedRecommendationKey(group.key || group['id'])
-    const rawItemsValue = group.items || group['models'] || group['recommendations']
-    const rawItems = Array.isArray(rawItemsValue) ? rawItemsValue : []
-    const items = rawItems
-      .filter(isEligibleRecommendationModel)
-      .map((item) => {
-        const iq = canonicalIQ.get(recommendationIdentity(item))
-        return iq == null ? item : { ...item, iq }
-      })
-    const seen = new Set(items.map(recommendationIdentity))
-    for (const candidate of rankedCandidates(categoryKey)) {
-      if (items.length >= 2) break
-      const identity = recommendationIdentity(candidate)
-      if (seen.has(identity)) continue
-      items.push(candidate)
-      seen.add(identity)
-    }
-    return { ...group, items: items.slice(0, 2) }
-  })
+function scorePercent(score: number | null | undefined): number {
+  return typeof score === 'number' && Number.isFinite(score) ? Math.max(0, Math.min(100, score / 1.5)) : 0
 }
 
-/** 识别模型所属系列：gpt 系列合并为 Sol/Terra/Luna/5.5 行，其余模型各自成行。 */
-function familyInfo(model: unknown): FamilyInfo {
-  const raw = typeof model === 'string' ? model : ''
-  const name = raw.toLowerCase()
-  if (name.includes('sol')) return { key: 'sol', label: 'Sol', order: 0, theme: 'intel-sol' }
-  if (name.includes('terra')) return { key: 'terra', label: 'Terra', order: 1, theme: 'intel-terra' }
-  if (name.includes('luna')) return { key: 'luna', label: 'Luna', order: 2, theme: 'intel-luna' }
-  if (name.includes('gpt-5.5')) return { key: 'gpt-5.5', label: '5.5', order: 3, theme: 'intel-55' }
-  return { key: raw || 'other', label: raw || '-', order: 10, theme: 'intel-default' }
+function number(value: number | null | undefined): string {
+  return typeof value === 'number' && Number.isFinite(value) ? value.toFixed(1) : '—'
 }
 
-function displayName(model: unknown, effort: unknown): string {
-  const family = familyInfo(model)
-  const level = typeof effort === 'string' && effort ? effort : ''
-  return level ? `${family.label} ${level}` : family.label
+function money(value: number | null): string {
+  return value == null ? '—' : `$${value.toFixed(2)}`
 }
 
-function effortColumn(effort: unknown): number {
-  const index = EFFORT_COLUMNS.indexOf(String(effort || '').toLowerCase())
-  return index === -1 ? 0 : index + 1
+function isStale(point: BenchPoint): boolean {
+  const observed = Date.parse(point.observed_at ?? '')
+  return point.stale || !Number.isFinite(observed) || now.value - observed >= 3600000
 }
 
-const intelligenceRows = computed<IntelligenceRow[]>(() => {
-  const rowMap = new Map<string, IntelligenceRow & { order: number }>()
-  for (const point of openaiPoints.value) {
-    const family = familyInfo(point.model)
-    let row = rowMap.get(family.key)
-    if (!row) {
-      row = { key: family.key, theme: family.theme, order: family.order, cells: [] }
-      rowMap.set(family.key, row)
-    }
-    row.cells.push({ point, column: effortColumn(point.effort), label: displayName(point.model, point.effort) })
-  }
-  return [...rowMap.values()]
-    .map(row => ({
-      ...row,
-      cells: [...row.cells].sort((a, b) => (a.column || 99) - (b.column || 99)),
-    }))
-    .sort((a, b) => a.order - b.order || a.key.localeCompare(b.key))
-})
-
-function finiteNumber(value: unknown): number | null {
-  return typeof value === 'number' && Number.isFinite(value) ? value : null
+function isProvisional(point: BenchPoint): boolean {
+  const current = dimension(point)
+  return (current.coverage ?? 0) < (current.required_tasks ?? 64)
 }
 
-/** 样本权重：优先指定样本字段，缺失时依次回退 valid_tasks / total，最少为 1（与原站一致）。 */
-function sampleWeight(point: CodexRadarIntelligencePoint, sampleField: string): number {
-  return Math.max(1, finiteNumber(point[sampleField]) ?? finiteNumber(point.valid_tasks) ?? finiteNumber(point.total) ?? 1)
+function partialMetrics(point: BenchPoint): boolean {
+  return ['api_equivalent_usd', 'elapsed_ms'].some(key => (point.statistics?.metrics?.[key]?.missing_samples ?? 0) > 0)
 }
 
-/** 两维度均值指标按样本数加权平均；单侧缺失时取另一侧。 */
-function weightedMetric(left: CodexRadarIntelligencePoint, right: CodexRadarIntelligencePoint, field: string, sampleField: string): number | null {
-  const leftValue = finiteNumber(left[field])
-  const rightValue = finiteNumber(right[field])
-  if (leftValue == null && rightValue == null) return null
-  if (leftValue == null) return rightValue
-  if (rightValue == null) return leftValue
-  const leftWeight = sampleWeight(left, sampleField)
-  const rightWeight = sampleWeight(right, sampleField)
-  return (leftValue * leftWeight + rightValue * rightWeight) / (leftWeight + rightWeight)
-}
-
-/** 两维度计数指标求和；均缺失时返回 null。 */
-function summedMetric(left: CodexRadarIntelligencePoint, right: CodexRadarIntelligencePoint, field: string): number | null {
-  const values = [finiteNumber(left[field]), finiteNumber(right[field])].filter((value): value is number => value != null)
-  return values.length ? values.reduce((sum, value) => sum + value, 0) : null
-}
-
-function formatInteger(value: unknown): string {
-  return typeof value === 'number' && Number.isFinite(value) ? Math.round(value).toString() : '-'
-}
-
-function formatMoney(value: unknown): string {
-  return typeof value === 'number' && Number.isFinite(value) ? `$${value.toFixed(2)}` : '-'
-}
-
-function formatMinutes(value: unknown): string {
-  return typeof value === 'number' && Number.isFinite(value) ? t('codexRadar.minutesShort', { n: value.toFixed(0) }) : '-'
-}
-
-function recommendationTheme(index: number): string {
-  return ['rec-green', 'rec-yellow', 'rec-purple', 'rec-blue'][index % 4]
+function modelLabel(model: string): string {
+  return model.replace(/^gpt-/, 'GPT-').replace(/-(astra|sol|luna)$/, (_, suffix: string) => ` ${suffix[0].toUpperCase()}${suffix.slice(1)}`)
 }
 
 async function reload(): Promise<void> {
+  if (loading.value) return
   loading.value = true
-  loadFailed.value = false
+  error.value = false
   try {
-    summary.value = await getCodexRadarSummary()
+    const summary = await getCodexRadarSummary()
+    const next = parseRadarBench(summary.data)
+    if (next) data.value = next
+    else error.value = true
   } catch {
-    loadFailed.value = true
-    appStore.showError(t('codexRadar.loadError'))
+    error.value = true
   } finally {
     loading.value = false
   }
@@ -489,419 +200,293 @@ async function reload(): Promise<void> {
 
 onMounted(() => {
   void reload()
-  refreshTimer = setInterval(() => void reload(), 60 * 60 * 1000)
+  refreshTimer = setInterval(() => {
+    now.value = Date.now()
+    void reload()
+  }, 60000)
 })
 
-onBeforeUnmount(() => {
-  if (refreshTimer) clearInterval(refreshTimer)
-})
+onUnmounted(() => clearInterval(refreshTimer))
 </script>
 
 <style scoped>
 .radar-page {
-  min-width: 0;
-  background-image: linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
-  background-size: 32px 32px;
+  @apply -mx-4 min-h-[calc(100vh-4rem)] bg-gray-50 px-4 py-4 text-gray-900 dark:bg-dark-950 dark:text-gray-100 md:-mx-6 lg:-mx-8 lg:px-8;
 }
 
-.radar-page > div {
-  min-width: 0;
+.radar-shell {
+  @apply mx-auto max-w-[1680px] rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-dark-700 dark:bg-dark-900 sm:p-6;
 }
 
-.radar-panel {
-  min-width: 0;
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(203, 213, 225, 0.6);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  border-radius: 14px;
-  padding: 18px;
+.radar-header {
+  @apply flex flex-wrap items-end justify-between gap-4 border-b border-gray-100 pb-4 dark:border-dark-700;
 }
 
-.radar-update-chip,
-.radar-icon-button,
-.radar-secondary-button,
-.radar-source-link {
-  min-height: 36px;
-  border: 1px solid rgba(203, 213, 225, 0.8);
-  border-radius: 8px;
+.eyebrow {
+  @apply mb-1 text-xs font-semibold uppercase tracking-[0.16em] text-teal-600 dark:text-teal-300;
 }
 
-.radar-update-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 0 11px;
-  color: #0d9488;
-  font-size: 11px;
-  font-weight: 600;
-  white-space: nowrap;
-  background: rgba(240, 253, 250, 0.8);
+h1 {
+  @apply text-2xl font-bold tracking-tight sm:text-3xl;
 }
 
-.radar-icon-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  color: #14b8a6;
-  background: white;
-  transition: border-color 180ms ease, background-color 180ms ease, color 180ms ease;
+h1 span {
+  @apply font-medium text-gray-400 dark:text-gray-500;
 }
 
-.radar-icon-button:hover:not(:disabled) {
-  border-color: #14b8a6;
-  background: rgba(240, 253, 250, 0.8);
-  color: #0d9488;
+.subtitle {
+  @apply mt-2 text-sm text-gray-500 dark:text-gray-400;
 }
 
-.radar-icon-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
+.toolbar {
+  @apply flex flex-wrap items-center justify-end gap-2;
 }
 
-.radar-source-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0 11px;
-  color: #0d9488;
-  font-size: 11px;
-  font-weight: 600;
-  background: white;
-  transition: border-color 180ms ease, background-color 180ms ease;
+.sync-status {
+  @apply mr-2 inline-flex items-center gap-2 text-xs font-medium text-gray-500 dark:text-gray-400;
 }
 
-.radar-source-link:hover {
-  border-color: #14b8a6;
-  background: rgba(240, 253, 250, 0.8);
+.status-dot {
+  @apply h-2 w-2 rounded-full bg-emerald-500;
+  box-shadow: 0 0 0 3px rgb(16 185 129 / 12%);
 }
 
-.radar-section-heading {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 14px;
+.toolbar-button {
+  @apply inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 text-sm font-medium text-gray-600 transition-colors hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 disabled:cursor-wait disabled:opacity-50 dark:border-dark-600 dark:bg-dark-900 dark:text-gray-300 dark:hover:border-teal-700 dark:hover:bg-teal-900/30 dark:hover:text-teal-300;
 }
 
-.radar-section-mark {
-  width: 7px;
-  height: 22px;
-  border-radius: 999px;
-  background: linear-gradient(180deg, #14b8a6, #0d9488);
-  box-shadow: 0 0 12px rgba(20, 184, 166, 0.4);
+.source-button {
+  @apply no-underline;
 }
 
-/* ============ 站长推荐：表格卡片 ============ */
-
-.rec-card {
-  min-width: 0;
-  overflow: hidden;
-  border: 1.5px solid var(--rec-light);
-  border-radius: 12px;
-  background: white;
-  transition: box-shadow 200ms ease, transform 200ms ease;
+.dimension-tabs {
+  @apply flex flex-wrap gap-2 py-3;
 }
 
-.rec-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.1);
+.dimension-tabs button {
+  @apply inline-flex min-h-9 items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 text-sm font-medium text-gray-600 transition-colors hover:border-teal-300 hover:text-teal-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 dark:border-dark-600 dark:bg-dark-800 dark:text-gray-300 dark:hover:border-teal-700 dark:hover:text-teal-300;
 }
 
-.rec-card-header {
-  padding: 10px 16px;
-  background: linear-gradient(90deg, var(--rec-dark), var(--rec-light));
-  color: white;
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
+.dimension-tabs button.selected {
+  @apply border-teal-500 bg-teal-50 text-teal-700 dark:border-teal-600 dark:bg-teal-900/30 dark:text-teal-300;
 }
 
-.rec-row {
+.tab-mark {
+  @apply h-1.5 w-1.5 rounded-full bg-gray-300 dark:bg-dark-500;
+}
+
+.selected .tab-mark {
+  @apply bg-teal-500;
+}
+
+.legend {
+  @apply mb-4 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400;
+}
+
+.legend-bar {
+  @apply inline-block h-1.5 w-8 rounded-full bg-teal-500;
+}
+
+.message {
+  @apply rounded-xl border px-4 py-5 text-center text-sm;
+}
+
+.error-message {
+  @apply border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300;
+}
+
+.empty-message {
+  @apply border-dashed border-gray-200 bg-gray-50 text-gray-500 dark:border-dark-600 dark:bg-dark-800 dark:text-gray-400;
+}
+
+.radar-matrix {
+  @apply w-full;
+}
+
+.matrix-heading,
+.model-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 42px 58px 64px;
-  gap: 6px;
-  align-items: center;
-  padding: 12px 14px;
+  grid-template-columns: minmax(132px, 0.72fr) repeat(6, minmax(0, 1fr));
+  gap: 8px;
 }
 
-.rec-head {
-  padding: 8px 16px;
-  border-bottom: 1px solid #f1f5f9;
-  color: #94a3b8;
-  font-size: 11px;
-  font-weight: 600;
+.matrix-heading {
+  @apply mb-2 px-2 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-gray-400 dark:text-gray-500;
 }
 
-.rec-row + .rec-row {
-  border-top: 1px solid #f1f5f9;
+.matrix-heading span:first-child {
+  @apply text-left;
 }
 
-.rec-model {
-  overflow: hidden;
-  color: #1f2937;
-  font-size: 14px;
-  font-weight: 700;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+.model-row {
+  @apply mb-2;
 }
 
-.rec-iq {
-  color: #111827;
-  font-size: 18px;
-  font-weight: 800;
-  text-align: right;
+.model-name {
+  @apply flex min-w-0 flex-col justify-center rounded-lg border border-transparent px-2 py-2;
 }
 
-.rec-time {
-  color: #6b7280;
-  font-size: 13px;
-  text-align: right;
+.model-name strong {
+  @apply truncate text-sm font-semibold text-gray-800 dark:text-gray-100;
 }
 
-.rec-cost {
-  color: var(--rec-dark);
-  font-size: 14px;
-  font-weight: 800;
-  text-align: right;
+.model-name span {
+  @apply mt-1 text-[10px] text-gray-400 dark:text-gray-500;
 }
 
-.rec-green {
-  --rec-dark: #0d9488;
-  --rec-light: #2dd4bf;
-}
-
-.rec-yellow {
-  --rec-dark: #d97706;
-  --rec-light: #fbbf24;
-}
-
-.rec-purple {
-  --rec-dark: #7c3aed;
-  --rec-light: #a78bfa;
-}
-
-.rec-blue {
-  --rec-dark: #2563eb;
-  --rec-light: #60a5fa;
-}
-
-/* ============ 综合智能：档位对齐网格 ============ */
-
-/* 每个系列一行，6 列对应 ultra→low 档位，同档位纵向对齐 */
-.intel-row {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.intel-card {
-  display: flex;
+.score-card,
+.missing-card {
   min-width: 0;
-  min-height: 96px;
-  overflow: hidden;
-  grid-column: var(--intel-col, auto);
-  border: 1.5px solid var(--fam-border);
-  border-radius: 10px;
-  background: var(--fam-bg);
-  transition: transform 180ms ease, box-shadow 180ms ease;
+  min-height: 88px;
 }
 
-.intel-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+.score-card {
+  @apply rounded-lg border border-gray-200 border-t-2 border-t-teal-400 bg-gray-50 px-2.5 py-1.5 transition-colors dark:border-dark-600 dark:border-t-teal-500 dark:bg-dark-800;
 }
 
-.intel-main {
-  display: flex;
-  min-width: 0;
-  flex: 1;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 10px 8px 10px 12px;
+.score-card:hover {
+  @apply border-gray-300 bg-white dark:border-dark-500 dark:bg-dark-700;
 }
 
-.intel-iq-row {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 6px;
+.score-card.stale {
+  @apply border-t-amber-400 dark:border-t-amber-500;
 }
 
-.intel-iq-row .intel-samples {
-  margin-bottom: 3px;
+.score-card.no-score {
+  @apply border-t-gray-300 dark:border-t-dark-500;
 }
 
-.intel-name {
-  overflow: hidden;
-  color: #334155;
-  font-size: 14px;
-  font-weight: 700;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+.card-topline,
+.card-meta {
+  @apply flex items-center justify-between gap-2;
 }
 
-.intel-samples {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 22px;
-  padding: 1px 6px;
-  border: 1px solid var(--fam-border);
-  border-radius: 6px;
-  background: white;
-  color: var(--fam-accent);
-  font-size: 11px;
-  font-weight: 800;
-  line-height: 1.4;
+.card-topline {
+  @apply text-[10px] text-gray-400 dark:text-gray-500;
 }
 
-.intel-iq {
-  color: var(--fam-accent);
-  font-size: 38px;
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: -0.03em;
+.effort-label {
+  @apply font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300;
 }
 
-.intel-side {
-  display: flex;
-  flex-shrink: 0;
-  width: 88px;
-  flex-direction: column;
-  border-left: 1px solid var(--fam-line);
+.sample-count {
+  @apply truncate;
 }
 
-.intel-price,
-.intel-time {
-  display: flex;
-  flex: 1;
-  align-items: center;
-  justify-content: center;
-  padding: 2px 4px;
-  white-space: nowrap;
+.score-line {
+  @apply mt-1 flex items-end justify-between gap-2;
 }
 
-.intel-price {
-  border-bottom: 1px solid var(--fam-line);
-  color: var(--fam-accent);
-  font-size: 14px;
-  font-weight: 800;
+.score-line strong {
+  @apply text-[23px] font-bold leading-none tabular-nums text-teal-600 dark:text-teal-300;
 }
 
-.intel-time {
-  color: #64748b;
-  font-size: 13px;
-  font-weight: 600;
+.no-score .score-line strong {
+  @apply text-gray-400 dark:text-gray-500;
 }
 
-.intel-sol {
-  --fam-border: #f59e0b;
-  --fam-accent: #d97706;
-  --fam-bg: #fffbeb;
-  --fam-line: rgba(245, 158, 11, 0.3);
+.metrics {
+  @apply text-right text-[10px] leading-4 text-gray-500 dark:text-gray-400;
 }
 
-.intel-terra {
-  --fam-border: #3b82f6;
-  --fam-accent: #2563eb;
-  --fam-bg: #eff6ff;
-  --fam-line: rgba(59, 130, 246, 0.3);
+progress {
+  @apply block h-1.5 w-full overflow-hidden rounded-full border-0 bg-gray-200 dark:bg-dark-600;
+  appearance: none;
 }
 
-.intel-luna {
-  --fam-border: #94a3b8;
-  --fam-accent: #475569;
-  --fam-bg: #f8fafc;
-  --fam-line: rgba(148, 163, 184, 0.4);
+progress::-webkit-progress-bar {
+  @apply rounded-full bg-gray-200 dark:bg-dark-600;
 }
 
-.intel-55 {
-  --fam-border: #06b6d4;
-  --fam-accent: #0891b2;
-  --fam-bg: #ecfeff;
-  --fam-line: rgba(6, 182, 212, 0.3);
+progress::-webkit-progress-value {
+  @apply rounded-full bg-teal-500;
 }
 
-.intel-default {
-  --fam-border: #14b8a6;
-  --fam-accent: #0d9488;
-  --fam-bg: #f0fdfa;
-  --fam-line: rgba(20, 184, 166, 0.3);
+progress::-moz-progress-bar {
+  @apply rounded-full bg-teal-500;
 }
 
-/* ============ 空态与按钮 ============ */
-
-.radar-empty-state,
-.radar-empty-inline {
-  border: 1px dashed rgba(148, 163, 184, 0.7);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.8);
-  text-align: center;
+.card-meta {
+  @apply mt-1 text-[10px] text-gray-500 dark:text-gray-400;
 }
 
-.radar-empty-state {
-  padding: 48px 20px;
+.card-meta span:last-child {
+  @apply text-gray-400 dark:text-gray-500;
 }
 
-.radar-empty-inline {
-  margin-top: 16px;
-  padding: 30px 16px;
-  color: #64748b;
-  font-size: 13px;
+.missing-card {
+  @apply flex items-center justify-center rounded-lg border border-dashed border-gray-200 text-sm text-gray-300 dark:border-dark-600 dark:text-dark-500;
 }
 
-.radar-secondary-button {
-  display: inline-flex;
-  min-height: 38px;
-  align-items: center;
-  padding: 0 14px;
-  background: white;
-  color: #334155;
-  font-size: 13px;
-  font-weight: 600;
-  transition: border-color 180ms ease, background-color 180ms ease;
+.radar-footer {
+  @apply mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 pt-3 text-[11px] text-gray-400 dark:border-dark-700 dark:text-gray-500;
 }
 
-.radar-secondary-button:hover {
-  border-color: #14b8a6;
-  background: rgba(240, 253, 250, 0.8);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .radar-icon-button,
-  .radar-source-link,
-  .rec-card,
-  .intel-card {
-    transition: none;
+@media (max-width: 1180px) {
+  .matrix-heading,
+  .model-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .rec-card:hover,
-  .intel-card:hover {
-    transform: none;
-  }
-}
-
-/* 窄屏放弃档位列对齐，自动流式排布 */
-@media (max-width: 1279px) {
-  .intel-row {
-    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  .matrix-heading span:first-child {
+    grid-column: 1 / -1;
+    text-align: left;
   }
 
-  .intel-card {
-    grid-column: auto;
+  .model-name {
+    grid-column: 1 / -1;
+    min-height: 0;
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 4px 2px;
+  }
+
+  .model-name span {
+    margin-top: 0;
   }
 }
 
 @media (max-width: 640px) {
-  .radar-panel {
-    border-radius: 10px;
-    padding: 13px;
+  .radar-page {
+    @apply -mx-4 px-3 py-3;
   }
 
-  .intel-row {
+  .radar-shell {
+    @apply rounded-xl p-4;
+  }
+
+  .toolbar,
+  .toolbar-button {
+    width: 100%;
+  }
+
+  .sync-status {
+    width: 100%;
+    margin-right: 0;
+  }
+
+  .matrix-heading,
+  .model-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .score-card,
+  .missing-card {
+    min-height: 88px;
+  }
+
+  .radar-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toolbar-button,
+  .dimension-tabs button,
+  .score-card {
+    transition: none;
   }
 }
 </style>

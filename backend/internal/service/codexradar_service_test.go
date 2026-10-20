@@ -19,6 +19,7 @@ import (
 // newTestRadarService 构造一个指向测试服务器的 CodexRadarService。
 func newTestRadarService(imageURL, summaryURL string) *CodexRadarService {
 	s := NewCodexRadarService()
+	s.benchURL = ""
 	s.imageURL = imageURL
 	s.summaryURL = summaryURL
 	s.recommendationsURL = ""
@@ -49,6 +50,7 @@ func TestCodexRadarService_FetchesStructuredDatasets(t *testing.T) {
 
 	s := NewCodexRadarService()
 	s.imageURL = ""
+	s.benchURL = ""
 	s.summaryURL = ""
 	s.recommendationsURL = srv.URL + "/recommendations"
 	s.intelligenceURL = srv.URL + "/intelligence"

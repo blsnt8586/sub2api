@@ -48,7 +48,7 @@ export interface CodexRadarData {
     comprehensive_points?: CodexRadarRecommendationItem[]
     [key: string]: unknown
   }
-  /** 「软件工程能力」（deep-swe 基准）数据。 */
+  /** RadarBench 150 分制快照；由 parseRadarBench 校验后使用。 */
   intelligence?: {
     points?: CodexRadarIntelligencePoint[]
     [key: string]: unknown
@@ -61,7 +61,7 @@ export interface CodexRadarData {
   [key: string]: unknown
 }
 
-/** 第三方摘要响应：两个结构化接口 + 本平台附加的来源元信息。 */
+/** 第三方摘要响应：RadarBench 快照 + 本平台附加的来源元信息。 */
 export interface CodexRadarSummary {
   enabled: boolean
   available: boolean
@@ -77,7 +77,7 @@ export interface CodexRadarSummary {
 
 /** 拉取缓存的第三方状态摘要。 */
 export async function getCodexRadarSummary(): Promise<CodexRadarSummary> {
-  const { data } = await apiClient.get<CodexRadarSummary>('/codexradar/summary')
+  const { data } = await apiClient.get<CodexRadarSummary>('/codexradar/summary', { timeout: 100000 })
   return data
 }
 

@@ -519,12 +519,12 @@ cd backend && make build            # 产出 backend/bin/server
 
 ## 五之三、Codex 雷达（第三方数据代理，功能块 F）
 
-用户端 + 管理端共用一个页面，展示第三方社区站点 codexradar.com 的「站长推荐」和「综合智能」数据。本平台仅做代理缓存 + 署名转载，页面醒目标注「数据非本站提供、来源第三方」并提供跳转原站的详情链接。**默认关闭（opt-in）**，第三方数据来源需管理员显式启用。
+用户端 + 管理端共用一个页面，展示第三方社区站点 codexradar.com 的 RadarBench 150 分制评分数据。本平台仅做代理缓存 + 署名转载，页面醒目标注「数据非本站提供、来源第三方」并提供跳转原站的详情链接。**默认关闭（opt-in）**，第三方数据来源需管理员显式启用。
 
 ### F.1 设计要点
 
-- **数据源**：仅代理原站三个公开结构化接口：`https://codexradar.com/api/radar-insights`（站长推荐）、`https://codexradar.com/api/intelligence-efficiency-metrics`（软件工程能力，deep-swe 基准）和 `https://codexradar.com/api/visual-spatial-reasoning`（视觉空间推理，pompeii-adjacency 基准）。不再采集原站图片、`current.json`、社区体感分、额度/Fast 雷达等其他区域。
-- **综合智能为前端合成**：原站没有现成的「综合智能」接口——其页面展示的是两个基准按「模型|档位」配对后的合成结果。本平台前端复刻原站算法（`CodexRadarView.vue` 的 `comprehensivePoints`）：IQ 取等权几何平均 `√(软件IQ×视觉IQ)`，价格/耗时按各自样本数（`price_samples`/`duration_samples`，缺失回退 `valid_tasks`/`total`）加权平均，运行次数相加；只纳入两维均有有效成绩的档位，visual 数据缺失时降级展示软件工程数据。
+- **数据源（2026-10 RadarBench）**：先读 `/data/radar-bench-binding.json`，再按 `model_efforts` 和绑定中的 `transport_origin` / `endpoint_path` 请求评分（当前 `https://api.codexradar.com/api/v1/radar-bench-score?model=…&effort=…&view=summary`；仅允许此已知传输地址），请求头为 `X-Radar-Bench-Selection: user-selected-v1`。旧三个接口已不用于默认抓取。最多 100 个档位、并发 3、总超时 90 秒；校验 benchmark/catalog/task digest 和 150 分制版本。部分失败可复用同题集 24 小时内的档位快照，保留读取时间并标记过期；全部失败保留缓存。
+- **展示口径**：直接使用原站 RadarBench 150 分制总分与软件工程、视觉空间、终端操作、科学研究四个分项，不合成 IQ。显示判分题次、题目覆盖率和暂定状态；平均费用为官方 API 等价美元费用，平均耗时以已知样本计算，分项不提供独立费用。浏览器每分钟读取本平台缓存，后台每小时同步；超过一小时的观测显示缓存待更新。
 - **后端代理缓存**：不让终端用户浏览器直连第三方；进程内 `atomic.Value` 缓存，1 小时 TTL。
 - **懒加载 + stale-while-revalidate**：请求命中时按需刷新；缓存过期时先返回旧数据、后台异步刷新，不阻塞请求；失败按 30s 节流，绝不打爆对方。
 - **定时预热（治冷启动加载失败）**：cron `0 * * * *`（时区取 `cfg.Timezone`，默认 Asia/Shanghai）每小时整点拉取；另在进程启动后延迟 5s 做一次启动预热。预热仅在功能开关开启时执行，与上游解耦。
@@ -532,11 +532,13 @@ cd backend && make build            # 产出 backend/bin/server
 
 ### F.2 新增文件（零上游依赖，直接保留）
 
-- `backend/internal/service/codexradar_service.go` — 核心：`NewCodexRadarService`、`EnsureFresh`（懒加载+SWR）、`DataSnapshot`（三个 JSON 快照：推荐/软件工程/视觉空间）、`ConfigureScheduler`/`Start`/`Stop`/`warmup`/`forceRefresh`（每小时预热）。
+- `backend/internal/service/codexradar_service.go` — 核心：`NewCodexRadarService`、`EnsureFresh`（懒加载+SWR）、`DataSnapshot`（RadarBench 快照通过 intelligence 字段返回）、`ConfigureScheduler`/`Start`/`Stop`/`warmup`/`forceRefresh`（每小时预热）。
 - `backend/internal/service/codexradar_service_test.go` — 10 用例（拉取缓存/空态/SWR/上游报错保留旧数据 + 预热开关关闭跳过/开启拉取/forceRefresh 绕过 TTL/Start-Stop 幂等 + 图片缩放变小/非图透传）。
 - `backend/internal/handler/codexradar_handler.go` — `Image`（ETag 协商缓存 + 私有 1h 缓存，源站日更两次）、`Summary`（原始 JSON + source/attribution/fetched_at 元信息）。开关关闭返回 403。
-- `frontend/src/api/codexradar.ts` — `getCodexRadarSummary` 及两类数据类型。
-- `frontend/src/views/user/CodexRadarView.vue` — 页面：站长推荐/综合智能两块数据看板、每小时自动刷新、加载/失败/空数据状态和来源署名。
+- `backend/internal/service/codexradar_bench.go` — 公开题集绑定、限并发抓取、版本校验和逐档位快照回退。
+- `frontend/src/utils/radarBench.ts` — RadarBench 数据类型与响应校验。
+- `frontend/src/api/codexradar.ts` — `getCodexRadarSummary`，冷启动请求超时 100 秒。
+- `frontend/src/views/user/CodexRadarView.vue` — 页面：RadarBench 模型 × 推理档位矩阵、五个维度切换、定期读取缓存、加载/失败/空数据状态和来源署名。
 
 ### F.3 上游钩子
 
