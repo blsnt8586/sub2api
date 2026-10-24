@@ -410,6 +410,7 @@ type UpdateGroupInput struct {
 }
 
 type CreateAccountInput struct {
+	ProxyMode          string // 受限写入在验权后选择代理。
 	Name               string
 	Notes              *string
 	Platform           string
@@ -442,6 +443,7 @@ type ShadowOptions struct {
 }
 
 type UpdateAccountInput struct {
+	ProxyMode             string // 受限写入在验权后选择代理。
 	Name                  string
 	Notes                 *string
 	Type                  string // Account type: oauth, setup-token, apikey
