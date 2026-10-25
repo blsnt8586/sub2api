@@ -64,9 +64,11 @@ describe('AppSidebar header styles', () => {
 })
 
 describe('AppSidebar studio navigation', () => {
-  it('exposes the authenticated studio route in the shared self-navigation', () => {
-    expect(componentSource).toContain("{ path: '/studio', label: t('nav.studio'), icon: StudioIcon }")
-    expect(componentSource).toContain("const StudioIcon = {")
+  it('keeps Studio hidden from navigation while preserving its authenticated route', () => {
+    expect(componentSource).not.toContain("{ path: '/studio', label: t('nav.studio'), icon: StudioIcon }")
+    expect(componentSource).not.toContain('const StudioIcon = {')
+    const routerSource = readFileSync(resolve(dirname(componentPath), '../../router/index.ts'), 'utf8')
+    expect(routerSource).toMatch(/path: '\/studio',[\s\S]*?requiresAuth: true/)
   })
 })
 

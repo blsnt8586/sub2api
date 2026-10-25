@@ -3,6 +3,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 
@@ -93,7 +94,7 @@ func TestAPIKeyService_RejectsSnapshotWithoutModelPricingSupport(t *testing.T) {
 
 func TestAPIKeyService_RejectsPreMergeAuthSnapshots(t *testing.T) {
 	svc := &APIKeyService{}
-	for _, version := range []int{24, 26} {
+	for _, version := range []int{24, 25, 26, 27} {
 		key, ok, err := svc.applyAuthCacheEntry("k-pre-merge", &APIKeyAuthCacheEntry{
 			Snapshot: &APIKeyAuthSnapshot{Version: version},
 		})
@@ -101,4 +102,32 @@ func TestAPIKeyService_RejectsPreMergeAuthSnapshots(t *testing.T) {
 		require.False(t, ok, "pre-merge snapshot version %d must reload", version)
 		require.Nil(t, key)
 	}
+}
+
+func TestAPIKeyAuthSnapshot_ImageCountBillingRetainsForkPricing(t *testing.T) {
+	svc := &APIKeyService{}
+	groupID := int64(7)
+	imagePrice := 0.08
+	key := &APIKey{
+		ID: 1, UserID: 2, GroupID: &groupID, User: &User{ID: 2},
+		Group: &Group{
+			ID: groupID, Platform: PlatformCanvas, ImageCountBilling: true,
+			CanvasImagePricePerCount: &imagePrice,
+			CanvasModelPricing: &ModelPricingConfig{Image: map[string]*ModelImagePricing{
+				"gpt-image-2": {Price1K: priceOf(0.03)},
+			}},
+		},
+	}
+	snapshot := svc.snapshotFromAPIKey(context.Background(), key)
+	require.GreaterOrEqual(t, snapshot.Version, 28)
+	payload, err := json.Marshal(&APIKeyAuthCacheEntry{Snapshot: snapshot})
+	require.NoError(t, err)
+	var entry APIKeyAuthCacheEntry
+	require.NoError(t, json.Unmarshal(payload, &entry))
+	materialized, used, err := svc.applyAuthCacheEntry("k-image-count-compat", &entry)
+	require.NoError(t, err)
+	require.True(t, used)
+	require.True(t, materialized.Group.ImageCountBilling)
+	require.Equal(t, &imagePrice, materialized.Group.CanvasImagePricePerCount)
+	require.Equal(t, priceOf(0.03), materialized.Group.CanvasModelPricing.GetModelImagePrice("gpt-image-2", "1K"))
 }

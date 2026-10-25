@@ -594,7 +594,7 @@ func TestAdminService_CreateGroup_DefaultsGrokMediaGenerationEnabled(t *testing.
 }
 
 func TestAdminService_CreateGroup_DefaultsGeminiFamilyImageGenerationEnabled(t *testing.T) {
-	for _, platform := range []string{PlatformGemini, PlatformAntigravity} {
+	for _, platform := range []string{PlatformGemini, PlatformAntigravity, PlatformCanvas} {
 		t.Run(platform, func(t *testing.T) {
 			repo := &groupRepoStubForAdmin{}
 			svc := &adminServiceImpl{groupRepo: repo}
