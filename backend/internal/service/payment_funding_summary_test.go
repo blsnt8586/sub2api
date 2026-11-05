@@ -62,6 +62,7 @@ func TestGetUserFundingSummarySeparatesOrdersAndStandaloneRedeems(t *testing.T) 
 	summary, err := (&PaymentService{entClient: client}).GetUserFundingSummary(ctx, user.ID)
 	require.NoError(t, err)
 	require.InDelta(t, 800, summary.OrderRecharged, 1e-9)
+	require.InDelta(t, 800, summary.PaidOrderRechargedCNY, 1e-9)
 	require.InDelta(t, 75, summary.RedeemRecharged, 1e-9)
 	require.InDelta(t, 875, summary.TotalRecharged, 1e-9)
 }
@@ -89,6 +90,7 @@ func TestGetUserFundingSummarySupportsRedeemOnlyAccount(t *testing.T) {
 	summary, err := (&PaymentService{entClient: client}).GetUserFundingSummary(ctx, user.ID)
 	require.NoError(t, err)
 	require.Zero(t, summary.OrderRecharged)
+	require.Zero(t, summary.PaidOrderRechargedCNY)
 	require.InDelta(t, 125, summary.RedeemRecharged, 1e-9)
 	require.InDelta(t, 125, summary.TotalRecharged, 1e-9)
 }
@@ -124,6 +126,7 @@ func TestGetUserFundingSummaryReadsCompletedOrderWithoutRedeemMirror(t *testing.
 	summary, err := (&PaymentService{entClient: client}).GetUserFundingSummary(ctx, user.ID)
 	require.NoError(t, err)
 	require.InDelta(t, 320, summary.OrderRecharged, 1e-9)
+	require.InDelta(t, 320, summary.PaidOrderRechargedCNY, 1e-9)
 	require.Zero(t, summary.RedeemRecharged)
 	require.InDelta(t, 320, summary.TotalRecharged, 1e-9)
 }
@@ -160,6 +163,7 @@ func TestGetUserFundingSummarySubtractsSuccessfulOrderRefund(t *testing.T) {
 	summary, err := (&PaymentService{entClient: client}).GetUserFundingSummary(ctx, user.ID)
 	require.NoError(t, err)
 	require.InDelta(t, 140, summary.OrderRecharged, 1e-9)
+	require.InDelta(t, 140, summary.PaidOrderRechargedCNY, 1e-9)
 	require.Zero(t, summary.RedeemRecharged)
 	require.InDelta(t, 140, summary.TotalRecharged, 1e-9)
 }
@@ -204,6 +208,41 @@ func TestGetUserFundingSummaryCountsFailedOrderWhenItsCreditWasApplied(t *testin
 	summary, err := (&PaymentService{entClient: client}).GetUserFundingSummary(ctx, user.ID)
 	require.NoError(t, err)
 	require.InDelta(t, 90, summary.OrderRecharged, 1e-9)
+	require.Zero(t, summary.PaidOrderRechargedCNY)
 	require.Zero(t, summary.RedeemRecharged)
 	require.InDelta(t, 90, summary.TotalRecharged, 1e-9)
+}
+
+func TestGetUserFundingSummaryConvertsBalanceRefundToPaidCNY(t *testing.T) {
+	client := newPaymentOrderLifecycleTestClient(t)
+	ctx := context.Background()
+	now := time.Now().UTC()
+
+	user, err := client.User.Create().
+		SetEmail("funding-summary-refund-conversion@example.com").
+		SetPasswordHash("test").
+		Save(ctx)
+	require.NoError(t, err)
+	_, err = client.PaymentOrder.Create().
+		SetUserID(user.ID).
+		SetUserEmail(user.Email).
+		SetUserName(user.Username).
+		SetAmount(14).
+		SetPayAmount(100).
+		SetRechargeCode("REFUND-CONVERSION-ORDER").
+		SetOutTradeNo("funding-summary-refund-conversion").
+		SetPaymentType(payment.TypeAlipay).
+		SetPaymentTradeNo("funding-summary-refund-conversion-trade").
+		SetOrderType(payment.OrderTypeBalance).
+		SetStatus(OrderStatusPartiallyRefunded).
+		SetRefundAmount(7).
+		SetExpiresAt(now.Add(time.Hour)).
+		SetClientIP("127.0.0.1").
+		SetSrcHost("example.com").
+		Save(ctx)
+	require.NoError(t, err)
+
+	summary, err := (&PaymentService{entClient: client}).GetUserFundingSummary(ctx, user.ID)
+	require.NoError(t, err)
+	require.InDelta(t, 50, summary.PaidOrderRechargedCNY, 1e-9)
 }

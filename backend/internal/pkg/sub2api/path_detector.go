@@ -42,6 +42,10 @@ var commonGroupsPaths = []string{
 
 // DetectKeysPath 探测 API Keys 路径
 func (d *PathDetector) DetectKeysPath(ctx context.Context) (string, error) {
+	if d.client.IsNewAPI() {
+		_, _, err := d.client.GetAPIKeysPage(ctx, "", 1, 1)
+		return "/api/token/", err
+	}
 	for _, path := range commonKeysPaths {
 		_, err := d.client.GetAPIKeys(ctx, path)
 		if err == nil {
@@ -56,6 +60,10 @@ func (d *PathDetector) DetectKeysPath(ctx context.Context) (string, error) {
 
 // DetectGroupsPath 探测 Groups 路径
 func (d *PathDetector) DetectGroupsPath(ctx context.Context) (string, error) {
+	if d.client.IsNewAPI() {
+		_, err := d.client.GetGroups(ctx, "")
+		return d.client.newAPI.groupsPath, err
+	}
 	for _, path := range commonGroupsPaths {
 		_, err := d.client.GetGroups(ctx, path)
 		if err == nil {
@@ -94,5 +102,9 @@ func (d *PathDetector) DetectAllPaths(ctx context.Context) (*PathsResult, error)
 
 // TestConnection 测试连接（仅登录）
 func (d *PathDetector) TestConnection(ctx context.Context) error {
+	if d.client.IsNewAPI() {
+		_, err := d.client.GetCurrentUserProfile(ctx)
+		return err
+	}
 	return d.client.Login(ctx)
 }

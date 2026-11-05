@@ -2,15 +2,15 @@
   <div class="min-w-0" :data-test="`route-timeline-${route.id}`">
     <div v-if="!compact" class="mb-1 flex min-w-0 items-center justify-between gap-3 text-xs text-gray-500 dark:text-dark-300">
       <span class="min-w-0 truncate">
-        {{ t('admin.sub2apiProviders.health.routes.probeHistory') }}
+        {{ t(route.monitoring_source === 'user_requests' ? 'admin.sub2apiProviders.health.routes.requestHistory' : (route.monitoring_source === 'recovery_probes' ? 'admin.sub2apiProviders.health.routes.recoveryHistory' : 'admin.sub2apiProviders.health.routes.probeHistory')) }}
         <span class="ml-1 text-gray-300 dark:text-dark-400">·</span>
         <span class="ml-1 tabular-nums">{{ t('admin.sub2apiProviders.health.routes.slowThreshold', { count: route.degraded_latency_ms }) }}</span>
       </span>
       <span v-if="displayBuckets.length" class="flex-shrink-0 tabular-nums">
-        {{ t('admin.sub2apiProviders.health.routes.recentProbeResults', { count: displayBuckets.length }) }}
+        {{ t(route.monitoring_source === 'user_requests' ? 'admin.sub2apiProviders.health.routes.recentRequestResults' : (route.monitoring_source === 'recovery_probes' ? 'admin.sub2apiProviders.health.routes.recentRecoveryResults' : 'admin.sub2apiProviders.health.routes.recentProbeResults'), { count: displayBuckets.length }) }}
       </span>
       <span v-else class="flex-shrink-0">
-        {{ route.status === 'disabled' ? t('admin.sub2apiProviders.health.status.disabled') : t('admin.sub2apiProviders.health.routes.noProbeResults') }}
+        {{ route.status === 'disabled' ? t('admin.sub2apiProviders.health.status.disabled') : t(route.monitoring_source === 'user_requests' ? 'admin.sub2apiProviders.health.routes.noRequestResults' : (route.monitoring_source === 'recovery_probes' ? 'admin.sub2apiProviders.health.routes.noRecoveryHistory' : 'admin.sub2apiProviders.health.routes.noProbeResults')) }}
       </span>
     </div>
     <div
@@ -46,7 +46,7 @@
       class="flex min-h-7 items-center justify-center rounded-[2px] border border-dashed border-gray-200 px-3 text-xs text-gray-500 dark:border-dark-600 dark:text-dark-400"
       data-test="route-timeline-empty"
     >
-      {{ route.status === 'disabled' ? t('admin.sub2apiProviders.health.status.disabled') : t('admin.sub2apiProviders.health.routes.noProbeResults') }}
+      {{ route.status === 'disabled' ? t('admin.sub2apiProviders.health.status.disabled') : t(route.monitoring_source === 'user_requests' ? 'admin.sub2apiProviders.health.routes.noRequestResults' : (route.monitoring_source === 'recovery_probes' ? 'admin.sub2apiProviders.health.routes.noRecoveryHistory' : 'admin.sub2apiProviders.health.routes.noProbeResults')) }}
     </div>
 
     <div v-if="!compact && activeBucket" class="mt-1 flex min-h-5 min-w-0 items-center gap-2 text-xs text-gray-500 dark:text-dark-300" aria-live="polite" data-test="route-timeline-detail">
@@ -148,12 +148,12 @@ const bucketTitle = (bucket: Sub2APIProviderHealthBucket) => {
 
 const activeBucketAriaLabel = computed(() => {
   if (!activeBucket.value) {
-    return [props.route.account_name, props.route.test_model, t('admin.sub2apiProviders.health.routes.noProbeResults')].filter(Boolean).join(' · ')
+    return [props.route.account_name, props.route.test_model, t(props.route.monitoring_source === 'user_requests' ? 'admin.sub2apiProviders.health.routes.noRequestResults' : (props.route.monitoring_source === 'recovery_probes' ? 'admin.sub2apiProviders.health.routes.noRecoveryHistory' : 'admin.sub2apiProviders.health.routes.noProbeResults'))].filter(Boolean).join(' · ')
   }
   return [
     props.route.account_name,
     props.route.test_model,
-    t('admin.sub2apiProviders.health.routes.recentProbeResults', { count: displayBuckets.value.length }),
+    t(props.route.monitoring_source === 'user_requests' ? 'admin.sub2apiProviders.health.routes.recentRequestResults' : (props.route.monitoring_source === 'recovery_probes' ? 'admin.sub2apiProviders.health.routes.recentRecoveryResults' : 'admin.sub2apiProviders.health.routes.recentProbeResults'), { count: displayBuckets.value.length }),
     bucketTitle(activeBucket.value),
   ].filter(Boolean).join(' · ')
 })

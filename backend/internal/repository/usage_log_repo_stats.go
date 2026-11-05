@@ -16,6 +16,55 @@ import (
 	"github.com/lib/pq"
 )
 
+// GetProviderLocalUsage aggregates immutable local usage records for a set of
+// linked accounts. It is used only as a labeled fallback when an upstream
+// dashboard does not expose request statistics.
+func (r *usageLogRepository) GetProviderLocalUsage(ctx context.Context, accountIDs []int64, startTime, endTime time.Time) (service.ProviderLocalUsage, error) {
+	var out service.ProviderLocalUsage
+	if len(accountIDs) == 0 {
+		return out, nil
+	}
+	today := timezone.Today()
+	rows, err := r.sql.QueryContext(ctx, `
+SELECT COUNT(*) FILTER (WHERE created_at >= $2 AND created_at < $3),
+       COALESCE(SUM(input_tokens) FILTER (WHERE created_at >= $2 AND created_at < $3),0),
+       COALESCE(SUM(output_tokens) FILTER (WHERE created_at >= $2 AND created_at < $3),0),
+       COALESCE(SUM(cache_creation_tokens) FILTER (WHERE created_at >= $2 AND created_at < $3),0),
+       COALESCE(SUM(cache_read_tokens) FILTER (WHERE created_at >= $2 AND created_at < $3),0),
+       COALESCE(SUM(input_tokens+output_tokens+cache_creation_tokens+cache_read_tokens) FILTER (WHERE created_at >= $2 AND created_at < $3),0),
+       COALESCE(SUM(actual_cost) FILTER (WHERE created_at >= $2 AND created_at < $3),0),
+       COUNT(*) FILTER (WHERE created_at >= $4),
+       COALESCE(SUM(input_tokens) FILTER (WHERE created_at >= $4),0),
+       COALESCE(SUM(output_tokens) FILTER (WHERE created_at >= $4),0),
+       COALESCE(SUM(cache_creation_tokens) FILTER (WHERE created_at >= $4),0),
+       COALESCE(SUM(cache_read_tokens) FILTER (WHERE created_at >= $4),0),
+       COALESCE(SUM(input_tokens+output_tokens+cache_creation_tokens+cache_read_tokens) FILTER (WHERE created_at >= $4),0),
+       COALESCE(SUM(actual_cost) FILTER (WHERE created_at >= $4),0),
+       COALESCE(AVG(duration_ms) FILTER (WHERE created_at >= $2 AND created_at < $3),0)
+  FROM usage_logs
+ WHERE account_id = ANY($1) AND created_at >= LEAST($2,$4)`, pq.Array(accountIDs), startTime, endTime, today)
+	if err != nil {
+		return out, err
+	}
+	defer rows.Close()
+	if !rows.Next() {
+		if err := rows.Err(); err != nil {
+			return out, err
+		}
+		return out, sql.ErrNoRows
+	}
+	if err := rows.Scan(
+		&out.TotalRequests, &out.TotalInputTokens, &out.TotalOutputTokens,
+		&out.TotalCacheCreationTokens, &out.TotalCacheReadTokens, &out.TotalTokens,
+		&out.TotalActualCost, &out.TodayRequests, &out.TodayInputTokens,
+		&out.TodayOutputTokens, &out.TodayCacheCreationTokens, &out.TodayCacheReadTokens,
+		&out.TodayTokens, &out.TodayActualCost, &out.AverageDurationMS,
+	); err != nil {
+		return out, err
+	}
+	return out, nil
+}
+
 // GetProviderAccountRevenue aggregates local customer charges for a bounded
 // set of accounts in one query. It is intentionally an optional repository
 // capability so older UsageLogRepository test doubles remain source-compatible.
@@ -44,21 +93,141 @@ func (r *usageLogRepository) GetProviderAccountRevenue(ctx context.Context, acco
 		endTime = time.Now()
 	}
 	today := timezone.Today()
+	monthStart := time.Date(today.Year(), today.Month(), 1, 0, 0, 0, 0, today.Location())
 	rows, err := r.sql.QueryContext(ctx, `
 		SELECT account_id,
 		       COALESCE(SUM(actual_cost) FILTER (WHERE created_at >= $2 AND created_at < $3), 0),
-		       COALESCE(SUM(actual_cost) FILTER (WHERE created_at >= $4), 0)
+		       COALESCE(SUM(actual_cost) FILTER (WHERE created_at >= $4), 0),
+		       COALESCE(SUM(actual_cost) FILTER (WHERE created_at >= $5 AND created_at < $3), 0),
+		       COALESCE(SUM(actual_cost) FILTER (WHERE created_at < $3), 0)
 		  FROM usage_logs
 		 WHERE account_id = ANY($1)
-		   AND created_at >= LEAST($2, $4)
-		 GROUP BY account_id`, pq.Array(ids), startTime, endTime, today)
+		   AND created_at < $3
+		 GROUP BY account_id`, pq.Array(ids), startTime, endTime, today, monthStart)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { _ = rows.Close() }()
 	for rows.Next() {
 		var item service.ProviderAccountRevenue
-		if err := rows.Scan(&item.AccountID, &item.TotalActualCost, &item.TodayActualCost); err != nil {
+		if err := rows.Scan(&item.AccountID, &item.TotalActualCost, &item.TodayActualCost, &item.MonthActualCost, &item.CumulativeActualCost); err != nil {
+			return nil, err
+		}
+		result[item.AccountID] = item
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+// GetProviderAccountCost aggregates the local estimate of upstream cost from
+// immutable usage-log snapshots. account_stats_cost carries special pricing;
+// account_rate_multiplier is applied exactly once for historical rows.
+func (r *usageLogRepository) GetProviderAccountCost(ctx context.Context, accountIDs []int64, startTime, endTime time.Time) (map[int64]service.ProviderAccountCost, error) {
+	result := make(map[int64]service.ProviderAccountCost)
+	ids := make([]int64, 0, len(accountIDs))
+	seen := make(map[int64]struct{}, len(accountIDs))
+	for _, id := range accountIDs {
+		if id <= 0 {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		ids = append(ids, id)
+		result[id] = service.ProviderAccountCost{AccountID: id}
+	}
+	if len(ids) == 0 {
+		return result, nil
+	}
+	if startTime.IsZero() {
+		startTime = time.Now().AddDate(0, 0, -30)
+	}
+	if endTime.IsZero() {
+		endTime = time.Now()
+	}
+	today := timezone.Today()
+	monthStart := time.Date(today.Year(), today.Month(), 1, 0, 0, 0, 0, today.Location())
+	rows, err := r.sql.QueryContext(ctx, `
+		SELECT account_id,
+		       COUNT(*) FILTER (WHERE created_at >= $2 AND created_at < $3),
+		       COALESCE(SUM(input_tokens) FILTER (WHERE created_at >= $2 AND created_at < $3), 0),
+		       COALESCE(SUM(output_tokens) FILTER (WHERE created_at >= $2 AND created_at < $3), 0),
+		       COALESCE(SUM(cache_creation_tokens + cache_read_tokens) FILTER (WHERE created_at >= $2 AND created_at < $3), 0),
+		       COALESCE(SUM(COALESCE(account_stats_cost, total_cost) * COALESCE(account_rate_multiplier, 1)) FILTER (WHERE created_at >= $2 AND created_at < $3), 0),
+		       COALESCE(SUM(COALESCE(account_stats_cost, total_cost) * COALESCE(account_rate_multiplier, 1)) FILTER (WHERE created_at >= $4), 0),
+		       COALESCE(SUM(COALESCE(account_stats_cost, total_cost) * COALESCE(account_rate_multiplier, 1)) FILTER (WHERE created_at >= $5 AND created_at < $3), 0),
+		       COALESCE(SUM(COALESCE(account_stats_cost, total_cost) * COALESCE(account_rate_multiplier, 1)) FILTER (WHERE created_at < $3), 0)
+		  FROM usage_logs
+		 WHERE account_id = ANY($1)
+		   AND created_at < $3
+		 GROUP BY account_id`, pq.Array(ids), startTime, endTime, today, monthStart)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var item service.ProviderAccountCost
+		if err := rows.Scan(&item.AccountID, &item.RequestCount, &item.InputTokens, &item.OutputTokens, &item.CacheTokens, &item.EstimatedCost, &item.TodayEstimatedCost, &item.MonthEstimatedCost, &item.CumulativeEstimatedCost); err != nil {
+			return nil, err
+		}
+		result[item.AccountID] = item
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+// GetProviderAccountLocalProfit only uses this platform's request records.
+// Since historical remote group multipliers are not persisted per request,
+// the current synchronized account multiplier is applied to each row's base
+// account cost snapshot.
+func (r *usageLogRepository) GetProviderAccountLocalProfit(ctx context.Context, accountIDs []int64, endTime time.Time) (map[int64]service.ProviderAccountLocalProfit, error) {
+	result := make(map[int64]service.ProviderAccountLocalProfit, len(accountIDs))
+	ids := make([]int64, 0, len(accountIDs))
+	seen := make(map[int64]struct{}, len(accountIDs))
+	for _, id := range accountIDs {
+		if id <= 0 {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		ids = append(ids, id)
+		result[id] = service.ProviderAccountLocalProfit{AccountID: id, CostAvailable: true}
+	}
+	if len(ids) == 0 {
+		return result, nil
+	}
+	if endTime.IsZero() {
+		endTime = time.Now()
+	}
+	today := timezone.StartOfDay(endTime)
+	monthStart := time.Date(today.Year(), today.Month(), 1, 0, 0, 0, 0, today.Location())
+	rows, err := r.sql.QueryContext(ctx, `
+		SELECT u.account_id,
+		       COALESCE(SUM(u.actual_cost) FILTER (WHERE u.created_at >= $2), 0),
+		       COALESCE(SUM(u.actual_cost - COALESCE(u.account_stats_cost, u.total_cost) * a.remote_group_multiplier) FILTER (WHERE u.created_at >= $2), 0),
+		       COALESCE(SUM(u.actual_cost) FILTER (WHERE u.created_at >= $3 AND u.created_at < $4), 0),
+		       COALESCE(SUM(u.actual_cost - COALESCE(u.account_stats_cost, u.total_cost) * a.remote_group_multiplier) FILTER (WHERE u.created_at >= $3 AND u.created_at < $4), 0),
+		       COALESCE(SUM(u.actual_cost), 0),
+		       COALESCE(SUM(u.actual_cost - COALESCE(u.account_stats_cost, u.total_cost) * a.remote_group_multiplier), 0),
+		       COUNT(*) FILTER (WHERE a.remote_group_multiplier IS NULL OR a.remote_group_multiplier < 0) = 0
+		  FROM usage_logs u
+		  JOIN accounts a ON a.id = u.account_id
+		 WHERE u.account_id = ANY($1) AND u.created_at < $4
+		 GROUP BY u.account_id`, pq.Array(ids), today, monthStart, endTime)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var item service.ProviderAccountLocalProfit
+		if err := rows.Scan(&item.AccountID, &item.TodayRevenue, &item.TodayProfit, &item.MonthRevenue, &item.MonthProfit, &item.CumulativeRevenue, &item.CumulativeProfit, &item.CostAvailable); err != nil {
 			return nil, err
 		}
 		result[item.AccountID] = item

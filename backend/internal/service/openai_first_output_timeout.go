@@ -276,7 +276,7 @@ func (s *OpenAIGatewayService) newOpenAIFirstOutputTimeoutError(
 		Detail: fmt.Sprintf("phase=%s elapsed_ms=%d timeout_ms=%d", phase, elapsed.Milliseconds(), timeout.Milliseconds()),
 	})
 	if s.rateLimitService != nil {
-		s.rateLimitService.HandleStreamTimeout(ctx, account, originalModel)
+		s.rateLimitService.HandleFirstOutputTimeout(ctx, account, originalModel)
 	}
 	return &UpstreamFailoverError{
 		StatusCode:      http.StatusGatewayTimeout,

@@ -30,10 +30,10 @@ func NewSub2APIProviderHandler(providerService *service.Sub2APIProviderService, 
 type CreateProviderRequest struct {
 	Name              string   `json:"name" binding:"required"`
 	BaseURL           string   `json:"base_url" binding:"required,url"`
-	ProviderType      string   `json:"provider_type" binding:"omitempty,oneof=sub2api"`
-	Email             string   `json:"email" binding:"required,email"`
+	ProviderType      string   `json:"provider_type" binding:"omitempty,oneof=sub2api newapi"`
+	Email             string   `json:"email" binding:"required,max=200"`
 	Password          string   `json:"password"`
-	AuthMode          string   `json:"auth_mode" binding:"omitempty,oneof=password token_pair"`
+	AuthMode          string   `json:"auth_mode" binding:"omitempty,oneof=password token_pair access_token"`
 	AccessToken       *string  `json:"access_token"`
 	RefreshToken      *string  `json:"refresh_token"`
 	Notes             *string  `json:"notes"`
@@ -89,9 +89,9 @@ func (f *optionalProviderProxyID) UnmarshalJSON(data []byte) error {
 type UpdateProviderRequest struct {
 	Name              *string                 `json:"name"`
 	BaseURL           *string                 `json:"base_url" binding:"omitempty,url"`
-	Email             *string                 `json:"email" binding:"omitempty,email"`
+	Email             *string                 `json:"email" binding:"omitempty,max=200"`
 	Password          *string                 `json:"password"`
-	AuthMode          *string                 `json:"auth_mode" binding:"omitempty,oneof=password token_pair"`
+	AuthMode          *string                 `json:"auth_mode" binding:"omitempty,oneof=password token_pair access_token"`
 	AccessToken       *string                 `json:"access_token"`
 	RefreshToken      *string                 `json:"refresh_token"`
 	Status            *string                 `json:"status" binding:"omitempty,oneof=active inactive"`
@@ -312,8 +312,8 @@ func (h *Sub2APIProviderHandler) RemoteOverview(c *gin.Context) {
 	response.Success(c, overview)
 }
 
-// CachedRemoteOverviews returns only Redis-backed latest asset states and does
-// not contact any upstream Provider.
+// CachedRemoteOverviews returns cached remote assets with current local
+// request statistics and does not contact any upstream Provider.
 func (h *Sub2APIProviderHandler) CachedRemoteOverviews(c *gin.Context) {
 	ids, ok := parseProviderHealthOverviewIDs(c.Query("ids"))
 	if !ok {
@@ -341,6 +341,63 @@ func (h *Sub2APIProviderHandler) HealthOverview(c *gin.Context) {
 		return
 	}
 	response.Success(c, overviews)
+}
+
+// PassiveHealthPolicy exposes thresholds separately from the legacy probe
+// configuration. Reading this endpoint is local-only and never contacts an
+// upstream provider.
+func (h *Sub2APIProviderHandler) PassiveHealthPolicy(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || id <= 0 {
+		response.BadRequest(c, "Invalid provider ID")
+		return
+	}
+	policy, err := h.probeService.PassivePolicy(c.Request.Context(), id)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, policy)
+}
+
+func (h *Sub2APIProviderHandler) UpdatePassiveHealthPolicy(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || id <= 0 {
+		response.BadRequest(c, "Invalid provider ID")
+		return
+	}
+	var policy service.ProviderPassivePolicy
+	if err := c.ShouldBindJSON(&policy); err != nil {
+		response.BadRequest(c, "Invalid passive health policy")
+		return
+	}
+	if err := h.probeService.SavePassivePolicy(c.Request.Context(), id, policy); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, policy)
+}
+
+func (h *Sub2APIProviderHandler) DailyCosts(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || id <= 0 {
+		response.BadRequest(c, "Invalid provider ID")
+		return
+	}
+	days := 30
+	if raw := c.Query("days"); raw != "" {
+		days, err = strconv.Atoi(raw)
+		if err != nil {
+			response.BadRequest(c, "Invalid days")
+			return
+		}
+	}
+	items, err := h.probeService.DailyCosts(c.Request.Context(), id, days)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, items)
 }
 
 func parseProviderHealthOverviewIDs(raw string) ([]int64, bool) {
@@ -614,3 +671,33 @@ func (h *Sub2APIProviderHandler) UnlinkAccount(c *gin.Context) {
 
 // OptimizeAccount 与 OptimizeAll 已迁移到 Sub2APIOptimizeScheduleHandler，
 // 与定时任务共用同一智能引擎（倍率上限 + 连通测试 + 回滚）。此处不再提供。
+
+// AccountHealthPolicy updates one linked account; reading never runs a model test.
+func (h *Sub2APIProviderHandler) AccountHealthPolicy(c *gin.Context) {
+	providerID, e1 := strconv.ParseInt(c.Param("id"), 10, 64)
+	accountID, e2 := strconv.ParseInt(c.Param("account_id"), 10, 64)
+	if e1 != nil || e2 != nil || providerID <= 0 || accountID <= 0 {
+		response.BadRequest(c, "Invalid provider or account ID")
+		return
+	}
+	if c.Request.Method == "PUT" {
+		var policy service.ProviderAccountHealthPolicy
+		if err := c.ShouldBindJSON(&policy); err != nil {
+			response.BadRequest(c, "Invalid account health policy")
+			return
+		}
+		state, err := h.probeService.SaveAccountHealthPolicy(c.Request.Context(), providerID, accountID, policy)
+		if err != nil {
+			response.ErrorFrom(c, err)
+			return
+		}
+		response.Success(c, state)
+		return
+	}
+	state, err := h.probeService.AccountHealthPolicy(c.Request.Context(), providerID, accountID)
+	if err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	response.Success(c, state)
+}

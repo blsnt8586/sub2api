@@ -40,6 +40,9 @@ type UpdateSettingsRequest struct {
 	LoginAgreementMode                  string                       `json:"login_agreement_mode"`
 	LoginAgreementUpdatedAt             string                       `json:"login_agreement_updated_at"`
 	LoginAgreementDocuments             []dto.LoginAgreementDocument `json:"login_agreement_documents"`
+	TokenParkRewardEnabled              bool                         `json:"token_park_reward_enabled"`
+	TokenParkMinBalanceUSD              float64                      `json:"token_park_min_balance_usd"`
+	TokenParkGameRewardsUSD             map[string]float64           `json:"token_park_game_rewards_usd"`
 
 	// 邮件服务设置
 	SMTPHost     string `json:"smtp_host"`
@@ -1546,6 +1549,9 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		LoginAgreementMode:                  loginAgreementMode,
 		LoginAgreementUpdatedAt:             loginAgreementUpdatedAt,
 		LoginAgreementDocuments:             loginAgreementDocuments,
+		TokenParkRewardEnabled:              req.TokenParkRewardEnabled,
+		TokenParkMinBalanceUSD:              req.TokenParkMinBalanceUSD,
+		TokenParkGameRewardsUSD:             req.TokenParkGameRewardsUSD,
 		SMTPHost:                            req.SMTPHost,
 		SMTPPort:                            req.SMTPPort,
 		SMTPUsername:                        req.SMTPUsername,
@@ -2221,6 +2227,9 @@ func (h *SettingHandler) UpdateSettings(c *gin.Context) {
 		LoginAgreementMode:                                     updatedSettings.LoginAgreementMode,
 		LoginAgreementUpdatedAt:                                updatedSettings.LoginAgreementUpdatedAt,
 		LoginAgreementDocuments:                                loginAgreementDocumentsToDTO(updatedSettings.LoginAgreementDocuments),
+		TokenParkRewardEnabled:                                 updatedSettings.TokenParkRewardEnabled,
+		TokenParkMinBalanceUSD:                                 updatedSettings.TokenParkMinBalanceUSD,
+		TokenParkGameRewardsUSD:                                updatedSettings.TokenParkGameRewardsUSD,
 		SMTPHost:                                               updatedSettings.SMTPHost,
 		SMTPPort:                                               updatedSettings.SMTPPort,
 		SMTPUsername:                                           updatedSettings.SMTPUsername,

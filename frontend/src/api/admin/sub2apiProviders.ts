@@ -20,7 +20,7 @@ export interface Sub2APIProvider {
   id: number
   name: string
   base_url: string
-  /** 上游类型：当前仅 sub2api，后续可扩展其他上游协议 */
+  /** 上游类型：sub2api 或 newapi 控制面协议 */
   provider_type: string
   status: 'active' | 'inactive'
   /** Remote overview money is displayed as upstream value divided by this value. */
@@ -29,7 +29,7 @@ export interface Sub2APIProvider {
   proxy_id: number | null
   proxy_name?: string | null
   email: string
-  auth_mode: 'password' | 'token_pair'
+  auth_mode: 'password' | 'token_pair' | 'access_token'
   has_access_token: boolean
   has_refresh_token: boolean
   access_token_expires_at?: string | null
@@ -57,7 +57,7 @@ export interface CreateProviderRequest {
   provider_type?: string
   email: string
   password?: string
-  auth_mode?: 'password' | 'token_pair'
+  auth_mode?: 'password' | 'token_pair' | 'access_token'
   access_token?: string
   refresh_token?: string
   notes?: string | null
@@ -70,7 +70,7 @@ export interface UpdateProviderRequest {
   base_url?: string
   email?: string
   password?: string
-  auth_mode?: 'password' | 'token_pair'
+  auth_mode?: 'password' | 'token_pair' | 'access_token'
   access_token?: string
   refresh_token?: string
   status?: 'active' | 'inactive'
@@ -108,24 +108,35 @@ export interface Sub2APIProviderRemoteOverview {
   last_error?: string | null
   last_error_at?: string | null
   usage?: Sub2APIProviderRemoteUsageStats | null
+  local_usage?: Sub2APIProviderRemoteUsageStats | null
   profit?: Sub2APIProviderProfitSummary | null
 }
 
 export interface Sub2APIProviderProfitSummary {
   available: boolean
+  cost_source: 'remote' | 'local_estimate' | 'mixed' | 'unavailable' | string
   range_start: string
   range_end: string
   sampled_at: string
   total_revenue: number
   total_remote_cost: number
+  total_estimated_cost: number
   total_gross_profit: number
   total_gross_margin: number
   today_revenue: number
   today_remote_cost: number
+  today_estimated_cost: number
   today_gross_profit: number
   today_gross_margin: number
+  month_gross_profit: number
+  month_gross_margin: number
+  cumulative_gross_profit: number
+  cumulative_gross_margin: number
+  month_profit_available: boolean
+  cumulative_profit_available: boolean
   accounts: Sub2APIProviderAccountProfit[]
   error?: string | null
+  remote_error?: string | null
 }
 
 export interface Sub2APIProviderAccountProfit {
@@ -134,17 +145,24 @@ export interface Sub2APIProviderAccountProfit {
   provider_api_key_id?: number | null
   revenue: number
   remote_cost: number
+  estimated_cost: number
   gross_profit: number
   gross_margin: number
   today_revenue: number
   today_remote_cost: number
+  today_estimated_cost: number
   today_gross_profit: number
   today_gross_margin: number
+  month_gross_profit?: number
+  cumulative_gross_profit?: number
   remote_cost_available: boolean
+  estimated_cost_available: boolean
+  cost_source: 'remote' | 'local_estimate' | string
   error?: string | null
 }
 
 export interface Sub2APIProviderRemoteUsageStats {
+  usage_source?: 'remote' | 'local' | string
   total_recharged: number
   order_recharged: number
   redeem_recharged: number
@@ -221,8 +239,11 @@ export interface Sub2APIProviderHealth {
   probe_account_count: number
   account_probes: Sub2APIProviderAccountProbe[]
   traffic_request_count: number
+  traffic_failure_count?: number
   traffic_success_rate?: number | null
   traffic_p95_latency_ms?: number | null
+  passive_health_status?: 'unknown' | 'healthy' | 'degraded' | 'temporarily_unschedulable' | string
+  passive_cooldown_until?: string | null
   error_category?: string | null
   error_message?: string | null
   details?: Record<string, unknown>
@@ -261,6 +282,8 @@ export interface Sub2APIProviderHealthOverview {
 }
 
 export interface Sub2APIProviderProbeTargetHealth {
+  hybrid_health?: ProviderAccountHealthState
+  monitoring_source?: 'user_requests' | string
   id: number
   provider_id: number
   account_id: number
@@ -298,8 +321,16 @@ export interface Sub2APIProviderProbeTargetHealth {
   status: ProviderAccountProbeStatus
   latency_ms?: number | null
   traffic_request_count: number
+  traffic_failure_count?: number
   traffic_success_rate?: number | null
   traffic_p95_latency_ms?: number | null
+  average_duration_ms?: number | null
+  cache_hit_rate?: number | null
+  cache_hit_rate_available?: boolean
+  passive_health_status?: 'unknown' | 'healthy' | 'degraded' | 'temporarily_unschedulable' | string
+  last_request_at?: string | null
+  passive_cooldown_until?: string | null
+  passive_reason?: string
   error_category?: string | null
   error_message?: string | null
   last_checked_at?: string | null
@@ -307,6 +338,48 @@ export interface Sub2APIProviderProbeTargetHealth {
   route_changed_at?: string | null
   consecutive_failures: number
   buckets: Sub2APIProviderHealthBucket[]
+}
+
+export interface ProviderAccountHealthPolicy {
+  enabled: boolean
+  window_seconds: number
+  minimum_samples: number
+  degraded_latency_ms: number
+  timeout_ms: number
+  failure_threshold: number
+  account_failure_threshold: number
+  session_avoid_seconds: number
+  recovery_delay_seconds: number
+  probe_interval_seconds: number
+  probe_timeout_seconds: number
+  recovery_successes: number
+}
+export interface ProviderAccountHealthState {
+  account_id: number
+  provider_id: number
+  policy: ProviderAccountHealthPolicy
+  revision: number
+  phase: 'observing' | 'recovering'
+  observe_since: string
+  reason: string
+  recovery_successes: number
+  last_probe_at?: string | null
+  last_probe_status: string
+  last_probe_latency_ms?: number | null
+  next_probe_at?: string | null
+}
+
+export interface ProviderPassiveHealthPolicy {
+  enforce: boolean
+  window_seconds: number
+  minimum_samples: number
+  degraded_latency_ms: number
+  block_latency_ms: number
+  degraded_error_rate: number
+  block_error_rate: number
+  failure_threshold: number
+  cooldown_seconds: number
+  recovery_count: number
 }
 
 export type UpdateProviderProbeTargetRequest = Partial<Pick<
@@ -518,6 +591,21 @@ export async function updateProbeConfig(id: number, payload: UpdateProviderProbe
   return data
 }
 
+export async function updateAccountHealthPolicy(id: number, accountID: number, policy: ProviderAccountHealthPolicy): Promise<ProviderAccountHealthState> {
+  const { data } = await apiClient.put<ProviderAccountHealthState>(`/admin/sub2api-providers/${id}/accounts/${accountID}/health-policy`, policy)
+  return data
+}
+
+export async function getPassiveHealthPolicy(id: number): Promise<ProviderPassiveHealthPolicy> {
+  const { data } = await apiClient.get<ProviderPassiveHealthPolicy>(`/admin/sub2api-providers/${id}/passive-health-policy`)
+  return data
+}
+
+export async function updatePassiveHealthPolicy(id: number, payload: ProviderPassiveHealthPolicy): Promise<ProviderPassiveHealthPolicy> {
+  const { data } = await apiClient.put<ProviderPassiveHealthPolicy>(`/admin/sub2api-providers/${id}/passive-health-policy`, payload)
+  return data
+}
+
 export async function getProbeHistory(id: number, limit = 100, sinceSeconds = 3600): Promise<Sub2APIProviderHealth[]> {
   const { data } = await apiClient.get<Sub2APIProviderHealth[]>(`/admin/sub2api-providers/${id}/probe/history`, {
     params: { limit, since_seconds: sinceSeconds }
@@ -547,7 +635,11 @@ export async function updateProbeTarget(
 
 export async function runProbeTarget(providerId: number, targetId: number): Promise<Sub2APIProviderProbeTargetHealth> {
   const { data } = await apiClient.post<Sub2APIProviderProbeTargetHealth>(
-    `/admin/sub2api-providers/${providerId}/probe-targets/${targetId}/run`
+    `/admin/sub2api-providers/${providerId}/probe-targets/${targetId}/run`,
+    undefined,
+    // Target probes allow up to 120s on the server, plus binding refresh and
+    // result persistence. The default 30s client timeout cancels valid probes.
+    { timeout: 150_000 }
   )
   return data
 }
@@ -847,6 +939,9 @@ export const sub2apiProvidersAPI = {
   runProbe,
   getProbeConfig,
   updateProbeConfig,
+  updateAccountHealthPolicy,
+  getPassiveHealthPolicy,
+  updatePassiveHealthPolicy,
   getProbeHistory,
   getProbeTargets,
   updateProbeTarget,

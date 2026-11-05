@@ -89,14 +89,23 @@ type Sub2APIProviderProbeTargetRunInput struct {
 }
 
 type Sub2APIProviderProbeTargetTrafficStats struct {
-	RequestCount int
-	SuccessRate  float64
-	P95LatencyMS int
+	RequestCount          int
+	FailureCount          int
+	SuccessRate           float64
+	P95LatencyMS          int
+	AverageDurationMS     float64
+	CacheHitRate          float64
+	CacheHitRateAvailable bool
 }
 
 // Sub2APIProviderProbeTargetHealth is the public, route-level health model.
 // Status is "disabled" when the target is off or a media probe is not allowed.
 type Sub2APIProviderProbeTargetHealth struct {
+	HybridHealth                 *ProviderAccountHealthState   `json:"hybrid_health,omitempty"`
+	MonitoringSource             string                        `json:"monitoring_source,omitempty"`
+	LastRequestAt                *time.Time                    `json:"last_request_at,omitempty"`
+	PassiveCooldownUntil         *time.Time                    `json:"passive_cooldown_until,omitempty"`
+	PassiveReason                string                        `json:"passive_reason,omitempty"`
 	ID                           int64                         `json:"id"`
 	ProviderID                   int64                         `json:"provider_id"`
 	AccountID                    int64                         `json:"account_id"`
@@ -134,8 +143,13 @@ type Sub2APIProviderProbeTargetHealth struct {
 	Status                       string                        `json:"status"`
 	LatencyMS                    *int                          `json:"latency_ms,omitempty"`
 	TrafficRequestCount          int                           `json:"traffic_request_count"`
+	TrafficFailureCount          int                           `json:"traffic_failure_count"`
 	TrafficSuccessRate           *float64                      `json:"traffic_success_rate,omitempty"`
 	TrafficP95LatencyMS          *int                          `json:"traffic_p95_latency_ms,omitempty"`
+	AverageDurationMS            *float64                      `json:"average_duration_ms,omitempty"`
+	CacheHitRate                 *float64                      `json:"cache_hit_rate,omitempty"`
+	CacheHitRateAvailable        bool                          `json:"cache_hit_rate_available"`
+	PassiveHealthStatus          string                        `json:"passive_health_status"`
 	ErrorCategory                *string                       `json:"error_category,omitempty"`
 	ErrorMessage                 *string                       `json:"error_message,omitempty"`
 	LastCheckedAt                *time.Time                    `json:"last_checked_at,omitempty"`
@@ -269,18 +283,27 @@ func (s *Sub2APIProviderProbeService) TargetHistory(ctx context.Context, provide
 	if limit < 1 || limit > 2000 {
 		limit = 100
 	}
-	runs, err := s.probeRepo.ListTargetRunsSince(ctx, []int64{targetID}, since.UTC())
-	if err != nil {
-		return nil, err
+	state, stateErr := s.AccountHealthPolicy(ctx, providerID, target.AccountID)
+	if stateErr != nil {
+		return nil, stateErr
 	}
-	if len(runs) > limit {
-		runs = runs[:limit]
+	if state.Phase == "recovering" {
+		if state.ObserveSince.After(since) {
+			since = state.ObserveSince
+		}
+		runs, err := s.probeRepo.ListRecentTargetRuns(ctx, []int64{targetID}, since, limit)
+		if err != nil {
+			return nil, err
+		}
+		out := make([]*Sub2APIProviderProbeTargetHealth, 0, len(runs))
+		for _, run := range runs {
+			h := targetHealthFromRun(run, state.Policy.TimeoutMS)
+			h.MonitoringSource = "recovery_probes"
+			out = append(out, h)
+		}
+		return out, nil
 	}
-	out := make([]*Sub2APIProviderProbeTargetHealth, 0, len(runs))
-	for _, run := range runs {
-		out = append(out, targetHealthFromRun(run, target.DegradedLatencyMs))
-	}
-	return out, nil
+	return s.passiveTargetHistory(ctx, target, since, limit)
 }
 
 func (s *Sub2APIProviderProbeService) ensureTargets(ctx context.Context, providerID int64) ([]*ent.Sub2APIProviderProbeTarget, error) {
@@ -321,9 +344,8 @@ func (s *Sub2APIProviderProbeService) ensureTargets(ctx context.Context, provide
 		if _, exists := existing[account.ID]; exists {
 			continue
 		}
-		// New account routes own their business-probe cadence and quality
-		// thresholds and start enabled. Existing target rows are never changed
-		// here, so an operator's explicit disabled state remains authoritative.
+		// New targets are opt-in so creating a Provider/account binding cannot
+		// trigger billable model probes. Existing operator settings are preserved.
 		// The legacy Provider data-plane switch and selected-account list describe
 		// the retired shared probe and must not disable newly linked accounts.
 		input := defaultProbeTargetCreateInput(providerID, cfg, account)
@@ -377,7 +399,7 @@ func defaultProbeTargetCreateInput(providerID int64, cfg *ent.Sub2APIProviderPro
 		RemoteGroupID:                account.RemoteGroupID,
 		RemoteGroupName:              account.RemoteGroupName,
 		Platform:                     strings.TrimSpace(account.Platform),
-		Enabled:                      true,
+		Enabled:                      false,
 		IntervalSeconds:              interval,
 		AdaptiveIntervalEnabled:      adaptive,
 		HealthyIntervalSeconds:       healthyInterval,
@@ -575,11 +597,6 @@ func (s *Sub2APIProviderProbeService) runTarget(ctx context.Context, target *ent
 		}
 	}
 	status = targetProbeStatus(status, latency, target.DegradedLatencyMs)
-	trafficSince := finished.Add(-time.Hour)
-	if target.RouteChangedAt != nil && target.RouteChangedAt.After(trafficSince) {
-		trafficSince = *target.RouteChangedAt
-	}
-	traffic, trafficErr := s.probeRepo.TargetTrafficStats(ctx, target.AccountID, trafficSince)
 	input := &Sub2APIProviderProbeTargetRunInput{
 		TargetID:         target.ID,
 		ProviderID:       target.ProviderID,
@@ -597,14 +614,6 @@ func (s *Sub2APIProviderProbeService) runTarget(ctx context.Context, target *ent
 	}
 	if modelID != "" {
 		input.ModelID = &modelID
-	}
-	if trafficErr == nil && traffic != nil {
-		input.TrafficRequestCount = traffic.RequestCount
-		if traffic.RequestCount > 0 {
-			rate := traffic.SuccessRate
-			p95 := traffic.P95LatencyMS
-			input.TrafficSuccessRate, input.TrafficP95LatencyMS = &rate, &p95
-		}
 	}
 	run, err := s.probeRepo.CreateTargetRun(ctx, input)
 	if err != nil {
@@ -925,10 +934,8 @@ func (s *Sub2APIProviderProbeService) targetHealths(ctx context.Context, targets
 	if len(targets) == 0 {
 		return []*Sub2APIProviderProbeTargetHealth{}, nil
 	}
-	targetIDs := make([]int64, 0, len(targets))
 	accountIDs := make([]int64, 0, len(targets))
 	for _, target := range targets {
-		targetIDs = append(targetIDs, target.ID)
 		accountIDs = append(accountIDs, target.AccountID)
 	}
 	accounts, err := s.accountRepo.GetByIDs(ctx, accountIDs)
@@ -941,27 +948,56 @@ func (s *Sub2APIProviderProbeService) targetHealths(ctx context.Context, targets
 			accountsByID[account.ID] = account
 		}
 	}
-	// A route timeline is a sequence of real probe events, not fixed time slots.
-	// The repository applies the per-target limit so fast probe cadences do not
-	// load the complete retention window into memory.
-	runs, err := s.probeRepo.ListRecentTargetRuns(ctx, targetIDs, now.Add(-upstreamLogRetentionPeriod), targetHealthTimelineResultLimit)
+	states, err := s.accountHealthStates(ctx, targets[0].ProviderID)
 	if err != nil {
 		return nil, err
 	}
-	runsByTarget := make(map[int64][]*ent.Sub2APIProviderProbeTargetRun, len(targets))
-	for _, run := range runs {
-		runsByTarget[run.TargetID] = append(runsByTarget[run.TargetID], run)
-	}
-	minimumHealthyStreak := 0
-	if len(targets) > 0 {
-		if cfg, cfgErr := s.ensureConfig(ctx, targets[0].ProviderID); cfgErr == nil {
-			minimumHealthyStreak = probeAdaptiveMinimumHealthyStreak(cfg)
-		}
+	requests, err := s.passiveRequestEvents(ctx, targets[0].ProviderID, now.Add(-24*time.Hour), now, 10000)
+	if err != nil {
+		return nil, err
 	}
 	out := make([]*Sub2APIProviderProbeTargetHealth, 0, len(targets))
 	for _, target := range targets {
-		health := targetHealthFromTarget(target, accountsByID[target.AccountID], runsByTarget[target.ID], now)
-		health.CurrentIntervalSeconds = effectiveProbeTargetIntervalSecondsWithRecovery(target, minimumHealthyStreak)
+		health := targetHealthFromTarget(target, accountsByID[target.AccountID], nil, now)
+		state, ok := states[target.AccountID]
+		if !ok {
+			state = ProviderAccountHealthState{AccountID: target.AccountID, ProviderID: target.ProviderID, Phase: "observing", Policy: DefaultProviderAccountHealthPolicy()}
+		}
+		observation, _ := hybridObserve(state, requests[target.AccountID], now)
+		events := requests[target.AccountID]
+		if len(events) > targetHealthTimelineResultLimit {
+			events = events[:targetHealthTimelineResultLimit]
+		}
+		applyPassiveRequestHealth(health, &observation, events, hybridPolicyAsPassive(state.Policy), now)
+		health.HybridHealth = &state
+		if state.Phase == "recovering" {
+			health.Status = "unhealthy"
+			health.MonitoringSource = "recovery_probes"
+			health.TestModel = configuredAccountTestModel(accountsByID[target.AccountID])
+			health.LatencyMS = state.LastProbeLatencyMS
+			health.LastCheckedAt = state.LastProbeAt
+			runs, err := s.probeRepo.ListRecentTargetRuns(ctx, []int64{target.ID}, state.ObserveSince, targetHealthTimelineResultLimit)
+			if err != nil {
+				return nil, err
+			}
+			health.Buckets = buildTargetProbeSamples(runs, state.Policy.TimeoutMS)
+		}
+		trafficSince := now.Add(-time.Hour)
+		if target.RouteChangedAt != nil && target.RouteChangedAt.After(trafficSince) {
+			trafficSince = *target.RouteChangedAt
+		}
+		if traffic, trafficErr := s.probeRepo.TargetTrafficStats(ctx, target.AccountID, trafficSince); trafficErr == nil && traffic != nil {
+			if traffic.RequestCount > 0 && traffic.AverageDurationMS > 0 {
+				averageDuration := traffic.AverageDurationMS
+				health.AverageDurationMS = &averageDuration
+			}
+			health.CacheHitRateAvailable = traffic.CacheHitRateAvailable
+			if traffic.CacheHitRateAvailable {
+				cacheHitRate := traffic.CacheHitRate
+				health.CacheHitRate = &cacheHitRate
+			}
+		}
+
 		out = append(out, health)
 	}
 	return out, nil

@@ -322,6 +322,10 @@ type SystemSettings struct {
 
 	// 允许终端用户在用量页查看自己的失败请求
 	AllowUserViewErrorRequests bool
+
+	TokenParkRewardEnabled      bool
+	TokenParkMinBalanceUSD      float64
+	TokenParkGameRewardsUSD     map[string]float64
 }
 
 type DefaultSubscriptionSetting struct {
@@ -609,10 +613,10 @@ type OpenAIAPIKeyHealthBreakerSettings struct {
 
 func DefaultOpenAIAPIKeyHealthBreakerSettings() *OpenAIAPIKeyHealthBreakerSettings {
 	return &OpenAIAPIKeyHealthBreakerSettings{
-		Enabled:          false,
+		Enabled:          true,
 		WindowMinutes:    2,
-		FailureThreshold: 10,
-		CooldownMinutes:  5,
+		FailureThreshold: 3,
+		CooldownMinutes:  1,
 	}
 }
 

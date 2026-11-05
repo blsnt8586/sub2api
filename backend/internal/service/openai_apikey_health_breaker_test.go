@@ -81,6 +81,7 @@ func TestClassifyOpenAIAPIKeyHealthFailureExclusions(t *testing.T) {
 		{name: "dedicated same account retry", err: &UpstreamFailoverError{StatusCode: http.StatusTooManyRequests, RetryableOnSameAccount: true}},
 		{name: "credential disable path", err: &UpstreamFailoverError{StatusCode: http.StatusUnauthorized, Stage: GatewayFailureStageAccountAuth, Scope: GatewayFailureScopeAccount}},
 		{name: "client request", err: &UpstreamFailoverError{StatusCode: http.StatusBadRequest}},
+		{name: "retryable account 502 still counts", err: &UpstreamFailoverError{StatusCode: http.StatusBadGateway, RetryableOnSameAccount: true}, eligible: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -90,13 +91,29 @@ func TestClassifyOpenAIAPIKeyHealthFailureExclusions(t *testing.T) {
 	}
 }
 
-func TestOpenAIAPIKeyHealthBreakerDefaultDisabled(t *testing.T) {
+func TestOpenAIAPIKeyHealthBreakerDefaultEnabled(t *testing.T) {
 	settings := NewSettingService(&openAIAPIKeyHealthSettingRepo{}, &config.Config{})
-	cache := &openAIAPIKeyHealthCacheStub{tripped: true}
+	cache := &openAIAPIKeyHealthCacheStub{}
 	svc := NewRateLimitService(&openAIAPIKeyHealthAccountRepo{}, nil, &config.Config{}, nil, cache)
 	svc.SetSettingService(settings)
 	svc.SetOpenAIAPIKeyHealthCache(cache)
 
+	require.False(t, svc.ObserveOpenAIAPIKeyHealthFailure(context.Background(), openAIHealthPoolAccount(), &UpstreamFailoverError{StatusCode: http.StatusBadGateway}))
+	require.Equal(t, 1, cache.recordCalls)
+	defaults, err := settings.GetOpenAIAPIKeyHealthBreakerSettings(context.Background())
+	require.NoError(t, err)
+	require.True(t, defaults.Enabled)
+	require.Equal(t, 3, defaults.FailureThreshold)
+	require.Equal(t, 2, defaults.WindowMinutes)
+	require.Equal(t, 1, defaults.CooldownMinutes)
+}
+
+func TestOpenAIAPIKeyHealthBreakerExplicitDisableIsPreserved(t *testing.T) {
+	settings := NewSettingService(&openAIAPIKeyHealthSettingRepo{value: `{"enabled":false}`}, &config.Config{})
+	cache := &openAIAPIKeyHealthCacheStub{tripped: true}
+	svc := NewRateLimitService(&openAIAPIKeyHealthAccountRepo{}, nil, &config.Config{}, nil, cache)
+	svc.SetSettingService(settings)
+	svc.SetOpenAIAPIKeyHealthCache(cache)
 	require.False(t, svc.ObserveOpenAIAPIKeyHealthFailure(context.Background(), openAIHealthPoolAccount(), &UpstreamFailoverError{StatusCode: http.StatusBadGateway}))
 	require.Zero(t, cache.recordCalls)
 }

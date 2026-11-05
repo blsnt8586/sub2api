@@ -27,28 +27,6 @@
           </div>
       </div>
 
-      <div
-        v-if="!loading && providers.length"
-        class="grid grid-cols-3 gap-2 rounded-lg border border-gray-200 bg-white p-2 shadow-sm dark:border-dark-700 dark:bg-dark-800 sm:grid-cols-6"
-        :aria-label="t('admin.sub2apiProviders.health.summaryTitle')"
-        role="group"
-      >
-        <button
-          v-for="item in providerHealthSummaryItems"
-          :key="item.value"
-          type="button"
-          class="flex min-h-12 cursor-pointer items-center gap-2 rounded-md px-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
-          :class="healthFilter === item.value ? item.activeClass : 'hover:bg-gray-50 dark:hover:bg-dark-700/60'"
-          @click="healthFilter = item.value"
-        >
-          <span class="h-2 w-2 flex-shrink-0 rounded-full" :class="item.dotClass"></span>
-          <span class="min-w-0">
-            <span class="block truncate text-[10px] text-gray-500 dark:text-dark-400">{{ item.label }}</span>
-            <span class="block text-base font-semibold tabular-nums" :class="item.textClass">{{ item.count }}</span>
-          </span>
-        </button>
-      </div>
-
       <!-- 上游面板 -->
       <div v-if="loading" class="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4" aria-busy="true" :aria-label="t('common.loading')">
         <div
@@ -85,13 +63,6 @@
         />
       </div>
 
-      <div v-else-if="providers.length > 0" class="rounded-lg border border-dashed border-gray-200 bg-white py-10 text-center dark:border-dark-700 dark:bg-dark-800">
-        <p class="text-sm font-medium text-gray-700 dark:text-dark-200">{{ t('admin.sub2apiProviders.health.noFilterResults') }}</p>
-        <button type="button" class="mt-2 cursor-pointer text-xs font-medium text-primary-600 hover:underline dark:text-primary-400" @click="healthFilter = 'all'">
-          {{ t('admin.sub2apiProviders.health.clearHealthFilter') }}
-        </button>
-      </div>
-
       <div v-else class="rounded-lg border border-dashed border-gray-200 bg-white py-8 dark:border-dark-700 dark:bg-dark-800">
         <EmptyState
           :title="t('admin.sub2apiProviders.noProviders')"
@@ -112,194 +83,20 @@
       />
     </div>
 
-    <BaseDialog
+    <Sub2APIProviderRemoteDetails
       :show="showRemoteOverviewDialog"
-      :title="`${remoteOverviewProvider?.name || ''} · ${t('admin.sub2apiProviders.remoteOverview.dialogTitle')}`"
-      width="wide"
+      :provider-id="remoteOverviewProvider?.id ?? null"
+      :provider-name="remoteOverviewProvider?.name ?? ''"
+      :overview="remoteDialogOverview"
+      :local-loading="!!(remoteOverviewProvider && providerLocalOverviewLoading[remoteOverviewProvider.id])"
+      :remote-loading="!!(remoteOverviewProvider && providerRemoteOverviewLoading[remoteOverviewProvider.id])"
+      :upstream-enabled="remoteOverviewProvider?.status === 'active'"
+      :local-error="remoteOverviewProvider ? providerLocalOverviewErrors[remoteOverviewProvider.id] : null"
+      :remote-error="remoteDialogError"
       @close="showRemoteOverviewDialog = false"
-    >
-      <div class="min-h-52">
-        <div
-          v-if="remoteOverviewProvider && providerRemoteOverviewLoading[remoteOverviewProvider.id] && !remoteDialogHasSnapshot"
-          class="flex min-h-52 items-center justify-center gap-2 text-sm text-gray-500 dark:text-dark-300"
-          aria-live="polite"
-        >
-          <Icon name="refresh" size="md" class="animate-spin text-blue-500" />
-          {{ t('admin.sub2apiProviders.remoteOverview.loading') }}
-        </div>
-
-        <div
-          v-else-if="remoteDialogError && !remoteDialogHasSnapshot"
-          class="flex min-h-52 flex-col items-center justify-center rounded-md border border-red-200 bg-red-50 px-6 text-center dark:border-red-800 dark:bg-red-900/10"
-          role="alert"
-        >
-          <Icon name="exclamationCircle" size="lg" class="text-red-500" />
-          <p class="mt-3 text-sm font-semibold text-red-700 dark:text-red-300">{{ t('admin.sub2apiProviders.remoteOverview.loadFailed') }}</p>
-          <p class="mt-1 max-w-xl text-sm leading-6 text-red-600 dark:text-red-400">{{ remoteDialogError }}</p>
-          <button type="button" class="btn btn-secondary mt-4 min-h-11" @click="refreshRemoteOverview()">
-            <Icon name="refresh" size="sm" class="mr-1.5" />
-            {{ t('admin.sub2apiProviders.remoteOverview.retry') }}
-          </button>
-        </div>
-
-        <div v-else-if="remoteDialogHasSnapshot && remoteDialogOverview" class="space-y-4">
-          <div
-            v-if="remoteDialogError"
-            class="flex flex-col items-stretch gap-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800 sm:flex-row sm:items-start sm:justify-between dark:border-amber-800 dark:bg-amber-900/10 dark:text-amber-300"
-            role="status"
-          >
-            <span class="flex min-w-0 items-start gap-2">
-              <Icon name="exclamationTriangle" size="sm" class="mt-0.5 flex-shrink-0" />
-              <span class="min-w-0">
-                <strong class="block font-semibold">{{ t('admin.sub2apiProviders.remoteOverview.staleSnapshot') }}</strong>
-                <span class="mt-0.5 block break-words text-xs leading-5">{{ remoteDialogError }}</span>
-              </span>
-            </span>
-            <button type="button" class="btn btn-secondary min-h-11 flex-shrink-0 sm:self-start" @click="refreshRemoteOverview()">
-              <Icon name="refresh" size="sm" class="mr-1.5" />
-              {{ t('admin.sub2apiProviders.remoteOverview.retry') }}
-            </button>
-          </div>
-
-          <div
-            v-else-if="remoteOverviewProvider && providerRemoteOverviewLoading[remoteOverviewProvider.id]"
-            class="flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2.5 text-sm text-blue-700 dark:border-blue-800 dark:bg-blue-900/10 dark:text-blue-300"
-            aria-live="polite"
-          >
-            <Icon name="refresh" size="sm" class="animate-spin" />
-            {{ t('admin.sub2apiProviders.remoteOverview.refreshingWithSnapshot') }}
-          </div>
-          <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div class="rounded-md border border-gray-200 bg-gray-50 px-4 py-3 dark:border-dark-700 dark:bg-dark-900/30">
-              <span class="flex items-center gap-2 text-sm text-gray-600 dark:text-dark-300">
-                <Icon name="creditCard" size="sm" class="text-blue-500" />
-                {{ t('admin.sub2apiProviders.remoteOverview.balance') }}
-              </span>
-              <strong class="mt-1 block text-2xl font-semibold tabular-nums text-gray-900 dark:text-white">{{ formatRemoteNumber(remoteDialogOverview.balance) }}</strong>
-            </div>
-            <div class="rounded-md border border-gray-200 bg-gray-50 px-4 py-3 dark:border-dark-700 dark:bg-dark-900/30">
-              <span class="flex items-center gap-2 text-sm text-gray-600 dark:text-dark-300">
-                <Icon name="database" size="sm" class="text-indigo-500" />
-                {{ t('admin.sub2apiProviders.remoteOverview.visibleGroups') }}
-              </span>
-              <strong class="mt-1 block text-2xl font-semibold tabular-nums text-gray-900 dark:text-white">{{ remoteDialogOverview.groups.length }}</strong>
-            </div>
-            <div class="rounded-md border border-gray-200 bg-gray-50 px-4 py-3 dark:border-dark-700 dark:bg-dark-900/30">
-              <span class="flex items-center gap-2 text-sm text-gray-600 dark:text-dark-300">
-                <Icon name="chart" size="sm" class="text-amber-500" />
-                {{ t('admin.sub2apiProviders.remoteOverview.customRates') }}
-              </span>
-              <strong class="mt-1 block text-2xl font-semibold tabular-nums text-gray-900 dark:text-white">{{ remoteDialogCustomRateCount }}</strong>
-            </div>
-          </div>
-
-          <div v-if="remoteDialogOverview.profit" class="rounded-md border p-4" :class="remoteDialogOverview.profit.available ? 'border-emerald-200 bg-emerald-50/60 dark:border-emerald-900/60 dark:bg-emerald-900/10' : 'border-amber-200 bg-amber-50/40 dark:border-amber-900/60 dark:bg-amber-900/10'">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <h3 class="text-sm font-semibold text-emerald-900 dark:text-emerald-200">{{ t('admin.sub2apiProviders.remoteOverview.profitTitle') }}</h3>
-              <span class="text-xs text-emerald-700 dark:text-emerald-300">{{ t('admin.sub2apiProviders.remoteOverview.profitWindow') }}</span>
-            </div>
-            <div v-if="!remoteDialogOverview.profit.available" class="mt-3 rounded border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-900/10 dark:text-amber-300" :title="remoteDialogOverview.profit.error || undefined">
-              {{ t('admin.sub2apiProviders.remoteOverview.profitUnavailable') }}
-            </div>
-            <div v-if="remoteDialogOverview.profit.available" class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <div>
-                <span class="block text-xs text-emerald-700 dark:text-emerald-300">{{ t('admin.sub2apiProviders.remoteOverview.todayRevenue') }}</span>
-                <strong class="mt-1 block text-lg font-semibold tabular-nums text-emerald-900 dark:text-emerald-100">{{ formatMoney(remoteDialogOverview.profit.today_revenue) }}</strong>
-              </div>
-              <div>
-                <span class="block text-xs text-emerald-700 dark:text-emerald-300">{{ t('admin.sub2apiProviders.remoteOverview.todayRemoteCost') }}</span>
-                <strong class="mt-1 block text-lg font-semibold tabular-nums text-amber-800 dark:text-amber-200">{{ formatMoney(remoteDialogOverview.profit.today_remote_cost) }}</strong>
-              </div>
-              <div>
-                <span class="block text-xs text-emerald-700 dark:text-emerald-300">{{ t('admin.sub2apiProviders.remoteOverview.todayProfit') }}</span>
-                <strong class="mt-1 block text-lg font-semibold tabular-nums" :class="remoteDialogOverview.profit.today_gross_profit >= 0 ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-700 dark:text-red-300'">{{ formatMoney(remoteDialogOverview.profit.today_gross_profit) }}</strong>
-                <span class="text-xs text-emerald-700 dark:text-emerald-300">{{ formatPercent(remoteDialogOverview.profit.today_gross_margin) }}</span>
-              </div>
-              <div>
-                <span class="block text-xs text-emerald-700 dark:text-emerald-300">{{ t('admin.sub2apiProviders.remoteOverview.totalProfit') }}</span>
-                <strong class="mt-1 block text-lg font-semibold tabular-nums" :class="remoteDialogOverview.profit.total_gross_profit >= 0 ? 'text-teal-700 dark:text-teal-300' : 'text-red-700 dark:text-red-300'">{{ formatMoney(remoteDialogOverview.profit.total_gross_profit) }}</strong>
-                <span class="text-xs text-emerald-700 dark:text-emerald-300">{{ formatPercent(remoteDialogOverview.profit.total_gross_margin) }}</span>
-              </div>
-            </div>
-            <div v-if="remoteDialogOverview.profit.accounts.length" class="mt-4 overflow-x-auto rounded border border-emerald-200 dark:border-emerald-900/60">
-              <div class="grid min-w-[720px] grid-cols-[1.4fr_100px_110px_110px_100px] gap-3 border-b border-emerald-200 bg-white/70 px-3 py-2 text-xs font-medium text-emerald-800 dark:border-emerald-900/60 dark:bg-dark-800/50 dark:text-emerald-200">
-                <span>{{ t('admin.sub2apiProviders.remoteOverview.profitAccount') }}</span>
-                <span class="text-right">{{ t('admin.sub2apiProviders.remoteOverview.profitRevenue') }}</span>
-                <span class="text-right">{{ t('admin.sub2apiProviders.remoteOverview.profitCost') }}</span>
-                <span class="text-right">{{ t('admin.sub2apiProviders.remoteOverview.profitValue') }}</span>
-                <span class="text-right">{{ t('admin.sub2apiProviders.remoteOverview.profitMargin') }}</span>
-              </div>
-              <div v-for="account in remoteDialogOverview.profit.accounts" :key="account.account_id" class="grid min-w-[720px] grid-cols-[1.4fr_100px_110px_110px_100px] gap-3 border-b border-emerald-100 px-3 py-2.5 text-sm last:border-b-0 dark:border-emerald-900/40">
-                <span class="flex min-w-0 items-center gap-2 truncate text-gray-800 dark:text-dark-100" :title="account.error || undefined">
-                  <span class="truncate">{{ account.account_name }}</span>
-                  <span v-if="!account.remote_cost_available" class="flex-shrink-0 text-xs font-normal text-amber-700 dark:text-amber-300">{{ t('admin.sub2apiProviders.remoteOverview.accountCostUnavailable') }}</span>
-                </span>
-                <span class="text-right tabular-nums">{{ formatMoney(account.revenue) }}</span>
-                <span class="text-right tabular-nums">{{ account.remote_cost_available ? formatMoney(account.remote_cost) : '-' }}</span>
-                <span class="text-right font-semibold tabular-nums" :class="account.remote_cost_available ? (account.gross_profit >= 0 ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-700 dark:text-red-300') : 'text-gray-500 dark:text-dark-400'">{{ account.remote_cost_available ? formatMoney(account.gross_profit) : '-' }}</span>
-                <span class="text-right tabular-nums">{{ account.remote_cost_available ? formatPercent(account.gross_margin) : '-' }}</span>
-              </div>
-            </div>
-          </div>
-
-          <div
-            v-if="!remoteDialogOverview.rate_overrides_available"
-            class="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm leading-6 text-amber-800 dark:border-amber-800 dark:bg-amber-900/10 dark:text-amber-300"
-          >
-            <Icon name="exclamationTriangle" size="sm" class="mt-1 flex-shrink-0" />
-            {{ t('admin.sub2apiProviders.remoteOverview.rateFallback') }}
-          </div>
-
-          <div class="overflow-hidden rounded-md border border-gray-200 dark:border-dark-700">
-            <div class="flex items-center justify-between gap-3 border-b border-gray-200 bg-gray-50 px-4 py-2.5 dark:border-dark-700 dark:bg-dark-900/30">
-              <h3 class="text-sm font-semibold text-gray-800 dark:text-dark-100">{{ t('admin.sub2apiProviders.remoteOverview.groupRates') }}</h3>
-              <span class="text-xs tabular-nums text-gray-500 dark:text-dark-400">{{ formatDateTime(remoteDialogOverview.sampled_at) }}</span>
-            </div>
-            <div v-if="remoteDialogOverview.groups.length" class="max-h-[48vh] divide-y divide-gray-100 overflow-y-auto dark:divide-dark-700">
-              <div v-for="group in remoteDialogOverview.groups" :key="group.id" class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-3">
-                <div class="min-w-0">
-                  <div class="flex min-w-0 flex-wrap items-center gap-2">
-                    <span class="truncate text-sm font-medium text-gray-900 dark:text-white" :title="group.name">{{ group.name }}</span>
-                    <span v-if="group.platform" class="rounded border border-gray-200 px-1.5 py-0.5 text-xs text-gray-600 dark:border-dark-600 dark:text-dark-300">{{ group.platform }}</span>
-                    <span v-if="group.has_custom_rate" class="rounded bg-blue-50 px-1.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">{{ t('admin.sub2apiProviders.remoteOverview.customRate') }}</span>
-                  </div>
-                  <p v-if="group.description" class="mt-1 truncate text-xs text-gray-500 dark:text-dark-400" :title="group.description">{{ group.description }}</p>
-                </div>
-                <div class="text-right tabular-nums">
-                  <strong class="block text-sm text-gray-900 dark:text-white">×{{ formatRemoteMultiplier(group.effective_multiplier) }}</strong>
-                  <span v-if="group.has_custom_rate" class="mt-0.5 block text-xs text-gray-500 line-through dark:text-dark-400">×{{ formatRemoteMultiplier(group.default_multiplier) }}</span>
-                  <span v-else class="mt-0.5 block text-xs text-gray-500 dark:text-dark-400">{{ t('admin.sub2apiProviders.remoteOverview.defaultRate') }}</span>
-                </div>
-              </div>
-            </div>
-            <div v-else class="px-4 py-10 text-center text-sm text-gray-500 dark:text-dark-400">{{ t('admin.sub2apiProviders.remoteOverview.noGroups') }}</div>
-          </div>
-        </div>
-      </div>
-
-      <template #footer>
-        <div class="flex w-full flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <span v-if="remoteDialogHasSnapshot && remoteDialogOverview" class="min-w-0 text-xs leading-5 text-gray-500 dark:text-dark-400">
-            {{ t('admin.sub2apiProviders.remoteOverview.snapshotMeta', { source: remoteDialogSourceLabel, time: formatDateTime(remoteDialogOverview.sampled_at) }) }}
-            <span class="block sm:inline">{{ t('admin.sub2apiProviders.remoteOverview.cacheHint') }}</span>
-          </span>
-          <span v-else></span>
-          <div class="grid gap-2 sm:flex sm:flex-shrink-0 sm:items-center" :class="remoteDialogHasSnapshot ? 'grid-cols-2' : 'grid-cols-1'">
-            <button type="button" class="btn btn-secondary min-h-11 w-full whitespace-nowrap sm:w-auto" @click="showRemoteOverviewDialog = false">{{ t('common.close') }}</button>
-            <button
-              v-if="remoteDialogHasSnapshot"
-              type="button"
-              class="btn btn-primary min-h-11 w-full whitespace-nowrap sm:w-auto"
-              :disabled="!!(remoteOverviewProvider && providerRemoteOverviewLoading[remoteOverviewProvider.id])"
-              @click="refreshRemoteOverview()"
-            >
-              <Icon name="refresh" size="sm" class="mr-1.5" />
-              {{ t('admin.sub2apiProviders.remoteOverview.refresh') }}
-            </button>
-          </div>
-        </div>
-      </template>
-    </BaseDialog>
+      @refresh-local="refreshLocalOverview()"
+      @sync-upstream="refreshRemoteOverview()"
+    />
 
     <!-- ============================================================ -->
     <!-- 👁️ 绑定账户详情面板（新增）                                    -->
@@ -354,7 +151,7 @@
               <button
                 v-if="accountsPanelProvider && panelLinkedAccounts.length > 0"
                 @click="handleOptimizeAll(accountsPanelProvider)"
-                :disabled="optimizingAllId === accountsPanelProvider?.id"
+                :disabled="accountsPanelProvider?.provider_type === 'newapi' || optimizingAllId === accountsPanelProvider?.id"
                 class="btn btn-secondary min-h-11 min-w-0 px-2 text-xs"
               >
                 <Icon :name="optimizingAllId === accountsPanelProvider?.id ? 'refresh' : 'bolt'" size="sm" class="mr-1" :class="optimizingAllId === accountsPanelProvider?.id ? 'animate-spin' : ''" />
@@ -363,6 +160,7 @@
             </div>
           </div>
 
+          <p v-if="accountsPanelProvider?.provider_type === 'newapi'" class="mb-3 text-sm text-gray-500 dark:text-dark-400">{{ t('admin.sub2apiProviders.newapiCapabilities') }}</p>
           <div v-if="panelLinkedAccounts.length > 0">
             <div class="space-y-2 md:hidden">
               <article
@@ -414,7 +212,7 @@
                         step="0.1"
                         min="0"
                         :value="acc.sub2api_min_multiplier ?? ''"
-                        :disabled="savingSettingsId === acc.id"
+                        :disabled="accountsPanelProvider?.provider_type === 'newapi' || savingSettingsId === acc.id"
                         class="input mt-1 min-h-11"
                         @change="handleUpdateMinMultiplier(acc, ($event.target as HTMLInputElement).value)"
                       />
@@ -426,7 +224,7 @@
                         step="0.1"
                         min="0"
                         :value="acc.sub2api_max_multiplier ?? ''"
-                        :disabled="savingSettingsId === acc.id"
+                        :disabled="accountsPanelProvider?.provider_type === 'newapi' || savingSettingsId === acc.id"
                         class="input mt-1 min-h-11"
                         @change="handleUpdateMaxMultiplier(acc, ($event.target as HTMLInputElement).value)"
                       />
@@ -441,7 +239,7 @@
                         :search-placeholder="t('admin.sub2apiProviders.searchGroups')"
                         :selected-count-label="t('admin.sub2apiProviders.groupsSelectedSuffix')"
                         :clear-label="t('admin.sub2apiProviders.clearGroups')"
-                        :disabled="savingSettingsId === acc.id"
+                        :disabled="accountsPanelProvider?.provider_type === 'newapi' || savingSettingsId === acc.id"
                         class="mt-1 w-full"
                         @change="value => handleUpdateOptimizeGroup(acc, value)"
                       />
@@ -450,7 +248,7 @@
                       {{ t('admin.sub2apiProviders.testModel') }}
                       <select
                         :value="acc.sub2api_test_model ?? ''"
-                        :disabled="savingSettingsId === acc.id"
+                        :disabled="accountsPanelProvider?.provider_type === 'newapi' || savingSettingsId === acc.id"
                         class="input mt-1 min-h-11"
                         @focus="loadAccountModels(acc)"
                         @change="handleUpdateTestModel(acc, ($event.target as HTMLSelectElement).value)"
@@ -471,7 +269,7 @@
                       type="button"
                       class="relative inline-flex h-7 w-12 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:opacity-40"
                       :class="acc.sub2api_optimize_enabled ? 'bg-violet-600' : 'bg-gray-200 dark:bg-dark-600'"
-                      :disabled="savingSettingsId === acc.id"
+                      :disabled="accountsPanelProvider?.provider_type === 'newapi' || savingSettingsId === acc.id"
                       :aria-pressed="acc.sub2api_optimize_enabled"
                       :aria-label="acc.sub2api_optimize_enabled ? t('admin.sub2apiProviders.joinScheduleOn') : t('admin.sub2apiProviders.joinScheduleOff')"
                       @click="handleToggleParticipate(acc)"
@@ -487,7 +285,7 @@
                     <button
                       type="button"
                       class="btn btn-secondary min-h-11 min-w-0 px-1 text-[11px]"
-                      :disabled="optimizingAccountId === acc.id || !acc.sub2api_optimize_enabled"
+                      :disabled="accountsPanelProvider?.provider_type === 'newapi' || optimizingAccountId === acc.id || !acc.sub2api_optimize_enabled"
                       :title="acc.sub2api_optimize_enabled ? t('admin.sub2apiProviders.optimizeAccount') : t('admin.sub2apiProviders.optimizeNotEnabled')"
                       @click="handleOptimizeAccount(accountsPanelProvider!, acc)"
                     >
@@ -557,7 +355,7 @@
                 <button
                   type="button"
                   @click="handleToggleParticipate(acc)"
-                  :disabled="savingSettingsId === acc.id"
+                  :disabled="accountsPanelProvider?.provider_type === 'newapi' || savingSettingsId === acc.id"
                   class="relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none disabled:opacity-40"
                   :class="acc.sub2api_optimize_enabled ? 'bg-violet-600' : 'bg-gray-200 dark:bg-dark-600'"
                   :title="acc.sub2api_optimize_enabled ? t('admin.sub2apiProviders.joinScheduleOn') : t('admin.sub2apiProviders.joinScheduleOff')"
@@ -579,7 +377,7 @@
                   :value="acc.sub2api_max_multiplier ?? ''"
                   :placeholder="t('admin.sub2apiProviders.maxMultiplier')"
                   @change="handleUpdateMaxMultiplier(acc, ($event.target as HTMLInputElement).value)"
-                  :disabled="savingSettingsId === acc.id"
+                  :disabled="accountsPanelProvider?.provider_type === 'newapi' || savingSettingsId === acc.id"
                   :title="t('admin.sub2apiProviders.maxMultiplierHint')"
                   class="w-16 rounded border border-gray-200 bg-white px-1.5 py-1 text-center text-xs font-mono text-gray-700 focus:border-blue-400 focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 dark:border-dark-600 dark:bg-dark-700 dark:text-gray-300 dark:disabled:bg-dark-800 dark:disabled:text-dark-500"
                 />
@@ -593,7 +391,7 @@
                   :value="acc.sub2api_min_multiplier ?? ''"
                   :placeholder="t('admin.sub2apiProviders.minMultiplier')"
                   @change="handleUpdateMinMultiplier(acc, ($event.target as HTMLInputElement).value)"
-                  :disabled="savingSettingsId === acc.id"
+                  :disabled="accountsPanelProvider?.provider_type === 'newapi' || savingSettingsId === acc.id"
                   :title="t('admin.sub2apiProviders.minMultiplierHint')"
                   class="w-16 rounded border border-gray-200 bg-white px-1.5 py-1 text-center text-xs font-mono text-gray-700 focus:border-blue-400 focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 dark:border-dark-600 dark:bg-dark-700 dark:text-gray-300 dark:disabled:bg-dark-800 dark:disabled:text-dark-500"
                 />
@@ -608,7 +406,7 @@
                   :search-placeholder="t('admin.sub2apiProviders.searchGroups')"
                   :selected-count-label="t('admin.sub2apiProviders.groupsSelectedSuffix')"
                   :clear-label="t('admin.sub2apiProviders.clearGroups')"
-                  :disabled="savingSettingsId === acc.id"
+                  :disabled="accountsPanelProvider?.provider_type === 'newapi' || savingSettingsId === acc.id"
                   :aria-label="t('admin.sub2apiProviders.optimizeGroup')"
                   class="w-full"
                   @change="value => handleUpdateOptimizeGroup(acc, value)"
@@ -620,7 +418,7 @@
                   :value="acc.sub2api_test_model ?? ''"
                   @focus="loadAccountModels(acc)"
                   @change="handleUpdateTestModel(acc, ($event.target as HTMLSelectElement).value)"
-                  :disabled="savingSettingsId === acc.id"
+                  :disabled="accountsPanelProvider?.provider_type === 'newapi' || savingSettingsId === acc.id"
                   :title="acc.sub2api_test_model ?? t('admin.sub2apiProviders.defaultModel')"
                   class="w-full rounded border border-gray-200 bg-white px-1.5 py-1 text-xs text-gray-700 focus:border-blue-400 focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 dark:border-dark-600 dark:bg-dark-700 dark:text-gray-300 dark:disabled:bg-dark-800 dark:disabled:text-dark-500"
                 >
@@ -646,7 +444,7 @@
                 <!-- 立即优化 -->
                 <button
                   @click="handleOptimizeAccount(accountsPanelProvider!, acc)"
-                  :disabled="optimizingAccountId === acc.id || !acc.sub2api_optimize_enabled"
+                  :disabled="accountsPanelProvider?.provider_type === 'newapi' || optimizingAccountId === acc.id || !acc.sub2api_optimize_enabled"
                   class="rounded p-1.5 text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 disabled:opacity-40 transition-colors"
                   :title="acc.sub2api_optimize_enabled ? t('admin.sub2apiProviders.optimizeAccount') : t('admin.sub2apiProviders.optimizeNotEnabled')"
                 >
@@ -790,7 +588,7 @@
           <p class="input-hint">{{ t('admin.sub2apiProviders.form.remoteCostDivisorHint') }}</p>
         </div>
 
-        <!-- 上游平台仅创建时选择（当前仅 sub2api）；编辑时隐藏，避免切换上游类型导致接口逻辑与历史数据不匹配 -->
+        <!-- 上游平台仅创建时选择；编辑时隐藏，避免切换上游类型导致接口逻辑与历史数据不匹配 -->
         <div v-if="!isEditing">
           <label class="input-label">{{ t('admin.sub2apiProviders.form.providerType') }}</label>
           <div class="flex flex-wrap gap-3">
@@ -798,7 +596,7 @@
               v-for="opt in providerTypeOptions"
               :key="opt.value"
               type="button"
-              @click="form.provider_type = opt.value"
+              @click="selectProviderType(opt.value)"
               class="group relative flex items-center gap-3 overflow-hidden rounded-xl border px-4 py-3 text-left transition-all duration-200 focus:outline-none"
               :class="providerTypeCardClass(opt.color, form.provider_type === opt.value)"
             >
@@ -865,8 +663,9 @@
         </div>
 
         <div>
-          <label class="input-label">{{ t('admin.sub2apiProviders.form.email') }}</label>
-          <input v-model="form.email" type="email" autocomplete="username" class="input" :placeholder="t('admin.sub2apiProviders.form.emailPlaceholder')" required />
+          <label class="input-label">{{ providerIdentityLabel }}</label>
+          <input v-model="form.email" :type="form.provider_type === 'newapi' ? 'text' : 'email'" autocomplete="username" class="input" :placeholder="form.provider_type === 'newapi' ? providerIdentityLabel : t('admin.sub2apiProviders.form.emailPlaceholder')" maxlength="200" required />
+          <p v-if="form.provider_type === 'newapi'" class="input-hint">{{ t('admin.sub2apiProviders.form.newapiIdentityHint') }}</p>
           <p v-if="form.auth_method === 'token_pair'" class="input-hint">{{ t('admin.sub2apiProviders.form.emailTokenHint') }}</p>
         </div>
 
@@ -911,6 +710,19 @@
             <input v-model="form.refresh_token" type="password" autocomplete="off" spellcheck="false" class="input font-mono text-xs" :placeholder="tokenInputPlaceholder" :required="tokenPairRequired" />
           </div>
         </div>
+
+        <div v-if="form.auth_method === 'access_token'" class="space-y-3">
+          <Sub2APICredentialBundleImport
+            :key="credentialImportKey"
+            provider-type="newapi"
+            :expected-base-url="form.base_url"
+            @imported="handleCredentialBundleImported"
+          />
+          <label class="input-label">{{ t('admin.sub2apiProviders.form.authManagementToken') }}</label>
+          <input v-model="form.access_token" type="password" autocomplete="off" spellcheck="false" class="input font-mono text-xs" :placeholder="managementTokenRequired ? t('admin.sub2apiProviders.form.tokenRequiredPlaceholder') : t('admin.sub2apiProviders.form.keepSecretPlaceholder')" :required="managementTokenRequired" />
+          <p class="input-hint">{{ t('admin.sub2apiProviders.form.newapiTokenHint') }}</p>
+        </div>
+        <p v-if="form.provider_type === 'newapi'" class="input-hint">{{ t('admin.sub2apiProviders.newapiCapabilities') }}</p>
 
         <div v-if="isEditing">
           <label class="input-label">{{ t('admin.sub2apiProviders.form.status') }}</label>
@@ -1030,6 +842,20 @@
               <div><dt class="text-sm text-gray-500 dark:text-dark-400">Groups API</dt><dd class="mt-1 text-sm font-medium text-gray-700 dark:text-dark-200">{{ formatProbeStage(probeDialogHealth?.groups_latency_ms, probeDetailNumber('group_count')) }}</dd></div>
             </dl>
           </div>
+          <div class="mt-4 border-b border-gray-100 py-4 dark:border-dark-700">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <p class="text-sm font-semibold text-gray-700 dark:text-dark-200">{{ t('admin.sub2apiProviders.health.passiveTrafficTitle') }}</p>
+              <span class="text-xs font-medium" :class="probeStatusTextClass(probeDialogHealth?.passive_health_status)">{{ t(`admin.sub2apiProviders.health.passiveStatus.${probeDialogHealth?.passive_health_status || 'unknown'}`) }}</span>
+            </div>
+            <p v-if="!probeDialogHealth?.traffic_request_count" class="mt-2 text-sm text-gray-500 dark:text-dark-400">{{ t('admin.sub2apiProviders.health.passiveTrafficNoSamples') }}</p>
+            <dl v-else class="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-5">
+              <div><dt class="text-xs text-gray-500 dark:text-dark-400">{{ t('admin.sub2apiProviders.health.passiveTrafficRequests') }}</dt><dd class="mt-1 text-sm font-medium text-gray-700 dark:text-dark-200">{{ probeDialogHealth.traffic_request_count }}</dd></div>
+              <div><dt class="text-xs text-gray-500 dark:text-dark-400">{{ t('admin.sub2apiProviders.health.passiveTrafficFailures') }}</dt><dd class="mt-1 text-sm font-medium text-gray-700 dark:text-dark-200">{{ probeDialogHealth.traffic_failure_count ?? 0 }}</dd></div>
+              <div><dt class="text-xs text-gray-500 dark:text-dark-400">{{ t('admin.sub2apiProviders.health.passiveTrafficSuccessRate') }}</dt><dd class="mt-1 text-sm font-medium text-gray-700 dark:text-dark-200">{{ probeDialogHealth.traffic_success_rate == null ? '-' : `${probeDialogHealth.traffic_success_rate.toFixed(1)}%` }}</dd></div>
+              <div><dt class="text-xs text-gray-500 dark:text-dark-400">{{ t('admin.sub2apiProviders.health.passiveTrafficP95') }}</dt><dd class="mt-1 text-sm font-medium text-gray-700 dark:text-dark-200">{{ probeDialogHealth.traffic_p95_latency_ms == null ? '-' : `${probeDialogHealth.traffic_p95_latency_ms} ms` }}</dd></div>
+              <div v-if="probeDialogHealth.passive_cooldown_until"><dt class="text-xs text-gray-500 dark:text-dark-400">{{ t('admin.sub2apiProviders.health.passiveStatus.temporarily_unschedulable') }}</dt><dd class="mt-1 text-sm font-medium text-amber-700 dark:text-amber-300">{{ formatDateTime(probeDialogHealth.passive_cooldown_until) }}</dd></div>
+            </dl>
+          </div>
         </section>
 
         <section class="border-t border-gray-100 py-5 dark:border-dark-700">
@@ -1047,46 +873,18 @@
           </div>
         </section>
 
-        <section class="border-t border-gray-100 py-5 dark:border-dark-700">
-          <div class="mb-4">
-            <h3 class="text-base font-semibold text-gray-900 dark:text-white">{{ t('admin.sub2apiProviders.health.accountStatusSyncTitle') }}</h3>
-            <p class="mt-1 max-w-3xl text-sm leading-5 text-gray-500 dark:text-dark-400">{{ t('admin.sub2apiProviders.health.accountStatusSyncDescription') }}</p>
-          </div>
-          <div class="grid gap-4 md:max-w-3xl md:grid-cols-2">
-            <label class="flex min-h-11 items-center gap-3 md:col-span-2">
-              <input v-model="probeForm.account_status_sync_enabled" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
-              <span><span class="block text-sm font-semibold text-gray-800 dark:text-dark-100">{{ t('admin.sub2apiProviders.health.accountStatusSyncEnabled') }}</span><span class="mt-1 block text-sm leading-5 text-gray-500 dark:text-dark-400">{{ t('admin.sub2apiProviders.health.accountStatusSyncHint') }}</span></span>
-            </label>
-            <label class="text-sm font-medium text-gray-700 dark:text-dark-200">
-              <span>{{ t('admin.sub2apiProviders.health.accountStatusFailureThreshold') }}</span>
-              <span class="mt-1 block text-xs font-normal text-gray-500 dark:text-dark-400">{{ t('admin.sub2apiProviders.health.accountStatusFailureThresholdHint') }}</span>
-              <input v-model.number="probeForm.account_status_failure_threshold" type="number" min="1" max="20" :disabled="!probeForm.account_status_sync_enabled" class="input mt-2 min-h-11 disabled:cursor-not-allowed disabled:opacity-50" />
-            </label>
-            <label class="text-sm font-medium text-gray-700 dark:text-dark-200">
-              <span>{{ t('admin.sub2apiProviders.health.accountStatusRecoveryThreshold') }}</span>
-              <span class="mt-1 block text-xs font-normal text-gray-500 dark:text-dark-400">{{ t('admin.sub2apiProviders.health.accountStatusRecoveryThresholdHint') }}</span>
-              <input v-model.number="probeForm.account_status_recovery_threshold" type="number" min="1" max="20" :disabled="!probeForm.account_status_sync_enabled" class="input mt-2 min-h-11 disabled:cursor-not-allowed disabled:opacity-50" />
-            </label>
-          </div>
-        </section>
-
-        <Sub2APIProviderRouteMonitor
+        <Sub2APIProviderPassiveMonitor
           :routes="probeTargets"
+          :draft-policies="pendingHealthPolicies"
           :history-by-target="probeTargetHistory"
-          :running-target-id="runningProbeTargetID"
-          :dirty-target-ids="pendingProbeTargetIDs"
           :now-tick="relativeTimeTick"
-          @update="handleUpdateProbeTarget"
-          @run="handleRunProbeTarget"
+          @update-policy="(id, policy) => pendingHealthPolicies[id] = policy"
           @history="loadProbeTargetHistory"
         />
       </div>
       <template #footer>
         <div class="flex w-full items-center justify-between gap-3">
-          <span v-if="pendingProbeTargetIDs.length" class="text-xs font-medium text-amber-600 dark:text-amber-400">
-            {{ t('admin.sub2apiProviders.health.routes.unsavedCount', { count: pendingProbeTargetIDs.length }) }}
-          </span>
-          <span v-else></span>
+          <span></span>
           <div class="flex items-center gap-3">
             <button class="btn btn-secondary" @click="closeProbeDialog">{{ t('common.cancel') }}</button>
             <button class="btn btn-primary" :disabled="savingProbeConfig || loadingProbeDialog" @click="saveProbeConfig">
@@ -1192,13 +990,13 @@ import { getPersistedPageSize } from '@/composables/usePersistedPageSize'
 import { adminAPI } from '@/api/admin'
 import type {
   ProviderAccountProbeStatus,
+  ProviderAccountHealthPolicy,
   Sub2APIProvider,
   Sub2APIProviderHealth,
   Sub2APIProviderHealthOverview,
   Sub2APIProviderProbeConfig,
   Sub2APIProviderProbeTargetHealth,
   Sub2APIProviderRemoteOverview,
-  UpdateProviderProbeTargetRequest,
   OptimizeAllResult,
   OptimizeLogInfo,
   LinkedAccountInfo,
@@ -1223,8 +1021,9 @@ import Pagination from '@/components/common/Pagination.vue'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import Sub2APIProviderCard from '@/components/admin/Sub2APIProviderCard.vue'
+import Sub2APIProviderRemoteDetails from '@/components/admin/Sub2APIProviderRemoteDetails.vue'
 import Sub2APIProviderLogs from '@/components/admin/Sub2APIProviderLogs.vue'
-import Sub2APIProviderRouteMonitor from '@/components/admin/Sub2APIProviderRouteMonitor.vue'
+import Sub2APIProviderPassiveMonitor from '@/components/admin/Sub2APIProviderPassiveMonitor.vue'
 import Sub2APICredentialBundleImport from '@/components/admin/Sub2APICredentialBundleImport.vue'
 import Sub2APIProviderActionMenu from '@/components/admin/Sub2APIProviderActionMenu.vue'
 import AccountTestModal from '@/components/account/AccountTestModal.vue'
@@ -1267,6 +1066,8 @@ const providerHealth = reactive<Record<number, Sub2APIProviderHealth | null>>({}
 const providerHealthOverview = reactive<Record<number, Sub2APIProviderHealthOverview | null>>({})
 const providerRemoteOverviews = reactive<Record<number, Sub2APIProviderRemoteOverview | null>>({})
 const providerRemoteOverviewLoading = reactive<Record<number, boolean>>({})
+const providerLocalOverviewLoading = reactive<Record<number, boolean>>({})
+const providerLocalOverviewErrors = reactive<Record<number, string | null>>({})
 const providerRemoteOverviewErrors = reactive<Record<number, string | null>>({})
 const showRemoteOverviewDialog = ref(false)
 const remoteOverviewProvider = ref<Sub2APIProvider | null>(null)
@@ -1274,40 +1075,26 @@ const loading = ref(false)
 const searchQuery = ref('')
 const filters = reactive({ status: '' })
 type ProviderHealthFilter = 'all' | 'unhealthy' | 'degraded' | 'unknown' | 'healthy' | 'paused'
-const healthFilter = ref<ProviderHealthFilter>('all')
 const pagination = reactive({ page: 1, page_size: getPersistedPageSize(), total: 0, pages: 0 })
 
 const remoteDialogOverview = computed(() => remoteOverviewProvider.value
   ? providerRemoteOverviews[remoteOverviewProvider.value.id] ?? null
   : null)
-const remoteDialogHasSnapshot = computed(() => remoteDialogOverview.value?.available === true)
 const remoteDialogError = computed(() => {
   const providerID = remoteOverviewProvider.value?.id
   if (!providerID) return null
   return providerRemoteOverviewErrors[providerID] || remoteDialogOverview.value?.last_error || null
 })
-const remoteDialogSourceLabel = computed(() => remoteDialogOverview.value?.source === 'control_probe'
-  ? t('admin.sub2apiProviders.remoteOverview.sources.controlProbe')
-  : t('admin.sub2apiProviders.remoteOverview.sources.manual'))
-const remoteDialogCustomRateCount = computed(() => remoteDialogOverview.value?.groups.filter(group => group.has_custom_rate).length ?? 0)
-const formatMoney = (value: number | null | undefined) => {
-  if (value == null || !Number.isFinite(value)) return '-'
-  return `$${new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 }).format(value)}`
-}
-const formatPercent = (value: number | null | undefined) => {
-  if (value == null || !Number.isFinite(value)) return '-'
-  return `${(value * 100).toFixed(1)}%`
-}
-const formatRemoteNumber = (value: number) => new Intl.NumberFormat(undefined, {
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 2,
-}).format(value)
 const formatRemoteMultiplier = (value: number) => Number.isInteger(value)
   ? value.toFixed(0)
   : String(Number(value.toFixed(4)))
 
 const refreshRemoteOverview = async (provider = remoteOverviewProvider.value) => {
   if (!provider || providerRemoteOverviewLoading[provider.id]) return
+  if (provider.status !== 'active') {
+    await loadCachedRemoteOverviews([provider.id])
+    return
+  }
   providerRemoteOverviewLoading[provider.id] = true
   providerRemoteOverviewErrors[provider.id] = null
   try {
@@ -1323,12 +1110,25 @@ const refreshRemoteOverview = async (provider = remoteOverviewProvider.value) =>
   }
 }
 
+// Local profit refresh must never call the live upstream asset endpoint.
+const refreshLocalOverview = async (provider = remoteOverviewProvider.value) => {
+  if (!provider || providerLocalOverviewLoading[provider.id]) return
+  providerLocalOverviewLoading[provider.id] = true
+  providerLocalOverviewErrors[provider.id] = null
+  try {
+    const overviews = await adminAPI.sub2apiProviders.getCachedRemoteOverviews([provider.id])
+    overviews.forEach(mergeRemoteOverview)
+  } catch (error) {
+    providerLocalOverviewErrors[provider.id] = extractErrorMessage(error, t('admin.sub2apiProviders.remoteOverview.localRefreshFailed'))
+  } finally {
+    providerLocalOverviewLoading[provider.id] = false
+  }
+}
+
 const openRemoteOverview = (provider: Sub2APIProvider) => {
   remoteOverviewProvider.value = provider
   showRemoteOverviewDialog.value = true
-  if (providerRemoteOverviews[provider.id]?.available !== true) {
-    void refreshRemoteOverview(provider)
-  }
+  void refreshLocalOverview(provider)
 }
 
 const providerOperationalStatus = (provider: Sub2APIProvider): Exclude<ProviderHealthFilter, 'all'> => {
@@ -1336,19 +1136,6 @@ const providerOperationalStatus = (provider: Sub2APIProvider): Exclude<ProviderH
   return providerHealthOverview[provider.id]?.availability_status ?? 'unknown'
 }
 
-const providerHealthSummaryItems = computed(() => {
-  const count = (status?: Exclude<ProviderHealthFilter, 'all'>) => status
-    ? providers.value.filter(provider => providerOperationalStatus(provider) === status).length
-    : providers.value.length
-  return [
-    { value: 'all' as const, label: t('admin.sub2apiProviders.health.summary.all'), count: count(), dotClass: 'bg-blue-500', textClass: 'text-gray-900 dark:text-white', activeClass: 'bg-blue-50 ring-1 ring-blue-200 dark:bg-blue-900/20 dark:ring-blue-800' },
-    { value: 'unhealthy' as const, label: t('admin.sub2apiProviders.health.summary.unhealthy'), count: count('unhealthy'), dotClass: 'bg-red-500', textClass: 'text-red-600 dark:text-red-400', activeClass: 'bg-red-50 ring-1 ring-red-200 dark:bg-red-900/20 dark:ring-red-800' },
-    { value: 'degraded' as const, label: t('admin.sub2apiProviders.health.summary.degraded'), count: count('degraded'), dotClass: 'bg-amber-400', textClass: 'text-amber-600 dark:text-amber-400', activeClass: 'bg-amber-50 ring-1 ring-amber-200 dark:bg-amber-900/20 dark:ring-amber-800' },
-    { value: 'unknown' as const, label: t('admin.sub2apiProviders.health.summary.unknown'), count: count('unknown'), dotClass: 'bg-gray-300 dark:bg-dark-500', textClass: 'text-gray-600 dark:text-dark-300', activeClass: 'bg-gray-100 ring-1 ring-gray-200 dark:bg-dark-700 dark:ring-dark-600' },
-    { value: 'healthy' as const, label: t('admin.sub2apiProviders.health.summary.healthy'), count: count('healthy'), dotClass: 'bg-green-500', textClass: 'text-green-600 dark:text-green-400', activeClass: 'bg-green-50 ring-1 ring-green-200 dark:bg-green-900/20 dark:ring-green-800' },
-    { value: 'paused' as const, label: t('admin.sub2apiProviders.health.summary.paused'), count: count('paused'), dotClass: 'bg-slate-400', textClass: 'text-gray-600 dark:text-dark-300', activeClass: 'bg-gray-100 ring-1 ring-gray-200 dark:bg-dark-700 dark:ring-dark-600' },
-  ]
-})
 
 const providerHealthSeverity: Record<Exclude<ProviderHealthFilter, 'all'>, number> = {
   unhealthy: 5,
@@ -1359,7 +1146,6 @@ const providerHealthSeverity: Record<Exclude<ProviderHealthFilter, 'all'>, numbe
 }
 
 const displayedProviders = computed(() => providers.value
-  .filter(provider => healthFilter.value === 'all' || providerOperationalStatus(provider) === healthFilter.value)
   .slice()
   .sort((a, b) => providerHealthSeverity[providerOperationalStatus(b)] - providerHealthSeverity[providerOperationalStatus(a)] || a.name.localeCompare(b.name)))
 
@@ -1395,10 +1181,11 @@ const loadProviderProxies = async () => {
   }
 }
 
-// 上游平台（provider_type）：当前仅支持 sub2api，后续扩展其他上游协议时在此追加选项。
+// 上游平台（provider_type）决定控制面协议，和账号的模型协议平台独立。
 // color 用于单选按钮组的选中态配色，新增平台时给一个区分色即可。
 const providerTypeOptions = [
   { value: 'sub2api', label: 'Sub2API', color: 'blue' },
+  { value: 'newapi', label: 'New API', color: 'green' },
 ]
 
 // 卡片选择器配色（Tailwind 需静态字面量，故用查表而非拼接）。
@@ -1533,10 +1320,7 @@ const loadHealthOverviews = async (providerIds: number[], showError = true, pres
       }
       if (overview && showProbeDialog.value && probeProvider.value?.id === providerId) {
         probeDialogHealth.value = overview.latest ?? probeDialogHealth.value
-        probeTargets.value = overview.routes.map(target => ({
-          ...target,
-          ...(pendingProbeTargetUpdates[target.id] ?? {}),
-        }))
+        probeTargets.value = overview.routes
       }
     }
   } catch {
@@ -1624,7 +1408,7 @@ const showEditDialog = ref(false)
 const isEditing = ref(false)
 const editingId = ref<number | null>(null)
 const saving = ref(false)
-type ProviderAuthMode = 'password' | 'token_pair'
+type ProviderAuthMode = 'password' | 'token_pair' | 'access_token'
 const form = reactive({
   name: '', base_url: '', provider_type: 'sub2api', email: '', password: '',
   auth_method: 'token_pair' as ProviderAuthMode, auth_mode: 'token_pair' as ProviderAuthMode, access_token: '', refresh_token: '',
@@ -1633,21 +1417,44 @@ const form = reactive({
 const originalProxyID = ref<number | null>(null)
 const originalAuthMode = ref<ProviderAuthMode>('token_pair')
 const editingTokenStatus = reactive({ hasAccess: false, hasRefresh: false })
-const authModeOptions = computed(() => [
+const authModeOptions = computed(() => form.provider_type === 'newapi' ? [
+  { value: 'access_token' as const, icon: 'key' as const, label: t('admin.sub2apiProviders.form.authManagementToken'), description: t('admin.sub2apiProviders.form.authManagementTokenDesc'), recommended: true },
+  { value: 'password' as const, icon: 'lock' as const, label: t('admin.sub2apiProviders.form.newapiUsernamePassword'), description: t('admin.sub2apiProviders.form.newapiPasswordDesc'), recommended: false },
+] : [
   { value: 'token_pair' as const, icon: 'key' as const, label: t('admin.sub2apiProviders.form.authTokenPair'), description: t('admin.sub2apiProviders.form.authTokenPairDesc'), recommended: true },
   { value: 'password' as const, icon: 'lock' as const, label: t('admin.sub2apiProviders.form.authPassword'), description: t('admin.sub2apiProviders.form.authPasswordDesc'), recommended: false },
 ])
 const tokenPairRequired = computed(() => !isEditing.value || originalAuthMode.value !== 'token_pair' || !editingTokenStatus.hasAccess || !editingTokenStatus.hasRefresh)
 const tokenInputPlaceholder = computed(() => tokenPairRequired.value ? t('admin.sub2apiProviders.form.tokenRequiredPlaceholder') : t('admin.sub2apiProviders.form.keepSecretPlaceholder'))
+const managementTokenRequired = computed(() => !isEditing.value || originalAuthMode.value !== 'access_token' || !editingTokenStatus.hasAccess)
+const providerIdentityLabel = computed(() => form.provider_type === 'newapi' ? t(`admin.sub2apiProviders.form.${form.auth_mode === 'access_token' ? 'newapiUserID' : 'newapiUsername'}`) : t('admin.sub2apiProviders.form.email'))
 const credentialImportKey = ref(0)
+
+const selectProviderType = (providerType: string) => {
+  if (form.provider_type === providerType) return
+  credentialImportKey.value += 1
+  form.provider_type = providerType
+  form.email = ''; form.password = ''; form.access_token = ''; form.refresh_token = ''
+  form.auth_method = form.auth_mode = providerType === 'newapi' ? 'access_token' : 'token_pair'
+}
 
 const selectAuthMethod = (method: ProviderAuthMode) => {
   if (form.auth_method === method) return
+  if (form.provider_type === 'newapi') form.email = ''
+  form.password = ''; form.access_token = ''; form.refresh_token = ''
   form.auth_method = method
   form.auth_mode = method
 }
 
 const handleCredentialBundleImported = (bundle: Sub2APICredentialBundle) => {
+  if (bundle.providerType === 'newapi') {
+    form.auth_method = form.auth_mode = 'access_token'
+    form.password = ''; form.refresh_token = ''
+    form.access_token = bundle.accessToken
+    form.email = bundle.userID || ''
+    if (!form.base_url.trim()) form.base_url = bundle.sourceOrigin
+    return
+  }
   form.auth_method = 'token_pair'
   form.auth_mode = 'token_pair'
   form.password = ''
@@ -1690,7 +1497,7 @@ const handleSave = async () => {
       const payload: Record<string,unknown> = { name:form.name, base_url:form.base_url, email:form.email, auth_mode:form.auth_mode, status:form.status, notes:normalizedNotes, remote_cost_divisor:form.remote_cost_divisor }
 	  if (form.proxy_id !== originalProxyID.value) payload.proxy_id = form.proxy_id
       if (form.auth_mode === 'password' && form.password) payload.password = form.password
-      if (form.auth_mode === 'token_pair' && form.access_token) payload.access_token = form.access_token
+      if (form.auth_mode !== 'password' && form.access_token) payload.access_token = form.access_token
       if (form.auth_mode === 'token_pair' && form.refresh_token) payload.refresh_token = form.refresh_token
       const updated = await adminAPI.sub2apiProviders.update(editingId.value, payload as any)
       // 局部替换该行，不刷整列表
@@ -1704,7 +1511,7 @@ const handleSave = async () => {
         name:form.name, base_url:form.base_url, provider_type:form.provider_type,
         email:form.email, auth_mode:form.auth_mode,
 	    proxy_id:form.proxy_id,
-        ...(form.auth_mode === 'password' ? { password:form.password } : { access_token:form.access_token, refresh_token:form.refresh_token }),
+        ...(form.auth_mode === 'password' ? { password:form.password } : { access_token:form.access_token, ...(form.auth_mode === 'token_pair' ? { refresh_token:form.refresh_token } : {}) }),
         notes:form.notes||null, remote_cost_divisor:form.remote_cost_divisor
       })
       appStore.showSuccess(t('admin.sub2apiProviders.createSuccess'))
@@ -1854,18 +1661,14 @@ const loadingProbeDialog = ref(false)
 const savingProbeConfig = ref(false)
 const probeProvider = ref<Sub2APIProvider | null>(null)
 const probeDialogHealth = ref<Sub2APIProviderHealth | null>(null)
+const pendingHealthPolicies = reactive<Record<number, ProviderAccountHealthPolicy>>({})
 const probeTargets = ref<Sub2APIProviderProbeTargetHealth[]>([])
 const probeTargetHistory = reactive<Record<number, Sub2APIProviderProbeTargetHealth[]>>({})
-const pendingProbeTargetUpdates = reactive<Record<number, UpdateProviderProbeTargetRequest>>({})
-const runningProbeTargetID = ref<number | null>(null)
 const probeForm = reactive({
   control_enabled: true,
   control_interval_seconds: 1800,
   timeout_seconds: 15,
   degraded_latency_ms: 2000,
-  account_status_sync_enabled: true,
-  account_status_failure_threshold: 3,
-  account_status_recovery_threshold: 2,
 })
 
 const applyProbeConfig = (config: Sub2APIProviderProbeConfig) => {
@@ -1874,9 +1677,6 @@ const applyProbeConfig = (config: Sub2APIProviderProbeConfig) => {
     control_interval_seconds: config.control_interval_seconds,
     timeout_seconds: config.timeout_seconds,
     degraded_latency_ms: config.degraded_latency_ms,
-    account_status_sync_enabled: config.account_status_sync_enabled,
-    account_status_failure_threshold: config.account_status_failure_threshold,
-    account_status_recovery_threshold: config.account_status_recovery_threshold,
   })
 }
 
@@ -1907,7 +1707,6 @@ const probeStatusDotClass = (status?: ProviderAccountProbeStatus | null) => ({
 }[status || 'unknown'])
 
 const enabledProbeTargetCount = computed(() => probeTargets.value.filter(target => target.enabled).length)
-const pendingProbeTargetIDs = computed(() => Object.keys(pendingProbeTargetUpdates).map(Number))
 
 const currentControlHasAnomaly = computed(() => {
   const health = probeDialogHealth.value
@@ -1916,26 +1715,23 @@ const currentControlHasAnomaly = computed(() => {
   return ['health_error', 'keys_error', 'groups_error'].some(key => typeof health.details?.[key] === 'string')
 })
 
-const clearPendingProbeTargets = () => {
-  for (const targetID of Object.keys(pendingProbeTargetUpdates)) delete pendingProbeTargetUpdates[Number(targetID)]
-}
 
 const closeProbeDialog = () => {
   showProbeDialog.value = false
   probeProvider.value = null
-  clearPendingProbeTargets()
+  for (const id of Object.keys(pendingHealthPolicies)) delete pendingHealthPolicies[Number(id)]
 }
 
 const openProbeDialog = async (row: Sub2APIProvider) => {
   probeProvider.value = row
   showProbeDialog.value = true
   loadingProbeDialog.value = true
-  clearPendingProbeTargets()
+  for (const id of Object.keys(pendingHealthPolicies)) delete pendingHealthPolicies[Number(id)]
   try {
     const [config, health, targets] = await Promise.all([
       adminAPI.sub2apiProviders.getProbeConfig(row.id),
       adminAPI.sub2apiProviders.getHealth(row.id),
-      adminAPI.sub2apiProviders.getProbeTargets(row.id, true),
+      adminAPI.sub2apiProviders.getProbeTargets(row.id),
     ])
     if (probeProvider.value?.id !== row.id) return
     applyProbeConfig(config)
@@ -1955,15 +1751,12 @@ const saveProbeConfig = async () => {
   savingProbeConfig.value = true
   try {
     const providerID = probeProvider.value.id
-    const [config, ...savedTargets] = await Promise.all([
+    const [config] = await Promise.all([
       adminAPI.sub2apiProviders.updateProbeConfig(providerID, { ...probeForm }),
-      ...Object.entries(pendingProbeTargetUpdates).map(([targetID, payload]) =>
-        adminAPI.sub2apiProviders.updateProbeTarget(providerID, Number(targetID), payload)
-      ),
+      ...Object.entries(pendingHealthPolicies).map(([id, policy]) => adminAPI.sub2apiProviders.updateAccountHealthPolicy(providerID, Number(id), policy)),
     ])
     applyProbeConfig(config)
-    for (const target of savedTargets) replaceProbeTarget(target)
-    clearPendingProbeTargets()
+    for (const id of Object.keys(pendingHealthPolicies)) delete pendingHealthPolicies[Number(id)]
     await loadHealthOverviews([providerID], false, true)
     appStore.showSuccess(t('admin.sub2apiProviders.health.settingsSaved'))
   } catch (e: any) {
@@ -1973,43 +1766,12 @@ const saveProbeConfig = async () => {
   }
 }
 
-const replaceProbeTarget = (target: Sub2APIProviderProbeTargetHealth) => {
-  const index = probeTargets.value.findIndex(item => item.id === target.id)
-  if (index === -1) probeTargets.value = [...probeTargets.value, target]
-  else probeTargets.value.splice(index, 1, target)
-}
-
-const handleUpdateProbeTarget = (targetID: number, payload: UpdateProviderProbeTargetRequest) => {
-  const target = probeTargets.value.find(item => item.id === targetID)
-  if (!target) return
-  replaceProbeTarget({ ...target, ...payload })
-  pendingProbeTargetUpdates[targetID] = { ...pendingProbeTargetUpdates[targetID], ...payload }
-}
-
 const loadProbeTargetHistory = async (targetID: number) => {
   if (!probeProvider.value) return
   try {
     probeTargetHistory[targetID] = await adminAPI.sub2apiProviders.getProbeTargetHistory(probeProvider.value.id, targetID, 100)
   } catch (e: any) {
     appStore.showError(extractErrorMessage(e, t('admin.sub2apiProviders.health.routes.historyLoadFailed')))
-  }
-}
-
-const handleRunProbeTarget = async (targetID: number) => {
-  if (!probeProvider.value || pendingProbeTargetUpdates[targetID]) return
-  runningProbeTargetID.value = targetID
-  try {
-    const target = await adminAPI.sub2apiProviders.runProbeTarget(probeProvider.value.id, targetID)
-    replaceProbeTarget(target)
-    await Promise.all([
-      loadProbeTargetHistory(targetID),
-      loadHealthOverviews([probeProvider.value.id], false, true),
-    ])
-    appStore.showSuccess(t('admin.sub2apiProviders.health.routes.runSuccess'))
-  } catch (e: any) {
-    appStore.showError(extractErrorMessage(e, t('admin.sub2apiProviders.health.routes.runFailed')))
-  } finally {
-    runningProbeTargetID.value = null
   }
 }
 
@@ -2336,9 +2098,8 @@ const openAccountsPanel = async (row: Sub2APIProvider) => {
   accountsPanelProbeTargets.value = []
   mobileExpandedAccountID.value = null
   showAccountsPanel.value = true
-  // 打开面板时实时同步上游当前分组
-  await refreshLinkedAccounts(row.id, true)
-  if (providerRemoteOverviews[row.id]?.available !== true) void refreshRemoteOverview(row)
+  // 打开面板只读取本地快照；远端同步由管理员显式触发。
+  await refreshLinkedAccounts(row.id)
 }
 
 const refreshLinkedAccounts = async (providerId: number, sync = false) => {

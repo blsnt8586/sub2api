@@ -4,70 +4,105 @@ package service
 
 import (
 	"context"
-	"encoding/json"
-	"math"
-	"net/http"
-	"net/http/httptest"
+	"errors"
 	"testing"
 	"time"
 
-	"github.com/Wei-Shaw/sub2api/internal/pkg/sub2api"
+	"github.com/stretchr/testify/require"
 )
 
 type providerProfitUsageRepoStub struct {
 	UsageLogRepository
-	values map[int64]ProviderAccountRevenue
+	values    map[int64]ProviderAccountLocalProfit
+	err       error
+	sampledAt time.Time
 }
 
-func (s providerProfitUsageRepoStub) GetProviderAccountRevenue(context.Context, []int64, time.Time, time.Time) (map[int64]ProviderAccountRevenue, error) {
-	return s.values, nil
+func (s *providerProfitUsageRepoStub) GetProviderAccountLocalProfit(_ context.Context, ids []int64, at time.Time) (map[int64]ProviderAccountLocalProfit, error) {
+	s.sampledAt = at
+	return s.values, s.err
 }
 
-func TestCollectProviderProfitSnapshotJoinsLocalRevenueAndRemoteAPIKeyCost(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/v1/usage/dashboard/api-keys-usage" {
-			t.Fatalf("path=%q", r.URL.Path)
-		}
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{"code": 0, "data": map[string]any{"stats": map[string]any{
-			"101": map[string]any{"today_actual_cost": 2.0, "total_actual_cost": 20.0},
-			"102": map[string]any{"today_actual_cost": 1.0, "total_actual_cost": 8.0},
-		}}})
-	}))
-	defer server.Close()
-
-	client := sub2api.NewClient(server.URL, "", "")
-	client.Token = "access"
-	accounts := []Account{
-		{ID: 1, Name: "alpha", ProviderAPIKeyID: profitPtrInt64(101)},
-		{ID: 2, Name: "beta", ProviderAPIKeyID: profitPtrInt64(102)},
-	}
-	reader := providerProfitUsageRepoStub{values: map[int64]ProviderAccountRevenue{
-		1: {AccountID: 1, TodayActualCost: 3, TotalActualCost: 30},
-		2: {AccountID: 2, TodayActualCost: 2, TotalActualCost: 10},
+func TestCollectProviderProfitSnapshotUsesLocalRequestsForEveryPeriod(t *testing.T) {
+	accounts := []Account{{ID: 1, Name: "beta"}, {ID: 2, Name: "alpha"}}
+	repo := &providerProfitUsageRepoStub{values: map[int64]ProviderAccountLocalProfit{
+		1: {AccountID: 1, CostAvailable: true, TodayRevenue: 4, TodayProfit: 3, MonthRevenue: 10, MonthProfit: 6, CumulativeRevenue: 50, CumulativeProfit: 30},
+		// A loss is preserved rather than clamped to zero.
+		2: {AccountID: 2, CostAvailable: true, TodayRevenue: 1, TodayProfit: -2, MonthRevenue: 5, MonthProfit: -1, CumulativeRevenue: 20, CumulativeProfit: 4},
 	}}
-	sampledAt := time.Date(2026, 8, 30, 4, 0, 0, 0, time.UTC)
-	summary := collectProviderProfitSnapshot(context.Background(), client, accounts, []sub2api.APIKey{{ID: 101}, {ID: 102}}, reader, 10, sampledAt)
-	if !summary.Available || summary.TotalRevenue != 40 || math.Abs(summary.TotalRemoteCost-2.8) > 1e-9 || math.Abs(summary.TotalGrossProfit-37.2) > 1e-9 {
-		t.Fatalf("summary=%+v", summary)
-	}
-	if summary.TodayRevenue != 5 || math.Abs(summary.TodayRemoteCost-0.3) > 1e-9 || math.Abs(summary.TodayGrossProfit-4.7) > 1e-9 {
-		t.Fatalf("today summary=%+v", summary)
-	}
-	if len(summary.Accounts) != 2 || summary.Accounts[0].AccountName != "alpha" || summary.Accounts[0].RemoteCost != 2 || summary.Accounts[1].GrossProfit != 9.2 {
-		t.Fatalf("accounts=%+v", summary.Accounts)
+	at := time.Date(2026, 11, 3, 12, 0, 0, 0, time.UTC)
+	got := collectProviderProfitSnapshot(context.Background(), accounts, repo, at)
+	require.True(t, got.Available)
+	require.True(t, got.MonthProfitAvailable)
+	require.True(t, got.CumulativeProfitAvailable)
+	require.Equal(t, "local_request_logs", got.CostSource)
+	require.Nil(t, got.RemoteError)
+	require.Equal(t, at, repo.sampledAt)
+	require.True(t, got.RangeStart.IsZero()) // No implicit 30-day cutoff.
+	require.Equal(t, 5.0, got.TodayRevenue)
+	require.Equal(t, 4.0, got.TodayEstimatedCost)
+	require.Equal(t, 1.0, got.TodayGrossProfit)
+	require.InDelta(t, 0.2, got.TodayGrossMargin, 1e-9)
+	require.Equal(t, 5.0, got.MonthGrossProfit)
+	require.InDelta(t, 1.0/3, got.MonthGrossMargin, 1e-9)
+	require.Equal(t, 34.0, got.CumulativeGrossProfit)
+	require.Equal(t, 70.0, got.TotalRevenue)
+	require.Equal(t, 36.0, got.TotalEstimatedCost)
+	require.Equal(t, got.CumulativeGrossProfit, got.TotalGrossProfit)
+	require.Equal(t, "alpha", got.Accounts[0].AccountName)
+	require.Equal(t, -2.0, got.Accounts[0].TodayGrossProfit)
+	require.False(t, got.Accounts[0].RemoteCostAvailable)
+}
+
+func TestCollectProviderProfitSnapshotDoesNotAssumeMissingMultiplier(t *testing.T) {
+	repo := &providerProfitUsageRepoStub{values: map[int64]ProviderAccountLocalProfit{
+		1: {AccountID: 1, CumulativeRevenue: 10, CostAvailable: false},
+	}}
+	got := collectProviderProfitSnapshot(context.Background(), []Account{{ID: 1}}, repo, time.Now())
+	require.False(t, got.Available)
+	require.False(t, got.MonthProfitAvailable)
+	require.False(t, got.CumulativeProfitAvailable)
+	require.NotNil(t, got.Error)
+	require.False(t, got.Accounts[0].EstimatedCostAvailable)
+	require.NotNil(t, got.Accounts[0].Error)
+}
+
+func TestCollectProviderProfitSnapshotRepositoryFailureIsUnavailable(t *testing.T) {
+	repo := &providerProfitUsageRepoStub{err: errors.New("database unavailable")}
+	got := collectProviderProfitSnapshot(context.Background(), []Account{{ID: 1}}, repo, time.Now())
+	require.False(t, got.Available)
+	require.Contains(t, *got.Error, "database unavailable")
+	require.Nil(t, got.RemoteError)
+}
+
+func TestCollectProviderProfitSnapshotZeroTrafficAndEmptyProvider(t *testing.T) {
+	repo := &providerProfitUsageRepoStub{values: map[int64]ProviderAccountLocalProfit{1: {AccountID: 1, CostAvailable: true}}}
+	for _, accounts := range [][]Account{nil, {{ID: 1}}} {
+		got := collectProviderProfitSnapshot(context.Background(), accounts, repo, time.Now())
+		require.True(t, got.Available)
+		require.True(t, got.MonthProfitAvailable)
+		require.True(t, got.CumulativeProfitAvailable)
+		require.Zero(t, got.CumulativeGrossProfit)
+		require.Zero(t, got.CumulativeGrossMargin)
 	}
 }
 
-func TestCollectProviderProfitSnapshotReportsMissingRemoteKeyWithoutFailingHealth(t *testing.T) {
-	client := sub2api.NewClient("http://127.0.0.1:1", "", "")
-	client.Token = "access"
-	accounts := []Account{{ID: 1, Name: "alpha", ProviderAPIKeyID: profitPtrInt64(999)}}
-	reader := providerProfitUsageRepoStub{values: map[int64]ProviderAccountRevenue{1: {AccountID: 1, TotalActualCost: 5}}}
-	summary := collectProviderProfitSnapshot(context.Background(), client, accounts, []sub2api.APIKey{{ID: 999}}, reader, 1, time.Now())
-	if summary.Available || summary.Error == nil || len(summary.Accounts) != 1 || summary.Accounts[0].Error == nil {
-		t.Fatalf("summary=%+v", summary)
-	}
+func TestCachedProviderProfitDoesNotDependOnRemoteAssets(t *testing.T) {
+	accounts := &controlBindingAccountRepoStub{accounts: []Account{{ID: 1, Name: "local"}}}
+	usage := &providerProfitUsageRepoStub{values: map[int64]ProviderAccountLocalProfit{
+		1: {AccountID: 1, CostAvailable: true, TodayRevenue: 2, TodayProfit: 1, CumulativeRevenue: 10, CumulativeProfit: 4},
+	}}
+	original := &Sub2APIProviderRemoteOverview{ProviderID: 7, Available: true, Balance: 123,
+		Profit: &Sub2APIProviderProfitSummary{TotalGrossProfit: 999, CostSource: "remote"}}
+	cache := &remoteOverviewCacheStub{items: map[int64]*Sub2APIProviderRemoteOverview{7: original}}
+	svc := &Sub2APIProviderService{accountRepo: accounts, usageRepo: usage, remoteOverviewCache: cache}
+	got, err := svc.GetCachedRemoteOverviews(context.Background(), []int64{7, 8})
+	require.NoError(t, err)
+	require.Len(t, got, 2)
+	require.Equal(t, 123.0, got[0].Balance)
+	require.True(t, got[0].Available)
+	require.Equal(t, 4.0, got[0].Profit.CumulativeGrossProfit)
+	require.False(t, got[1].Available)                        // Unknown wallet stays unknown.
+	require.True(t, got[1].Profit.Available)                  // Local profits still work.
+	require.Equal(t, 999.0, original.Profit.TotalGrossProfit) // No shared-cache mutation.
 }
-
-func profitPtrInt64(value int64) *int64 { return &value }

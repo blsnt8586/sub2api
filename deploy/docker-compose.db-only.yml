@@ -16,12 +16,10 @@ services:
     ports:
       - "5434:5432"  # 映射到5434避免与本地PostgreSQL冲突
     volumes:
-      # 必须挂父路径 /var/lib/postgresql（镜像的 VOLUME 声明就在这一级），
-      # 不能挂子路径 /var/lib/postgresql/data：那样 Docker 会为父路径另建匿名
-      # volume，而嵌套在其中的 bind 在 WSL2 挂起/恢复后会退化成 tmpfs，
-      # 把宿主数据整个遮蔽 —— 表现为「重启后 users 表为空、登录失败」，
-      # 且此后所有写入只进内存，容器一停就蒸发。PGDATA 因此放子目录 pgdata/。
-      - ./postgres_data:/var/lib/postgresql:Z
+      # Docker Desktop / WSL 的 bind mount 在恢复后可能指向 tmpfs，
+      # 使用具名卷持久化，避免旧目录仍在但容器读到空库。
+      # 原 ./postgres_data 目录保留用于恢复，不自动删除或覆盖。
+      - postgres_data:/var/lib/postgresql
     environment:
       - POSTGRES_USER=sub2api
       - POSTGRES_PASSWORD=sub2api_dev_password
@@ -60,3 +58,7 @@ services:
       timeout: 5s
       retries: 5
       start_period: 5s
+
+volumes:
+  postgres_data:
+    name: sub2api-dev-postgres-data

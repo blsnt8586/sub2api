@@ -133,7 +133,7 @@ func TestStaleProbeTargetIDsOnlyReturnsTargetsForMissingAccounts(t *testing.T) {
 	}
 }
 
-func TestDefaultProbeTargetCreateInputEnablesNewLinkedAccount(t *testing.T) {
+func TestDefaultProbeTargetCreateInputDisablesNewLinkedAccount(t *testing.T) {
 	providerID := int64(13)
 	keyID := int64(4443)
 	groupID := int64(15)
@@ -150,8 +150,8 @@ func TestDefaultProbeTargetCreateInputEnablesNewLinkedAccount(t *testing.T) {
 		RemoteGroupID: &groupID, RemoteGroupName: &groupName,
 	})
 
-	if !input.Enabled {
-		t.Fatal("new linked account probe must not inherit the retired disabled provider data-plane switch")
+	if input.Enabled {
+		t.Fatal("new linked account probe must be disabled by default to avoid billable requests")
 	}
 	if input.IntervalSeconds != 30 || input.TimeoutSeconds != 60 || input.DegradedLatencyMS != 5000 || input.CostOptimizeHealthyThreshold != 6 {
 		t.Fatalf("new target defaults=%d/%d/%d/%d, want 30/60/5000/6", input.IntervalSeconds, input.TimeoutSeconds, input.DegradedLatencyMS, input.CostOptimizeHealthyThreshold)
@@ -353,7 +353,7 @@ func TestEffectiveProbeTargetIntervalDoesNotDelayAccountRecovery(t *testing.T) {
 	}
 }
 
-func TestAdaptiveProbeTargetSchedulingReturnsToBaseAfterNonHealthyResult(t *testing.T) {
+func TestScheduledAccountProbeRemainsOffAfterNonHealthyResult(t *testing.T) {
 	now := time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC)
 	last := now.Add(-60 * time.Second)
 	target := &ent.Sub2APIProviderProbeTarget{
@@ -374,8 +374,8 @@ func TestAdaptiveProbeTargetSchedulingReturnsToBaseAfterNonHealthyResult(t *test
 	// Repository result persistence resets this field for degraded/unhealthy.
 	// The next scheduler scan must therefore use the 30-second base cadence.
 	target.ConsecutiveHealthy = 0
-	if !shouldRunProviderProbeTarget(target, true, true, now) {
-		t.Fatal("non-healthy route should immediately return to the base cadence")
+	if shouldRunProviderProbeTarget(target, true, true, now) {
+		t.Fatal("scheduled model probing must stay off even after failures")
 	}
 }
 
@@ -385,8 +385,8 @@ func TestProviderManualControlProbeNeverFansOutToAccountTargets(t *testing.T) {
 	if shouldRunProviderProbeTarget(target, false, false, now) {
 		t.Fatal("a Provider-level manual control check must not run an account target")
 	}
-	if !shouldRunProviderProbeTarget(target, true, true, now) {
-		t.Fatal("an enabled due target should still run from the scheduled account-target cycle")
+	if shouldRunProviderProbeTarget(target, true, true, now) {
+		t.Fatal("legacy enabled targets must never generate scheduled model traffic")
 	}
 	lastRun := now.Add(-30 * time.Second)
 	target.LastRunAt = &lastRun

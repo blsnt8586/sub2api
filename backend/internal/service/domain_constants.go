@@ -243,6 +243,11 @@ const (
 	SettingKeyLoginAgreementMode                  = "login_agreement_mode"             // 条款确认展示模式：modal / checkbox
 	SettingKeyLoginAgreementUpdatedAt             = "login_agreement_updated_at"       // 条款更新日期（展示用）
 	SettingKeyLoginAgreementDocuments             = "login_agreement_documents"        // 条款文档列表（JSON，Markdown 内容）
+	SettingKeyTokenParkRewardEnabled              = "token_park_reward_enabled"
+	SettingKeyTokenParkMinBalanceUSD              = "token_park_min_balance_usd"
+	// Deprecated: retained for reading old installations; new writes use SettingKeyTokenParkMinBalanceUSD.
+	SettingKeyTokenParkMinPaidRechargeCNY         = "token_park_min_paid_recharge_cny"
+	SettingKeyTokenParkGameRewardsUSD             = "token_park_game_rewards_usd"
 
 	// 邮件服务设置
 	SettingKeySMTPHost     = "smtp_host"      // SMTP服务器地址
@@ -585,7 +590,7 @@ const (
 	SettingKeyRateLimit429CooldownSettings = "rate_limit_429_cooldown_settings"
 	// SettingKeyOpenAIImagesOAuthUnavailableCooldownSettings stores the cooldown applied when the OAuth image tool is unavailable.
 	SettingKeyOpenAIImagesOAuthUnavailableCooldownSettings = "openai_images_oauth_unavailable_cooldown_settings"
-	// SettingKeyOpenAIAPIKeyHealthBreakerSettings stores the opt-in OpenAI pool API-key breaker config.
+	// SettingKeyOpenAIAPIKeyHealthBreakerSettings stores the OpenAI pool API-key breaker config.
 	SettingKeyOpenAIAPIKeyHealthBreakerSettings = "openai_apikey_health_breaker_settings"
 
 	// =========================

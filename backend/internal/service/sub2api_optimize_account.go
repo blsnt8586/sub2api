@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/internal/domain"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/sub2api"
 )
 
@@ -187,6 +188,12 @@ func (s *Sub2APIOptimizeScheduleService) optimizeAccountsWithProbePolicies(
 	probePolicies map[int64]probeOptimizePolicy,
 ) []OptimizeAccountDetail {
 	details := make([]OptimizeAccountDetail, 0, len(participating))
+	if provider.ProviderType == domain.ProviderTypeNewAPI {
+		for _, acc := range participating {
+			details = append(details, OptimizeAccountDetail{AccountID: acc.ID, AccountName: acc.Name, Status: "skipped", Reason: "New API automatic group switching is not supported"})
+		}
+		return details
+	}
 
 	// 登录一次（复用 token cache）
 	client, err := s.providerSvc.newAuthedClient(ctx, provider)

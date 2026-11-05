@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Sub2API 浏览器凭据导出助手
 // @namespace    https://github.com/Wei-Shaw/sub2api
-// @version      1.1.0
-// @description  经用户确认后，将当前 Sub2API 登录 Token 和当前域 Cookie 复制为可导入的 JSON 凭据包。
+// @version      1.2.0
+// @description  导出 Sub2API 登录凭据，或验证并导出 New API 管理令牌与用户 ID，生成平台可导入的 JSON 包。
 // @author       Sub2API
 // @match        http://*/*
 // @match        https://*/*
@@ -15,6 +15,8 @@
 // @grant        GM_setClipboard
 // ==/UserScript==
 
+/* global GM_addStyle, GM_cookie, GM_notification, GM_registerMenuCommand, GM_setClipboard */
+
 (function () {
   'use strict'
 
@@ -25,8 +27,12 @@
   const REQUIRED_STORAGE_KEYS = ['auth_token', 'refresh_token']
   let verificationStarted = false
   let verifiedSub2API = false
+  let detectedProvider = null
+  let lastDetectionAt = 0
+  let exporting = false
 
   GM_addStyle(`
+    #${PANEL_ID} [hidden] { display: none !important; }
     #${BUTTON_ID} {
       position: fixed;
       right: 20px;
@@ -217,7 +223,7 @@
 
   function notify(text, isError) {
     GM_notification({
-      title: isError ? 'Sub2API 凭据导出失败' : 'Sub2API 凭据导出助手',
+      title: isError ? '上游凭据导出失败' : 'Sub2API / New API 凭据导出助手',
       text,
       timeout: isError ? 6000 : 3500,
     })
@@ -265,6 +271,107 @@
       verificationStarted = false
     }
     return verifiedSub2API
+  }
+
+  async function detectProvider(force = false) {
+    if (!force && Date.now() - lastDetectionAt < 15000) return detectedProvider
+    lastDetectionAt = Date.now()
+    if (hasTokenPair() && await verifySub2API()) {
+      detectedProvider = 'sub2api'
+      return detectedProvider
+    }
+    try {
+      const response = await fetch('/api/status', { credentials: 'omit', redirect: 'error', headers: { Accept: 'application/json' } })
+      const payload = await response.json()
+      if (response.ok && payload?.success === true && Number(payload.data?.quota_per_unit) > 0) {
+        detectedProvider = 'newapi'
+        return detectedProvider
+      }
+    } catch { /* A non-New API site must not receive a credential prompt. */ }
+    detectedProvider = null
+    return null
+  }
+
+  function collectNewAPICredentials() {
+    document.getElementById(PANEL_ID)?.remove()
+    const overlay = document.createElement('div')
+    overlay.id = PANEL_ID
+    overlay.setAttribute('role', 'dialog')
+    overlay.setAttribute('aria-modal', 'true')
+    overlay.setAttribute('aria-label', 'New API 管理凭据')
+    overlay.innerHTML = `
+      <section class="sub2api-export-panel">
+        <header class="sub2api-export-header"><h2>导出 New API 凭据</h2><button type="button" class="sub2api-export-close" aria-label="关闭">&times;</button></header>
+        <form class="sub2api-export-body">
+          <p>填写 New API 个人设置中的管理访问令牌，以及所属用户的数字 ID。不是调用模型的 sk- 密钥。</p>
+          <label>用户 ID<input name="user_id" type="text" inputmode="numeric" pattern="[1-9][0-9]*" required style="display:block;width:100%;padding:8px;margin:6px 0 12px" /></label>
+          <label>管理访问令牌<input name="access_token" type="password" autocomplete="off" required style="display:block;width:100%;padding:8px;margin:6px 0 12px" /></label>
+          <p class="sub2api-export-warning">点击后仅向当前站点验证身份，不创建或修改令牌，不导出 Cookie。生成后请只导入你自己的上游管理页面。</p>
+          <div class="sub2api-copy-status" role="status" aria-live="polite"></div>
+          <div class="sub2api-export-actions"><button type="submit">验证并生成凭据包</button></div>
+        </form>
+      </section>`
+    const form = overlay.querySelector('form')
+    const idInput = form.elements.namedItem('user_id')
+    const tokenInput = form.elements.namedItem('access_token')
+    const status = overlay.querySelector('[role="status"]')
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || 'null')
+      if (Number.isSafeInteger(user?.id) && user.id > 0) idInput.value = String(user.id)
+    } catch { /* Legacy user data is only an optional identity hint. */ }
+    return new Promise(resolve => {
+      let closed = false
+      let pendingRequest = null
+      const close = () => {
+        closed = true
+        pendingRequest?.abort()
+        tokenInput.value = ''
+        overlay.remove()
+        resolve(null)
+      }
+      overlay.querySelector('.sub2api-export-close').addEventListener('click', close)
+      overlay.addEventListener('click', event => { if (event.target === overlay) close() })
+      overlay.addEventListener('keydown', event => { if (event.key === 'Escape') close() })
+      form.addEventListener('submit', async event => {
+        event.preventDefault()
+        if (pendingRequest || closed) return
+        const userID = idInput.value.trim()
+        const token = tokenInput.value.trim()
+        if (!/^[1-9]\d*$/.test(userID) || !Number.isSafeInteger(Number(userID)) || !token) {
+          status.textContent = '请填写有效的正整数用户 ID 和管理访问令牌。'
+          return
+        }
+        const submit = form.querySelector('[type="submit"]')
+        submit.disabled = true
+        status.textContent = '正在向当前站点验证管理令牌...'
+        pendingRequest = new AbortController()
+        const timeout = window.setTimeout(() => pendingRequest?.abort(), 15000)
+        try {
+          const response = await fetch('/api/user/self', {
+            method: 'GET', credentials: 'omit', redirect: 'error',
+            signal: pendingRequest.signal,
+            headers: { Accept: 'application/json', Authorization: `Bearer ${token}`, 'New-Api-User': userID },
+          })
+          const payload = await response.json()
+          if (closed) return
+          if (!response.ok || payload?.success !== true || String(payload.data?.id) !== userID) {
+            throw new Error('管理令牌验证失败或用户 ID 不匹配，请检查令牌权限和用户 ID。')
+          }
+          const credentials = { user_id: userID, access_token: token }
+          tokenInput.value = ''
+          overlay.remove()
+          resolve(credentials)
+        } catch {
+          if (!closed) status.textContent = '管理令牌验证失败或用户 ID 不匹配，请检查管理令牌、用户 ID、权限及网络后重试。'
+        } finally {
+          window.clearTimeout(timeout)
+          pendingRequest = null
+          submit.disabled = false
+        }
+      })
+      document.body.appendChild(overlay)
+      tokenInput.focus()
+    })
   }
 
   function documentCookieItems() {
@@ -378,7 +485,7 @@
     throw new Error('浏览器拒绝写入剪贴板，请展开完整 JSON 后手动复制。')
   }
 
-  function showExportPanel(bundleText, storage, cookieCapture) {
+  function showExportPanel(bundleText, storage, cookieCapture, providerType = 'sub2api') {
     document.getElementById(PANEL_ID)?.remove()
 
     const overlay = document.createElement('div')
@@ -426,7 +533,17 @@
     const toggleButton = overlay.querySelector('.sub2api-toggle-json')
     const copyButton = overlay.querySelector('.sub2api-copy-button')
 
-    subtitle.textContent = `${location.origin} · ${storage.auth_user?.email || '当前登录账号'}`
+    if (providerType === 'newapi') {
+      overlay.querySelector('h2').textContent = 'New API 凭据已生成'
+      const badges = overlay.querySelectorAll('.sub2api-token-status > div')
+      overlay.querySelector('.sub2api-token-status').style.gridTemplateColumns = 'repeat(2, minmax(0, 1fr))'
+      badges[0].textContent = '管理访问令牌已验证'
+      badges[1].textContent = `用户 ID: ${storage.user_id}`
+      cookieCount.hidden = true
+      overlay.querySelector('.sub2api-cookie-heading').hidden = true
+      cookieList.hidden = true
+    }
+    subtitle.textContent = providerType === 'newapi' ? location.origin : `${location.origin} · ${storage.auth_user?.email || '当前登录账号'}`
     cookieCount.textContent = `Cookie ${cookieCapture.items.length} 个`
     textarea.value = bundleText
 
@@ -493,6 +610,30 @@
   }
 
   async function exportCredentials(button) {
+    if (exporting) return
+    exporting = true
+    if (button) button.disabled = true
+    try {
+      await generateCredentials()
+    } catch {
+      notify('无法生成凭据包，请检查当前站点和网络后重试。', true)
+    } finally {
+      exporting = false
+      if (button) button.disabled = false
+    }
+  }
+
+  async function generateCredentials() {
+    const providerType = await detectProvider(true)
+    if (providerType === 'newapi') {
+      const credentials = await collectNewAPICredentials()
+      if (!credentials) return
+      const bundle = { format: 'newapi-browser-credentials', version: VERSION, provider_type: 'newapi',
+        source: { origin: location.origin, captured_at: new Date().toISOString() }, credentials }
+      showExportPanel(JSON.stringify(bundle, null, 2), credentials, { items: [] }, 'newapi')
+      return
+    }
+    if (providerType !== 'sub2api') { notify('未识别为已登录的 Sub2API 或 New API 站点。', true); return }
     const storage = readStorage()
     if (!storage.auth_token || !storage.refresh_token) {
       notify('没有检测到完整的 Access Token 和 Refresh Token，请先完成登录。', true)
@@ -503,7 +644,6 @@
     )
     if (!accepted) return
 
-    if (button) button.disabled = true
     try {
       const cookieCapture = await listCookies()
       const credentialBundle = {
@@ -526,24 +666,23 @@
       notify('凭据已生成。请在页面面板查看 Cookie 信息，并点击“复制完整凭据包”。')
     } catch (error) {
       notify(error instanceof Error ? error.message : '无法生成凭据包。', true)
-    } finally {
-      if (button) button.disabled = false
     }
   }
 
   async function mountButtonWhenReady() {
-    if (document.getElementById(BUTTON_ID) || !hasTokenPair()) return
-    if (!await verifySub2API()) return
+    if (document.getElementById(BUTTON_ID)) return
+    const providerType = await detectProvider()
+    if (!providerType || document.getElementById(BUTTON_ID)) return
     const button = document.createElement('button')
     button.id = BUTTON_ID
     button.type = 'button'
-    button.title = '导出当前 Sub2API 登录 Token 与可读取 Cookie'
-    button.innerHTML = '<span class="sub2api-exporter-dot" aria-hidden="true"></span><span>导出 Sub2API 凭据</span>'
+    button.title = providerType === 'newapi' ? '验证并导出 New API 管理访问令牌与用户 ID' : '导出当前 Sub2API 登录 Token 与可读取 Cookie'
+    button.innerHTML = `<span class="sub2api-exporter-dot" aria-hidden="true"></span><span>导出 ${providerType === 'newapi' ? 'New API' : 'Sub2API'} 凭据</span>`
     button.addEventListener('click', () => exportCredentials(button))
     document.body.appendChild(button)
   }
 
-  GM_registerMenuCommand('复制当前 Sub2API 登录凭据', () => exportCredentials(null))
+  GM_registerMenuCommand('导出 Sub2API / New API 凭据', () => exportCredentials(null))
   void mountButtonWhenReady()
   window.setInterval(() => { void mountButtonWhenReady() }, 1500)
 })()

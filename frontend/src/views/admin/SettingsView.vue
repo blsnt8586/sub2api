@@ -8439,6 +8439,37 @@
                   </div>
                 </div>
               </template>
+              <div class="mt-6 border-t border-gray-100 pt-5 dark:border-dark-700">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <h3 class="font-medium text-gray-900 dark:text-white">TOKEN 乐园</h3>
+                  <label class="inline-flex min-h-11 cursor-pointer items-center gap-2 self-start text-sm text-gray-700 dark:text-gray-300">
+                    <input v-model="form.token_park_reward_enabled" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-dark-600" />
+                    开启通关奖励
+                  </label>
+                </div>
+                <div class="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-dark-600 dark:bg-dark-800">
+                  <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+                    <label for="token-park-unlock-amount" class="text-sm font-medium text-gray-900 dark:text-gray-100">总充值解锁门槛</label>
+                    <div class="relative w-full sm:w-48">
+                      <input id="token-park-unlock-amount" v-model.number="form.token_park_min_balance_usd" type="number" min="0" step="1" class="input pr-16" />
+                      <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-gray-500 dark:text-gray-400">美元</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="mt-6">
+                  <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100">各游戏通关奖励</h4>
+                  <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">通关后发放至账户余额，每款游戏限领一次。</p>
+                  <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <div v-for="game in [{ id: 'miner', name: 'TOKEN 矿工' }, { id: 'ocean', name: 'TOKEN 海洋' }, { id: 'tower', name: 'TOKEN 魔塔' }]" :key="game.id" class="rounded-xl border border-gray-200 p-4 dark:border-dark-600">
+                      <label :for="`token-park-reward-${game.id}`" class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ game.name }}</label>
+                      <div class="relative mt-3">
+                        <input :id="`token-park-reward-${game.id}`" v-model.number="form.token_park_game_rewards_usd[game.id]" type="number" min="0" step="0.01" class="input pr-16" />
+                        <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-gray-500 dark:text-gray-400">美元</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -9784,6 +9815,9 @@ const form = reactive<SettingsForm>({
   login_agreement_mode: "modal",
   login_agreement_updated_at: "2026-03-31",
   login_agreement_documents: defaultLoginAgreementDocuments(),
+  token_park_reward_enabled: true,
+  token_park_min_balance_usd: 20,
+  token_park_game_rewards_usd: { miner: 1, ocean: 1, tower: 1 },
   default_balance: 0,
   default_platform_quotas: normalizePlatformQuotasMap() as DefaultPlatformQuotasMap,
   account_scheduling_thresholds: normalizeAccountSchedulingThresholdsMap(),
@@ -11491,6 +11525,11 @@ async function saveSettings() {
       login_agreement_mode: form.login_agreement_mode,
       login_agreement_updated_at: form.login_agreement_updated_at,
       login_agreement_documents: form.login_agreement_documents,
+      token_park_reward_enabled: form.token_park_reward_enabled,
+      token_park_min_balance_usd: Math.max(0, Number(form.token_park_min_balance_usd) || 0),
+      token_park_game_rewards_usd: Object.fromEntries(
+        ['miner', 'ocean', 'tower'].map((game) => [game, Math.max(0, Number(form.token_park_game_rewards_usd[game]) || 0)]),
+      ),
       default_balance: form.default_balance,
       affiliate_rebate_rate: Math.min(
         100,

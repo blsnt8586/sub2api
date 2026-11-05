@@ -2175,6 +2175,10 @@ func (s *OpenAIGatewayService) selectAccountWithScheduler(
 	previousResponseCanMove bool,
 	useUpstreamTokenCost bool,
 ) (*AccountSelectionResult, OpenAIAccountScheduleDecision, error) {
+	// A non-portable continuation must remain with its owner; never strip or replay it to escape a session cooldown.
+	if s.rateLimitService != nil && s.rateLimitService.providerHealth != nil && (previousResponseID == "" || previousResponseCanMove) {
+		excludedIDs = s.rateLimitService.providerHealth.Exclusions(ctx, derefGroupID(groupID), sessionHash, excludedIDs)
+	}
 	selection, decision, err := s.selectAccountWithSchedulerOnce(ctx, groupID, previousResponseID, sessionHash, requestedModel, excludedIDs, requiredTransport, requiredCapability, requiredImageCapability, requireCompact, platform, previousResponseCanMove, useUpstreamTokenCost)
 	if err == nil || openAIProxyStreamQuarantineBypassed(ctx) {
 		return selection, decision, err

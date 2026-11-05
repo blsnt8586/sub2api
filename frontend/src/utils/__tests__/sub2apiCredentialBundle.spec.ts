@@ -79,3 +79,37 @@ describe('parseSub2APICredentialBundle', () => {
     })), 'tokenPairMissing')
   })
 })
+
+describe('New API credential bundles', () => {
+  const newAPIBundle = (credentials: Record<string, unknown> = { user_id: '42', access_token: 'management-token' }) =>
+    JSON.stringify({
+      format: 'newapi-browser-credentials', version: 1,
+      source: { origin: 'https://newapi.example.com' }, credentials,
+    })
+
+  it.each(['42', 42])('imports user ID %s and a management token without a refresh token', userID => {
+    const parsed = parseSub2APICredentialBundle(
+      newAPIBundle({ user_id: userID, access_token: ' management-token ' }),
+      'https://newapi.example.com/console', 'newapi'
+    )
+    expect(parsed).toMatchObject({
+      providerType: 'newapi', userID: '42', accessToken: 'management-token',
+      refreshToken: '', sourceOrigin: 'https://newapi.example.com', cookieCount: 0,
+    })
+  })
+
+  it('rejects bundles for the wrong provider or origin', () => {
+    expectCode(() => parseSub2APICredentialBundle(newAPIBundle(), undefined, 'sub2api'), 'providerMismatch')
+    expectCode(() => parseSub2APICredentialBundle(bundle(), undefined, 'newapi'), 'providerMismatch')
+    expectCode(() => parseSub2APICredentialBundle(newAPIBundle(), 'https://other.example.com', 'newapi'), 'originMismatch')
+  })
+
+  it.each([0, -1, 1.5, '01', '1e3', 'abc', '9007199254740992', null])('rejects invalid user ID %s', userID => {
+    expectCode(() => parseSub2APICredentialBundle(newAPIBundle({ user_id: userID, access_token: 'token' })), 'invalidUserID')
+  })
+
+  it('requires a bounded management token', () => {
+    expectCode(() => parseSub2APICredentialBundle(newAPIBundle({ user_id: '42' })), 'managementTokenMissing')
+    expectCode(() => parseSub2APICredentialBundle(newAPIBundle({ user_id: '42', access_token: 'x'.repeat(128 * 1024 + 1) })), 'tokenTooLarge')
+  })
+})

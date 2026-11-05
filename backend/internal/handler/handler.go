@@ -72,6 +72,8 @@ type Handlers struct {
 	AsyncImage       *AsyncImageHandler
 	BatchImage       *BatchImageHandler
 	CodexRadar       *CodexRadarHandler
+	ToolDownloads    *ToolDownloadsHandler
+	TokenPark        *TokenParkHandler
 }
 
 // BuildInfo contains build-time information

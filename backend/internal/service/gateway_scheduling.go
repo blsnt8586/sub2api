@@ -128,6 +128,9 @@ func (s *GatewayService) SelectAccountWithLoadAwareness(ctx context.Context, gro
 		return nil, fmt.Errorf("%w supporting model: %s (channel pricing restriction)", ErrNoAvailableAccounts, requestedModel)
 	}
 
+	if s.rateLimitService != nil && s.rateLimitService.providerHealth != nil {
+		excludedIDs = s.rateLimitService.providerHealth.Exclusions(ctx, derefGroupID(groupID), sessionHash, excludedIDs)
+	}
 	var stickyAccountID int64
 	var stickySource string
 	if prefetch := prefetchedStickyAccountIDFromContext(ctx, groupID); prefetch > 0 {

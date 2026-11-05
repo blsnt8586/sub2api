@@ -208,6 +208,8 @@ func ProvideHandlers(
 	asyncImageHandler *AsyncImageHandler,
 	batchImageHandler *BatchImageHandler,
 	codexRadarHandler *CodexRadarHandler, // [CUSTOM]
+	toolDownloadsHandler *ToolDownloadsHandler,
+	tokenParkHandler *TokenParkHandler,
 	_ *service.IdempotencyCoordinator,
 	_ *service.IdempotencyCleanupService,
 	_ *service.OpenAIQuotaAutoResetService,
@@ -236,6 +238,8 @@ func ProvideHandlers(
 		AsyncImage:       asyncImageHandler,
 		BatchImage:       batchImageHandler,
 		CodexRadar:       codexRadarHandler, // [CUSTOM]
+		ToolDownloads:    toolDownloadsHandler,
+		TokenPark:        tokenParkHandler,
 	}
 }
 
@@ -303,6 +307,8 @@ var ProviderSet = wire.NewSet(
 	admin.NewSub2APIProviderHandler,
 	admin.NewSub2APIOptimizeScheduleHandler,
 	NewCodexRadarHandler,
+	NewToolDownloadsHandler,
+	NewTokenParkHandler,
 
 	// AdminHandlers and Handlers constructors
 	ProvideAdminHandlers,

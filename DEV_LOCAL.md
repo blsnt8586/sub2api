@@ -27,6 +27,11 @@ docker compose -f docker-compose.db-only.yml ps
 docker compose -f docker-compose.db-only.yml down
 ```
 
+PostgreSQL 使用具名卷 `sub2api-dev-postgres-data` 持久化。Docker Desktop / WSL
+曾出现 bind mount 实际落在 `tmpfs`、宿主目录仍有旧数据但容器读到空库的问题，
+因此不再直接挂载 `deploy/postgres_data`。该旧目录和 `deploy/backups` 中的恢复备份均保留。
+普通 `down` 不删除具名卷；`down -v` 会删除数据库，仅在明确要清空本地数据时使用。
+
 ### 2. 启动后端 (Go)
 
 **方式一：使用启动脚本**
@@ -63,6 +68,8 @@ pnpm run dev
 ```
 
 前端地址: http://localhost:5173
+
+以启动日志为准；当前开发配置默认使用 http://localhost:3000。
 
 ## 数据库连接信息
 

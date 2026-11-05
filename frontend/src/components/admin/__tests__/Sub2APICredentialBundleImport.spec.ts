@@ -103,4 +103,35 @@ describe('Sub2APICredentialBundleImport', () => {
       'admin.sub2apiProviders.form.credentialCookieNone'
     )
   })
+
+  it('imports New API management credentials and clears the sensitive input', async () => {
+    const wrapper = mount(Sub2APICredentialBundleImport, {
+      props: { providerType: 'newapi', expectedBaseUrl: 'https://newapi.example.com' },
+    })
+    expect(wrapper.get('[data-test="credential-session-warning"]').text()).toContain('newapiExportHint')
+    await wrapper.get('button').trigger('click')
+    const input = wrapper.get<HTMLTextAreaElement>('[data-test="credential-bundle-input"]')
+    await input.setValue(JSON.stringify({
+      format: 'newapi-browser-credentials', version: 1,
+      source: { origin: 'https://newapi.example.com' },
+      credentials: { user_id: '42', access_token: 'management-token' },
+    }))
+    await wrapper.get('[data-test="credential-bundle-apply"]').trigger('click')
+
+    expect(wrapper.emitted('imported')?.[0]?.[0]).toMatchObject({
+      providerType: 'newapi', userID: '42', accessToken: 'management-token', refreshToken: '',
+    })
+    expect(input.element.value).toBe('')
+    expect(wrapper.get('[data-test="credential-bundle-summary"]').text()).toContain('42')
+    expect(wrapper.text()).not.toContain('management-token')
+    expect(wrapper.find('[data-test="credential-cookie-none"]').exists()).toBe(false)
+  })
+
+  it('rejects Sub2API bundles in the New API form', async () => {
+    const wrapper = mount(Sub2APICredentialBundleImport, { props: { providerType: 'newapi' } })
+    await wrapper.get('button').trigger('click')
+    await wrapper.get('[data-test="credential-bundle-input"]').setValue(credentialBundle())
+    await wrapper.get('[data-test="credential-bundle-apply"]').trigger('click')
+    expect(wrapper.emitted('imported')).toBeUndefined()
+  })
 })

@@ -98,17 +98,17 @@
         </span>
         <span v-else-if="remoteOverviewAvailable" class="block min-w-0" data-test="provider-remote-metrics">
           <span class="grid grid-cols-3 gap-x-3 gap-y-2">
-            <span v-for="metric in remoteMetrics" :key="metric.key" class="min-w-0" :data-test="`remote-metric-${metric.key}`">
-              <span class="flex min-w-0 items-center gap-1 text-[10px] font-medium text-gray-500 dark:text-dark-400">
+            <span v-for="metric in remoteMetrics" :key="metric.key" class="min-w-0 text-center" :data-test="`remote-metric-${metric.key}`">
+              <span class="flex min-w-0 items-center justify-center gap-1 text-[10px] font-medium text-gray-500 dark:text-dark-400">
                 <Icon :name="metric.icon" size="xs" class="flex-shrink-0" :class="metric.iconClass" />
                 <span class="truncate">{{ t(`admin.sub2apiProviders.remoteOverview.${metric.label}`) }}</span>
               </span>
-              <span class="mt-0.5 block truncate text-sm font-semibold tabular-nums" :class="metric.valueClass" :title="metric.title">
+              <span class="mt-0.5 block truncate text-center text-sm font-semibold tabular-nums" :class="metric.valueClass" :title="metric.title">
                 {{ metric.value }}
               </span>
               <span
                 v-if="metric.detail"
-                class="mt-0.5 block truncate text-[10px] font-medium tabular-nums text-gray-500 dark:text-dark-400"
+                class="mt-0.5 block truncate text-center text-[10px] font-medium tabular-nums text-gray-500 dark:text-dark-400"
                 :title="metric.detail"
                 data-test="remote-metric-detail"
               >
@@ -188,7 +188,7 @@
               >
                 <Icon name="bolt" size="xs" aria-hidden="true" />
               </span>
-              <span class="flex-shrink-0 text-[11px] font-medium tabular-nums" :class="routeStatusTextClass(route.status)">
+              <span class="flex-shrink-0 text-center text-[11px] font-medium tabular-nums" :class="routeStatusTextClass(route.status)">
                 {{ route.latency_ms != null ? `${route.latency_ms} ms` : t(`admin.sub2apiProviders.health.status.${route.status}`) }}
               </span>
             </div>
@@ -198,7 +198,19 @@
                 <Icon name="cpu" size="xs" class="flex-shrink-0" />
                 <span class="truncate">{{ route.test_model }}</span>
               </span>
-              <span class="flex-shrink-0 tabular-nums">{{ route.last_checked_at ? formatRelative(route.last_checked_at) : t('admin.sub2apiProviders.health.neverChecked') }}</span>
+              <span class="flex-shrink-0 tabular-nums">{{ route.last_checked_at ? formatRelative(route.last_checked_at) : t(route.monitoring_source === 'user_requests' ? 'admin.sub2apiProviders.health.routes.noRequestResults' : 'admin.sub2apiProviders.health.neverChecked') }}</span>
+            </div>
+            <div
+              v-if="route.average_duration_ms != null || route.cache_hit_rate_available"
+              class="mt-1 flex items-center justify-center gap-3 pl-3.5 text-center text-[10px] tabular-nums text-gray-500 dark:text-dark-400"
+              data-test="route-traffic-metrics"
+            >
+              <span v-if="route.average_duration_ms != null">
+                {{ t('admin.sub2apiProviders.remoteOverview.averageResponse') }} {{ formatDuration(route.average_duration_ms) }}
+              </span>
+              <span v-if="route.cache_hit_rate_available && route.cache_hit_rate != null">
+                {{ t('admin.sub2apiProviders.remoteOverview.cacheHitRate') }} {{ formatPercent(route.cache_hit_rate) }}
+              </span>
             </div>
             <div class="mt-1.5 min-w-0 pl-3.5">
               <Sub2APIProviderRouteTimeline :route="route" compact />
@@ -227,7 +239,7 @@
           {{ t('admin.sub2apiProviders.apiPathLabel') }}：{{ provider.api_path_keys ? t('admin.sub2apiProviders.apiPathStatus.ready') : t('admin.sub2apiProviders.apiPathStatus.notDetected') }}
         </span>
         <span class="inline-flex min-w-0 items-center gap-1.5" :title="authStatusTitle">
-          <Icon :name="provider.auth_mode === 'token_pair' ? 'key' : 'lock'" size="xs" class="flex-shrink-0" :class="authStatusClass" />
+          <Icon :name="provider.auth_mode !== 'password' ? 'key' : 'lock'" size="xs" class="flex-shrink-0" :class="authStatusClass" />
           <span class="truncate" :class="authStatusClass">{{ authStatusLabel }}</span>
         </span>
       </div>
@@ -307,23 +319,27 @@ const formatRelative = (value: string | Date | null | undefined) => {
   return formatRelativeTime(value)
 }
 
-const providerTypeLabel = computed(() => props.provider.provider_type === 'sub2api' ? 'Sub2API' : props.provider.provider_type)
+const providerTypeLabel = computed(() => props.provider.provider_type === 'sub2api' ? 'Sub2API' : props.provider.provider_type === 'newapi' ? 'New API' : props.provider.provider_type)
 const authStatusLabel = computed(() => {
+  if (props.provider.auth_mode === 'access_token') return t(props.provider.last_auth_error ? 'admin.sub2apiProviders.auth.reimportRequired' : 'admin.sub2apiProviders.form.authManagementToken')
   if (props.provider.auth_mode !== 'token_pair') return t('admin.sub2apiProviders.auth.password')
   if (props.provider.last_auth_error) return t('admin.sub2apiProviders.auth.reimportRequired')
   if (props.provider.has_access_token && props.provider.has_refresh_token) return t('admin.sub2apiProviders.auth.tokenReady')
   return t('admin.sub2apiProviders.auth.tokenIncomplete')
 })
 const authStatusClass = computed(() => {
+  if (props.provider.auth_mode === 'access_token') return props.provider.last_auth_error ? 'text-red-600 dark:text-red-400' : props.provider.has_access_token ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'
   if (props.provider.auth_mode !== 'token_pair') return 'text-gray-500 dark:text-dark-400'
   if (props.provider.last_auth_error) return 'text-red-600 dark:text-red-400'
   return props.provider.has_access_token && props.provider.has_refresh_token
     ? 'text-green-600 dark:text-green-400'
     : 'text-amber-600 dark:text-amber-400'
 })
-const authStatusTitle = computed(() => props.provider.auth_mode === 'token_pair'
+const authStatusTitle = computed(() => props.provider.auth_mode === 'access_token'
+  ? t('admin.sub2apiProviders.form.newapiTokenHint')
+  : props.provider.auth_mode === 'token_pair'
   ? t('admin.sub2apiProviders.auth.tokenTitle')
-  : t('admin.sub2apiProviders.auth.passwordTitle'))
+  : props.provider.provider_type === 'newapi' ? t('admin.sub2apiProviders.form.newapiPasswordDesc') : t('admin.sub2apiProviders.auth.passwordTitle'))
 const providerHostname = computed(() => {
   try {
     return new URL(props.provider.base_url).host
@@ -340,13 +356,16 @@ const providerURL = computed(() => {
   }
 })
 
-const remoteOverviewAvailable = computed(() => props.remoteOverview?.available === true)
+const remoteOverviewAvailable = computed(() => props.remoteOverview?.available === true || props.remoteOverview?.profit != null || props.remoteOverview?.local_usage != null)
 const remoteOverviewErrorMessage = computed(() => props.remoteOverviewError || props.remoteOverview?.last_error || null)
-const remoteUsage = computed(() => props.remoteOverview?.usage ?? null)
-const remoteDashboardAvailable = computed(() => remoteUsage.value?.dashboard_available === true)
+const remoteUsage = computed(() => {
+  const remote = props.remoteOverview?.usage
+  if (remote?.dashboard_available === true) return remote
+  return props.remoteOverview?.local_usage ?? remote ?? null
+})
 const formatMoney = (value: number | null | undefined) => {
   if (value == null || !Number.isFinite(value)) return '-'
-  return `$${new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 }).format(value)}`
+  return `$${new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)}`
 }
 const formatCount = (value: number | null | undefined) => {
   if (value == null || !Number.isFinite(value)) return '-'
@@ -368,7 +387,7 @@ const formatPercent = (value: number | null | undefined) => {
   return `${(value * 100).toFixed(1)}%`
 }
 const remoteMetricValue = (value: number | null | undefined, formatter: (value: number | null | undefined) => string) =>
-  remoteDashboardAvailable.value ? formatter(value) : '-'
+  value == null ? '-' : formatter(value)
 type RemoteMetricIcon = 'creditCard' | 'dollar' | 'chart' | 'database' | 'clock'
 type RemoteMetric = {
   key: string
@@ -383,23 +402,19 @@ type RemoteMetric = {
 const remoteMetrics = computed<RemoteMetric[]>(() => {
   const usage = remoteUsage.value
   const metrics: RemoteMetric[] = [
-    { key: 'balance', label: 'balance', icon: 'creditCard', iconClass: 'text-emerald-500', value: formatMoney(props.remoteOverview?.balance), valueClass: 'text-emerald-600 dark:text-emerald-400' },
-    { key: 'total-recharged', label: 'totalRecharged', icon: 'dollar', iconClass: 'text-blue-500', value: formatMoney(usage?.total_recharged), valueClass: 'text-blue-600 dark:text-blue-400', title: usage?.funding_summary_available ? t('admin.sub2apiProviders.remoteOverview.fundingBreakdown', { orders: formatMoney(usage.order_recharged), redeems: formatMoney(usage.redeem_recharged) }) : undefined, detail: usage?.funding_summary_available ? t('admin.sub2apiProviders.remoteOverview.fundingBreakdown', { orders: formatMoney(usage.order_recharged), redeems: formatMoney(usage.redeem_recharged) }) : undefined },
-    { key: 'total-consumed', label: 'totalConsumed', icon: 'chart', iconClass: 'text-violet-500', value: formatMoney(usage?.total_consumed), valueClass: 'text-violet-600 dark:text-violet-400' },
+    { key: 'balance', label: 'balance', icon: 'creditCard', iconClass: 'text-emerald-500', value: props.remoteOverview?.available ? formatMoney(props.remoteOverview.balance) : '-', valueClass: 'text-emerald-600 dark:text-emerald-400' },
+    { key: 'total-recharged', label: 'totalRecharged', icon: 'dollar', iconClass: 'text-blue-500', value: props.remoteOverview?.usage?.funding_summary_available ? formatMoney(props.remoteOverview.usage.total_recharged) : '-', valueClass: 'text-blue-600 dark:text-blue-400' },
+    { key: 'total-tokens', label: 'totalTokens', icon: 'database', iconClass: 'text-indigo-500', value: remoteMetricValue(usage?.total_tokens, formatTokens), valueClass: 'text-gray-900 dark:text-white' },
     { key: 'today-requests', label: 'todayRequests', icon: 'chart', iconClass: 'text-green-500', value: remoteMetricValue(usage?.today_requests, formatCount), valueClass: 'text-gray-900 dark:text-white' },
     { key: 'today-consumed', label: 'todayConsumed', icon: 'dollar', iconClass: 'text-purple-500', value: remoteMetricValue(usage?.today_actual_cost, formatMoney), valueClass: 'text-purple-600 dark:text-purple-400' },
     { key: 'today-tokens', label: 'todayTokens', icon: 'database', iconClass: 'text-amber-500', value: remoteMetricValue(usage?.today_tokens, formatTokens), valueClass: 'text-gray-900 dark:text-white' },
-    { key: 'total-tokens', label: 'totalTokens', icon: 'database', iconClass: 'text-indigo-500', value: remoteMetricValue(usage?.total_tokens, formatTokens), valueClass: 'text-gray-900 dark:text-white' },
-    { key: 'cache-hit-rate', label: 'cacheHitRate', icon: 'database', iconClass: 'text-cyan-500', value: usage?.cache_hit_rate_available ? formatPercent(usage.cache_hit_rate) : '-', valueClass: 'text-cyan-600 dark:text-cyan-400' },
-    { key: 'average-response', label: 'averageResponse', icon: 'clock', iconClass: 'text-rose-500', value: remoteMetricValue(usage?.average_duration_ms, formatDuration), valueClass: 'text-rose-600 dark:text-rose-400' },
   ]
   const profit = props.remoteOverview?.profit
-  if (profit?.available) {
-    metrics.push(
-      { key: 'today-profit', label: 'todayProfit', icon: 'dollar', iconClass: 'text-emerald-500', value: formatMoney(profit.today_gross_profit), valueClass: profit.today_gross_profit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400', detail: `${formatPercent(profit.today_gross_margin)} ${t('admin.sub2apiProviders.remoteOverview.marginSuffix')}` },
-      { key: 'total-profit', label: 'totalProfit', icon: 'chart', iconClass: 'text-teal-500', value: formatMoney(profit.total_gross_profit), valueClass: profit.total_gross_profit >= 0 ? 'text-teal-600 dark:text-teal-400' : 'text-red-600 dark:text-red-400', detail: `${formatPercent(profit.total_gross_margin)} ${t('admin.sub2apiProviders.remoteOverview.marginSuffix')}` },
-    )
-  }
+  metrics.push(
+    { key: 'today-profit', label: 'todayProfit', icon: 'dollar', iconClass: 'text-emerald-500', value: profit?.available ? formatMoney(profit.today_gross_profit) : '-', valueClass: profit && profit.today_gross_profit < 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400', detail: profit?.available ? `${formatPercent(profit.today_gross_margin)} ${t('admin.sub2apiProviders.remoteOverview.marginSuffix')}` : undefined },
+    { key: 'month-profit', label: 'monthProfit', icon: 'chart', iconClass: 'text-cyan-500', value: profit?.month_profit_available ? formatMoney(profit.month_gross_profit) : '-', valueClass: profit && profit.month_gross_profit < 0 ? 'text-red-600 dark:text-red-400' : 'text-cyan-600 dark:text-cyan-400', detail: profit?.month_profit_available ? `${formatPercent(profit.month_gross_margin)} ${t('admin.sub2apiProviders.remoteOverview.marginSuffix')}` : undefined },
+    { key: 'cumulative-profit', label: 'cumulativeProfit', icon: 'chart', iconClass: 'text-teal-500', value: profit?.cumulative_profit_available ? formatMoney(profit.cumulative_gross_profit) : '-', valueClass: profit && profit.cumulative_gross_profit < 0 ? 'text-red-600 dark:text-red-400' : 'text-teal-600 dark:text-teal-400', detail: profit?.cumulative_profit_available ? `${formatPercent(profit.cumulative_gross_margin)} ${t('admin.sub2apiProviders.remoteOverview.marginSuffix')}` : undefined },
+  )
   return metrics
 })
 

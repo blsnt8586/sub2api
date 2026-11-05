@@ -163,6 +163,7 @@ export default {
 
   // Navigation
   nav: {
+    arcade: 'TOKEN Park',
     dashboard: 'Dashboard',
     announcements: 'Announcements',
     studio: 'Studio',
@@ -217,6 +218,7 @@ export default {
     promptAudit: 'Prompt Audit',
     auditLogs: 'Audit Logs',
     codexRadar: 'Codex Radar',
+    toolDownloads: 'Tool Downloads',
   },
 
   // Auth

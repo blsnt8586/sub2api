@@ -23,14 +23,19 @@ func classifyOpenAIAPIKeyHealthFailure(err error) (int, []byte, bool) {
 	if err == nil || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 		return 0, nil, false
 	}
+	var streamErr *openAICommittedStreamError
+	if errors.As(err, &streamErr) {
+		return streamErr.status, streamErr.body, streamErr.eligible
+	}
 
 	var failoverErr *UpstreamFailoverError
 	if errors.As(err, &failoverErr) {
 		// These failures already have dedicated recovery/state handling or are not
-		// attributable to the selected account.
+		// attributable to the selected account. Retryable account-side 5xx still
+		// count so retries cannot indefinitely hide an unhealthy pool key.
 		if failoverErr.IsCredentialFailure() ||
 			failoverErr.RequestScopedTransient ||
-			failoverErr.RetryableOnSameAccount ||
+			(failoverErr.RetryableOnSameAccount && failoverErr.StatusCode == http.StatusTooManyRequests) ||
 			failoverErr.Scope == GatewayFailureScopeRequest ||
 			failoverErr.Scope == GatewayFailureScopeProvider {
 			return failoverErr.StatusCode, failoverErr.ResponseBody, false
@@ -56,6 +61,11 @@ func (s *RateLimitService) ObserveOpenAIAPIKeyHealthFailure(ctx context.Context,
 	}
 	statusCode, responseBody, eligible := classifyOpenAIAPIKeyHealthFailure(upstreamErr)
 	if !eligible {
+		return false
+	}
+	// Managed inference failures belong to the per-session / distinct-user
+	// policy. Credential/quota errors remain in their native recovery handlers.
+	if s.providerHealthManaged(ctx, account) {
 		return false
 	}
 	settings, err := s.settingService.GetOpenAIAPIKeyHealthBreakerSettings(ctx)

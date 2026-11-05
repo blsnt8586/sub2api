@@ -36,6 +36,7 @@ const (
 )
 
 const upstreamLogRetentionLeaderLockKey = "sub2api:upstream-log-retention"
+const providerAccountDailyCostSnapshotLockKey = "sub2api:provider-account-daily-cost-snapshot"
 
 // Sub2APIUpstreamLogCleanupResult reports one bounded physical-delete batch.
 // Provider/account configuration and current health snapshots are not part of
@@ -133,6 +134,7 @@ type Sub2APIProviderProbeConfigInput struct {
 
 type Sub2APIProviderTrafficStats struct {
 	RequestCount int
+	FailureCount int
 	SuccessRate  float64
 	P95LatencyMS int
 }
@@ -172,30 +174,33 @@ type Sub2APIProviderAccountProbe struct {
 }
 
 type Sub2APIProviderHealth struct {
-	ProviderID          int64                         `json:"provider_id"`
-	Status              string                        `json:"status"`
-	ControlStatus       string                        `json:"control_status"`
-	DataStatus          string                        `json:"data_status"`
-	TrafficStatus       string                        `json:"traffic_status"`
-	ConsecutiveFailures int                           `json:"consecutive_failures"`
-	LoginLatencyMS      *int                          `json:"login_latency_ms,omitempty"`
-	HealthLatencyMS     *int                          `json:"health_latency_ms,omitempty"`
-	KeysLatencyMS       *int                          `json:"keys_latency_ms,omitempty"`
-	GroupsLatencyMS     *int                          `json:"groups_latency_ms,omitempty"`
-	DataProbeCount      int                           `json:"data_probe_count"`
-	DataProbeSuccess    int                           `json:"data_probe_success"`
-	DataProbeFailed     int                           `json:"data_probe_failed"`
-	DataProbeEnabled    bool                          `json:"data_probe_enabled"`
-	DataProbeInterval   int                           `json:"data_probe_interval_seconds"`
-	ProbeAccountCount   int                           `json:"probe_account_count"`
-	AccountProbes       []Sub2APIProviderAccountProbe `json:"account_probes"`
-	TrafficRequestCount int                           `json:"traffic_request_count"`
-	TrafficSuccessRate  *float64                      `json:"traffic_success_rate,omitempty"`
-	TrafficP95LatencyMS *int                          `json:"traffic_p95_latency_ms,omitempty"`
-	ErrorCategory       *string                       `json:"error_category,omitempty"`
-	ErrorMessage        *string                       `json:"error_message,omitempty"`
-	Details             map[string]any                `json:"details,omitempty"`
-	LastCheckedAt       *time.Time                    `json:"last_checked_at,omitempty"`
+	ProviderID           int64                         `json:"provider_id"`
+	Status               string                        `json:"status"`
+	ControlStatus        string                        `json:"control_status"`
+	DataStatus           string                        `json:"data_status"`
+	TrafficStatus        string                        `json:"traffic_status"`
+	ConsecutiveFailures  int                           `json:"consecutive_failures"`
+	LoginLatencyMS       *int                          `json:"login_latency_ms,omitempty"`
+	HealthLatencyMS      *int                          `json:"health_latency_ms,omitempty"`
+	KeysLatencyMS        *int                          `json:"keys_latency_ms,omitempty"`
+	GroupsLatencyMS      *int                          `json:"groups_latency_ms,omitempty"`
+	DataProbeCount       int                           `json:"data_probe_count"`
+	DataProbeSuccess     int                           `json:"data_probe_success"`
+	DataProbeFailed      int                           `json:"data_probe_failed"`
+	DataProbeEnabled     bool                          `json:"data_probe_enabled"`
+	DataProbeInterval    int                           `json:"data_probe_interval_seconds"`
+	ProbeAccountCount    int                           `json:"probe_account_count"`
+	AccountProbes        []Sub2APIProviderAccountProbe `json:"account_probes"`
+	TrafficRequestCount  int                           `json:"traffic_request_count"`
+	TrafficFailureCount  int                           `json:"traffic_failure_count"`
+	TrafficSuccessRate   *float64                      `json:"traffic_success_rate,omitempty"`
+	TrafficP95LatencyMS  *int                          `json:"traffic_p95_latency_ms,omitempty"`
+	PassiveHealthStatus  string                        `json:"passive_health_status"`
+	PassiveCooldownUntil *time.Time                    `json:"passive_cooldown_until,omitempty"`
+	ErrorCategory        *string                       `json:"error_category,omitempty"`
+	ErrorMessage         *string                       `json:"error_message,omitempty"`
+	Details              map[string]any                `json:"details,omitempty"`
+	LastCheckedAt        *time.Time                    `json:"last_checked_at,omitempty"`
 }
 
 type Sub2APIProviderHealthBucket struct {
@@ -362,12 +367,15 @@ func (s *Sub2APIProviderProbeService) GetHealth(ctx context.Context, providerID 
 	}
 	run, err := s.probeRepo.LatestRun(ctx, providerID)
 	if ent.IsNotFound(err) {
-		return &Sub2APIProviderHealth{ProviderID: providerID, Status: "unknown", ControlStatus: "unknown", DataStatus: "unknown", TrafficStatus: "unknown"}, nil
+		health := &Sub2APIProviderHealth{ProviderID: providerID, Status: "unknown", ControlStatus: "unknown", DataStatus: "unknown", TrafficStatus: "unknown"}
+		s.applyLiveProviderTraffic(ctx, health)
+		return health, nil
 	}
 	if err != nil {
 		return nil, err
 	}
 	health := healthFromRun(run)
+	s.applyLiveProviderTraffic(ctx, health)
 	if runs, listErr := s.probeRepo.ListRuns(ctx, providerID, 20); listErr == nil {
 		health.ConsecutiveFailures = countConsecutiveProbeFailures(runs)
 	}
@@ -420,6 +428,10 @@ func (s *Sub2APIProviderProbeService) HealthOverview(ctx context.Context, provid
 		}
 		if overview := byProviderID[providerID]; overview != nil {
 			overview.Routes = routes
+			if overview.Latest == nil {
+				overview.Latest = &Sub2APIProviderHealth{ProviderID: providerID, Status: "unknown", ControlStatus: "unknown", DataStatus: "unknown", TrafficStatus: "unknown"}
+			}
+			s.applyLiveProviderTraffic(ctx, overview.Latest)
 		}
 	}
 	return overviews, nil
@@ -428,7 +440,7 @@ func (s *Sub2APIProviderProbeService) HealthOverview(ctx context.Context, provid
 const (
 	providerHealthOverviewBucketCount   = 60
 	providerHealthOverviewBucketSeconds = 24 * 60
-	// Account route timelines are event sequences: one point per real probe.
+	// Account route timelines are event sequences: one point per real user request.
 	targetHealthTimelineResultLimit = 60
 )
 
@@ -606,6 +618,14 @@ func (s *Sub2APIProviderProbeService) run(ctx context.Context, providerID int64,
 	traffic, trafficErr := s.probeRepo.TrafficStats(ctx, providerID, started.Add(-time.Hour))
 	if trafficErr == nil && traffic != nil {
 		result.TrafficRequestCount = traffic.RequestCount
+		result.Details["traffic_failure_count"] = traffic.FailureCount
+		result.Details["passive_health_status"] = passiveHealthStatus(traffic.RequestCount, traffic.FailureCount, func() *int {
+			if traffic.RequestCount == 0 {
+				return nil
+			}
+			p := traffic.P95LatencyMS
+			return &p
+		}())
 		if traffic.RequestCount > 0 {
 			r := traffic.SuccessRate
 			result.TrafficSuccessRate = &r
@@ -887,7 +907,7 @@ func (s *Sub2APIProviderProbeService) runControl(ctx context.Context, provider *
 	}
 	// Asset collection follows the control-plane cadence and reuses the same
 	// authenticated client and Groups response. It also samples account profit
-	// from the linked local accounts and their remote API keys. Profit failures
+	// from local request records and cached upstream group rates. Profit failures
 	// remain best-effort and never affect Provider availability.
 	var remoteOverview *Sub2APIProviderRemoteOverview
 	if groupsErr == nil && s.remoteOverviewCache != nil {
@@ -912,12 +932,16 @@ func (s *Sub2APIProviderProbeService) runControl(ctx context.Context, provider *
 					message := trimProbeError(accountsErr)
 					remoteOverview.Profit = &Sub2APIProviderProfitSummary{Available: false, SampledAt: assetAttemptedAt, Error: &message}
 				} else {
-					remoteOverview.Profit = collectProviderProfitSnapshot(ctx, client, accounts, keys, s.usageRepo, provider.RemoteCostDivisor, assetAttemptedAt)
-					if keysErr != nil && remoteOverview.Profit != nil {
-						message := fmt.Sprintf("read remote API key inventory failed: %s", keysErr)
-						remoteOverview.Profit.Available = false
-						remoteOverview.Profit.Error = &message
+					if reader, ok := s.usageRepo.(ProviderLocalUsageReader); ok {
+						accountIDs := make([]int64, 0, len(accounts))
+						for _, account := range accounts {
+							accountIDs = append(accountIDs, account.ID)
+						}
+						if local, localErr := reader.GetProviderLocalUsage(ctx, accountIDs, time.Time{}, assetAttemptedAt); localErr == nil {
+							remoteOverview.LocalUsage = localUsageSnapshot(local)
+						}
 					}
+					remoteOverview.Profit = collectProviderProfitSnapshot(ctx, accounts, s.usageRepo, assetAttemptedAt)
 				}
 			}
 			storeRemoteOverviewSuccess(ctx, s.remoteOverviewCache, overview)
@@ -1016,7 +1040,28 @@ func healthFromRun(run *ent.Sub2APIProviderProbeRun) *Sub2APIProviderHealth {
 	}
 	health := &Sub2APIProviderHealth{ProviderID: run.ProviderID, Status: string(run.OverallStatus), ControlStatus: string(run.ControlStatus), DataStatus: string(run.DataStatus), TrafficStatus: string(run.TrafficStatus), ConsecutiveFailures: failures, LoginLatencyMS: run.LoginLatencyMs, HealthLatencyMS: run.HealthLatencyMs, KeysLatencyMS: run.KeysLatencyMs, GroupsLatencyMS: run.GroupsLatencyMs, DataProbeCount: run.DataProbeCount, DataProbeSuccess: run.DataProbeSuccess, DataProbeFailed: run.DataProbeFailed, TrafficRequestCount: run.TrafficRequestCount, TrafficSuccessRate: run.TrafficSuccessRate, TrafficP95LatencyMS: run.TrafficP95LatencyMs, ErrorCategory: run.ErrorCategory, ErrorMessage: run.ErrorMessage, Details: run.Details, LastCheckedAt: providerProbeTimePtr(run.FinishedAt)}
 	applyProviderProbeDetails(health)
+	if run.Details != nil {
+		_ = decodeProviderProbeDetail(run.Details["traffic_failure_count"], &health.TrafficFailureCount)
+		_ = decodeProviderProbeDetail(run.Details["passive_health_status"], &health.PassiveHealthStatus)
+		_ = decodeProviderProbeDetail(run.Details["passive_cooldown_until"], &health.PassiveCooldownUntil)
+	}
+	if health.PassiveHealthStatus == "" {
+		health.PassiveHealthStatus = passiveHealthStatus(health.TrafficRequestCount, health.TrafficFailureCount, health.TrafficP95LatencyMS)
+	}
 	return health
+}
+
+func passiveHealthStatus(samples, failures int, p95 *int) string {
+	if samples < 3 {
+		return "unknown"
+	}
+	if failures >= 3 || float64(failures)/float64(samples) >= 0.5 {
+		return "temporarily_unschedulable"
+	}
+	if float64(failures)/float64(samples) >= 0.2 || (p95 != nil && *p95 > 5000) {
+		return "degraded"
+	}
+	return "healthy"
 }
 
 func applyProviderProbeDetails(health *Sub2APIProviderHealth) {
@@ -1357,7 +1402,9 @@ func shouldRunProviderProbeTarget(target *ent.Sub2APIProviderProbeTarget, schedu
 }
 
 func shouldRunProviderProbeTargetWithRecovery(target *ent.Sub2APIProviderProbeTarget, scheduled, includeTargets bool, now time.Time, minimumHealthyStreak int) bool {
-	if !includeTargets || target == nil || !target.Enabled {
+	// Automatic account health comes only from real gateway requests.
+	// Legacy enabled/interval settings must never schedule model requests.
+	if scheduled || !includeTargets || target == nil || !target.Enabled {
 		return false
 	}
 	return !scheduled || probeIntervalDueWithJitterAt(target.LastRunAt, effectiveProbeTargetIntervalSecondsWithRecovery(target, minimumHealthyStreak), target.ID, now)
@@ -1377,6 +1424,7 @@ type Sub2APIProviderProbeRunner struct {
 	once               sync.Once
 	retentionMu        sync.Mutex
 	nextRetentionRunAt time.Time
+	nextCostSnapshotAt time.Time
 }
 
 func NewSub2APIProviderProbeRunner(service *Sub2APIProviderProbeService, lockCache LeaderLockCache, db *sql.DB) *Sub2APIProviderProbeRunner {
@@ -1395,7 +1443,9 @@ func (r *Sub2APIProviderProbeRunner) Stop() {
 	}
 }
 func (r *Sub2APIProviderProbeRunner) runDue() {
-	r.runLogRetentionIfDue(time.Now().UTC())
+	now := time.Now().UTC()
+	r.runLogRetentionIfDue(now)
+	r.runProviderAccountCostSnapshotsIfDue(now)
 
 	lockCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	release, ok := tryAcquireSingletonLeaderLock(lockCtx, r.lockCache, r.db, "sub2api:provider-probe:runner", r.instanceID, 30*time.Minute)
@@ -1413,34 +1463,52 @@ func (r *Sub2APIProviderProbeRunner) runDue() {
 	var wg sync.WaitGroup
 	workers := make(chan struct{}, 3)
 	for _, p := range providers {
-		cfg, err := r.service.ensureConfig(ctx, p.ID)
-		if err != nil {
-			continue
-		}
-		controlDue := cfg.ControlEnabled && probeIntervalDue(cfg.LastControlRunAt, cfg.ControlIntervalSeconds)
-		targets, targetErr := r.service.ensureTargets(ctx, p.ID)
-		if targetErr != nil {
-			continue
-		}
-		targetDue := false
-		minimumHealthyStreak := probeAdaptiveMinimumHealthyStreak(cfg)
-		for _, target := range targets {
-			if target.Enabled && probeIntervalDueWithJitterAt(target.LastRunAt, effectiveProbeTargetIntervalSecondsWithRecovery(target, minimumHealthyStreak), target.ID, time.Now()) {
-				targetDue = true
-				break
+		wg.Add(1)
+		workers <- struct{}{}
+		go func(id int64) {
+			defer wg.Done()
+			defer func() { <-workers }()
+			workCtx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+			defer cancel()
+			if err := r.service.runHybridAccountHealth(workCtx, id); err != nil {
+				logger.LegacyPrintf("service.sub2api_provider_probe", "account hybrid health: %v", err)
 			}
-		}
-		if controlDue || targetDue {
-			wg.Add(1)
-			workers <- struct{}{}
-			go func(id int64) {
-				defer wg.Done()
-				defer func() { <-workers }()
-				_, _ = r.service.run(context.Background(), id, true, true)
-			}(p.ID)
-		}
+			cfg, err := r.service.ensureConfig(workCtx, id)
+			if err == nil && cfg.ControlEnabled && probeIntervalDue(cfg.LastControlRunAt, cfg.ControlIntervalSeconds) {
+				_, _ = r.service.run(workCtx, id, true, false)
+			}
+		}(p.ID)
 	}
 	wg.Wait()
+}
+
+func (r *Sub2APIProviderProbeRunner) runProviderAccountCostSnapshotsIfDue(now time.Time) {
+	if r == nil || r.db == nil {
+		return
+	}
+	r.retentionMu.Lock()
+	if !r.nextCostSnapshotAt.IsZero() && now.Before(r.nextCostSnapshotAt) {
+		r.retentionMu.Unlock()
+		return
+	}
+	r.nextCostSnapshotAt = now.Add(time.Hour)
+	r.retentionMu.Unlock()
+
+	lockCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	release, ok := tryAcquireSingletonLeaderLock(lockCtx, r.lockCache, r.db, providerAccountDailyCostSnapshotLockKey, r.instanceID, 10*time.Minute)
+	cancel()
+	if !ok {
+		return
+	}
+	defer release()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+	start := time.Date(now.In(time.Local).Year(), now.In(time.Local).Month(), now.In(time.Local).Day(), 0, 0, 0, 0, time.Local).AddDate(0, 0, -1)
+	err := r.service.RebuildDailyCosts(ctx, 0, start, start.AddDate(0, 0, 2))
+	if err != nil {
+		logger.LegacyPrintf("service.sub2api_provider_probe", "[ProviderAccountDailyCostSnapshot] upsert failed: %v", err)
+	}
 }
 
 func (r *Sub2APIProviderProbeRunner) runLogRetentionIfDue(now time.Time) {

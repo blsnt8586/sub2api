@@ -82,6 +82,7 @@ func providePluginHostInfo(buildInfo handler.BuildInfo) service.PluginHostInfo {
 }
 
 func provideCleanup(
+	toolDownloads *service.ToolDownloadsService,
 	entClient *ent.Client,
 	rdb *redis.Client,
 	opsMetricsCollector *service.OpsMetricsCollector,
@@ -146,6 +147,12 @@ func provideCleanup(
 
 		// 应用层清理步骤可并行执行，基础设施资源（Redis/Ent）最后按顺序关闭。
 		parallelSteps := []cleanupStep{
+			{"ToolDownloadsService", func() error {
+				if toolDownloads != nil {
+					toolDownloads.Stop()
+				}
+				return nil
+			}},
 			{"APIKeySmartGroupService", func() error {
 				if apiKeySmartGroup != nil {
 					apiKeySmartGroup.Stop()

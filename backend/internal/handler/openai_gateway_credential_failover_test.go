@@ -16,6 +16,48 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+func TestOpenAIQueueHeartbeatDoesNotBlockAccountFailover(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/responses", nil)
+	before := service.OpenAICompactKeepaliveAdjustedWrittenSize(c)
+	n, err := c.Writer.Write([]byte(":\n\n"))
+	require.NoError(t, err)
+	recordGatewayStreamHeartbeat(c, n)
+	c.Writer.Flush()
+
+	require.True(t, gatewayStreamHasOnlyHeartbeats(c))
+	require.Equal(t, before, service.OpenAICompactKeepaliveAdjustedWrittenSize(c))
+	failure := &service.UpstreamFailoverError{StatusCode: http.StatusBadGateway}
+	require.True(t, openAIForwardMayFailover(c, before, failure))
+
+	_, err = c.Writer.Write([]byte("data: {\"type\":\"response.output_text.delta\",\"delta\":\"hello\"}\n\n"))
+	require.NoError(t, err)
+	require.False(t, gatewayStreamHasOnlyHeartbeats(c))
+	require.False(t, openAIForwardMayFailover(c, before, failure))
+}
+
+func TestOpenAIResponsesToolCapabilityFailoverExhaustionReturnsClear400(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	recorder := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(recorder)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/responses", nil)
+	failoverErr := &service.UpstreamFailoverError{
+		StatusCode:        http.StatusBadRequest,
+		Scope:             service.GatewayFailureScopeAccount,
+		Reason:            service.OpenAIResponsesToolsRequireResponsesReason,
+		NextAccountAction: service.NextAccountRetry,
+		ClientStatusCode:  http.StatusBadRequest,
+		ClientMessage:     "gpt-6.1-sol requires a Responses-capable account for tool calls",
+	}
+
+	(&OpenAIGatewayHandler{}).handleFailoverExhausted(c, failoverErr, false)
+
+	require.Equal(t, http.StatusBadRequest, recorder.Code)
+	require.Contains(t, recorder.Body.String(), "invalid_request_error")
+	require.Contains(t, recorder.Body.String(), "Responses-capable account")
+}
+
 func TestGatewayChatCredentialStopDoesNotSelectAnotherAccountAndReturnsSafe503(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	stopErr := &service.UpstreamFailoverError{

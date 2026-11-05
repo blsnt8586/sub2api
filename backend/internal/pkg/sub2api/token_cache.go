@@ -20,9 +20,10 @@ const (
 // TokenCache 缓存每个上游 Provider 的登录 Token 对，减少重复登录开销。
 // authGroup 保证同一个 Provider 的登录或 Refresh Token 轮换只执行一次。
 type TokenCache struct {
-	mu        sync.RWMutex
-	items     map[int64]*tokenEntry
-	authGroup singleflight.Group
+	mu             sync.RWMutex
+	items          map[int64]*tokenEntry
+	newAPISessions map[int64]newAPISession
+	authGroup      singleflight.Group
 }
 
 type tokenEntry struct {
@@ -127,6 +128,7 @@ func (c *TokenCache) Evict(providerID int64) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	delete(c.items, providerID)
+	delete(c.newAPISessions, providerID)
 }
 
 func (c *TokenCache) authenticate(providerID int64, fn func() (TokenPair, error)) (TokenPair, error) {

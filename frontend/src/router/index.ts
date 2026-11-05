@@ -11,6 +11,7 @@ import { useAdminComplianceStore } from '@/stores/adminCompliance'
 import { useNavigationLoadingState } from '@/composables/useNavigationLoading'
 import { useRoutePrefetch } from '@/composables/useRoutePrefetch'
 import { getSetupStatus } from '@/api/setup'
+import { getTokenParkStatus } from '@/api/tokenPark'
 import { resolveCompletedSetupRedirectPath } from './setupRedirect'
 import { resolveRouteDocumentTitle } from './title'
 
@@ -188,6 +189,54 @@ const routes: RouteRecordRaw[] = [
 
   // ==================== User Routes ====================
   {
+    path: '/arcade',
+    name: 'Arcade',
+    component: () => import('@/views/user/ArcadeView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'TOKEN Park',
+      titleKey: 'arcade.title',
+      descriptionKey: 'park.subtitle',
+    },
+  },
+  {
+    path: '/arcade/miner',
+    name: 'TokenMiner',
+    component: () => import('@/views/user/TokenMinerView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'TOKEN Miner',
+      titleKey: 'arcade.gameTitle',
+      requiresTokenParkGame: true,
+    },
+  },
+  {
+    path: '/arcade/ocean',
+    name: 'TokenOcean',
+    component: () => import('@/views/user/TokenOceanView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'TOKEN Feed & Grow',
+      titleKey: 'ocean.title',
+      requiresTokenParkGame: true,
+    },
+  },
+  {
+    path: '/arcade/tower',
+    name: 'TokenTower',
+    component: () => import('@/views/user/TokenTowerView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'TOKEN Tower',
+      titleKey: 'tower.title',
+      requiresTokenParkGame: true,
+    },
+  },
+  {
     path: '/',
     redirect: '/home'
   },
@@ -296,6 +345,18 @@ const routes: RouteRecordRaw[] = [
       title: 'Codex Radar',
       titleKey: 'codexRadar.title',
       descriptionKey: 'codexRadar.subtitle'
+    }
+  },
+  {
+    path: '/tool-downloads',
+    name: 'ToolDownloads',
+    component: () => import('@/views/user/ToolDownloadsView.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: false,
+      title: 'Tool Downloads',
+      titleKey: 'toolDownloads.title',
+      descriptionKey: 'toolDownloads.subtitle'
     }
   },
   {
@@ -643,6 +704,16 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/admin/token-park/leaderboard',
+    name: 'AdminTokenParkLeaderboard',
+    redirect: '/arcade',
+    meta: {
+      requiresAuth: true,
+      requiresAdmin: true,
+      title: 'TOKEN Park Leaderboard',
+    },
+  },
+  {
     path: '/admin/sub2api-providers',
     name: 'AdminSub2APIProviders',
     component: () => import('@/views/admin/Sub2APIProvidersView.vue'),
@@ -861,6 +932,7 @@ router.beforeEach(async (to, _from, next) => {
   // Check if route requires authentication
   const requiresAuth = to.meta.requiresAuth !== false // Default to true
   const requiresAdmin = to.meta.requiresAdmin === true
+  const requiresTokenParkGame = to.meta.requiresTokenParkGame === true
 
   if (to.path === '/setup') {
     try {
@@ -946,6 +1018,19 @@ router.beforeEach(async (to, _from, next) => {
     // User is authenticated but not admin, redirect to user dashboard
     next('/dashboard')
     return
+  }
+
+  if (requiresTokenParkGame) {
+    try {
+      const parkStatus = await getTokenParkStatus()
+      if (!parkStatus.eligible) {
+        next('/arcade')
+        return
+      }
+    } catch {
+      next('/arcade')
+      return
+    }
   }
 
   if (requiresAdmin && authStore.isAdmin) {

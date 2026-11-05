@@ -115,6 +115,7 @@ func IsUnauthorized(err error) bool {
 
 // Client Sub2API HTTP 客户端
 type Client struct {
+	newAPI         *newAPIClient
 	BaseURL        string
 	Email          string
 	Password       string
@@ -216,6 +217,9 @@ type LoginResponse struct {
 
 // Login 使用 email + password 登录
 func (c *Client) Login(ctx context.Context) error {
+	if c.newAPI != nil {
+		return c.newAPI.login(ctx)
+	}
 	loginReq := LoginRequest{
 		Email:    c.Email,
 		Password: c.Password,
@@ -332,8 +336,10 @@ type Group struct {
 // CurrentUserProfile is the small wallet/profile projection exposed by the
 // remote Sub2API instance for the authenticated Provider account.
 type CurrentUserProfile struct {
-	Balance        float64 `json:"balance"`
-	TotalRecharged float64 `json:"total_recharged"`
+	// TotalConsumed is available when the upstream exposes usage independently of funding.
+	TotalConsumed  *float64 `json:"-"`
+	Balance        float64  `json:"balance"`
+	TotalRecharged float64  `json:"total_recharged"`
 }
 
 // CurrentUserBalance is kept as an alias for callers that only need the wallet
@@ -490,6 +496,9 @@ type GroupRatesResponse struct {
 
 // GetAPIKeys 获取 API Keys
 func (c *Client) GetAPIKeys(ctx context.Context, path string) ([]APIKey, error) {
+	if c.newAPI != nil {
+		return c.newAPI.allKeys(ctx)
+	}
 	const pageSize = 100
 	all := make([]APIKey, 0)
 	seen := make(map[int64]struct{})
@@ -516,6 +525,9 @@ func (c *Client) GetAPIKeys(ctx context.Context, path string) ([]APIKey, error) 
 // GetAPIKeysPage returns one page of remote API keys. Sub2API defaults to a
 // small page size, so callers that need a complete key inventory must iterate.
 func (c *Client) GetAPIKeysPage(ctx context.Context, path string, page, pageSize int) ([]APIKey, int64, error) {
+	if c.newAPI != nil {
+		return c.newAPI.keysPage(ctx, page, pageSize)
+	}
 	if page < 1 {
 		page = 1
 	}
@@ -542,6 +554,9 @@ func (c *Client) GetAPIKeysPage(ctx context.Context, path string, page, pageSize
 
 // GetGroups 获取分组列表
 func (c *Client) GetGroups(ctx context.Context, path string) ([]Group, error) {
+	if c.newAPI != nil {
+		return c.newAPI.groups(ctx)
+	}
 	var resp GroupsResponse
 	if err := c.makeRequestWithAuth(ctx, http.MethodGet, path, nil, &resp); err != nil {
 		return nil, fmt.Errorf("get groups failed: %w", err)
@@ -567,6 +582,9 @@ func (c *Client) GetCurrentUserBalance(ctx context.Context) (float64, error) {
 
 // GetCurrentUserProfile reads the authenticated user's wallet profile.
 func (c *Client) GetCurrentUserProfile(ctx context.Context) (CurrentUserProfile, error) {
+	if c.newAPI != nil {
+		return c.newAPI.profile(ctx)
+	}
 	var resp CurrentUserResponse
 	if err := c.makeRequestWithAuth(ctx, http.MethodGet, "/api/v1/auth/me", nil, &resp); err != nil {
 		return CurrentUserProfile{}, fmt.Errorf("get current user profile failed: %w", err)
@@ -581,6 +599,9 @@ func (c *Client) GetCurrentUserProfile(ctx context.Context) (CurrentUserProfile,
 // remote user dashboard. Older compatible upstreams may not expose this route;
 // callers should treat that error as an optional-metrics miss.
 func (c *Client) GetUserDashboardStats(ctx context.Context) (UserDashboardStats, error) {
+	if c.newAPI != nil {
+		return UserDashboardStats{}, errNewAPIUnsupportedStats
+	}
 	var resp UserDashboardStatsResponse
 	if err := c.makeRequestWithAuth(ctx, http.MethodGet, "/api/v1/usage/dashboard/stats", nil, &resp); err != nil {
 		return UserDashboardStats{}, fmt.Errorf("get user dashboard stats failed: %w", err)
@@ -594,6 +615,9 @@ func (c *Client) GetUserDashboardStats(ctx context.Context) (UserDashboardStats,
 // GetUserDashboardTrend reads the user Token usage trend for a bounded date
 // range. The endpoint is optional on older upstreams.
 func (c *Client) GetUserDashboardTrend(ctx context.Context, startDate, endDate, granularity string) ([]UserDashboardTrendPoint, error) {
+	if c.newAPI != nil {
+		return nil, errNewAPIUnsupportedStats
+	}
 	u, err := url.Parse("/api/v1/usage/dashboard/trend")
 	if err != nil {
 		return nil, fmt.Errorf("build user dashboard trend path: %w", err)
@@ -627,6 +651,9 @@ func (c *Client) GetUserDashboardTrend(ctx context.Context, startDate, endDate, 
 // GetAPIKeysUsage reads bounded per-key usage totals from the upstream user
 // dashboard. The upstream contract accepts at most 100 IDs per request.
 func (c *Client) GetAPIKeysUsage(ctx context.Context, apiKeyIDs []int64) (map[int64]APIKeyUsageStats, error) {
+	if c.newAPI != nil {
+		return nil, errNewAPIUnsupportedStats
+	}
 	ids := make([]int64, 0, len(apiKeyIDs))
 	seen := make(map[int64]struct{}, len(apiKeyIDs))
 	for _, id := range apiKeyIDs {
@@ -746,6 +773,9 @@ func (c *Client) GetUserBalanceRedemptionFunding(ctx context.Context) (float64, 
 // profile's total_recharged is normally orders plus redemptions; if an older
 // installation only tracked redemptions, the order subtotal is added back.
 func (c *Client) GetUserFundingSummaryWithFallback(ctx context.Context, profileTotal float64) (UserFundingSummary, string, error) {
+	if c.newAPI != nil {
+		return UserFundingSummary{}, "", errNewAPIUnsupportedStats
+	}
 	if summary, err := c.GetUserFundingSummary(ctx); err == nil {
 		return summary, "orders_and_redeems", nil
 	}
@@ -787,6 +817,9 @@ func (c *Client) GetUserFundingSummaryWithFallback(ctx context.Context, profileT
 // fall back to Group.RateMultiplier when an older compatible upstream does not
 // expose this optional endpoint.
 func (c *Client) GetGroupRates(ctx context.Context) (map[string]float64, error) {
+	if c.newAPI != nil {
+		return map[string]float64{}, nil // New API groups already include the effective user ratio.
+	}
 	var resp GroupRatesResponse
 	if err := c.makeRequestWithAuth(ctx, http.MethodGet, "/api/v1/groups/rates", nil, &resp); err != nil {
 		return nil, fmt.Errorf("get group rates failed: %w", err)
@@ -804,6 +837,9 @@ func (c *Client) GetGroupRates(ctx context.Context) (map[string]float64, error) 
 // response body is intentionally ignored; HTTP success proves reachability and
 // the authenticated Keys/Groups checks validate the API contract separately.
 func (c *Client) ProbeHealth(ctx context.Context, path string) error {
+	if c.newAPI != nil {
+		return c.newAPI.health(ctx)
+	}
 	return c.makeRequest(ctx, http.MethodGet, path, nil, nil)
 }
 
@@ -858,6 +894,11 @@ func (c *Client) makeRequest(ctx context.Context, method, path string, body, res
 // EnsureLoggedIn 优先复用有效 Access Token；Access Token 过期时优先使用
 // Refresh Token 轮换。密码模式可在刷新失败后重新登录，导入 Token 模式则返回需人工处理的错误。
 func (c *Client) EnsureLoggedIn(ctx context.Context, providerID int64, cache *TokenCache) error {
+	if c.newAPI != nil {
+		c.providerID = providerID
+		c.tokenCache = cache
+		return c.newAPI.ensureLoggedIn(ctx)
+	}
 	c.providerID = providerID
 	c.tokenCache = cache
 	if cache == nil {
@@ -886,6 +927,9 @@ func (c *Client) EnsureLoggedIn(ctx context.Context, providerID int64, cache *To
 // Reauthenticate 恢复一次被上游 401 拒绝的认证状态。若其他并发请求已经
 // 完成轮换，直接采用缓存中的新 Token；否则按认证模式串行执行 Refresh 或密码登录。
 func (c *Client) Reauthenticate(ctx context.Context) error {
+	if c.newAPI != nil {
+		return c.newAPI.login(ctx)
+	}
 	if c.tokenCache == nil {
 		if c.RefreshToken != "" {
 			if err := c.Refresh(ctx); err == nil {
@@ -1113,6 +1157,9 @@ type UpdateAPIKeyGroupResponse struct {
 
 // UpdateAPIKeyGroup 修改远程 APIKey 的分组
 func (c *Client) UpdateAPIKeyGroup(ctx context.Context, keysPath string, keyID, groupID int64) error {
+	if c.newAPI != nil {
+		return fmt.Errorf("New API automatic group switching is not supported")
+	}
 	// 构造 PUT 路径，如 /api/v1/keys/272
 	path := fmt.Sprintf("%s/%d", keysPath, keyID)
 

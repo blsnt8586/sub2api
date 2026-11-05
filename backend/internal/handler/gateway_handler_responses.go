@@ -183,6 +183,8 @@ func (h *GatewayHandler) Responses(c *gin.Context) {
 		APIKeyID:  apiKey.ID,
 	}
 	sessionHash := h.gatewayService.GenerateSessionHash(parsedReq)
+	c.Request = c.Request.WithContext(service.WithProviderRequestHealth(c.Request.Context()))
+	requestCtx = service.WithProviderRequestHealth(requestCtx)
 
 	// 3. Account selection + failover loop
 	fs := NewFailoverState(h.maxAccountSwitches, false)
@@ -278,6 +280,7 @@ func (h *GatewayHandler) Responses(c *gin.Context) {
 		accountReleaseFunc = wrapReleaseOnDone(c.Request.Context(), accountReleaseFunc)
 
 		// 5. Forward request
+		providerHealthStart := time.Now()
 		writerSizeBeforeForward := c.Writer.Size()
 		forwardBody := body
 		if channelMapping.Mapped {
@@ -298,6 +301,7 @@ func (h *GatewayHandler) Responses(c *gin.Context) {
 		} else {
 			result, err = h.gatewayService.ForwardAsResponses(requestCtx, c, account, forwardBody, parsedReq)
 		}
+		h.gatewayService.ObserveProviderRequestHealth(requestCtx, c, account, apiKey.GroupID, sessionHash, providerHealthStart, result, err)
 
 		if accountReleaseFunc != nil {
 			accountReleaseFunc()

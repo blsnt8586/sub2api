@@ -53,7 +53,8 @@
           <!-- 批量优化 -->
           <button
             @click="emit('optimize-all', provider); emit('close')"
-            :disabled="optimizing"
+            :disabled="optimizing || provider.provider_type === 'newapi'"
+            :title="provider.provider_type === 'newapi' ? t('admin.sub2apiProviders.newapiCapabilities') : undefined"
             class="flex min-h-11 w-full items-center gap-2 px-4 py-2 text-sm hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500 disabled:opacity-40 dark:hover:bg-dark-700"
           >
             <Icon :name="optimizing ? 'refresh' : 'bolt'" size="sm" class="text-orange-500" :class="optimizing ? 'animate-spin' : ''" />

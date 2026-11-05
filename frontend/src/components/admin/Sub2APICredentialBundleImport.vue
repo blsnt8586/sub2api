@@ -22,7 +22,7 @@
       data-test="credential-session-warning"
     >
       <Icon name="exclamationTriangle" size="sm" class="mt-0.5 flex-shrink-0" />
-      <span>{{ t('admin.sub2apiProviders.form.credentialSessionWarning') }}</span>
+      <span>{{ t(props.providerType === 'newapi' ? 'admin.sub2apiProviders.form.newapiExportHint' : 'admin.sub2apiProviders.form.credentialSessionWarning') }}</span>
     </div>
 
     <div v-if="showImporter" class="mt-3 space-y-2">
@@ -74,14 +74,15 @@
       data-test="credential-bundle-summary"
     >
       <span class="truncate">{{ t('admin.sub2apiProviders.form.credentialSource') }}: {{ summary.sourceOrigin }}</span>
-      <span v-if="summary.cookieCount === 0" data-test="credential-cookie-none">
+      <span v-if="summary.providerType !== 'newapi' && summary.cookieCount === 0" data-test="credential-cookie-none">
         {{ t('admin.sub2apiProviders.form.credentialCookieNone') }}
       </span>
-      <span v-else>
+      <span v-else-if="summary.providerType !== 'newapi'">
         {{ t('admin.sub2apiProviders.form.credentialCookieSummary', { count: summary.cookieCount, httpOnly: summary.httpOnlyCookieCount }) }}
       </span>
+      <span v-if="summary.userID">{{ t('admin.sub2apiProviders.form.newapiUserID') }}: {{ summary.userID }}</span>
       <span v-if="summary.email" class="truncate">{{ t('admin.sub2apiProviders.form.email') }}: {{ summary.email }}</span>
-      <span>{{ t('admin.sub2apiProviders.form.credentialCookiesNotStored') }}</span>
+      <span v-if="summary.providerType !== 'newapi'">{{ t('admin.sub2apiProviders.form.credentialCookiesNotStored') }}</span>
     </div>
   </div>
 </template>
@@ -99,6 +100,7 @@ import {
 
 const props = defineProps<{
   expectedBaseUrl?: string
+  providerType?: 'sub2api' | 'newapi'
 }>()
 
 const emit = defineEmits<{
@@ -121,7 +123,7 @@ const errorMessage = (error: unknown) => {
 
 const applyBundle = () => {
   try {
-    const parsed = parseSub2APICredentialBundle(bundleText.value, props.expectedBaseUrl)
+    const parsed = parseSub2APICredentialBundle(bundleText.value, props.expectedBaseUrl, props.providerType || 'sub2api')
     summary.value = parsed
     bundleText.value = ''
     showSecrets.value = false

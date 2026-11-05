@@ -507,6 +507,13 @@ func (s *SettingService) buildSystemSettingsUpdates(ctx context.Context, setting
 	updates[SettingPaymentVisibleMethodWxpaySource] = settings.PaymentVisibleMethodWxpaySource
 	updates[SettingPaymentVisibleMethodAlipayEnabled] = strconv.FormatBool(settings.PaymentVisibleMethodAlipayEnabled)
 	updates[SettingPaymentVisibleMethodWxpayEnabled] = strconv.FormatBool(settings.PaymentVisibleMethodWxpayEnabled)
+	updates[SettingKeyTokenParkRewardEnabled] = strconv.FormatBool(settings.TokenParkRewardEnabled)
+	updates[SettingKeyTokenParkMinBalanceUSD] = strconv.FormatFloat(settings.TokenParkMinBalanceUSD, 'f', 2, 64)
+	tokenParkRewards, err := json.Marshal(settings.TokenParkGameRewardsUSD)
+	if err != nil {
+		return nil, fmt.Errorf("marshal token park rewards: %w", err)
+	}
+	updates[SettingKeyTokenParkGameRewardsUSD] = string(tokenParkRewards)
 	updates[SettingKeyOpenAILowUpstreamRatePriorityEnabled] = strconv.FormatBool(settings.OpenAILowUpstreamRatePriorityEnabled)
 	updates[SettingKeyOpenAIOAuthSchedulingRateMultiplier] = ""
 	if rate := settings.OpenAIOAuthSchedulingRateMultiplier; rate != nil {

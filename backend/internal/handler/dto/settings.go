@@ -49,6 +49,9 @@ type SystemSettings struct {
 	LoginAgreementMode                  string                   `json:"login_agreement_mode"`
 	LoginAgreementUpdatedAt             string                   `json:"login_agreement_updated_at"`
 	LoginAgreementDocuments             []LoginAgreementDocument `json:"login_agreement_documents"`
+	TokenParkRewardEnabled              bool                     `json:"token_park_reward_enabled"`
+	TokenParkMinBalanceUSD              float64                  `json:"token_park_min_balance_usd"`
+	TokenParkGameRewardsUSD             map[string]float64       `json:"token_park_game_rewards_usd"`
 
 	SMTPHost               string `json:"smtp_host"`
 	SMTPPort               int    `json:"smtp_port"`

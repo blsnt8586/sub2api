@@ -41,6 +41,9 @@ func RegisterAdminRoutes(
 
 		// 用户管理
 		registerUserManagementRoutes(admin, h)
+		if h.TokenPark != nil {
+			admin.GET("/token-park/leaderboard", h.TokenPark.AdminLeaderboard)
+		}
 
 		// 分组管理
 		registerGroupRoutes(admin, h)
@@ -866,6 +869,11 @@ func registerSub2APIProviderRoutes(admin *gin.RouterGroup, h *handler.Handlers) 
 		providers.POST("/:id/test-connection", h.Admin.Sub2APIProvider.TestConnection)
 		providers.GET("/:id/remote-overview", h.Admin.Sub2APIProvider.RemoteOverview)
 		providers.GET("/:id/health", h.Admin.Sub2APIProvider.Health)
+		providers.GET("/:id/accounts/:account_id/health-policy", h.Admin.Sub2APIProvider.AccountHealthPolicy)
+		providers.PUT("/:id/accounts/:account_id/health-policy", h.Admin.Sub2APIProvider.AccountHealthPolicy)
+		providers.GET("/:id/passive-health-policy", h.Admin.Sub2APIProvider.PassiveHealthPolicy)
+		providers.PUT("/:id/passive-health-policy", h.Admin.Sub2APIProvider.UpdatePassiveHealthPolicy)
+		providers.GET("/:id/daily-costs", h.Admin.Sub2APIProvider.DailyCosts)
 		providers.GET("/:id/probe-config", h.Admin.Sub2APIProvider.GetProbeConfig)
 		providers.PUT("/:id/probe-config", h.Admin.Sub2APIProvider.UpdateProbeConfig)
 		providers.POST("/:id/probe/run", h.Admin.Sub2APIProvider.RunProbe)

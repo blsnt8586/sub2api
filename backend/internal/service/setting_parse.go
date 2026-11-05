@@ -64,6 +64,9 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 		SettingKeyLoginAgreementMode:                        defaultLoginAgreementMode,
 		SettingKeyLoginAgreementUpdatedAt:                   defaultLoginAgreementDate,
 		SettingKeyLoginAgreementDocuments:                   loginAgreementDocumentsJSON,
+		SettingKeyTokenParkRewardEnabled:                    "true",
+		SettingKeyTokenParkMinBalanceUSD:                    "20",
+		SettingKeyTokenParkGameRewardsUSD:                   `{"miner":1,"ocean":1,"tower":1}`,
 		SettingKeyAPIKeyACLTrustForwardedIP:                 "true",
 		SettingKeyForwardedClientIPHeaders:                  string(forwardedClientIPHeadersJSON),
 		settingKeyForwardedClientIPModeV2:                   "true",
@@ -337,6 +340,9 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 		LoginAgreementMode:                     normalizeLoginAgreementMode(settings[SettingKeyLoginAgreementMode]),
 		LoginAgreementUpdatedAt:                loginAgreementUpdatedAt,
 		LoginAgreementDocuments:                loginAgreementDocuments,
+		TokenParkRewardEnabled:                 settings[SettingKeyTokenParkRewardEnabled] != "false",
+		TokenParkMinBalanceUSD:                 parseTokenParkMinBalance(settings),
+		TokenParkGameRewardsUSD:                parseTokenParkRewards(settings[SettingKeyTokenParkGameRewardsUSD]),
 		SMTPHost:                               settings[SettingKeySMTPHost],
 		SMTPUsername:                           settings[SettingKeySMTPUsername],
 		SMTPFrom:                               settings[SettingKeySMTPFrom],
@@ -1004,6 +1010,36 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 	})
 
 	return result
+}
+
+func parseNonNegativeFloat(raw string, fallback float64) float64 {
+	v, err := strconv.ParseFloat(strings.TrimSpace(raw), 64)
+	if err != nil || math.IsNaN(v) || math.IsInf(v, 0) || v < 0 {
+		return fallback
+	}
+	return v
+}
+
+func parseTokenParkRewards(raw string) map[string]float64 {
+	result := map[string]float64{"miner": 1, "ocean": 1, "tower": 1}
+	var parsed map[string]float64
+	if err := json.Unmarshal([]byte(raw), &parsed); err != nil {
+		return result
+	}
+	for game, amount := range parsed {
+		if _, ok := result[game]; ok && amount >= 0 && !math.IsNaN(amount) && !math.IsInf(amount, 0) {
+			result[game] = amount
+		}
+	}
+	return result
+}
+
+func parseTokenParkMinBalance(settings map[string]string) float64 {
+	raw := settings[SettingKeyTokenParkMinBalanceUSD]
+	if strings.TrimSpace(raw) == "" {
+		raw = settings[SettingKeyTokenParkMinPaidRechargeCNY]
+	}
+	return parseNonNegativeFloat(raw, 20)
 }
 
 func normalizeOpenAITTFTMode(mode string) string {

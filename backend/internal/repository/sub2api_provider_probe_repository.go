@@ -240,19 +240,21 @@ WITH requests AS (
   SELECT COALESCE(o.response_latency_ms, o.upstream_latency_ms, 0)::double precision, FALSE
     FROM ops_error_logs o JOIN accounts a ON a.id = o.account_id
    WHERE a.provider_id = $1 AND o.created_at >= $2 AND COALESCE(o.status_code, 0) >= 400
+     AND COALESCE(o.is_business_limited, false) = false
 ), summary AS (
   SELECT COUNT(*)::int AS total,
          COUNT(*) FILTER (WHERE success)::int AS successes,
+         COUNT(*) FILTER (WHERE NOT success)::int AS failures,
          percentile_cont(0.95) WITHIN GROUP (ORDER BY latency_ms) AS p95
     FROM requests
 )
-SELECT total, successes, p95 FROM summary`
-	var total, successes int
+SELECT total, successes, failures, p95 FROM summary`
+	var total, successes, failures int
 	var p95 sql.NullFloat64
-	if err := r.db.QueryRowContext(ctx, q, providerID, since.UTC()).Scan(&total, &successes, &p95); err != nil {
+	if err := r.db.QueryRowContext(ctx, q, providerID, since.UTC()).Scan(&total, &successes, &failures, &p95); err != nil {
 		return nil, err
 	}
-	out := &service.Sub2APIProviderTrafficStats{RequestCount: total}
+	out := &service.Sub2APIProviderTrafficStats{RequestCount: total, FailureCount: failures}
 	if total > 0 {
 		out.SuccessRate = float64(successes) / float64(total) * 100
 		out.P95LatencyMS = int(p95.Float64)
@@ -521,29 +523,41 @@ func (r *sub2APIProviderProbeRepository) TargetTrafficStats(ctx context.Context,
 	}
 	const q = `
 WITH requests AS (
-  SELECT ul.duration_ms::double precision AS latency_ms, TRUE AS success
+  SELECT ul.duration_ms::double precision AS latency_ms, TRUE AS success,
+         ul.cache_read_tokens::double precision AS cache_read_tokens,
+         (ul.input_tokens + ul.cache_creation_tokens + ul.cache_read_tokens)::double precision AS prompt_tokens
     FROM usage_logs ul
    WHERE ul.account_id = $1 AND ul.created_at >= $2
   UNION ALL
-  SELECT COALESCE(o.response_latency_ms, o.upstream_latency_ms, 0)::double precision, FALSE
+  SELECT COALESCE(o.response_latency_ms, o.upstream_latency_ms, 0)::double precision, FALSE, 0::double precision, 0::double precision
     FROM ops_error_logs o
    WHERE o.account_id = $1 AND o.created_at >= $2 AND COALESCE(o.status_code, 0) >= 400
+     AND COALESCE(o.is_business_limited, false) = false
 ), summary AS (
   SELECT COUNT(*)::int AS total,
          COUNT(*) FILTER (WHERE success)::int AS successes,
-         percentile_cont(0.95) WITHIN GROUP (ORDER BY latency_ms) AS p95
+         COUNT(*) FILTER (WHERE NOT success)::int AS failures,
+         percentile_cont(0.95) WITHIN GROUP (ORDER BY latency_ms) AS p95,
+         COALESCE(AVG(latency_ms) FILTER (WHERE success), 0) AS avg_duration,
+         COALESCE(SUM(cache_read_tokens) FILTER (WHERE success), 0) AS cache_read,
+         COALESCE(SUM(prompt_tokens) FILTER (WHERE success), 0) AS prompt
     FROM requests
 )
-SELECT total, successes, p95 FROM summary`
-	var total, successes int
-	var p95 sql.NullFloat64
-	if err := r.db.QueryRowContext(ctx, q, accountID, since.UTC()).Scan(&total, &successes, &p95); err != nil {
+SELECT total, successes, failures, p95, avg_duration, cache_read, prompt FROM summary`
+	var total, successes, failures int
+	var p95, avgDuration, cacheRead, prompt sql.NullFloat64
+	if err := r.db.QueryRowContext(ctx, q, accountID, since.UTC()).Scan(&total, &successes, &failures, &p95, &avgDuration, &cacheRead, &prompt); err != nil {
 		return nil, err
 	}
-	out := &service.Sub2APIProviderProbeTargetTrafficStats{RequestCount: total}
+	out := &service.Sub2APIProviderProbeTargetTrafficStats{RequestCount: total, FailureCount: failures}
 	if total > 0 {
 		out.SuccessRate = float64(successes) / float64(total) * 100
 		out.P95LatencyMS = int(p95.Float64)
+		out.AverageDurationMS = avgDuration.Float64
+		if prompt.Float64 > 0 {
+			out.CacheHitRate = cacheRead.Float64 / prompt.Float64
+			out.CacheHitRateAvailable = true
+		}
 	}
 	return out, nil
 }

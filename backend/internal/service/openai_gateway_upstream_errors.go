@@ -472,6 +472,22 @@ const (
 	OpenAIHTTPContinuationUnsupportedReason = GatewayFailureReason("openai_http_continuation_unsupported")
 )
 
+// OpenAIResponsesToolsRequireResponsesReason identifies an account whose
+// Chat Completions fallback cannot preserve Responses-only tool semantics.
+const OpenAIResponsesToolsRequireResponsesReason GatewayFailureReason = "openai_responses_tools_require_responses"
+
+func newOpenAIResponsesToolsRequireResponsesFailoverError(model string) *UpstreamFailoverError {
+	message := fmt.Sprintf("%s requires a Responses-capable account for tool calls", normalizeKnownOpenAICodexModel(model))
+	return &UpstreamFailoverError{
+		StatusCode:        http.StatusBadRequest,
+		Scope:             GatewayFailureScopeAccount,
+		Reason:            OpenAIResponsesToolsRequireResponsesReason,
+		NextAccountAction: NextAccountRetry,
+		ClientStatusCode:  http.StatusBadRequest,
+		ClientMessage:     message,
+	}
+}
+
 // isOpenAIUpstreamAccessStateError recognizes provider-side credential state
 // failures only from explicit structured codes. Free-form messages may contain
 // echoed user input, including inside stream terminal error.message fields.

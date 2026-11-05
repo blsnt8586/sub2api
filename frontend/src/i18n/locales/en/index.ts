@@ -7,6 +7,8 @@ import channelMonitorV2 from './channelMonitorV2'
 import batchImage from './batchImage'
 import admin from './admin'
 import misc from './misc'
+import arcade from './arcade'
+import toolDownloads from './toolDownloads'
 
 export default {
   adminAccessKeys,
@@ -18,4 +20,6 @@ export default {
   ...batchImage,
   admin,
   ...misc,
+  ...arcade,
+  ...toolDownloads,
 }

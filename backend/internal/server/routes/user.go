@@ -17,6 +17,13 @@ func RegisterUserRoutes(
 	settingService *service.SettingService,
 	panelRateLimiter *middleware.PanelRateLimiter,
 ) {
+	// Open-source installers are public immutable files. Native browser downloads
+	// cannot attach the panel's bearer token; only published manifest entries are
+	// served here. Listing the tools continues to require panel authentication.
+	if h.ToolDownloads != nil {
+		v1.GET("/tool-downloads/files/:release/:name", h.ToolDownloads.Download)
+		v1.HEAD("/tool-downloads/files/:release/:name", h.ToolDownloads.Download)
+	}
 	authenticated := v1.Group("")
 	authenticated.Use(gin.HandlerFunc(jwtAuth))
 	authenticated.Use(middleware.BackendModeUserGuard(settingService))
@@ -26,6 +33,15 @@ func RegisterUserRoutes(
 	authenticated.Use(gin.HandlerFunc(auditLog))
 	{
 		// 用户接口
+		tokenPark := authenticated.Group("/token-park")
+		{
+			tokenPark.GET("/status", h.TokenPark.Status)
+			tokenPark.GET("/leaderboard", h.TokenPark.Leaderboard)
+			tokenPark.GET("/games/:game/progress", h.TokenPark.GetProgress)
+			tokenPark.PUT("/games/:game/progress", h.TokenPark.SaveProgress)
+			tokenPark.DELETE("/games/:game/progress", h.TokenPark.DeleteProgress)
+			tokenPark.POST("/games/:game/claim", h.TokenPark.Claim)
+		}
 		user := authenticated.Group("/user")
 		{
 			user.GET("/profile", h.User.GetProfile)
@@ -77,6 +93,11 @@ func RegisterUserRoutes(
 				passkeys.PATCH("/:id", h.Passkey.Rename)
 				passkeys.DELETE("/:id", h.Passkey.Delete)
 			}
+		}
+
+		// 工具下载：登录用户共享每日刷新的官方 Release 信息。
+		if h.ToolDownloads != nil {
+			authenticated.GET("/tool-downloads", h.ToolDownloads.List)
 		}
 
 		// Codex 雷达（管理员开关开启后用户可读，handler 内再次校验开关）

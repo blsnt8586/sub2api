@@ -1,5 +1,6 @@
 export const SUB2API_CREDENTIAL_BUNDLE_FORMAT = 'sub2api-browser-credentials'
 export const SUB2API_CREDENTIAL_BUNDLE_VERSION = 1
+export const NEWAPI_CREDENTIAL_BUNDLE_FORMAT = 'newapi-browser-credentials'
 
 const MAX_BUNDLE_BYTES = 256 * 1024
 const MAX_TOKEN_LENGTH = 128 * 1024
@@ -14,6 +15,9 @@ export type Sub2APICredentialBundleErrorCode =
   | 'originMismatch'
   | 'tokenPairMissing'
   | 'tokenTooLarge'
+  | 'providerMismatch'
+  | 'managementTokenMissing'
+  | 'invalidUserID'
 
 export class Sub2APICredentialBundleError extends Error {
   constructor(public readonly code: Sub2APICredentialBundleErrorCode) {
@@ -23,6 +27,8 @@ export class Sub2APICredentialBundleError extends Error {
 }
 
 export interface Sub2APICredentialBundle {
+  providerType?: 'sub2api' | 'newapi'
+  userID?: string
   accessToken: string
   refreshToken: string
   email?: string
@@ -89,7 +95,8 @@ function parseOptionalTimestamp(value: unknown): number | undefined {
 
 export function parseSub2APICredentialBundle(
   raw: string,
-  expectedBaseURL?: string
+  expectedBaseURL?: string,
+  expectedProviderType?: 'sub2api' | 'newapi'
 ): Sub2APICredentialBundle {
   const trimmed = raw.trim()
   if (!trimmed) throw new Sub2APICredentialBundleError('empty')
@@ -103,13 +110,17 @@ export function parseSub2APICredentialBundle(
     throw new Sub2APICredentialBundleError('invalidJson')
   }
   const bundle = asRecord(decoded)
-  if (!bundle || bundle.format !== SUB2API_CREDENTIAL_BUNDLE_FORMAT) {
+  if (!bundle || ![SUB2API_CREDENTIAL_BUNDLE_FORMAT, NEWAPI_CREDENTIAL_BUNDLE_FORMAT].includes(String(bundle.format))) {
     throw new Sub2APICredentialBundleError('invalidFormat')
   }
   if (bundle.version !== SUB2API_CREDENTIAL_BUNDLE_VERSION) {
     throw new Sub2APICredentialBundleError('unsupportedVersion')
   }
 
+  const providerType = bundle.format === NEWAPI_CREDENTIAL_BUNDLE_FORMAT ? 'newapi' : 'sub2api'
+  if (expectedProviderType && providerType !== expectedProviderType) {
+    throw new Sub2APICredentialBundleError('providerMismatch')
+  }
   const source = asRecord(bundle.source)
   const sourceOrigin = normalizeOrigin(source?.origin)
   if (expectedBaseURL?.trim()) {
@@ -119,6 +130,27 @@ export function parseSub2APICredentialBundle(
     }
   }
 
+  if (providerType === 'newapi') {
+    const credentials = asRecord(bundle.credentials)
+    const accessToken = optionalString(credentials?.access_token)
+    if (!accessToken) throw new Sub2APICredentialBundleError('managementTokenMissing')
+    if (accessToken.length > MAX_TOKEN_LENGTH) throw new Sub2APICredentialBundleError('tokenTooLarge')
+    const userID = typeof credentials?.user_id === 'number' ? String(credentials.user_id) : optionalString(credentials?.user_id)
+    if (!userID || !/^[1-9]\d*$/.test(userID) || !Number.isSafeInteger(Number(userID))) {
+      throw new Sub2APICredentialBundleError('invalidUserID')
+    }
+    return {
+      providerType,
+      userID,
+      accessToken,
+      refreshToken: '',
+      sourceOrigin,
+      capturedAt: optionalString(source?.captured_at),
+      cookieCount: 0,
+      httpOnlyCookieCount: 0,
+      rawSize,
+    }
+  }
   const storage = asRecord(bundle.local_storage)
   const accessToken = optionalString(storage?.auth_token)
   const refreshToken = optionalString(storage?.refresh_token)
@@ -136,6 +168,7 @@ export function parseSub2APICredentialBundle(
   }, 0)
 
   return {
+    providerType,
     accessToken,
     refreshToken,
     email: extractEmail(storage?.auth_user),

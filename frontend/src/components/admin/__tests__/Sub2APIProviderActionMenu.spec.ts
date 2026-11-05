@@ -45,5 +45,20 @@ describe('Sub2APIProviderActionMenu', () => {
     expect(wrapper.emitted('probe-settings')).toHaveLength(1)
     expect(wrapper.emitted('optimize-all')).toHaveLength(1)
     expect(wrapper.emitted('delete')).toHaveLength(1)
+    wrapper.unmount()
   })
+})
+
+it('disables New API optimization while keeping account management actions available', () => {
+  const wrapper = mount(Sub2APIProviderActionMenu, {
+    props: { show: true, provider: { ...provider, provider_type: 'newapi' }, position: { top: 10, left: 10 } },
+    attachTo: document.body,
+  })
+  const buttons = Array.from(document.body.querySelectorAll('button'))
+  const optimize = buttons.find(button => button.textContent?.includes('admin.sub2apiProviders.optimizeAll'))!
+  expect(optimize.disabled).toBe(true)
+  optimize.click()
+  expect(wrapper.emitted('optimize-all')).toBeUndefined()
+  expect(buttons.find(button => button.textContent?.includes('common.edit'))?.disabled).toBe(false)
+  wrapper.unmount()
 })

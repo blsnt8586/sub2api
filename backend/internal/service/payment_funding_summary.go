@@ -9,9 +9,10 @@ import (
 // UserFundingSummary separates balance credited by payment orders from
 // standalone balance redemptions.
 type UserFundingSummary struct {
-	OrderRecharged  float64 `json:"order_recharged"`
-	RedeemRecharged float64 `json:"redeem_recharged"`
-	TotalRecharged  float64 `json:"total_recharged"`
+	OrderRecharged        float64 `json:"order_recharged"`
+	PaidOrderRechargedCNY float64 `json:"paid_order_recharged_cny"`
+	RedeemRecharged       float64 `json:"redeem_recharged"`
+	TotalRecharged        float64 `json:"total_recharged"`
 }
 
 // GetUserFundingSummary returns lifetime successful positive balance credits.
@@ -62,6 +63,32 @@ func (s *PaymentService) GetUserFundingSummary(ctx context.Context, userID int64
 				  )
 			), 0) AS order_recharged,
 			COALESCE((
+				SELECT SUM(
+					CASE
+						WHEN po.status IN ('REFUNDED', 'PARTIALLY_REFUNDED')
+							THEN CASE
+								WHEN po.amount <= 0 OR po.refund_amount >= po.amount THEN 0
+								ELSE po.pay_amount * (1 - po.refund_amount / po.amount)
+							END
+						ELSE po.pay_amount
+					END
+				)
+				FROM payment_orders po
+				WHERE po.user_id = $1
+				  AND po.order_type = 'balance'
+				  AND po.pay_amount > 0
+				  AND UPPER(COALESCE(NULLIF(po.provider_snapshot->>'currency', ''), 'CNY')) = 'CNY'
+				  AND po.status IN (
+					'COMPLETED',
+					'REFUND_REQUESTED',
+					'REFUNDING',
+					'REFUND_PENDING',
+					'REFUND_FAILED',
+					'PARTIALLY_REFUNDED',
+					'REFUNDED'
+				  )
+			), 0) AS paid_order_recharged_cny,
+			COALESCE((
 				SELECT SUM(rc.value)
 				FROM redeem_codes rc
 				WHERE rc.used_by = $1
@@ -89,7 +116,7 @@ func (s *PaymentService) GetUserFundingSummary(ctx context.Context, userID int64
 		}
 		return result, nil
 	}
-	if err := rows.Scan(&result.OrderRecharged, &result.RedeemRecharged); err != nil {
+	if err := rows.Scan(&result.OrderRecharged, &result.PaidOrderRechargedCNY, &result.RedeemRecharged); err != nil {
 		return nil, fmt.Errorf("scan user funding summary: %w", err)
 	}
 	if err := rows.Err(); err != nil {

@@ -505,6 +505,8 @@ func ProvideSchedulerSnapshotService(
 
 // ProvideRateLimitService creates RateLimitService with optional dependencies.
 func ProvideRateLimitService(
+	db *sql.DB,
+	gatewayCache GatewayCache,
 	accountRepo AccountRepository,
 	usageRepo UsageLogRepository,
 	cfg *config.Config,
@@ -517,6 +519,7 @@ func ProvideRateLimitService(
 	ollamaCloudUsage *OllamaCloudUsageService,
 ) *RateLimitService {
 	svc := NewRateLimitService(accountRepo, usageRepo, cfg, geminiQuotaService, tempUnschedCache)
+	svc.providerHealth = NewProviderRequestHealthService(db, gatewayCache)
 	if healthCache, ok := tempUnschedCache.(OpenAIAPIKeyHealthCache); ok {
 		svc.SetOpenAIAPIKeyHealthCache(healthCache)
 	}
@@ -880,6 +883,7 @@ var ProviderSet = wire.NewSet(
 	NewPasskeyService,
 	NewUserService,
 	NewMCPOAuthService,
+	NewTokenParkRewardService,
 	ProvideAPIKeyService,
 	ProvideAPIKeySmartGroupService,
 	ProvideAPIKeyAuthCacheInvalidator,
@@ -1018,6 +1022,7 @@ var ProviderSet = wire.NewSet(
 	NewChannelMonitorRequestTemplateService,
 	ProvideUserPlatformQuotaUsageFlusher,
 	ProvideCodexRadarService,
+	NewToolDownloadsService,
 )
 
 // ProvideCodexRadarService 创建 Codex 雷达代理服务并启动定时预热（二开）。
@@ -1084,6 +1089,7 @@ func ProvideSub2APIProviderProbeRunner(
 	lockCache LeaderLockCache,
 	db *sql.DB,
 ) *Sub2APIProviderProbeRunner {
+	probeService.SetLeaderLock(lockCache, db)
 	probeService.SetAutoOptimizeTrigger(optimizeService)
 	probeService.SetRemoteOverviewCache(remoteOverviewCache)
 	probeService.SetUsageLogRepository(usageRepo)

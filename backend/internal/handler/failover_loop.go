@@ -115,10 +115,25 @@ func effectiveSameAccountRetryLimit(failoverErr *service.UpstreamFailoverError, 
 		return 0
 	}
 	limit := account.GetPoolModeRetryCount()
+	if account.Platform == service.PlatformOpenAI && account.Type == service.AccountTypeAPIKey && limit > 2 {
+		// Initial attempt plus two retries: a fourth attempt must use another key.
+		limit = 2
+	}
 	if limit > 0 && failoverErr != nil && failoverErr.SameAccountRetryMax > 0 && failoverErr.SameAccountRetryMax < limit {
 		return failoverErr.SameAccountRetryMax
 	}
 	return limit
+}
+
+func openAISameAccountRetryAllowed(account *service.Account, failoverErr *service.UpstreamFailoverError, retryCount int) bool {
+	limit := effectiveSameAccountRetryLimit(failoverErr, account)
+	if account != nil && account.Platform == service.PlatformOpenAI && account.Type == service.AccountTypeAPIKey {
+		// A reconstructed deadline must not reopen an exhausted key's budget.
+		if limit <= 0 || retryCount >= limit {
+			return false
+		}
+	}
+	return sameAccountRetryAllowed(failoverErr, retryCount, limit)
 }
 
 // FailoverState 跨循环迭代共享的 failover 状态

@@ -75,6 +75,9 @@ const route = (id: number, accountName: string, platform: string): Sub2APIProvid
   status: id === 1 ? 'healthy' : 'unknown',
   latency_ms: id === 1 ? 240 : null,
   traffic_request_count: 0,
+  average_duration_ms: id === 1 ? 1250 : null,
+  cache_hit_rate: id === 1 ? 0.501 : null,
+  cache_hit_rate_available: id === 1,
   last_checked_at: id === 1 ? '2026-08-14T05:00:00Z' : null,
   last_run_at: id === 1 ? '2026-08-14T05:00:00Z' : null,
   route_changed_at: null,
@@ -280,18 +283,18 @@ describe('Sub2APIProviderCard', () => {
     const summary = wrapper.get('[data-test="provider-remote-overview"]')
     expect(summary.text()).toContain('128.5')
     expect(summary.text()).toContain('500.00')
-    expect(summary.text()).toContain('admin.sub2apiProviders.remoteOverview.fundingBreakdown')
-    expect(summary.findAll('[data-test="remote-metric-detail"]')).toHaveLength(1)
-    expect(summary.get('[data-test="remote-metric-total-recharged"]').find('span[title]').attributes('title')).toContain('admin.sub2apiProviders.remoteOverview.fundingBreakdown')
-    expect(summary.text()).toContain('491.50')
+    expect(summary.text()).not.toContain('admin.sub2apiProviders.remoteOverview.fundingBreakdown')
+    expect(summary.findAll('[data-test="remote-metric-detail"]')).toHaveLength(0)
+    expect(summary.text()).not.toContain('admin.sub2apiProviders.remoteOverview.totalConsumed')
     expect(summary.text()).toContain('4')
     expect(summary.text()).toContain('1.00')
     expect(summary.text()).toContain('600')
     expect(summary.text()).toContain('14.0K')
-    expect(summary.text()).toContain('50.1%')
-    expect(summary.find('[data-test="remote-metric-cache-hit-rate"]').exists()).toBe(true)
-    expect(summary.find('[data-test="remote-metric-average-cache"]').exists()).toBe(false)
-    expect(summary.text()).toContain('1.25s')
+    expect(summary.find('[data-test="remote-metric-cache-hit-rate"]').exists()).toBe(false)
+    expect(summary.find('[data-test="remote-metric-average-response"]').exists()).toBe(false)
+    expect(wrapper.findAll('[data-test="route-traffic-metrics"]')).toHaveLength(1)
+    expect(wrapper.get('[data-test="route-traffic-metrics"]').text()).toContain('50.1%')
+    expect(wrapper.get('[data-test="route-traffic-metrics"]').text()).toContain('1.25s')
     expect(summary.text()).not.toContain('admin.sub2apiProviders.remoteOverview.groups')
     expect(summary.text()).not.toContain('admin.sub2apiProviders.remoteOverview.rateRange')
     expect(wrapper.find('[data-test="provider-remote-overview-status"]').exists()).toBe(false)
@@ -310,6 +313,40 @@ describe('Sub2APIProviderCard', () => {
     })
     expect(failed.text()).toContain('admin.sub2apiProviders.remoteOverview.loadFailed')
     expect(failed.text()).toContain('admin.sub2apiProviders.remoteOverview.retry')
+  })
+
+  it('shows local request profit in three fixed rows even without remote wallet data', () => {
+    const localOverview: Sub2APIProviderRemoteOverview = {
+      ...remoteOverview,
+      available: false,
+      balance: 999999,
+      usage: null,
+      local_usage: { ...remoteOverview.usage!, usage_source: 'local', funding_summary_available: false },
+      profit: {
+        available: true, cost_source: 'local_request_logs', range_start: '', range_end: '', sampled_at: '',
+        total_revenue: 30, total_remote_cost: 0, total_estimated_cost: 15,
+        total_gross_profit: 15, total_gross_margin: 0.5,
+        today_revenue: 2, today_remote_cost: 0, today_estimated_cost: 1,
+        today_gross_profit: 1, today_gross_margin: 0.5,
+        month_gross_profit: -2.5, month_gross_margin: -0.25, month_profit_available: true,
+        cumulative_gross_profit: 15, cumulative_gross_margin: 0.5, cumulative_profit_available: true,
+        accounts: [],
+      },
+    }
+    const wrapper = mount(Sub2APIProviderCard, { props: { provider, remoteOverview: localOverview } })
+    const metrics = wrapper.get('[data-test="provider-remote-metrics"]')
+    expect(metrics.findAll('[data-test^="remote-metric-"]').filter(item => item.attributes('data-test') !== 'remote-metric-detail')
+      .map(item => item.attributes('data-test'))).toEqual([
+      'remote-metric-balance', 'remote-metric-total-recharged', 'remote-metric-total-tokens',
+      'remote-metric-today-requests', 'remote-metric-today-consumed', 'remote-metric-today-tokens',
+      'remote-metric-today-profit', 'remote-metric-month-profit', 'remote-metric-cumulative-profit',
+    ])
+    expect(metrics.get('[data-test="remote-metric-balance"]').text()).not.toContain('999,999')
+    expect(metrics.get('[data-test="remote-metric-total-recharged"]').text()).toContain('-')
+    expect(metrics.get('[data-test="remote-metric-today-profit"]').text()).toContain('$1.00')
+    expect(metrics.get('[data-test="remote-metric-month-profit"]').text()).toContain('$-2.50')
+    expect(metrics.get('[data-test="remote-metric-cumulative-profit"]').text()).toContain('$15.00')
+    expect(metrics.text()).not.toContain('admin.sub2apiProviders.remoteOverview.localUsageSource')
   })
 
   it('keeps the last successful asset data visible after a later refresh failure', () => {
@@ -409,4 +446,17 @@ describe('Sub2APIProviderCard', () => {
     expect(wrapper.get('[data-test="provider-probe-paused"]').exists()).toBe(true)
     expect(wrapper.find('[data-test="provider-control-status"]').exists()).toBe(false)
   })
+})
+
+it('shows New API identity and leaves unknown funding unavailable', () => {
+  const wrapper = mount(Sub2APIProviderCard, {
+    props: {
+      provider: { ...provider, provider_type: 'newapi', auth_mode: 'access_token', has_access_token: true },
+      remoteOverview: { ...remoteOverview, usage: { ...remoteOverview.usage!, funding_summary_available: false, total_recharged: 0, total_consumed: 1.5 } },
+    },
+  })
+  expect(wrapper.text()).toContain('New API')
+  expect(wrapper.text()).toContain('admin.sub2apiProviders.form.authManagementToken')
+  expect(wrapper.get('[data-test="remote-metric-total-recharged"]').text()).toContain('-')
+  expect(wrapper.find('[data-test="remote-metric-total-consumed"]').exists()).toBe(false)
 })

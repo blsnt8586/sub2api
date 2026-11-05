@@ -114,6 +114,22 @@ func TestEffectiveSameAccountRetryLimitHonorsErrorCapAndDisabledAccount(t *testi
 	require.Equal(t, 0, effectiveSameAccountRetryLimit(&service.UpstreamFailoverError{SameAccountRetryMax: 1}, account))
 }
 
+func TestOpenAIAPIKeyRetriesSwitchBeforeFourthAttempt(t *testing.T) {
+	account := &service.Account{Platform: service.PlatformOpenAI, Type: service.AccountTypeAPIKey, Credentials: map[string]any{"pool_mode": true, "pool_mode_retry_count": float64(20)}}
+	for _, deadline := range []time.Time{{}, time.Now().Add(time.Minute)} {
+		err := &service.UpstreamFailoverError{StatusCode: 502, RetryableOnSameAccount: true, SameAccountRetryDeadline: deadline}
+		require.Equal(t, 2, effectiveSameAccountRetryLimit(err, account))
+		require.True(t, openAISameAccountRetryAllowed(account, err, 0), "second attempt may use the same key")
+		require.True(t, openAISameAccountRetryAllowed(account, err, 1), "third attempt is the last retry on the same key")
+		require.False(t, openAISameAccountRetryAllowed(account, err, 2), "fourth attempt must switch even with a deadline")
+	}
+	account.Credentials["pool_mode_retry_count"] = float64(0)
+	require.False(t, openAISameAccountRetryAllowed(account, &service.UpstreamFailoverError{RetryableOnSameAccount: true}, 0))
+	account.Type = service.AccountTypeOAuth
+	err := &service.UpstreamFailoverError{RetryableOnSameAccount: true, SameAccountRetryDeadline: time.Now().Add(time.Minute)}
+	require.True(t, openAISameAccountRetryAllowed(account, err, 10), "OAuth quota windows keep their dedicated policy")
+}
+
 // ---------------------------------------------------------------------------
 // Helper
 // ---------------------------------------------------------------------------

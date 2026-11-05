@@ -146,4 +146,9 @@ func TestOpenAIResponsesRequiredCapabilityForRequest(t *testing.T) {
 	require.Equal(t, service.OpenAIEndpointCapabilityChatCompletions, openAIResponsesRequiredCapability(true, service.PlatformGrok))
 	require.Equal(t, service.OpenAIEndpointCapabilityResponses, openAIResponsesRequiredCapabilityForRequest(false, true, service.PlatformOpenAI))
 	require.Equal(t, service.OpenAIEndpointCapabilityChatCompletions, openAIResponsesRequiredCapabilityForRequest(false, true, service.PlatformGrok))
+	require.True(t, openAIResponsesToolsRequireResponsesCapability("gpt-6.1-sol", []byte(`{"tools":[{"type":"function"}]}`)))
+	require.False(t, openAIResponsesToolsRequireResponsesCapability("gpt-6.1-sol", []byte(`{"tools":[]}`)))
+	require.False(t, openAIResponsesToolsRequireResponsesCapability("gpt-5.4", []byte(`{"tools":[{"type":"function"}]}`)))
+	require.True(t, openAIResponsesToolsRequireResponsesCapability("gpt-6-luna", []byte(`{"tools":[{"type":"function"}],"reasoning_effort":"high"}`)))
+	require.False(t, openAIResponsesToolsRequireResponsesCapability("gpt-6-luna", []byte(`{"tools":[{"type":"function"}],"reasoning":{"effort":"none"}}`)))
 }

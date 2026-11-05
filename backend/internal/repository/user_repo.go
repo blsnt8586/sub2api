@@ -955,7 +955,9 @@ func (r *userRepository) DeductAvailableBalance(ctx context.Context, id int64, a
 func (r *userRepository) AdjustBalance(ctx context.Context, id int64, delta float64) (service.BalanceChange, error) {
 	const updateSQL = `
 		UPDATE users
-		SET balance = balance + $1, updated_at = NOW()
+		SET balance = balance + $1,
+		    total_recharged = total_recharged + GREATEST($1, 0),
+		    updated_at = NOW()
 		WHERE id = $2 AND deleted_at IS NULL AND balance + $1 >= 0
 		RETURNING balance - $1, balance
 	`
@@ -987,8 +989,10 @@ func (r *userRepository) SetBalance(ctx context.Context, id int64, value float64
 	}
 	const updateSQL = `
 		UPDATE users AS u
-		SET balance = $1, updated_at = NOW()
-		FROM (SELECT id, balance FROM users WHERE id = $2 AND deleted_at IS NULL) AS prev
+		SET balance = $1,
+		    total_recharged = prev.total_recharged + GREATEST($1 - prev.balance, 0),
+		    updated_at = NOW()
+		FROM (SELECT id, balance, total_recharged FROM users WHERE id = $2 AND deleted_at IS NULL) AS prev
 		WHERE u.id = prev.id AND u.deleted_at IS NULL
 		RETURNING prev.balance, u.balance
 	`

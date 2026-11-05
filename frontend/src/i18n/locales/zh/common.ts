@@ -163,6 +163,7 @@ export default {
 
   // Navigation
   nav: {
+    arcade: 'TOKEN 乐园',
     dashboard: '仪表盘',
     announcements: '公告',
     studio: '视图工作台',
@@ -217,6 +218,7 @@ export default {
     promptAudit: '提示词审计',
     auditLogs: '操作日志',
     codexRadar: 'Codex 雷达',
+    toolDownloads: '工具下载',
   },
 
   // Auth

@@ -1185,6 +1185,9 @@ func openAIStreamDataStartsClientOutput(data, eventType string) bool {
 	if trimmed == "" {
 		return false
 	}
+	if openAIStreamOnlyWhitespaceText(trimmed, eventType) {
+		return false
+	}
 	field := ""
 	switch strings.TrimSpace(eventType) {
 	case "response.failed":
@@ -1240,6 +1243,9 @@ func openAIStreamDataStartsVisibleOutput(data, eventType string) bool {
 	if eventType == "" {
 		eventType = strings.TrimSpace(gjson.Get(trimmed, "type").String())
 	}
+	if openAIStreamOnlyWhitespaceText(trimmed, eventType) {
+		return false
+	}
 	if strings.HasSuffix(eventType, ".delta") {
 		delta := gjson.Get(trimmed, "delta")
 		return delta.Exists() && delta.String() != ""
@@ -1282,6 +1288,9 @@ func openAIStreamDataStartsSemanticTTFT(data, eventType string) bool {
 	eventType = strings.TrimSpace(eventType)
 	if eventType == "" && gjson.Valid(trimmed) {
 		eventType = strings.TrimSpace(gjson.Get(trimmed, "type").String())
+	}
+	if openAIStreamOnlyWhitespaceText(trimmed, eventType) {
+		return false
 	}
 	switch eventType {
 	case "response.failed":
@@ -1358,6 +1367,33 @@ func logOpenAICapacityFailoverSuppressed(
 		)
 	}
 	logger.FromContext(ctx).Warn("gateway.failover_suppressed_after_semantic_output", fields...)
+}
+
+// Log the output gate for retryable terminal errors without logging model text
+// or request payloads. Otherwise a bare SSE error can exit as a generic forward
+// failure with no evidence of why replay was blocked.
+func logOpenAIStreamReplayBlocked(ctx context.Context, c *gin.Context, account *Account, path, upstreamRequestID, eventType string, payload []byte, message string, localOutputStarted, semanticOutputSeen bool) {
+	retryable := openAIStreamFailedEventShouldFailover(payload, message)
+	if eventType == "error" {
+		retryable = openAIStreamErrorEventShouldFailover(payload, message)
+	}
+	if !retryable || c == nil || c.Writer == nil {
+		return
+	}
+	fields := []zap.Field{
+		zap.String("stream_path", path),
+		zap.String("event_type", eventType),
+		zap.String("upstream_request_id", upstreamRequestID),
+		zap.Int("written_bytes", c.Writer.Size()),
+		zap.Int("adjusted_written_bytes", OpenAICompactKeepaliveAdjustedWrittenSize(c)),
+		zap.Int("queue_heartbeat_bytes", GatewayStreamHeartbeatBytes(c)),
+		zap.Bool("local_output_started", localOutputStarted),
+		zap.Bool("semantic_output_seen", semanticOutputSeen),
+	}
+	if account != nil {
+		fields = append(fields, zap.Int64("account_id", account.ID))
+	}
+	logger.FromContext(ctx).Warn("openai.stream_failover_blocked_after_output", fields...)
 }
 
 // openAICapacityShedRetryableClientCode 是把上游容量降载错误转发给客户端时改写
@@ -1948,6 +1984,7 @@ func (s *OpenAIGatewayService) handleStreamingResponsePassthrough(
 	semanticOutputSeen := false
 	capacityFailoverSuppressedLogged := false
 	failedMessage := ""
+	var failedPayload []byte
 	clientOutputStarted := false
 	codexFailureTerminal := account != nil && account.Platform == PlatformOpenAI
 	failureDelivered := false
@@ -1961,6 +1998,7 @@ func (s *OpenAIGatewayService) handleStreamingResponsePassthrough(
 	upstreamRequestID := strings.TrimSpace(resp.Header.Get("x-request-id"))
 	// pendingLines 在首个可见输出前保留前导事件，确保无输出失败仍可安全 failover。
 	pendingLines := make([]string, 0, 8)
+	pendingLineBytes := 0
 
 	// ── 首个可见输出之前的下游 keepalive ──────────────────────────────────
 	//
@@ -2019,6 +2057,7 @@ func (s *OpenAIGatewayService) handleStreamingResponsePassthrough(
 			}
 		}
 		pendingLines = pendingLines[:0]
+		pendingLineBytes = 0
 		return true
 	}
 	ensureResponseFailedTerminal := func() {
@@ -2027,6 +2066,7 @@ func (s *OpenAIGatewayService) handleStreamingResponsePassthrough(
 		}
 		if bareErrorAccountSideEffectsPending {
 			s.handleOpenAIStreamTerminalAccountSideEffects(c, account, bareErrorPayload, failedMessage, resp.Header, mappedModel)
+			s.recordOpenAIStreamUpstreamError(c, account, true, upstreamRequestID, "stream_failed", bareErrorPayload, failedMessage)
 			bareErrorAccountSideEffectsPending = false
 		}
 		if clientDisconnected || !writePendingLines() {
@@ -2128,6 +2168,7 @@ func (s *OpenAIGatewayService) handleStreamingResponsePassthrough(
 					sawResponseFailed = true
 				}
 				responseFailedPending = !codexFailureTerminal || eventType == "response.failed"
+				failedPayload = append(failedPayload[:0], dataBytes...)
 				failedMessage = extractOpenAISSEErrorMessage(dataBytes)
 				if failedMessage == "" {
 					failedMessage = "Upstream response failed"
@@ -2154,6 +2195,7 @@ func (s *OpenAIGatewayService) handleStreamingResponsePassthrough(
 					}
 				}
 				if outputStarted && !cyberHit {
+					logOpenAIStreamReplayBlocked(ctx, c, account, "passthrough_sse", upstreamRequestID, eventType, dataBytes, failedMessage, clientOutputStarted, semanticOutputSeen)
 					if codexFailureTerminal && eventType == "error" {
 						// Wait for the authoritative response.failed before mutating
 						// account health; EOF synthesis applies the pending effect.
@@ -2162,7 +2204,7 @@ func (s *OpenAIGatewayService) handleStreamingResponsePassthrough(
 						s.handleOpenAIStreamTerminalAccountSideEffects(c, account, dataBytes, failedMessage, resp.Header, mappedModel)
 						bareErrorAccountSideEffectsPending = false
 					}
-					if eventType == "response.failed" {
+					if eventType == "response.failed" || !codexFailureTerminal {
 						// The stream cannot be replayed after semantic output. Preserve the
 						// terminal event, while making the upstream failure queryable.
 						s.recordOpenAIStreamUpstreamError(c, account, true, upstreamRequestID, "stream_failed", dataBytes, failedMessage)
@@ -2254,6 +2296,10 @@ func (s *OpenAIGatewayService) handleStreamingResponsePassthrough(
 
 		if !clientDisconnected && !failureDelivered && !suppressCurrentEvent {
 			if !clientOutputStarted && !lineStartsClientOutput {
+				if len(line)+1 > openAIFirstOutputStageMaxBytes-pendingLineBytes || len(pendingLines) >= 65536 {
+					return resultWithUsage(), s.newOpenAIStreamFailoverError(c, account, true, upstreamRequestID, nil, "OpenAI pre-output stream buffer limit exceeded")
+				}
+				pendingLineBytes += len(line) + 1
 				pendingLines = append(pendingLines, line)
 				continue
 			}
@@ -2298,7 +2344,7 @@ func (s *OpenAIGatewayService) handleStreamingResponsePassthrough(
 			return resultWithUsage(), nil
 		}
 		if sawFailedEvent {
-			return resultWithUsage(), fmt.Errorf("upstream response failed: %s", failedMessage)
+			return resultWithUsage(), newOpenAICommittedStreamFailure(failedPayload, failedMessage)
 		}
 		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 			return resultWithUsage(), fmt.Errorf("stream usage incomplete: %w", err)
@@ -2325,10 +2371,10 @@ func (s *OpenAIGatewayService) handleStreamingResponsePassthrough(
 			upstreamRequestID,
 			err,
 		)
-		return resultWithUsage(), fmt.Errorf("stream read error: %w", err)
+		return resultWithUsage(), newOpenAICommittedStreamReadError(err)
 	}
 	if sawFailedEvent {
-		return resultWithUsage(), fmt.Errorf("upstream response failed: %s", failedMessage)
+		return resultWithUsage(), newOpenAICommittedStreamFailure(failedPayload, failedMessage)
 	}
 	if !clientDisconnected && !sawDone && !sawTerminalEvent && ctx.Err() == nil {
 		logger.FromContext(ctx).With(
