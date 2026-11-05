@@ -22,15 +22,15 @@
         </dl>
         <p v-if="route.hybrid_health?.phase === 'recovering'" class="mt-3 text-sm text-amber-700 dark:text-amber-300"><span v-if="route.hybrid_health.last_probe_status">{{ text('recoveryProgress', { count: route.hybrid_health.recovery_successes, total: route.hybrid_health.policy.recovery_successes }) }}</span><span v-if="route.hybrid_health.next_probe_at" class="ml-2 text-xs">{{ text(route.hybrid_health.last_probe_status ? 'nextRecoveryProbe' : 'firstRecoveryProbe', { time: formatDateTime(route.hybrid_health.next_probe_at) }) }}</span></p>
         <Sub2APIProviderRouteTimeline class="mt-3" :route="route" />
-        <div v-if="expanded === route.id" class="mt-3 grid items-start gap-4 rounded-lg border border-gray-100 p-3 dark:border-dark-700 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
-          <p v-if="route.hybrid_health?.phase === 'recovering' && route.hybrid_health.reason" class="break-words text-sm text-amber-700 dark:text-amber-300 md:col-span-2">{{ route.hybrid_health.reason }}</p>
+        <div v-if="expanded === route.id" class="mt-3 rounded-lg border border-gray-100 p-3 dark:border-dark-700">
+          <p v-if="route.hybrid_health?.phase === 'recovering' && route.hybrid_health.reason" class="break-words text-sm text-amber-700 dark:text-amber-300">{{ route.hybrid_health.reason }}</p>
           <div v-if="route.hybrid_health" class="min-w-0 space-y-2">
             <div class="flex flex-wrap items-center justify-between gap-2">
               <h4 class="text-sm font-semibold text-gray-900 dark:text-white">{{ text('accountPolicy') }}</h4>
               <span v-if="draftPolicies?.[route.account_id]" class="text-xs text-amber-700 dark:text-amber-300">{{ text('unsaved') }}</span>
             </div>
             <label class="flex min-h-11 items-center gap-2 text-sm text-gray-800 dark:text-dark-100"><input type="checkbox" class="h-4 w-4 rounded border-gray-300 text-primary-600" :checked="policyFor(route).enabled" @change="updatePolicy(route, 'enabled', ($event.target as HTMLInputElement).checked)" />{{ text('hybridEnabled') }}</label>
-            <div class="grid grid-cols-2 gap-x-3 gap-y-2">
+            <div class="grid grid-cols-1 gap-x-3 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
               <label v-for="field in policyFields" :key="field.key" class="min-w-0 text-xs leading-5 text-gray-600 dark:text-dark-300">
                 <span>{{ text(field.label) }}</span>
                 <input type="number" class="input mt-1 min-h-11 w-full px-2.5 py-2 text-sm tabular-nums" :min="field.min" :max="field.max" :disabled="!policyFor(route).enabled" :value="policyFor(route)[field.key]" @input="updatePolicy(route, field.key, Number(($event.target as HTMLInputElement).value))" />
@@ -40,18 +40,6 @@
               <summary class="cursor-pointer py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500">{{ text('policyDetails') }}</summary>
               <p class="mt-1 leading-6">{{ text('hybridPolicyHint') }}</p>
             </details>
-          </div>
-          <div class="min-w-0 space-y-2 border-t border-gray-100 pt-3 dark:border-dark-700 md:border-l md:border-t-0 md:pl-4 md:pt-0">
-            <div class="flex items-center justify-between gap-2"><h4 class="text-sm font-medium text-gray-800 dark:text-dark-100">{{ text(route.hybrid_health?.phase === 'recovering' ? 'recoveryHistory' : 'userHistory1h') }}</h4><button type="button" class="min-h-11 px-2 text-sm text-primary-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:text-primary-400" @click="emit('history', route.id)">{{ text('refreshHistory') }}</button></div>
-            <p class="text-xs text-gray-500 dark:text-dark-400">{{ text('lastUserRequest') }} {{ route.last_request_at ? formatDateTime(route.last_request_at) : '—' }}</p>
-            <ul v-if="historyByTarget[route.id]?.length" class="divide-y divide-gray-100 dark:divide-dark-700">
-              <li v-for="(item, index) in historyByTarget[route.id]" :key="index" class="flex flex-wrap items-center justify-between gap-2 py-2 text-xs">
-                <span class="tabular-nums text-gray-500 dark:text-dark-400">{{ item.last_checked_at ? formatDateTime(item.last_checked_at) : '—' }}</span>
-                <span class="break-words text-gray-600 dark:text-dark-300">{{ item.test_model }}</span>
-                <span :class="statusClass(item.status)">{{ t(`admin.sub2apiProviders.health.status.${item.status}`) }} · {{ item.latency_ms == null ? '—' : `${item.latency_ms} ms` }}</span>
-              </li>
-            </ul>
-            <p v-else class="py-3 text-center text-sm text-gray-500 dark:text-dark-400">{{ text(route.hybrid_health?.phase === 'recovering' ? 'noRecoveryHistory' : 'noUserHistory1h') }}</p>
           </div>
         </div>
       </article>
@@ -67,12 +55,12 @@ import type { ProviderAccountHealthPolicy, Sub2APIProviderProbeTargetHealth } fr
 import { formatDateTime } from '@/utils/format'
 import Icon from '@/components/icons/Icon.vue'
 import Sub2APIProviderRouteTimeline from './Sub2APIProviderRouteTimeline.vue'
-const props = defineProps<{ routes: Sub2APIProviderProbeTargetHealth[]; historyByTarget: Record<number, Sub2APIProviderProbeTargetHealth[]>; nowTick?: number; draftPolicies?: Record<number, ProviderAccountHealthPolicy> }>()
-const emit = defineEmits<{ history: [targetID: number]; 'update-policy': [accountID: number, policy: ProviderAccountHealthPolicy] }>()
+const props = defineProps<{ routes: Sub2APIProviderProbeTargetHealth[]; draftPolicies?: Record<number, ProviderAccountHealthPolicy> }>()
+const emit = defineEmits<{ 'update-policy': [accountID: number, policy: ProviderAccountHealthPolicy] }>()
 const { t } = useI18n()
 const text = (key: string, values: Record<string, string | number> = {}) => t(`admin.sub2apiProviders.health.routes.${key}`, values)
 const expanded = ref<number | null>(null)
-const toggle = (id: number) => { expanded.value = expanded.value === id ? null : id; if (expanded.value != null) emit('history', id) }
+const toggle = (id: number) => { expanded.value = expanded.value === id ? null : id }
 const statusClass = (status: string) => ({ healthy: 'text-green-700 dark:text-green-400', degraded: 'text-amber-700 dark:text-amber-300', unhealthy: 'text-red-700 dark:text-red-300' }[status] ?? 'text-gray-500 dark:text-dark-400')
 const policyFields: { key: Exclude<keyof ProviderAccountHealthPolicy, 'enabled'>; label: string; min: number; max: number }[] = [
   { key: 'failure_threshold', label: 'accountFailureThreshold', min: 1, max: 100 },

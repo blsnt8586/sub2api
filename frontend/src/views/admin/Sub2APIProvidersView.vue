@@ -876,10 +876,7 @@
         <Sub2APIProviderPassiveMonitor
           :routes="probeTargets"
           :draft-policies="pendingHealthPolicies"
-          :history-by-target="probeTargetHistory"
-          :now-tick="relativeTimeTick"
           @update-policy="(id, policy) => pendingHealthPolicies[id] = policy"
-          @history="loadProbeTargetHistory"
         />
       </div>
       <template #footer>
@@ -1663,7 +1660,6 @@ const probeProvider = ref<Sub2APIProvider | null>(null)
 const probeDialogHealth = ref<Sub2APIProviderHealth | null>(null)
 const pendingHealthPolicies = reactive<Record<number, ProviderAccountHealthPolicy>>({})
 const probeTargets = ref<Sub2APIProviderProbeTargetHealth[]>([])
-const probeTargetHistory = reactive<Record<number, Sub2APIProviderProbeTargetHealth[]>>({})
 const probeForm = reactive({
   control_enabled: true,
   control_interval_seconds: 1800,
@@ -1763,15 +1759,6 @@ const saveProbeConfig = async () => {
     appStore.showError(extractErrorMessage(e, t('admin.sub2apiProviders.health.settingsSaveFailed')))
   } finally {
     savingProbeConfig.value = false
-  }
-}
-
-const loadProbeTargetHistory = async (targetID: number) => {
-  if (!probeProvider.value) return
-  try {
-    probeTargetHistory[targetID] = await adminAPI.sub2apiProviders.getProbeTargetHistory(probeProvider.value.id, targetID, 100)
-  } catch (e: any) {
-    appStore.showError(extractErrorMessage(e, t('admin.sub2apiProviders.health.routes.historyLoadFailed')))
   }
 }
 
