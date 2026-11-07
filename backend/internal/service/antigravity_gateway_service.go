@@ -396,7 +396,7 @@ func (s *AntigravityGatewayService) TestConnectionWithPrompt(ctx context.Context
 	if shouldUseAntigravityGeminiTestRequest(modelID, mappedModel) {
 		requestBody, err = s.buildGeminiTestRequestWithPromptContext(ctx, projectID, mappedModel, prompt)
 	} else {
-		requestBody, err = s.buildClaudeTestRequest(ctx, projectID, mappedModel)
+		requestBody, err = s.buildClaudeTestRequestWithPromptContext(ctx, projectID, mappedModel, prompt)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("构建请求失败: %w", err)
@@ -506,8 +506,8 @@ func (s *AntigravityGatewayService) buildGeminiTestRequestWithPromptContext(ctx 
 
 	probePrompt, maxTokens, probeChallenge := accountProbePromptForModel(ctx, model, ".")
 	if !probeChallenge {
-		probePrompt = "."
-		maxTokens = 1
+		probePrompt = antigravityTestPrompt(prompt)
+		maxTokens = antigravityTestMaxOutputTokens
 	} else if maxTokens == accountProbeChallengeStandardMaxTokens {
 		maxTokens = accountProbeChallengeTightMaxTokens
 	}
@@ -544,15 +544,18 @@ func (s *AntigravityGatewayService) buildGeminiTestRequest(ctx context.Context, 
 }
 
 // buildClaudeTestRequest 构建 Claude 格式测试请求并转换为 Gemini 格式。
-// 普通手动测试保持 1 token；账号探针按模型使用紧凑输出预算。
-func (s *AntigravityGatewayService) buildClaudeTestRequest(ctx context.Context, projectID, mappedModel string) ([]byte, error) {
-	prompt, maxTokens, probeChallenge := accountProbePromptForModel(ctx, mappedModel, ".")
+func (s *AntigravityGatewayService) buildClaudeTestRequest(projectID, mappedModel, prompt string) ([]byte, error) {
+	return s.buildClaudeTestRequestWithPromptContext(context.Background(), projectID, mappedModel, prompt)
+}
+
+func (s *AntigravityGatewayService) buildClaudeTestRequestWithPromptContext(ctx context.Context, projectID, mappedModel, prompt string) ([]byte, error) {
+	probePrompt, maxTokens, probeChallenge := accountProbePromptForModel(ctx, mappedModel, antigravityTestPrompt(prompt))
 	if !probeChallenge {
-		maxTokens = 1
+		maxTokens = antigravityTestMaxOutputTokens
 	} else if maxTokens == accountProbeChallengeStandardMaxTokens {
 		maxTokens = accountProbeChallengeTightMaxTokens
 	}
-	promptBytes, err := json.Marshal(prompt)
+	promptBytes, err := json.Marshal(probePrompt)
 	if err != nil {
 		return nil, err
 	}
@@ -578,6 +581,18 @@ func (s *AntigravityGatewayService) getClaudeTransformOptions(ctx context.Contex
 	opts.EnableIdentityPatch = s.settingService.IsIdentityPatchEnabled(ctx)
 	opts.IdentityPatch = s.settingService.GetIdentityPatchPrompt(ctx)
 	return opts
+}
+
+// antigravityTestMaxOutputTokens leaves a thinking model room to think and still answer a short
+// test prompt. It was 1, so gemini-4-argon / gemini-3.8-flash returned no text at all.
+const antigravityTestMaxOutputTokens = 256
+
+// antigravityTestPrompt is the admin's test prompt, or "hi" like the other platforms' tests.
+func antigravityTestPrompt(prompt string) string {
+	if trimmed := strings.TrimSpace(prompt); trimmed != "" {
+		return trimmed
+	}
+	return defaultGeminiTextTestPrompt
 }
 
 // extractContentFromSSEResponse 从 SSE 流式响应中提取文本和内联图片
@@ -666,20 +681,32 @@ func injectIdentityPatchToGeminiRequest(body []byte) ([]byte, error) {
 		return nil, fmt.Errorf("解析 Gemini 请求失败: %w", err)
 	}
 
+	identityFound := false
+	systemChanged := false
 	// 检查现有 systemInstruction 是否已包含身份提示词
 	if sysInst, ok := request["systemInstruction"].(map[string]any); ok {
 		if parts, ok := sysInst["parts"].([]any); ok {
 			for _, part := range parts {
 				if partMap, ok := part.(map[string]any); ok {
 					if text, ok := partMap["text"].(string); ok {
-						if strings.Contains(text, "You are Antigravity") {
-							// 已包含身份提示词，直接返回原始请求
-							return body, nil
+						neutral := antigravity.NeutralizeSystemIdentity(text)
+						if neutral != text {
+							partMap["text"] = neutral
+							systemChanged = true
+						}
+						if strings.Contains(neutral, "You are Antigravity") {
+							identityFound = true
 						}
 					}
 				}
 			}
 		}
+	}
+	if identityFound {
+		if systemChanged {
+			return json.Marshal(request)
+		}
+		return body, nil
 	}
 
 	// 获取默认身份提示词

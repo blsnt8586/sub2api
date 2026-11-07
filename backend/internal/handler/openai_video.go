@@ -279,13 +279,20 @@ func prepareOpenAIVideoCompletionBilling(ctx context.Context, h *OpenAIGatewayHa
 
 func recordOpenAIVideoUsage(c *gin.Context, h *OpenAIGatewayHandler, reqLog *zap.Logger, apiKey *service.APIKey, subject middleware2.AuthSubject, subscription *service.UserSubscription, account *service.Account, result *service.OpenAIForwardResult, requestID string) {
 	result.RequestID = service.StableOpenAIVideoBillingRequestID(requestID)
-	h.submitOpenAIUsageRecordTask(c.Request.Context(), result, func(ctx context.Context) {
+	requestCtx := c.Request.Context()
+	inboundEndpoint := GetInboundEndpoint(c)
+	upstreamEndpoint := GetUpstreamEndpoint(c, account.Platform)
+	userAgent := c.GetHeader("User-Agent")
+	ipAddress := ip.GetClientIP(c)
+	quotaPlatform := service.QuotaPlatform(requestCtx, apiKey)
+	clientSessionID := service.ExtractClientSessionID(c)
+	h.submitOpenAIUsageRecordTask(requestCtx, result, func(ctx context.Context) {
 		err := h.gatewayService.RecordUsage(ctx, &service.OpenAIRecordUsageInput{
 			Result: result, APIKey: apiKey, User: apiKey.User, Account: account, Subscription: subscription,
-			InboundEndpoint: GetInboundEndpoint(c), UpstreamEndpoint: GetUpstreamEndpoint(c, account.Platform),
-			UserAgent: c.GetHeader("User-Agent"), IPAddress: ip.GetClientIP(c),
+			InboundEndpoint: inboundEndpoint, UpstreamEndpoint: upstreamEndpoint,
+			UserAgent: userAgent, IPAddress: ipAddress,
 			RequestPayloadHash: service.HashUsageRequestPayload([]byte(requestID)), APIKeyService: h.apiKeyService,
-			QuotaPlatform: service.QuotaPlatform(c.Request.Context(), apiKey), SessionID: service.ExtractClientSessionID(c),
+			QuotaPlatform: quotaPlatform, SessionID: clientSessionID,
 			ChannelUsageFields: service.ChannelUsageFields{OriginalModel: result.Model, ChannelMappedModel: result.BillingModel},
 		})
 		if err == nil {
