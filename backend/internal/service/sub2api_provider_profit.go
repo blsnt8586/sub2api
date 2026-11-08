@@ -50,6 +50,68 @@ func collectProviderProfitSnapshot(
 		summary.Error = &message
 		return summary
 	}
+	return buildProviderProfitSummary(accounts, localByAccount, sampledAt, "local_request_logs")
+}
+
+func providerDailyProfitSnapshot(accounts []Account, snapshots map[int64]ProviderDailySnapshot, sampledAt time.Time) *Sub2APIProviderProfitSummary {
+	values := make(map[int64]ProviderAccountLocalProfit, len(snapshots))
+	for accountID, snapshot := range snapshots {
+		values[accountID] = ProviderAccountLocalProfit{
+			AccountID: accountID, CostAvailable: snapshot.CostAvailable && snapshot.BaseCostAvailable,
+			TodayRevenue: snapshot.TodayRevenue, TodayProfit: snapshot.TodayProfit,
+			MonthRevenue: snapshot.MonthRevenue, MonthProfit: snapshot.MonthProfit,
+			CumulativeRevenue: snapshot.TotalRevenue, CumulativeProfit: snapshot.CumulativeProfit,
+		}
+	}
+	return buildProviderProfitSummary(accounts, values, sampledAt, "provider_daily_snapshots")
+}
+
+func readProviderDailySnapshots(ctx context.Context, providerID int64, accounts []Account, usageRepo UsageLogRepository, sampledAt time.Time) (map[int64]ProviderDailySnapshot, bool) {
+	reader, ok := usageRepo.(ProviderDailySnapshotReader)
+	if !ok || reader == nil {
+		return nil, false
+	}
+	ids := make([]int64, 0, len(accounts))
+	for _, account := range accounts {
+		ids = append(ids, account.ID)
+	}
+	snapshots, err := reader.GetProviderDailySnapshots(ctx, providerID, ids, sampledAt)
+	if err != nil {
+		return nil, false
+	}
+	for _, snapshot := range snapshots {
+		if snapshot.HasData {
+			return snapshots, true
+		}
+	}
+	return nil, false
+}
+
+func providerDailyUsageSnapshot(snapshots map[int64]ProviderDailySnapshot) *Sub2APIProviderRemoteUsageStats {
+	usage := &Sub2APIProviderRemoteUsageStats{UsageSource: "provider_daily_snapshots", DashboardAvailable: true}
+	for _, snapshot := range snapshots {
+		usage.TodayTokens += snapshot.TodayTokens
+		usage.TotalTokens += snapshot.TotalTokens
+		usage.TodayActualCost += snapshot.TodayRevenue
+		usage.TotalActualCost += snapshot.TotalRevenue
+	}
+	return usage
+}
+
+func buildProviderProfitSummary(accounts []Account, localByAccount map[int64]ProviderAccountLocalProfit, sampledAt time.Time, source string) *Sub2APIProviderProfitSummary {
+	summary := &Sub2APIProviderProfitSummary{
+		RangeStart: time.Time{},
+		RangeEnd:   sampledAt.UTC(),
+		SampledAt:  sampledAt,
+		Accounts:   make([]Sub2APIProviderAccountProfit, 0, len(accounts)),
+	}
+	if len(accounts) == 0 {
+		summary.Available = true
+		summary.MonthProfitAvailable = true
+		summary.CumulativeProfitAvailable = true
+		summary.CostSource = source
+		return summary
+	}
 	allCostsAvailable := true
 	monthRevenue := 0.0
 	for _, account := range accounts {
@@ -63,10 +125,10 @@ func collectProviderProfitSnapshot(
 			TodayEstimatedCost: local.TodayRevenue - local.TodayProfit,
 			GrossProfit:        local.CumulativeProfit, TodayGrossProfit: local.TodayProfit,
 			MonthGrossProfit: local.MonthProfit, CumulativeGrossProfit: local.CumulativeProfit,
-			EstimatedCostAvailable: costAvailable, CostSource: "local_request_logs",
+			EstimatedCostAvailable: costAvailable, CostSource: source,
 		}
 		if !costAvailable {
-			message := "upstream group multiplier is unavailable for local requests"
+			message := "upstream group multiplier or historical base cost snapshot is unavailable"
 			item.Error = &message
 		}
 		item.GrossMargin = safeGrossMargin(item.GrossProfit, item.Revenue)
@@ -90,10 +152,10 @@ func collectProviderProfitSnapshot(
 	summary.MonthProfitAvailable = allCostsAvailable
 	summary.CumulativeProfitAvailable = allCostsAvailable
 	if !allCostsAvailable {
-		message := "one or more accounts have no upstream group multiplier for local profit estimates"
+		message := "one or more accounts have incomplete cost inputs for local profit estimates"
 		summary.Error = &message
 	}
-	summary.CostSource = "local_request_logs"
+	summary.CostSource = source
 	sort.SliceStable(summary.Accounts, func(i, j int) bool { return summary.Accounts[i].AccountName < summary.Accounts[j].AccountName })
 	return summary
 }

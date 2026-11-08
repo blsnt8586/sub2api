@@ -941,7 +941,10 @@ func (s *Sub2APIProviderProbeService) runControl(ctx context.Context, provider *
 					message := trimProbeError(accountsErr)
 					remoteOverview.Profit = &Sub2APIProviderProfitSummary{Available: false, SampledAt: assetAttemptedAt, Error: &message}
 				} else {
-					if reader, ok := s.usageRepo.(ProviderLocalUsageReader); ok {
+					if snapshots, ok := readProviderDailySnapshots(ctx, provider.ID, accounts, s.usageRepo, assetAttemptedAt); ok {
+						remoteOverview.LocalUsage = providerDailyUsageSnapshot(snapshots)
+						remoteOverview.Profit = providerDailyProfitSnapshot(accounts, snapshots, assetAttemptedAt)
+					} else if reader, ok := s.usageRepo.(ProviderLocalUsageReader); ok {
 						accountIDs := make([]int64, 0, len(accounts))
 						for _, account := range accounts {
 							accountIDs = append(accountIDs, account.ID)
@@ -949,8 +952,10 @@ func (s *Sub2APIProviderProbeService) runControl(ctx context.Context, provider *
 						if local, localErr := reader.GetProviderLocalUsage(ctx, accountIDs, time.Time{}, assetAttemptedAt); localErr == nil {
 							remoteOverview.LocalUsage = localUsageSnapshot(local)
 						}
+						remoteOverview.Profit = collectProviderProfitSnapshot(ctx, accounts, s.usageRepo, assetAttemptedAt)
+					} else {
+						remoteOverview.Profit = collectProviderProfitSnapshot(ctx, accounts, s.usageRepo, assetAttemptedAt)
 					}
-					remoteOverview.Profit = collectProviderProfitSnapshot(ctx, accounts, s.usageRepo, assetAttemptedAt)
 				}
 			}
 			storeRemoteOverviewSuccess(ctx, s.remoteOverviewCache, overview)

@@ -96,6 +96,38 @@ describe('credential exporter userscript', () => {
     expect(document.querySelector('.sub2api-export-json')).not.toBeNull()
   })
 
+  it('retries a New API refresh race and accepts a successful refresh without cookie rotation', async () => {
+    await openNewAPI()
+    let refreshCalls = 0
+    cookies.mockImplementation((_options: unknown, callback: (cookies: unknown[]) => void) => callback([
+      { name: 'new_api_refresh', value: 'stable-refresh-cookie', httpOnly: true, domain: window.location.hostname, hostOnly: false, path: '/api/user/auth', secure: false },
+    ]))
+    fetchMock.mockImplementation(async (path: string) => {
+      if (path === '/api/status') return { ok: true, status: 200, json: async () => ({ success: true, data: { quota_per_unit: 500000 } }) }
+      if (path === '/api/user/auth/refresh') {
+        refreshCalls += 1
+        if (refreshCalls === 1) {
+          return { ok: false, status: 409, json: async () => ({ success: false, code: 'AUTH_REFRESH_RACE' }) }
+        }
+        return {
+          ok: true, status: 200,
+          json: async () => ({ success: true, data: { access_token: 'browser-session-token', access_expires_at: 1_800_000_000, user: { id: 42 } } }),
+        }
+      }
+      return { ok: true, status: 200, json: async () => ({ success: true, data: { id: 42 } }) }
+    })
+    document.querySelector<HTMLButtonElement>('#sub2api-credential-exporter-button')!.click()
+    await flushPromises()
+    await vi.advanceTimersByTimeAsync(1600)
+    await flushPromises()
+
+    expect(refreshCalls).toBe(2)
+    const raw = document.querySelector<HTMLTextAreaElement>('.sub2api-export-json')!.value
+    expect(parseSub2APICredentialBundle(raw, window.location.origin, 'newapi')).toMatchObject({
+      userID: '42', accessToken: 'browser-session-token', refreshToken: 'stable-refresh-cookie',
+    })
+  })
+
   it.each([
     { ok: true, success: true, data: { access_token: 'token', user: { id: 43 } } },
     { ok: true, success: false, data: { access_token: 'token', user: { id: 42 } } },

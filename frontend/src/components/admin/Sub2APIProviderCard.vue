@@ -186,15 +186,17 @@
               </span>
             </div>
             <div
-              v-if="route.average_duration_ms != null || route.cache_hit_rate_available"
-              class="mt-1 flex items-center justify-center gap-3 pl-3.5 text-center text-[10px] tabular-nums text-gray-500 dark:text-dark-400"
+              class="mt-1 flex min-w-0 items-center justify-center gap-3 pl-3.5 text-center text-[10px] tabular-nums text-gray-500 dark:text-dark-400"
               data-test="route-traffic-metrics"
             >
-              <span v-if="route.average_duration_ms != null">
-                {{ t('admin.sub2apiProviders.remoteOverview.averageResponse') }} {{ formatDuration(route.average_duration_ms) }}
+              <span class="shrink-0">
+                {{ t('admin.sub2apiProviders.remoteOverview.averageResponse') }} {{ route.average_duration_ms != null ? formatDuration(route.average_duration_ms) : '-' }}
               </span>
-              <span v-if="route.cache_hit_rate_available && route.cache_hit_rate != null">
-                {{ t('admin.sub2apiProviders.remoteOverview.cacheHitRate') }} {{ formatPercent(route.cache_hit_rate) }}
+              <span class="shrink-0">
+                {{ t('admin.sub2apiProviders.remoteOverview.cacheHitRate') }} {{ route.cache_hit_rate_available && route.cache_hit_rate != null ? formatPercent(route.cache_hit_rate) : '-' }}
+              </span>
+              <span class="min-w-0 truncate" :title="route.test_model || undefined">
+                {{ t('admin.sub2apiProviders.remoteOverview.testModel') }} {{ route.test_model || '-' }}
               </span>
             </div>
             <div class="mt-1.5 min-w-0 pl-3.5">

@@ -18,6 +18,15 @@ type providerProfitUsageRepoStub struct {
 	sampledAt time.Time
 }
 
+type providerDailySnapshotReaderStub struct {
+	UsageLogRepository
+	values map[int64]ProviderDailySnapshot
+}
+
+func (s *providerDailySnapshotReaderStub) GetProviderDailySnapshots(_ context.Context, _ int64, _ []int64, _ time.Time) (map[int64]ProviderDailySnapshot, error) {
+	return s.values, nil
+}
+
 func (s *providerProfitUsageRepoStub) GetProviderAccountLocalProfit(_ context.Context, ids []int64, at time.Time) (map[int64]ProviderAccountLocalProfit, error) {
 	s.sampledAt = at
 	return s.values, s.err
@@ -52,6 +61,37 @@ func TestCollectProviderProfitSnapshotUsesLocalRequestsForEveryPeriod(t *testing
 	require.Equal(t, "alpha", got.Accounts[0].AccountName)
 	require.Equal(t, -2.0, got.Accounts[0].TodayGrossProfit)
 	require.False(t, got.Accounts[0].RemoteCostAvailable)
+}
+
+func TestProviderDailySnapshotsRemainAuthoritativeAfterUsageLogPruning(t *testing.T) {
+	repo := &providerDailySnapshotReaderStub{values: map[int64]ProviderDailySnapshot{
+		1: {AccountID: 1, HasData: true, CostAvailable: true, BaseCostAvailable: true, TodayTokens: 15, TotalTokens: 115, TodayRevenue: 2, MonthRevenue: 12, TotalRevenue: 22, TodayProfit: 1, MonthProfit: 6, CumulativeProfit: 11},
+	}}
+	accounts := []Account{{ID: 1, Name: "snapshot account"}}
+	at := time.Date(2026, 11, 8, 12, 0, 0, 0, time.UTC)
+	snapshots, ok := readProviderDailySnapshots(context.Background(), 7, accounts, repo, at)
+	require.True(t, ok)
+
+	usage := providerDailyUsageSnapshot(snapshots)
+	require.Equal(t, int64(15), usage.TodayTokens)
+	require.Equal(t, int64(115), usage.TotalTokens)
+	profit := providerDailyProfitSnapshot(accounts, snapshots, at)
+	require.Equal(t, 1.0, profit.TodayGrossProfit)
+	require.Equal(t, 6.0, profit.MonthGrossProfit)
+	require.Equal(t, 11.0, profit.CumulativeGrossProfit)
+	require.Equal(t, "provider_daily_snapshots", profit.CostSource)
+}
+
+func TestProviderDailySnapshotsDoNotTreatUnknownHistoricalCostAsZero(t *testing.T) {
+	accounts := []Account{{ID: 1, Name: "legacy account"}}
+	snapshots := map[int64]ProviderDailySnapshot{
+		1: {AccountID: 1, HasData: true, CostAvailable: true, BaseCostAvailable: false, TotalRevenue: 100, CumulativeProfit: 100},
+	}
+	profit := providerDailyProfitSnapshot(accounts, snapshots, time.Now())
+	require.False(t, profit.Available)
+	require.False(t, profit.MonthProfitAvailable)
+	require.False(t, profit.CumulativeProfitAvailable)
+	require.NotNil(t, profit.Error)
 }
 
 func TestCollectProviderProfitSnapshotDoesNotAssumeMissingMultiplier(t *testing.T) {

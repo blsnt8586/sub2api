@@ -113,6 +113,29 @@ type ProviderAccountLocalProfitReader interface {
 	GetProviderAccountLocalProfit(context.Context, []int64, time.Time) (map[int64]ProviderAccountLocalProfit, error)
 }
 
+// ProviderDailySnapshot is the durable provider/account usage projection. It
+// keeps card aggregates independent from the retention window of usage_logs.
+type ProviderDailySnapshot struct {
+	AccountID         int64
+	HasData           bool
+	CostAvailable     bool
+	BaseCostAvailable bool
+	TodayTokens       int64
+	TotalTokens       int64
+	TodayRevenue      float64
+	MonthRevenue      float64
+	TotalRevenue      float64
+	TodayProfit       float64
+	MonthProfit       float64
+	CumulativeProfit  float64
+}
+
+// ProviderDailySnapshotReader is optional so older repository test doubles and
+// preview configurations can continue using the raw usage-log fallback.
+type ProviderDailySnapshotReader interface {
+	GetProviderDailySnapshots(context.Context, int64, []int64, time.Time) (map[int64]ProviderDailySnapshot, error)
+}
+
 type Sub2APIProviderProxyRepository interface {
 	GetByID(ctx context.Context, id int64) (*Proxy, error)
 }
@@ -1222,17 +1245,21 @@ func (s *Sub2APIProviderService) GetRemoteOverview(ctx context.Context, id int64
 			for _, account := range accounts {
 				accountIDs = append(accountIDs, account.ID)
 			}
-			if reader, ok := s.usageRepo.(ProviderLocalUsageReader); ok {
+			if snapshots, ok := readProviderDailySnapshots(ctx, id, accounts, s.usageRepo, attemptedAt); ok {
+				overview.LocalUsage = providerDailyUsageSnapshot(snapshots)
+				overview.Profit = providerDailyProfitSnapshot(accounts, snapshots, attemptedAt)
+			} else if reader, ok := s.usageRepo.(ProviderLocalUsageReader); ok {
 				if local, localErr := reader.GetProviderLocalUsage(ctx, accountIDs, time.Time{}, attemptedAt); localErr == nil {
 					overview.LocalUsage = localUsageSnapshot(local)
 				}
+				overview.Profit = collectProviderProfitSnapshot(ctx, accounts, s.usageRepo, attemptedAt)
+			} else {
+				overview.Profit = collectProviderProfitSnapshot(ctx, accounts, s.usageRepo, attemptedAt)
 			}
 		}
 		if accountsErr != nil {
 			message := fmt.Sprintf("list linked accounts for profit failed: %s", accountsErr)
 			overview.Profit = &Sub2APIProviderProfitSummary{Available: false, SampledAt: attemptedAt, Error: &message}
-		} else {
-			overview.Profit = collectProviderProfitSnapshot(ctx, accounts, s.usageRepo, attemptedAt)
 		}
 	}
 	storeRemoteOverviewSuccess(ctx, s.remoteOverviewCache, overview)
@@ -1396,8 +1423,10 @@ func (s *Sub2APIProviderService) GetCachedRemoteOverviews(ctx context.Context, p
 			if overview == nil {
 				overview = &Sub2APIProviderRemoteOverview{ProviderID: providerID, Groups: []Sub2APIProviderRemoteGroupRate{}}
 			}
-			overview.Profit = collectProviderProfitSnapshot(ctx, accounts, s.usageRepo, now)
-			if reader, ok := s.usageRepo.(ProviderLocalUsageReader); ok {
+			if snapshots, ok := readProviderDailySnapshots(ctx, providerID, accounts, s.usageRepo, now); ok {
+				overview.LocalUsage = providerDailyUsageSnapshot(snapshots)
+				overview.Profit = providerDailyProfitSnapshot(accounts, snapshots, now)
+			} else if reader, ok := s.usageRepo.(ProviderLocalUsageReader); ok {
 				ids := make([]int64, 0, len(accounts))
 				for _, account := range accounts {
 					ids = append(ids, account.ID)
@@ -1405,6 +1434,9 @@ func (s *Sub2APIProviderService) GetCachedRemoteOverviews(ctx context.Context, p
 				if usage, err := reader.GetProviderLocalUsage(ctx, ids, time.Time{}, now); err == nil {
 					overview.LocalUsage = localUsageSnapshot(usage)
 				}
+				overview.Profit = collectProviderProfitSnapshot(ctx, accounts, s.usageRepo, now)
+			} else {
+				overview.Profit = collectProviderProfitSnapshot(ctx, accounts, s.usageRepo, now)
 			}
 		}
 		if overview != nil {

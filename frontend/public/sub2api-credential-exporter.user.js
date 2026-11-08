@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Sub2API 浏览器凭据导出助手
 // @namespace    https://github.com/Wei-Shaw/sub2api
-// @version      1.9.0
+// @version      1.9.1
 // @description  导出 Sub2API 登录凭据，或导出当前 New API 浏览器登录会话，生成平台可导入的 JSON 包。
 // @author       Sub2API
 // @match        http://*/*
@@ -313,14 +313,28 @@
   async function readNewAPICredentials() {
     const authURL = `${location.origin}/api/user/auth/refresh`
     const initialCookies = await readNewAPIRefreshCookie(authURL)
-    const response = await fetch('/api/user/auth/refresh', {
-      method: 'POST', credentials: 'include', redirect: 'error',
-      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-    })
-    const payload = await response.json().catch(() => null)
+    if (!initialCookies.cookie) {
+      throw new Error(initialCookies.error || '无法读取 New API Refresh Cookie，不能生成可自动续期的凭据。')
+    }
+    let response
+    let payload
+    // The New API web client serializes refreshes across tabs. A userscript
+    // runs outside that lock, so a click during an in-flight browser refresh
+    // can briefly return AUTH_REFRESH_RACE or AUTH_SESSION_MISMATCH.
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      response = await fetch('/api/user/auth/refresh', {
+        method: 'POST', credentials: 'include', redirect: 'error',
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      })
+      payload = await response.json().catch(() => null)
+      const retryable = response.status === 409 && ['AUTH_REFRESH_RACE', 'AUTH_SESSION_MISMATCH'].includes(payload?.code)
+      if (!retryable || attempt === 2) break
+      await new Promise(resolve => window.setTimeout(resolve, 350 * (attempt + 1)))
+    }
     if (!response.ok || payload?.success !== true) {
       const code = typeof payload?.code === 'string' && /^[A-Z0-9_]{1,64}$/.test(payload.code) ? ` ${payload.code}` : ''
-      throw new Error(`会话刷新失败：HTTP ${response.status}${code}。请确认当前 New API 登录未过期后重试。`)
+      const detail = typeof payload?.message === 'string' && payload.message.trim() ? `：${payload.message.trim()}` : ''
+      throw new Error(`会话刷新失败：HTTP ${response.status}${code}${detail}。请确认当前 New API 登录未过期后重试。`)
     }
     const userID = String(payload?.data?.user?.id || '')
     const token = String(payload?.data?.access_token || '')
@@ -335,22 +349,18 @@
     if (!verifyResponse.ok || verifyPayload?.success !== true || String(verifyPayload.data?.id) !== userID) {
       throw new Error(`Bearer Token 身份验证失败：HTTP ${verifyResponse.status}。`)
     }
-    let refreshCookie = ''
-    if (initialCookies.cookie) {
-      for (let attempt = 0; attempt < 5; attempt += 1) {
-        const current = await readNewAPIRefreshCookie(authURL)
-        if (current.cookie && current.cookie !== initialCookies.cookie) {
-          refreshCookie = current.cookie
-          break
-        }
-        if (attempt < 4) await new Promise(resolve => window.setTimeout(resolve, 200))
-      }
-    } else {
+    let refreshCookie = initialCookies.cookie
+    // Rotation is normally returned by the response, but some compatible
+    // deployments keep the same cookie for a successful refresh. Read again
+    // after a short settle window and retain the prior value when unchanged.
+    for (let attempt = 0; attempt < 5; attempt += 1) {
       const current = await readNewAPIRefreshCookie(authURL)
-      refreshCookie = current.cookie || ''
-      if (!refreshCookie) throw new Error(current.error || initialCookies.error || '无法读取 New API Refresh Cookie，不能生成可自动续期的凭据。')
+      if (current.cookie) {
+        refreshCookie = current.cookie
+        if (current.cookie !== initialCookies.cookie || attempt === 4) break
+      }
+      if (attempt < 4) await new Promise(resolve => window.setTimeout(resolve, 200))
     }
-    if (!refreshCookie) throw new Error('Refresh Cookie 轮换后未能读取新值，不能生成可自动续期的凭据。')
     return {
       user_id: userID,
       access_token: token,

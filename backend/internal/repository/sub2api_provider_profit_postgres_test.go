@@ -62,3 +62,41 @@ func TestProviderLocalProfitPostgresPeriodsAndMultiplier(t *testing.T) {
 	require.True(t, got[5].CostAvailable) // No requests means zero, no assumed cost.
 	require.Zero(t, got[5].CumulativeProfit)
 }
+
+func TestProviderDailySnapshotsPreserveClosedDayMetrics(t *testing.T) {
+	dsn := os.Getenv("PROVIDER_PROFIT_TEST_DSN")
+	if dsn == "" {
+		t.Skip("requires PROVIDER_PROFIT_TEST_DSN")
+	}
+	db, err := sql.Open("postgres", dsn)
+	require.NoError(t, err)
+	defer db.Close()
+	ctx := context.Background()
+	conn, err := db.Conn(ctx)
+	require.NoError(t, err)
+	defer conn.Close()
+	_, err = conn.ExecContext(ctx, `CREATE TEMP TABLE accounts(id bigint primary key, provider_id bigint, remote_group_multiplier numeric);
+ CREATE TEMP TABLE usage_logs(account_id bigint, input_tokens bigint, output_tokens bigint, cache_creation_tokens bigint, cache_read_tokens bigint, total_cost numeric, actual_cost numeric, account_stats_cost numeric, created_at timestamptz);
+ CREATE TEMP TABLE provider_account_daily_cost_snapshots(provider_id bigint, account_id bigint, stat_date date, total_tokens bigint, local_revenue numeric, base_cost numeric, base_cost_available boolean);
+ INSERT INTO accounts VALUES (11,7,0.1);
+ INSERT INTO provider_account_daily_cost_snapshots VALUES (7,11,CURRENT_DATE-1,100,10,50,true);
+ INSERT INTO usage_logs VALUES (11,8,2,0,0,5,2,NULL,NOW()::date + INTERVAL '1 hour');`)
+	require.NoError(t, err)
+
+	repo := &usageLogRepository{sql: conn}
+	today := timezone.StartOfDay(time.Now())
+	got, err := repo.GetProviderDailySnapshots(ctx, 7, []int64{11}, today.Add(2*time.Hour))
+	require.NoError(t, err)
+	require.Equal(t, int64(110), got[11].TotalTokens)
+	require.Equal(t, int64(10), got[11].TodayTokens)
+	require.InDelta(t, 12.0, got[11].TotalRevenue, 1e-9)
+	require.InDelta(t, 6.5, got[11].CumulativeProfit, 1e-9)
+	require.InDelta(t, 6.5, got[11].MonthProfit, 1e-9)
+
+	_, err = conn.ExecContext(ctx, `DELETE FROM usage_logs WHERE created_at < $1`, today)
+	require.NoError(t, err)
+	got, err = repo.GetProviderDailySnapshots(ctx, 7, []int64{11}, today.Add(2*time.Hour))
+	require.NoError(t, err)
+	require.Equal(t, int64(110), got[11].TotalTokens)
+	require.InDelta(t, 6.5, got[11].CumulativeProfit, 1e-9)
+}

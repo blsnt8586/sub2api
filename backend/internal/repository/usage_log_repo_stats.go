@@ -65,6 +65,116 @@ SELECT COUNT(*) FILTER (WHERE created_at >= $2 AND created_at < $3),
 	return out, nil
 }
 
+// GetProviderDailySnapshots combines durable daily rollups for closed days
+// with the current day's raw requests. The latter keeps the card responsive
+// between hourly snapshot runs while historical rows remain safe to prune.
+func (r *usageLogRepository) GetProviderDailySnapshots(ctx context.Context, providerID int64, accountIDs []int64, endTime time.Time) (map[int64]service.ProviderDailySnapshot, error) {
+	result := make(map[int64]service.ProviderDailySnapshot, len(accountIDs))
+	if providerID <= 0 || len(accountIDs) == 0 {
+		return result, nil
+	}
+	for _, id := range accountIDs {
+		if id > 0 {
+			result[id] = service.ProviderDailySnapshot{AccountID: id, CostAvailable: true, BaseCostAvailable: true}
+		}
+	}
+	if endTime.IsZero() {
+		endTime = time.Now()
+	}
+	today := timezone.StartOfDay(endTime)
+	monthStart := time.Date(today.Year(), today.Month(), 1, 0, 0, 0, 0, today.Location())
+	rows, err := r.sql.QueryContext(ctx, `
+SELECT s.account_id,
+       COALESCE(SUM(s.total_tokens), 0),
+       COALESCE(SUM(s.local_revenue) FILTER (WHERE s.stat_date >= $3::date), 0),
+       COALESCE(SUM(s.local_revenue), 0),
+       COALESCE(SUM(s.local_revenue - s.base_cost * a.remote_group_multiplier) FILTER (WHERE s.stat_date >= $3::date), 0),
+       COALESCE(SUM(s.local_revenue - s.base_cost * a.remote_group_multiplier), 0),
+       BOOL_AND(a.remote_group_multiplier IS NOT NULL AND a.remote_group_multiplier >= 0),
+       BOOL_AND(s.base_cost_available)
+  FROM provider_account_daily_cost_snapshots s
+  JOIN accounts a ON a.id = s.account_id
+ WHERE s.provider_id = $1
+   AND s.account_id = ANY($2)
+   AND s.stat_date < $4::date
+ GROUP BY s.account_id`, providerID, pq.Array(accountIDs), monthStart, today)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var item service.ProviderDailySnapshot
+		if err := rows.Scan(&item.AccountID, &item.TotalTokens, &item.MonthRevenue, &item.TotalRevenue, &item.MonthProfit, &item.CumulativeProfit, &item.CostAvailable, &item.BaseCostAvailable); err != nil {
+			_ = rows.Close()
+			return nil, err
+		}
+		item.HasData = true
+		result[item.AccountID] = item
+	}
+	if err := rows.Err(); err != nil {
+		_ = rows.Close()
+		return nil, err
+	}
+	_ = rows.Close()
+
+	rows, err = r.sql.QueryContext(ctx, `
+SELECT u.account_id,
+       COALESCE(SUM(u.input_tokens + u.output_tokens + u.cache_creation_tokens + u.cache_read_tokens), 0),
+       COALESCE(SUM(u.actual_cost), 0),
+       COALESCE(SUM(CASE WHEN a.remote_group_multiplier IS NULL OR a.remote_group_multiplier < 0 THEN NULL
+                         ELSE u.actual_cost - COALESCE(u.account_stats_cost, u.total_cost) * a.remote_group_multiplier END), 0),
+       BOOL_AND(a.remote_group_multiplier IS NOT NULL AND a.remote_group_multiplier >= 0)
+  FROM usage_logs u
+  JOIN accounts a ON a.id = u.account_id
+ WHERE a.provider_id = $1
+   AND u.account_id = ANY($2)
+   AND u.created_at >= $3
+   AND u.created_at < $4
+ GROUP BY u.account_id`, providerID, pq.Array(accountIDs), today, endTime)
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var item service.ProviderDailySnapshot
+		var available bool
+		if err := rows.Scan(&item.AccountID, &item.TodayTokens, &item.TodayRevenue, &item.TodayProfit, &available); err != nil {
+			_ = rows.Close()
+			return nil, err
+		}
+		item.HasData = true
+		item.BaseCostAvailable = true
+		item.MonthRevenue += item.TodayRevenue
+		item.TotalRevenue += item.TodayRevenue
+		item.MonthProfit += item.TodayProfit
+		item.CumulativeProfit += item.TodayProfit
+		item.TotalTokens += item.TodayTokens
+		result[item.AccountID] = mergeProviderDailySnapshot(result[item.AccountID], item, available)
+	}
+	if err := rows.Err(); err != nil {
+		_ = rows.Close()
+		return nil, err
+	}
+	_ = rows.Close()
+	return result, nil
+}
+
+func mergeProviderDailySnapshot(base, current service.ProviderDailySnapshot, available bool) service.ProviderDailySnapshot {
+	base.AccountID = current.AccountID
+	base.CostAvailable = base.CostAvailable && available
+	base.BaseCostAvailable = base.BaseCostAvailable && current.BaseCostAvailable
+	base.TodayTokens = current.TodayTokens
+	base.TodayRevenue = current.TodayRevenue
+	base.TodayProfit = current.TodayProfit
+	base.MonthRevenue += current.MonthRevenue
+	base.TotalRevenue += current.TotalRevenue
+	base.MonthProfit += current.MonthProfit
+	base.CumulativeProfit += current.CumulativeProfit
+	base.TotalTokens += current.TotalTokens
+	if !available {
+		base.TodayProfit = 0
+	}
+	return base
+}
+
 // GetProviderAccountRevenue aggregates local customer charges for a bounded
 // set of accounts in one query. It is intentionally an optional repository
 // capability so older UsageLogRepository test doubles remain source-compatible.
