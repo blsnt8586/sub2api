@@ -34,6 +34,7 @@ type ProviderRequestHealthCache interface {
 	ObserveProviderRequestHealth(context.Context, ProviderRequestHealthEvent) error
 	ProviderSessionAvoidances(context.Context, string, time.Time) ([]ProviderSessionAvoidance, error)
 	ProviderRecentFailures(context.Context, int64, string, time.Time, int) (int, error)
+	ProviderRecentDegradations(context.Context, int64, string, time.Time, int) (int, error)
 }
 
 type ProviderRequestHealthEvent struct {
@@ -41,6 +42,7 @@ type ProviderRequestHealthEvent struct {
 	Generation, Session, RequestID string
 	StartedAt, CompletedAt         time.Time
 	Failed                         bool
+	Degraded                       bool
 	Policy                         ProviderAccountHealthPolicy
 }
 type ProviderSessionAvoidance struct {
@@ -189,6 +191,7 @@ func (s *ProviderRequestHealthService) Observe(ctx context.Context, c *gin.Conte
 	if latency != nil && *latency > p.Policy.TimeoutMS {
 		failed = true
 	}
+	degraded := !failed && latency != nil && *latency > p.Policy.DegradedLatencyMS
 	// The account policy counts the first-response boundary. A completed
 	// response with a timely first token is not a failure because generation
 	// continued for longer afterward.
@@ -199,29 +202,53 @@ func (s *ProviderRequestHealthService) Observe(ctx context.Context, c *gin.Conte
 	}
 	writeCtx, cancel := context.WithTimeout(observeCtx, 150*time.Millisecond)
 	defer cancel()
-	if e := s.cache.ObserveProviderRequestHealth(writeCtx, ProviderRequestHealthEvent{AccountID: a.ID, UserID: userID, Generation: p.Generation, Session: providerSessionKey(userID, groupID, session), RequestID: requestID.(string), StartedAt: started, CompletedAt: time.Now(), Failed: failed, Policy: p.Policy}); e != nil {
+	if e := s.cache.ObserveProviderRequestHealth(writeCtx, ProviderRequestHealthEvent{AccountID: a.ID, UserID: userID, Generation: p.Generation, Session: providerSessionKey(userID, groupID, session), RequestID: requestID.(string), StartedAt: started, CompletedAt: time.Now(), Failed: failed, Degraded: degraded, Policy: p.Policy}); e != nil {
 		logger.LegacyPrintf("service.provider_health", "request health evidence unavailable: account=%d err=%v", a.ID, e)
 		return
 	}
-	if failed {
+	if failed || degraded {
 		readCtx, readCancel := context.WithTimeout(observeCtx, 150*time.Millisecond)
-		count, e := s.cache.ProviderRecentFailures(readCtx, a.ID, p.Generation, time.Now(), p.Policy.WindowSeconds)
+		reason, e := s.accountPauseReason(readCtx, a.ID, p, time.Now())
 		readCancel()
 		if e != nil {
-			logger.LegacyPrintf("service.provider_health", "recent account failures unavailable: account=%d err=%v", a.ID, e)
+			logger.LegacyPrintf("service.provider_health", "recent account health evidence unavailable: account=%d err=%v", a.ID, e)
 			return
 		}
-		if count >= p.Policy.AccountFailureThreshold {
+		if reason != "" {
 			quarantineCtx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 			defer cancel()
-			if e := s.quarantineAccount(quarantineCtx, a, p, count); e != nil {
+			if e := s.quarantineAccount(quarantineCtx, a, p, reason); e != nil {
 				logger.LegacyPrintf("service.provider_health", "account quarantine failed: account=%d err=%v", a.ID, e)
 			}
 		}
 	}
 }
 
-func (s *ProviderRequestHealthService) quarantineAccount(ctx context.Context, a *Account, p providerRuntimePolicy, count int) error {
+func providerDegradedPauseReason(count int, p ProviderAccountHealthPolicy) string {
+	return fmt.Sprintf("%d degraded requests (first response > %d ms) within %d seconds", count, p.DegradedLatencyMS, p.WindowSeconds)
+}
+
+func (s *ProviderRequestHealthService) accountPauseReason(ctx context.Context, accountID int64, p providerRuntimePolicy, now time.Time) (string, error) {
+	failures, err := s.cache.ProviderRecentFailures(ctx, accountID, p.Generation, now, p.Policy.WindowSeconds)
+	if err != nil {
+		return "", err
+	}
+	if failures >= p.Policy.AccountFailureThreshold {
+		return fmt.Sprintf("%d failed or timed-out requests within %d seconds", failures, p.Policy.WindowSeconds), nil
+	}
+	if p.Policy.AccountDegradedThreshold > 0 {
+		degraded, err := s.cache.ProviderRecentDegradations(ctx, accountID, p.Generation, now, p.Policy.WindowSeconds)
+		if err != nil {
+			return "", err
+		}
+		if degraded >= p.Policy.AccountDegradedThreshold {
+			return providerDegradedPauseReason(degraded, p.Policy), nil
+		}
+	}
+	return "", nil
+}
+
+func (s *ProviderRequestHealthService) quarantineAccount(ctx context.Context, a *Account, p providerRuntimePolicy, reason string) error {
 	if a.ProviderID == nil {
 		return nil
 	}
@@ -229,7 +256,6 @@ func (s *ProviderRequestHealthService) quarantineAccount(ctx context.Context, a 
 	if err != nil {
 		return err
 	}
-	reason := fmt.Sprintf("%d failed or timed-out requests within %d seconds", count, p.Policy.WindowSeconds)
 	return (&Sub2APIProviderProbeService{db: s.db}).enterHybridRecoveryWithGeneration(ctx, h, p.Generation, reason, time.Now().UTC())
 }
 

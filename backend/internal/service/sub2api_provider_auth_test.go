@@ -36,7 +36,9 @@ type providerAuthTestRepo struct {
 	persistedAccess  string
 	persistedRefresh string
 	persistedExpiry  time.Time
+	persistCalls     int
 	authError        *string
+	provider         *ent.Sub2APIProvider
 }
 
 type providerProxyLookupStub struct {
@@ -51,8 +53,11 @@ func (s *providerProxyLookupStub) GetByID(context.Context, int64) (*Proxy, error
 func (*providerAuthTestRepo) Create(context.Context, *CreateSub2APIProviderInput) (*ent.Sub2APIProvider, error) {
 	return nil, errors.New("not implemented")
 }
-func (*providerAuthTestRepo) GetByID(context.Context, int64) (*ent.Sub2APIProvider, error) {
-	return nil, errors.New("not implemented")
+func (r *providerAuthTestRepo) GetByID(_ context.Context, id int64) (*ent.Sub2APIProvider, error) {
+	if r.provider == nil || r.provider.ID != id {
+		return nil, errors.New("not implemented")
+	}
+	return r.provider, nil
 }
 func (*providerAuthTestRepo) GetByIDWithAccounts(context.Context, int64) (*ent.Sub2APIProvider, error) {
 	return nil, errors.New("not implemented")
@@ -79,6 +84,12 @@ func (r *providerAuthTestRepo) PersistTokenPair(_ context.Context, _ int64, acce
 	r.persistedAccess = access
 	r.persistedRefresh = refresh
 	r.persistedExpiry = expiresAt
+	r.persistCalls++
+	if r.provider != nil {
+		r.provider.AccessTokenEncrypted = &access
+		r.provider.RefreshTokenEncrypted = &refresh
+		r.provider.AccessTokenExpiresAt = &expiresAt
+	}
 	return nil
 }
 func (r *providerAuthTestRepo) UpdateAuthError(_ context.Context, _ int64, message *string) error {
@@ -112,7 +123,7 @@ func TestPrepareCreateProviderAuthEncryptsImportedTokens(t *testing.T) {
 	if prepared.refreshEncrypted == nil || *prepared.refreshEncrypted != "encrypted:refresh-secret" {
 		t.Fatalf("refresh token was not encrypted: %+v", prepared.refreshEncrypted)
 	}
-	if prepared.expiresAt == nil || !prepared.expiresAt.After(time.Now()) {
+	if prepared.expiresAt == nil || time.Since(*prepared.expiresAt) > time.Second {
 		t.Fatalf("missing conservative token expiry: %+v", prepared.expiresAt)
 	}
 }
@@ -194,6 +205,72 @@ func TestAuthedProviderClientRestoresAndPersistsRotatedTokenPair(t *testing.T) {
 	if repo.persistedAccess != "encrypted:access-new" || repo.persistedRefresh != "encrypted:refresh-new" || repo.persistedExpiry.IsZero() {
 		t.Fatalf("persisted token state=(%q,%q,%v)", repo.persistedAccess, repo.persistedRefresh, repo.persistedExpiry)
 	}
+}
+
+func TestProviderCredentialRefreshRunnerRotatesBeforeExpiryAndPersists(t *testing.T) {
+	var refreshCalls int
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, "/api/v1/auth/refresh", r.URL.Path)
+		refreshCalls++
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"code":0,"data":{"access_token":"access-scheduled","refresh_token":"refresh-scheduled","expires_in":3600}}`))
+	}))
+	defer server.Close()
+
+	expiresAt := time.Now().Add(10 * time.Minute)
+	access, refresh := "encrypted:access-imported", "encrypted:refresh-imported"
+	provider := &ent.Sub2APIProvider{
+		ID: 52, BaseURL: server.URL, ProviderType: domain.ProviderTypeSub2API, Status: "active",
+		Email: "admin@example.com", AuthMode: domain.Sub2APIProviderAuthModeTokenPair,
+		AccessTokenEncrypted: &access, RefreshTokenEncrypted: &refresh, AccessTokenExpiresAt: &expiresAt,
+	}
+	repo := &providerAuthTestRepo{provider: provider}
+	svc := &Sub2APIProviderService{repo: repo, tokenCache: sub2api.NewTokenCache(), encryptor: providerAuthTestEncryptor{}}
+	runner := NewSub2APIProviderProbeRunner(&Sub2APIProviderProbeService{
+		providerRepo: repo, tokenCache: svc.tokenCache, encryptor: svc.encryptor,
+	}, nil, nil)
+
+	runner.refreshProviderCredentials(context.Background(), provider.ID, time.Now())
+	require.Equal(t, 1, refreshCalls)
+	require.Equal(t, 1, repo.persistCalls)
+	require.Equal(t, "encrypted:access-scheduled", repo.persistedAccess)
+	require.Equal(t, "encrypted:refresh-scheduled", repo.persistedRefresh)
+	require.True(t, repo.persistedExpiry.After(expiresAt))
+	require.Nil(t, repo.authError)
+
+	// The persisted expiry moves the provider out of the lead window, so the
+	// high-frequency scheduler scan does not rotate it again.
+	runner.refreshProviderCredentials(context.Background(), provider.ID, time.Now())
+	require.Equal(t, 1, refreshCalls)
+}
+
+func TestProviderCredentialRefreshRunnerBacksOffAfterRejection(t *testing.T) {
+	var refreshCalls int
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		refreshCalls++
+		http.Error(w, `{"code":401,"message":"invalid refresh token"}`, http.StatusUnauthorized)
+	}))
+	defer server.Close()
+
+	now := time.Now()
+	expiresAt := now.Add(10 * time.Minute)
+	access, refresh := "encrypted:access-imported", "encrypted:refresh-imported"
+	provider := &ent.Sub2APIProvider{
+		ID: 53, BaseURL: server.URL, ProviderType: domain.ProviderTypeSub2API, Status: "active",
+		Email: "admin@example.com", AuthMode: domain.Sub2APIProviderAuthModeTokenPair,
+		AccessTokenEncrypted: &access, RefreshTokenEncrypted: &refresh, AccessTokenExpiresAt: &expiresAt,
+	}
+	repo := &providerAuthTestRepo{provider: provider}
+	runner := NewSub2APIProviderProbeRunner(&Sub2APIProviderProbeService{
+		providerRepo: repo, tokenCache: sub2api.NewTokenCache(), encryptor: providerAuthTestEncryptor{},
+	}, nil, nil)
+
+	runner.refreshProviderCredentials(context.Background(), provider.ID, now)
+	runner.refreshProviderCredentials(context.Background(), provider.ID, now.Add(time.Minute))
+	require.Equal(t, 1, refreshCalls)
+	require.NotNil(t, repo.authError)
+	runner.refreshProviderCredentials(context.Background(), provider.ID, now.Add(providerCredentialRefreshRetry+time.Second))
+	require.Equal(t, 2, refreshCalls)
 }
 
 func TestProviderJSONNeverIncludesStoredSecrets(t *testing.T) {

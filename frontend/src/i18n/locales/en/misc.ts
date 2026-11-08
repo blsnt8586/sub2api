@@ -290,6 +290,7 @@ export default {
     title: 'Recharge / Subscription',
     amountLabel: 'Amount',
     paymentAmount: 'Payment Amount',
+    orderSummary: 'Order Summary',
     creditedBalance: 'Credited Balance',
     rechargeBonus: {
       creditedShort: 'Get {amount}',

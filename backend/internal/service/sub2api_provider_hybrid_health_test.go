@@ -7,13 +7,13 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/Wei-Shaw/sub2api/ent"
-	"github.com/Wei-Shaw/sub2api/ent/sub2apiproviderprobetargetrun"
 	"net/http/httptest"
 	"os"
 	"testing"
 	"time"
 
+	"github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/ent/sub2apiproviderprobetargetrun"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
 	"github.com/gin-gonic/gin"
 	cache "github.com/patrickmn/go-cache"
@@ -26,6 +26,8 @@ func TestHybridObserveUsesAccountThresholdsAndFreshEvidence(t *testing.T) {
 	require.Equal(t, 25000, p.DegradedLatencyMS)
 	require.Equal(t, 2, p.FailureThreshold)
 	require.Equal(t, 3, p.AccountFailureThreshold)
+	require.Equal(t, 2, p.DegradedThreshold)
+	require.Equal(t, 5, p.AccountDegradedThreshold)
 	require.Equal(t, 300, p.WindowSeconds)
 	require.Equal(t, 300, p.RecoveryDelaySeconds)
 	h := ProviderAccountHealthState{Policy: p, ObserveSince: now.Add(-10 * time.Minute)}
@@ -84,6 +86,55 @@ func TestHybridPolicyValidation(t *testing.T) {
 	require.Error(t, p.Validate())
 }
 
+func TestHybridDegradedPolicyDefaultsAndRecoveryThreshold(t *testing.T) {
+	p := DefaultProviderAccountHealthPolicy()
+	// Older JSON adds the new controls without replacing a custom latency setting.
+	require.NoError(t, json.Unmarshal([]byte(`{"degraded_latency_ms":35000,"account_failure_threshold":7}`), &p))
+	require.Equal(t, 2, p.DegradedThreshold)
+	require.Equal(t, 5, p.AccountDegradedThreshold)
+	require.Equal(t, 7, p.AccountFailureThreshold)
+	require.Equal(t, 35000, p.recoveryLatencyLimitMS())
+	for _, change := range []func(*ProviderAccountHealthPolicy){
+		func(p *ProviderAccountHealthPolicy) { p.DegradedThreshold = -1 },
+		func(p *ProviderAccountHealthPolicy) { p.DegradedThreshold = 101 },
+		func(p *ProviderAccountHealthPolicy) { p.AccountDegradedThreshold = -1 },
+		func(p *ProviderAccountHealthPolicy) { p.AccountDegradedThreshold = 10001 },
+	} {
+		invalid := p
+		change(&invalid)
+		require.Error(t, invalid.Validate())
+	}
+	p.DegradedThreshold, p.AccountDegradedThreshold = 0, 0
+	require.NoError(t, p.Validate())
+	require.Equal(t, p.TimeoutMS, p.recoveryLatencyLimitMS(), "disabling both slow rules preserves timeout recovery")
+}
+
+func TestHybridObserveDegradationDoesNotFabricateFailures(t *testing.T) {
+	now := time.Now()
+	p := DefaultProviderAccountHealthPolicy()
+	h := ProviderAccountHealthState{Policy: p, ObserveSince: now.Add(-time.Hour)}
+	slow := 32000
+	events := make([]providerPassiveRequest, 0, 5)
+	for i := 0; i < 5; i++ {
+		events = append(events, providerPassiveRequest{RequestID: fmt.Sprint(i), At: now.Add(-time.Duration(i+1) * time.Second), Latency: &slow})
+	}
+	o, reason := hybridObserve(h, events[:4], now)
+	require.Empty(t, reason)
+	require.Equal(t, "degraded", o.Status)
+	o, reason = hybridObserve(h, events, now)
+	require.Contains(t, reason, "5 degraded requests")
+	require.Zero(t, o.Failures, "successful slow responses stay successful in usage metrics")
+	_, reason = hybridObserve(h, append(events[:4], events[0]), now)
+	require.Empty(t, reason, "duplicate evidence must not count twice")
+	h.Policy.AccountDegradedThreshold = 0
+	_, reason = hybridObserve(h, events, now)
+	require.Empty(t, reason)
+	h.Policy = p
+	h.ObserveSince = now
+	_, reason = hybridObserve(h, events, now)
+	require.Empty(t, reason, "old slow responses cannot relatch a recovered account")
+}
+
 type hybridTestAccountRepo struct {
 	Sub2APIAccountRepository
 	db *sql.DB
@@ -92,6 +143,7 @@ type hybridTestAccountRepo struct {
 type providerHealthCacheSimulation struct {
 	seen     map[string]struct{}
 	failures int
+	degraded int
 }
 
 func (c *providerHealthCacheSimulation) ObserveProviderRequestHealth(_ context.Context, e ProviderRequestHealthEvent) error {
@@ -104,6 +156,8 @@ func (c *providerHealthCacheSimulation) ObserveProviderRequestHealth(_ context.C
 	c.seen[e.RequestID] = struct{}{}
 	if e.Failed {
 		c.failures++
+	} else if e.Degraded {
+		c.degraded++
 	}
 	return nil
 }
@@ -112,6 +166,9 @@ func (*providerHealthCacheSimulation) ProviderSessionAvoidances(context.Context,
 }
 func (c *providerHealthCacheSimulation) ProviderRecentFailures(context.Context, int64, string, time.Time, int) (int, error) {
 	return c.failures, nil
+}
+func (c *providerHealthCacheSimulation) ProviderRecentDegradations(context.Context, int64, string, time.Time, int) (int, error) {
+	return c.degraded, nil
 }
 
 func (r hybridTestAccountRepo) GetByID(ctx context.Context, id int64) (*Account, error) {
@@ -143,7 +200,7 @@ func TestHybridHealthPostgresQuarantineRecoveryAndOwnership(t *testing.T) {
  CREATE TEMP TABLE provider_account_hybrid_health(account_id bigint primary key,provider_id bigint,policy jsonb,revision bigint default 1,
  phase text default 'observing',observe_since timestamptz default NOW(),quarantine_token text default '',admin_generation text default '',reason text default '',
  recovery_successes int default 0,last_probe_at timestamptz,last_probe_status text default '',last_probe_latency_ms int,next_probe_at timestamptz,updated_at timestamptz default NOW());
- INSERT INTO accounts(id,provider_id) VALUES(1,18),(2,18),(3,18);`)
+ INSERT INTO accounts(id,provider_id) VALUES(1,18),(2,18),(3,18),(4,18);`)
 	require.NoError(t, err)
 	s := &Sub2APIProviderProbeService{db: db, accountRepo: hybridTestAccountRepo{db: db}}
 	require.NoError(t, s.initializeAccountHealth(ctx, 18))
@@ -191,7 +248,11 @@ func TestHybridHealthPostgresQuarantineRecoveryAndOwnership(t *testing.T) {
 	s.probeRepo = &hybridProbeRepoStub{}
 	_, err = db.ExecContext(ctx, `UPDATE provider_account_hybrid_health SET observe_since=NOW()-interval '1 hour' WHERE account_id=2`)
 	require.NoError(t, err)
-	target := &ent.Sub2APIProviderProbeTarget{ID: 2, ProviderID: 18, AccountID: 2}
+	answerPrompt := "configured answer challenge"
+	target := &ent.Sub2APIProviderProbeTarget{
+		ID: 2, ProviderID: 18, AccountID: 2,
+		AnswerProbeEnabled: true, AnswerProbePrompt: &answerPrompt,
+	}
 	require.NoError(t, s.runHybridRecoveryProbe(ctx, states()[2], target))
 	require.Zero(t, probe.calls)
 	require.NoError(t, s.enterHybridRecovery(ctx, states()[2], "test incident", now))
@@ -201,6 +262,7 @@ func TestHybridHealthPostgresQuarantineRecoveryAndOwnership(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, s.runHybridRecoveryProbe(ctx, states()[2], target))
 	require.Equal(t, 1, probe.calls)
+	require.Zero(t, probe.answerCalls, "recovery must use a health probe, not the configured answer challenge")
 	require.Equal(t, 1, states()[2].RecoverySuccesses)
 	require.NoError(t, s.runHybridRecoveryProbe(ctx, states()[2], target))
 	require.Equal(t, 1, probe.calls, "honor next probe time")
@@ -288,6 +350,49 @@ func TestHybridHealthPostgresQuarantineRecoveryAndOwnership(t *testing.T) {
 	require.NoError(t, db.QueryRowContext(ctx, `SELECT status FROM accounts WHERE id=3`).Scan(&status))
 	require.Equal(t, "error", status)
 	require.True(t, states()[3].NextProbeAt.After(time.Now().Add(4*time.Minute)))
+	// Successful-but-slow requests alone can pause an account, independently
+	// from the existing error path. No HTTP output or billing is rewritten.
+	slowCache := &providerHealthCacheSimulation{}
+	slowRuntime := &ProviderRequestHealthService{db: db, cache: slowCache, policies: cache.New(time.Minute, time.Minute)}
+	makeSlow := func(requestID string) {
+		requestCtx := context.WithValue(ctx, ctxkey.UserID, int64(700))
+		writer := httptest.NewRecorder()
+		ginCtx, _ := gin.CreateTestContext(writer)
+		ginCtx.Set("provider_health_request_nonce", requestID)
+		latency := 32000
+		slowRuntime.Observe(requestCtx, ginCtx, &Account{ID: 4, ProviderID: &providerID}, 5, "slow-session", time.Now(), true, true, &latency, nil)
+		require.Empty(t, writer.Body.String())
+	}
+	for i := 0; i < 4; i++ {
+		makeSlow(fmt.Sprintf("slow-%d", i))
+	}
+	makeSlow("slow-0")
+	require.Equal(t, "observing", states()[4].Phase)
+	makeSlow("slow-4")
+	require.Equal(t, "recovering", states()[4].Phase)
+	require.Contains(t, states()[4].Reason, "5 degraded requests")
+	require.Zero(t, slowCache.failures)
+	require.Equal(t, 5, slowCache.degraded)
+	require.WithinDuration(t, time.Now().Add(5*time.Minute), *states()[4].NextProbeAt, 2*time.Second)
+	// A successful 35-second probe is still degraded and must not recover traffic.
+	stillSlow := 35000
+	require.NoError(t, s.finishHybridRecoveryProbe(ctx, states()[4], true, &stillSlow, "", time.Now()))
+	require.Zero(t, states()[4].RecoverySuccesses)
+	require.Equal(t, "unhealthy", states()[4].LastProbeStatus)
+	require.NotEmpty(t, block(4))
+	probe.latency = 35000
+	_, err = db.ExecContext(ctx, `UPDATE provider_account_hybrid_health SET next_probe_at=NOW()-interval '1 second' WHERE account_id=4`)
+	require.NoError(t, err)
+	require.NoError(t, s.runHybridRecoveryProbe(ctx, states()[4], &ent.Sub2APIProviderProbeTarget{ID: 4, ProviderID: 18, AccountID: 4}))
+	require.Zero(t, states()[4].RecoverySuccesses)
+	probe.latency = 50
+	for i := 0; i < 2; i++ {
+		_, err = db.ExecContext(ctx, `UPDATE provider_account_hybrid_health SET next_probe_at=NOW()-interval '1 second' WHERE account_id=4`)
+		require.NoError(t, err)
+		require.NoError(t, s.runHybridRecoveryProbe(ctx, states()[4], &ent.Sub2APIProviderProbeTarget{ID: 4, ProviderID: 18, AccountID: 4}))
+	}
+	require.Equal(t, "observing", states()[4].Phase)
+	require.Empty(t, block(4))
 	// Restart/read retains independent account settings.
 	restarted := &Sub2APIProviderProbeService{db: db}
 	persisted, err := restarted.accountHealthStates(ctx, 18)
@@ -300,8 +405,10 @@ func TestHybridHealthPostgresQuarantineRecoveryAndOwnership(t *testing.T) {
 }
 
 type hybridProbeRunnerStub struct {
-	calls int
-	fail  bool
+	calls       int
+	answerCalls int
+	fail        bool
+	latency     int
 }
 
 func (r *hybridProbeRunnerStub) RunProbeTestBackground(_ context.Context, _ int64, model string) (*ScheduledTestResult, error) {
@@ -310,7 +417,16 @@ func (r *hybridProbeRunnerStub) RunProbeTestBackground(_ context.Context, _ int6
 	if r.fail {
 		status = "failed"
 	}
-	return &ScheduledTestResult{Status: status, LatencyMs: 50, FinishedAt: time.Now().UTC()}, nil
+	latency := r.latency
+	if latency == 0 {
+		latency = 50
+	}
+	return &ScheduledTestResult{Status: status, LatencyMs: int64(latency), FinishedAt: time.Now().UTC()}, nil
+}
+
+func (r *hybridProbeRunnerStub) RunAnswerProbeBackground(_ context.Context, _ int64, model, _ string) (*ScheduledTestResult, error) {
+	r.answerCalls++
+	return &ScheduledTestResult{Status: "success", LatencyMs: 50, ResponseText: "challenge answer", FinishedAt: time.Now().UTC()}, nil
 }
 
 type hybridProbeRepoStub struct{ Sub2APIProviderProbeRepository }

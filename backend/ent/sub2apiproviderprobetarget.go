@@ -53,6 +53,12 @@ type Sub2APIProviderProbeTarget struct {
 	ConsecutiveHealthy int `json:"consecutive_healthy,omitempty"`
 	// TestModel holds the value of the "test_model" field.
 	TestModel *string `json:"test_model,omitempty"`
+	// AnswerProbeEnabled holds the value of the "answer_probe_enabled" field.
+	AnswerProbeEnabled bool `json:"answer_probe_enabled,omitempty"`
+	// AnswerProbePrompt holds the value of the "answer_probe_prompt" field.
+	AnswerProbePrompt *string `json:"answer_probe_prompt,omitempty"`
+	// AnswerProbeIntervalSeconds holds the value of the "answer_probe_interval_seconds" field.
+	AnswerProbeIntervalSeconds int `json:"answer_probe_interval_seconds,omitempty"`
 	// AllowMediaProbe holds the value of the "allow_media_probe" field.
 	AllowMediaProbe bool `json:"allow_media_probe,omitempty"`
 	// TimeoutSeconds holds the value of the "timeout_seconds" field.
@@ -132,11 +138,11 @@ func (*Sub2APIProviderProbeTarget) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case sub2apiproviderprobetarget.FieldEnabled, sub2apiproviderprobetarget.FieldAdaptiveIntervalEnabled, sub2apiproviderprobetarget.FieldAllowMediaProbe, sub2apiproviderprobetarget.FieldCostOptimizeEnabled:
+		case sub2apiproviderprobetarget.FieldEnabled, sub2apiproviderprobetarget.FieldAdaptiveIntervalEnabled, sub2apiproviderprobetarget.FieldAnswerProbeEnabled, sub2apiproviderprobetarget.FieldAllowMediaProbe, sub2apiproviderprobetarget.FieldCostOptimizeEnabled:
 			values[i] = new(sql.NullBool)
-		case sub2apiproviderprobetarget.FieldID, sub2apiproviderprobetarget.FieldProviderID, sub2apiproviderprobetarget.FieldAccountID, sub2apiproviderprobetarget.FieldProviderAPIKeyID, sub2apiproviderprobetarget.FieldRemoteGroupID, sub2apiproviderprobetarget.FieldIntervalSeconds, sub2apiproviderprobetarget.FieldHealthyIntervalSeconds, sub2apiproviderprobetarget.FieldHealthyIntervalThreshold, sub2apiproviderprobetarget.FieldStableHealthyIntervalSeconds, sub2apiproviderprobetarget.FieldStableHealthyThreshold, sub2apiproviderprobetarget.FieldConsecutiveHealthy, sub2apiproviderprobetarget.FieldTimeoutSeconds, sub2apiproviderprobetarget.FieldDegradedLatencyMs, sub2apiproviderprobetarget.FieldDegradedOptimizeThreshold, sub2apiproviderprobetarget.FieldCostOptimizeIntervalSeconds, sub2apiproviderprobetarget.FieldCostOptimizeHealthyThreshold, sub2apiproviderprobetarget.FieldFailureThreshold, sub2apiproviderprobetarget.FieldRecoveryThreshold:
+		case sub2apiproviderprobetarget.FieldID, sub2apiproviderprobetarget.FieldProviderID, sub2apiproviderprobetarget.FieldAccountID, sub2apiproviderprobetarget.FieldProviderAPIKeyID, sub2apiproviderprobetarget.FieldRemoteGroupID, sub2apiproviderprobetarget.FieldIntervalSeconds, sub2apiproviderprobetarget.FieldHealthyIntervalSeconds, sub2apiproviderprobetarget.FieldHealthyIntervalThreshold, sub2apiproviderprobetarget.FieldStableHealthyIntervalSeconds, sub2apiproviderprobetarget.FieldStableHealthyThreshold, sub2apiproviderprobetarget.FieldConsecutiveHealthy, sub2apiproviderprobetarget.FieldAnswerProbeIntervalSeconds, sub2apiproviderprobetarget.FieldTimeoutSeconds, sub2apiproviderprobetarget.FieldDegradedLatencyMs, sub2apiproviderprobetarget.FieldDegradedOptimizeThreshold, sub2apiproviderprobetarget.FieldCostOptimizeIntervalSeconds, sub2apiproviderprobetarget.FieldCostOptimizeHealthyThreshold, sub2apiproviderprobetarget.FieldFailureThreshold, sub2apiproviderprobetarget.FieldRecoveryThreshold:
 			values[i] = new(sql.NullInt64)
-		case sub2apiproviderprobetarget.FieldRemoteGroupName, sub2apiproviderprobetarget.FieldPlatform, sub2apiproviderprobetarget.FieldTestModel:
+		case sub2apiproviderprobetarget.FieldRemoteGroupName, sub2apiproviderprobetarget.FieldPlatform, sub2apiproviderprobetarget.FieldTestModel, sub2apiproviderprobetarget.FieldAnswerProbePrompt:
 			values[i] = new(sql.NullString)
 		case sub2apiproviderprobetarget.FieldCreatedAt, sub2apiproviderprobetarget.FieldUpdatedAt, sub2apiproviderprobetarget.FieldLastCostOptimizeAt, sub2apiproviderprobetarget.FieldLastRunAt, sub2apiproviderprobetarget.FieldRouteChangedAt:
 			values[i] = new(sql.NullTime)
@@ -266,6 +272,25 @@ func (_m *Sub2APIProviderProbeTarget) assignValues(columns []string, values []an
 			} else if value.Valid {
 				_m.TestModel = new(string)
 				*_m.TestModel = value.String
+			}
+		case sub2apiproviderprobetarget.FieldAnswerProbeEnabled:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field answer_probe_enabled", values[i])
+			} else if value.Valid {
+				_m.AnswerProbeEnabled = value.Bool
+			}
+		case sub2apiproviderprobetarget.FieldAnswerProbePrompt:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field answer_probe_prompt", values[i])
+			} else if value.Valid {
+				_m.AnswerProbePrompt = new(string)
+				*_m.AnswerProbePrompt = value.String
+			}
+		case sub2apiproviderprobetarget.FieldAnswerProbeIntervalSeconds:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field answer_probe_interval_seconds", values[i])
+			} else if value.Valid {
+				_m.AnswerProbeIntervalSeconds = int(value.Int64)
 			}
 		case sub2apiproviderprobetarget.FieldAllowMediaProbe:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -451,6 +476,17 @@ func (_m *Sub2APIProviderProbeTarget) String() string {
 		builder.WriteString("test_model=")
 		builder.WriteString(*v)
 	}
+	builder.WriteString(", ")
+	builder.WriteString("answer_probe_enabled=")
+	builder.WriteString(fmt.Sprintf("%v", _m.AnswerProbeEnabled))
+	builder.WriteString(", ")
+	if v := _m.AnswerProbePrompt; v != nil {
+		builder.WriteString("answer_probe_prompt=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	builder.WriteString("answer_probe_interval_seconds=")
+	builder.WriteString(fmt.Sprintf("%v", _m.AnswerProbeIntervalSeconds))
 	builder.WriteString(", ")
 	builder.WriteString("allow_media_probe=")
 	builder.WriteString(fmt.Sprintf("%v", _m.AllowMediaProbe))

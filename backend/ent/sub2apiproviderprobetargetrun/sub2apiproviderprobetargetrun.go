@@ -45,6 +45,10 @@ const (
 	FieldErrorCategory = "error_category"
 	// FieldErrorMessage holds the string denoting the error_message field in the database.
 	FieldErrorMessage = "error_message"
+	// FieldResponseText holds the string denoting the response_text field in the database.
+	FieldResponseText = "response_text"
+	// FieldAnswerProbe holds the string denoting the answer_probe field in the database.
+	FieldAnswerProbe = "answer_probe"
 	// FieldStartedAt holds the string denoting the started_at field in the database.
 	FieldStartedAt = "started_at"
 	// FieldFinishedAt holds the string denoting the finished_at field in the database.
@@ -82,6 +86,8 @@ var Columns = []string{
 	FieldTrafficP95LatencyMs,
 	FieldErrorCategory,
 	FieldErrorMessage,
+	FieldResponseText,
+	FieldAnswerProbe,
 	FieldStartedAt,
 	FieldFinishedAt,
 	FieldCreatedAt,
@@ -110,6 +116,8 @@ var (
 	DefaultTrafficRequestCount int
 	// ErrorCategoryValidator is a validator for the "error_category" field. It is called by the builders before save.
 	ErrorCategoryValidator func(string) error
+	// DefaultAnswerProbe holds the default value on creation for the "answer_probe" field.
+	DefaultAnswerProbe bool
 	// DefaultStartedAt holds the default value on creation for the "started_at" field.
 	DefaultStartedAt func() time.Time
 	// DefaultFinishedAt holds the default value on creation for the "finished_at" field.
@@ -224,6 +232,16 @@ func ByErrorCategory(opts ...sql.OrderTermOption) OrderOption {
 // ByErrorMessage orders the results by the error_message field.
 func ByErrorMessage(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldErrorMessage, opts...).ToFunc()
+}
+
+// ByResponseText orders the results by the response_text field.
+func ByResponseText(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldResponseText, opts...).ToFunc()
+}
+
+// ByAnswerProbe orders the results by the answer_probe field.
+func ByAnswerProbe(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAnswerProbe, opts...).ToFunc()
 }
 
 // ByStartedAt orders the results by the started_at field.

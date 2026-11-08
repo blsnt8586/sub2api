@@ -247,6 +247,48 @@ func (_c *Sub2APIProviderProbeTargetCreate) SetNillableTestModel(v *string) *Sub
 	return _c
 }
 
+// SetAnswerProbeEnabled sets the "answer_probe_enabled" field.
+func (_c *Sub2APIProviderProbeTargetCreate) SetAnswerProbeEnabled(v bool) *Sub2APIProviderProbeTargetCreate {
+	_c.mutation.SetAnswerProbeEnabled(v)
+	return _c
+}
+
+// SetNillableAnswerProbeEnabled sets the "answer_probe_enabled" field if the given value is not nil.
+func (_c *Sub2APIProviderProbeTargetCreate) SetNillableAnswerProbeEnabled(v *bool) *Sub2APIProviderProbeTargetCreate {
+	if v != nil {
+		_c.SetAnswerProbeEnabled(*v)
+	}
+	return _c
+}
+
+// SetAnswerProbePrompt sets the "answer_probe_prompt" field.
+func (_c *Sub2APIProviderProbeTargetCreate) SetAnswerProbePrompt(v string) *Sub2APIProviderProbeTargetCreate {
+	_c.mutation.SetAnswerProbePrompt(v)
+	return _c
+}
+
+// SetNillableAnswerProbePrompt sets the "answer_probe_prompt" field if the given value is not nil.
+func (_c *Sub2APIProviderProbeTargetCreate) SetNillableAnswerProbePrompt(v *string) *Sub2APIProviderProbeTargetCreate {
+	if v != nil {
+		_c.SetAnswerProbePrompt(*v)
+	}
+	return _c
+}
+
+// SetAnswerProbeIntervalSeconds sets the "answer_probe_interval_seconds" field.
+func (_c *Sub2APIProviderProbeTargetCreate) SetAnswerProbeIntervalSeconds(v int) *Sub2APIProviderProbeTargetCreate {
+	_c.mutation.SetAnswerProbeIntervalSeconds(v)
+	return _c
+}
+
+// SetNillableAnswerProbeIntervalSeconds sets the "answer_probe_interval_seconds" field if the given value is not nil.
+func (_c *Sub2APIProviderProbeTargetCreate) SetNillableAnswerProbeIntervalSeconds(v *int) *Sub2APIProviderProbeTargetCreate {
+	if v != nil {
+		_c.SetAnswerProbeIntervalSeconds(*v)
+	}
+	return _c
+}
+
 // SetAllowMediaProbe sets the "allow_media_probe" field.
 func (_c *Sub2APIProviderProbeTargetCreate) SetAllowMediaProbe(v bool) *Sub2APIProviderProbeTargetCreate {
 	_c.mutation.SetAllowMediaProbe(v)
@@ -519,6 +561,14 @@ func (_c *Sub2APIProviderProbeTargetCreate) defaults() {
 		v := sub2apiproviderprobetarget.DefaultConsecutiveHealthy
 		_c.mutation.SetConsecutiveHealthy(v)
 	}
+	if _, ok := _c.mutation.AnswerProbeEnabled(); !ok {
+		v := sub2apiproviderprobetarget.DefaultAnswerProbeEnabled
+		_c.mutation.SetAnswerProbeEnabled(v)
+	}
+	if _, ok := _c.mutation.AnswerProbeIntervalSeconds(); !ok {
+		v := sub2apiproviderprobetarget.DefaultAnswerProbeIntervalSeconds
+		_c.mutation.SetAnswerProbeIntervalSeconds(v)
+	}
 	if _, ok := _c.mutation.AllowMediaProbe(); !ok {
 		v := sub2apiproviderprobetarget.DefaultAllowMediaProbe
 		_c.mutation.SetAllowMediaProbe(v)
@@ -642,6 +692,12 @@ func (_c *Sub2APIProviderProbeTargetCreate) check() error {
 		if err := sub2apiproviderprobetarget.TestModelValidator(v); err != nil {
 			return &ValidationError{Name: "test_model", err: fmt.Errorf(`ent: validator failed for field "Sub2APIProviderProbeTarget.test_model": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.AnswerProbeEnabled(); !ok {
+		return &ValidationError{Name: "answer_probe_enabled", err: errors.New(`ent: missing required field "Sub2APIProviderProbeTarget.answer_probe_enabled"`)}
+	}
+	if _, ok := _c.mutation.AnswerProbeIntervalSeconds(); !ok {
+		return &ValidationError{Name: "answer_probe_interval_seconds", err: errors.New(`ent: missing required field "Sub2APIProviderProbeTarget.answer_probe_interval_seconds"`)}
 	}
 	if _, ok := _c.mutation.AllowMediaProbe(); !ok {
 		return &ValidationError{Name: "allow_media_probe", err: errors.New(`ent: missing required field "Sub2APIProviderProbeTarget.allow_media_probe"`)}
@@ -797,6 +853,18 @@ func (_c *Sub2APIProviderProbeTargetCreate) createSpec() (*Sub2APIProviderProbeT
 	if value, ok := _c.mutation.TestModel(); ok {
 		_spec.SetField(sub2apiproviderprobetarget.FieldTestModel, field.TypeString, value)
 		_node.TestModel = &value
+	}
+	if value, ok := _c.mutation.AnswerProbeEnabled(); ok {
+		_spec.SetField(sub2apiproviderprobetarget.FieldAnswerProbeEnabled, field.TypeBool, value)
+		_node.AnswerProbeEnabled = value
+	}
+	if value, ok := _c.mutation.AnswerProbePrompt(); ok {
+		_spec.SetField(sub2apiproviderprobetarget.FieldAnswerProbePrompt, field.TypeString, value)
+		_node.AnswerProbePrompt = &value
+	}
+	if value, ok := _c.mutation.AnswerProbeIntervalSeconds(); ok {
+		_spec.SetField(sub2apiproviderprobetarget.FieldAnswerProbeIntervalSeconds, field.TypeInt, value)
+		_node.AnswerProbeIntervalSeconds = value
 	}
 	if value, ok := _c.mutation.AllowMediaProbe(); ok {
 		_spec.SetField(sub2apiproviderprobetarget.FieldAllowMediaProbe, field.TypeBool, value)
@@ -1209,6 +1277,54 @@ func (u *Sub2APIProviderProbeTargetUpsert) UpdateTestModel() *Sub2APIProviderPro
 // ClearTestModel clears the value of the "test_model" field.
 func (u *Sub2APIProviderProbeTargetUpsert) ClearTestModel() *Sub2APIProviderProbeTargetUpsert {
 	u.SetNull(sub2apiproviderprobetarget.FieldTestModel)
+	return u
+}
+
+// SetAnswerProbeEnabled sets the "answer_probe_enabled" field.
+func (u *Sub2APIProviderProbeTargetUpsert) SetAnswerProbeEnabled(v bool) *Sub2APIProviderProbeTargetUpsert {
+	u.Set(sub2apiproviderprobetarget.FieldAnswerProbeEnabled, v)
+	return u
+}
+
+// UpdateAnswerProbeEnabled sets the "answer_probe_enabled" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsert) UpdateAnswerProbeEnabled() *Sub2APIProviderProbeTargetUpsert {
+	u.SetExcluded(sub2apiproviderprobetarget.FieldAnswerProbeEnabled)
+	return u
+}
+
+// SetAnswerProbePrompt sets the "answer_probe_prompt" field.
+func (u *Sub2APIProviderProbeTargetUpsert) SetAnswerProbePrompt(v string) *Sub2APIProviderProbeTargetUpsert {
+	u.Set(sub2apiproviderprobetarget.FieldAnswerProbePrompt, v)
+	return u
+}
+
+// UpdateAnswerProbePrompt sets the "answer_probe_prompt" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsert) UpdateAnswerProbePrompt() *Sub2APIProviderProbeTargetUpsert {
+	u.SetExcluded(sub2apiproviderprobetarget.FieldAnswerProbePrompt)
+	return u
+}
+
+// ClearAnswerProbePrompt clears the value of the "answer_probe_prompt" field.
+func (u *Sub2APIProviderProbeTargetUpsert) ClearAnswerProbePrompt() *Sub2APIProviderProbeTargetUpsert {
+	u.SetNull(sub2apiproviderprobetarget.FieldAnswerProbePrompt)
+	return u
+}
+
+// SetAnswerProbeIntervalSeconds sets the "answer_probe_interval_seconds" field.
+func (u *Sub2APIProviderProbeTargetUpsert) SetAnswerProbeIntervalSeconds(v int) *Sub2APIProviderProbeTargetUpsert {
+	u.Set(sub2apiproviderprobetarget.FieldAnswerProbeIntervalSeconds, v)
+	return u
+}
+
+// UpdateAnswerProbeIntervalSeconds sets the "answer_probe_interval_seconds" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsert) UpdateAnswerProbeIntervalSeconds() *Sub2APIProviderProbeTargetUpsert {
+	u.SetExcluded(sub2apiproviderprobetarget.FieldAnswerProbeIntervalSeconds)
+	return u
+}
+
+// AddAnswerProbeIntervalSeconds adds v to the "answer_probe_interval_seconds" field.
+func (u *Sub2APIProviderProbeTargetUpsert) AddAnswerProbeIntervalSeconds(v int) *Sub2APIProviderProbeTargetUpsert {
+	u.Add(sub2apiproviderprobetarget.FieldAnswerProbeIntervalSeconds, v)
 	return u
 }
 
@@ -1766,6 +1882,62 @@ func (u *Sub2APIProviderProbeTargetUpsertOne) UpdateTestModel() *Sub2APIProvider
 func (u *Sub2APIProviderProbeTargetUpsertOne) ClearTestModel() *Sub2APIProviderProbeTargetUpsertOne {
 	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
 		s.ClearTestModel()
+	})
+}
+
+// SetAnswerProbeEnabled sets the "answer_probe_enabled" field.
+func (u *Sub2APIProviderProbeTargetUpsertOne) SetAnswerProbeEnabled(v bool) *Sub2APIProviderProbeTargetUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.SetAnswerProbeEnabled(v)
+	})
+}
+
+// UpdateAnswerProbeEnabled sets the "answer_probe_enabled" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsertOne) UpdateAnswerProbeEnabled() *Sub2APIProviderProbeTargetUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.UpdateAnswerProbeEnabled()
+	})
+}
+
+// SetAnswerProbePrompt sets the "answer_probe_prompt" field.
+func (u *Sub2APIProviderProbeTargetUpsertOne) SetAnswerProbePrompt(v string) *Sub2APIProviderProbeTargetUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.SetAnswerProbePrompt(v)
+	})
+}
+
+// UpdateAnswerProbePrompt sets the "answer_probe_prompt" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsertOne) UpdateAnswerProbePrompt() *Sub2APIProviderProbeTargetUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.UpdateAnswerProbePrompt()
+	})
+}
+
+// ClearAnswerProbePrompt clears the value of the "answer_probe_prompt" field.
+func (u *Sub2APIProviderProbeTargetUpsertOne) ClearAnswerProbePrompt() *Sub2APIProviderProbeTargetUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.ClearAnswerProbePrompt()
+	})
+}
+
+// SetAnswerProbeIntervalSeconds sets the "answer_probe_interval_seconds" field.
+func (u *Sub2APIProviderProbeTargetUpsertOne) SetAnswerProbeIntervalSeconds(v int) *Sub2APIProviderProbeTargetUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.SetAnswerProbeIntervalSeconds(v)
+	})
+}
+
+// AddAnswerProbeIntervalSeconds adds v to the "answer_probe_interval_seconds" field.
+func (u *Sub2APIProviderProbeTargetUpsertOne) AddAnswerProbeIntervalSeconds(v int) *Sub2APIProviderProbeTargetUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.AddAnswerProbeIntervalSeconds(v)
+	})
+}
+
+// UpdateAnswerProbeIntervalSeconds sets the "answer_probe_interval_seconds" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsertOne) UpdateAnswerProbeIntervalSeconds() *Sub2APIProviderProbeTargetUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.UpdateAnswerProbeIntervalSeconds()
 	})
 }
 
@@ -2523,6 +2695,62 @@ func (u *Sub2APIProviderProbeTargetUpsertBulk) UpdateTestModel() *Sub2APIProvide
 func (u *Sub2APIProviderProbeTargetUpsertBulk) ClearTestModel() *Sub2APIProviderProbeTargetUpsertBulk {
 	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
 		s.ClearTestModel()
+	})
+}
+
+// SetAnswerProbeEnabled sets the "answer_probe_enabled" field.
+func (u *Sub2APIProviderProbeTargetUpsertBulk) SetAnswerProbeEnabled(v bool) *Sub2APIProviderProbeTargetUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.SetAnswerProbeEnabled(v)
+	})
+}
+
+// UpdateAnswerProbeEnabled sets the "answer_probe_enabled" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsertBulk) UpdateAnswerProbeEnabled() *Sub2APIProviderProbeTargetUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.UpdateAnswerProbeEnabled()
+	})
+}
+
+// SetAnswerProbePrompt sets the "answer_probe_prompt" field.
+func (u *Sub2APIProviderProbeTargetUpsertBulk) SetAnswerProbePrompt(v string) *Sub2APIProviderProbeTargetUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.SetAnswerProbePrompt(v)
+	})
+}
+
+// UpdateAnswerProbePrompt sets the "answer_probe_prompt" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsertBulk) UpdateAnswerProbePrompt() *Sub2APIProviderProbeTargetUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.UpdateAnswerProbePrompt()
+	})
+}
+
+// ClearAnswerProbePrompt clears the value of the "answer_probe_prompt" field.
+func (u *Sub2APIProviderProbeTargetUpsertBulk) ClearAnswerProbePrompt() *Sub2APIProviderProbeTargetUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.ClearAnswerProbePrompt()
+	})
+}
+
+// SetAnswerProbeIntervalSeconds sets the "answer_probe_interval_seconds" field.
+func (u *Sub2APIProviderProbeTargetUpsertBulk) SetAnswerProbeIntervalSeconds(v int) *Sub2APIProviderProbeTargetUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.SetAnswerProbeIntervalSeconds(v)
+	})
+}
+
+// AddAnswerProbeIntervalSeconds adds v to the "answer_probe_interval_seconds" field.
+func (u *Sub2APIProviderProbeTargetUpsertBulk) AddAnswerProbeIntervalSeconds(v int) *Sub2APIProviderProbeTargetUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.AddAnswerProbeIntervalSeconds(v)
+	})
+}
+
+// UpdateAnswerProbeIntervalSeconds sets the "answer_probe_interval_seconds" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetUpsertBulk) UpdateAnswerProbeIntervalSeconds() *Sub2APIProviderProbeTargetUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetUpsert) {
+		s.UpdateAnswerProbeIntervalSeconds()
 	})
 }
 

@@ -48,6 +48,10 @@ type Sub2APIProviderProbeTargetRun struct {
 	ErrorCategory *string `json:"error_category,omitempty"`
 	// ErrorMessage holds the value of the "error_message" field.
 	ErrorMessage *string `json:"error_message,omitempty"`
+	// ResponseText holds the value of the "response_text" field.
+	ResponseText *string `json:"response_text,omitempty"`
+	// AnswerProbe holds the value of the "answer_probe" field.
+	AnswerProbe bool `json:"answer_probe,omitempty"`
 	// StartedAt holds the value of the "started_at" field.
 	StartedAt time.Time `json:"started_at,omitempty"`
 	// FinishedAt holds the value of the "finished_at" field.
@@ -85,11 +89,13 @@ func (*Sub2APIProviderProbeTargetRun) scanValues(columns []string) ([]any, error
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case sub2apiproviderprobetargetrun.FieldAnswerProbe:
+			values[i] = new(sql.NullBool)
 		case sub2apiproviderprobetargetrun.FieldTrafficSuccessRate:
 			values[i] = new(sql.NullFloat64)
 		case sub2apiproviderprobetargetrun.FieldID, sub2apiproviderprobetargetrun.FieldTargetID, sub2apiproviderprobetargetrun.FieldProviderID, sub2apiproviderprobetargetrun.FieldAccountID, sub2apiproviderprobetargetrun.FieldProviderAPIKeyID, sub2apiproviderprobetargetrun.FieldRemoteGroupID, sub2apiproviderprobetargetrun.FieldLatencyMs, sub2apiproviderprobetargetrun.FieldTrafficRequestCount, sub2apiproviderprobetargetrun.FieldTrafficP95LatencyMs:
 			values[i] = new(sql.NullInt64)
-		case sub2apiproviderprobetargetrun.FieldRemoteGroupName, sub2apiproviderprobetargetrun.FieldPlatform, sub2apiproviderprobetargetrun.FieldModelID, sub2apiproviderprobetargetrun.FieldStatus, sub2apiproviderprobetargetrun.FieldErrorCategory, sub2apiproviderprobetargetrun.FieldErrorMessage:
+		case sub2apiproviderprobetargetrun.FieldRemoteGroupName, sub2apiproviderprobetargetrun.FieldPlatform, sub2apiproviderprobetargetrun.FieldModelID, sub2apiproviderprobetargetrun.FieldStatus, sub2apiproviderprobetargetrun.FieldErrorCategory, sub2apiproviderprobetargetrun.FieldErrorMessage, sub2apiproviderprobetargetrun.FieldResponseText:
 			values[i] = new(sql.NullString)
 		case sub2apiproviderprobetargetrun.FieldStartedAt, sub2apiproviderprobetargetrun.FieldFinishedAt, sub2apiproviderprobetargetrun.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
@@ -213,6 +219,19 @@ func (_m *Sub2APIProviderProbeTargetRun) assignValues(columns []string, values [
 				_m.ErrorMessage = new(string)
 				*_m.ErrorMessage = value.String
 			}
+		case sub2apiproviderprobetargetrun.FieldResponseText:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field response_text", values[i])
+			} else if value.Valid {
+				_m.ResponseText = new(string)
+				*_m.ResponseText = value.String
+			}
+		case sub2apiproviderprobetargetrun.FieldAnswerProbe:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field answer_probe", values[i])
+			} else if value.Valid {
+				_m.AnswerProbe = value.Bool
+			}
 		case sub2apiproviderprobetargetrun.FieldStartedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field started_at", values[i])
@@ -334,6 +353,14 @@ func (_m *Sub2APIProviderProbeTargetRun) String() string {
 		builder.WriteString("error_message=")
 		builder.WriteString(*v)
 	}
+	builder.WriteString(", ")
+	if v := _m.ResponseText; v != nil {
+		builder.WriteString("response_text=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	builder.WriteString("answer_probe=")
+	builder.WriteString(fmt.Sprintf("%v", _m.AnswerProbe))
 	builder.WriteString(", ")
 	builder.WriteString("started_at=")
 	builder.WriteString(_m.StartedAt.Format(time.ANSIC))

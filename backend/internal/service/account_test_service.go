@@ -3516,7 +3516,16 @@ func (s *AccountTestService) RunProbeTestBackground(ctx context.Context, account
 	return result, nil
 }
 
+func (s *AccountTestService) RunAnswerProbeBackground(ctx context.Context, accountID int64, modelID, prompt string) (*ScheduledTestResult, error) {
+	ctx = withAccountAnswerPrompt(suppressAccountTestStatusMutation(ctx), prompt)
+	return s.runTestBackgroundWithPrompt(ctx, accountID, modelID, prompt)
+}
+
 func (s *AccountTestService) runTestBackground(ctx context.Context, accountID int64, modelID string) (*ScheduledTestResult, error) {
+	return s.runTestBackgroundWithPrompt(ctx, accountID, modelID, "")
+}
+
+func (s *AccountTestService) runTestBackgroundWithPrompt(ctx context.Context, accountID int64, modelID, prompt string) (*ScheduledTestResult, error) {
 	startedAt := time.Now()
 
 	w := httptest.NewRecorder()
@@ -3524,7 +3533,7 @@ func (s *AccountTestService) runTestBackground(ctx context.Context, accountID in
 	ginCtx.Set(accountTestBackgroundKey, true)
 	ginCtx.Request = (&http.Request{}).WithContext(ctx)
 
-	testErr := s.TestAccountConnection(ginCtx, accountID, modelID, "", AccountTestModeDefault)
+	testErr := s.TestAccountConnection(ginCtx, accountID, modelID, prompt, AccountTestModeDefault)
 
 	finishedAt := time.Now()
 	body := w.Body.String()

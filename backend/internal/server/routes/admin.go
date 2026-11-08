@@ -59,6 +59,12 @@ func RegisterAdminRoutes(
 
 		// 公告管理
 		registerAnnouncementRoutes(admin, h)
+		admin.GET("/feedback", h.RadarFeedback.AdminList)
+		admin.GET("/feedback/users", h.RadarFeedback.AdminUsers)
+		admin.GET("/feedback/users/:user_id/threads", h.RadarFeedback.AdminUserThreads)
+		admin.GET("/feedback/:id", h.RadarFeedback.AdminThread)
+		admin.POST("/feedback/:id/read", h.RadarFeedback.AdminRead)
+		admin.POST("/feedback/:id/reply", h.RadarFeedback.AdminReply)
 
 		// OpenAI OAuth
 		registerOpenAIOAuthRoutes(admin, h)

@@ -140,6 +140,21 @@ func TestModel(v string) predicate.Sub2APIProviderProbeTarget {
 	return predicate.Sub2APIProviderProbeTarget(sql.FieldEQ(FieldTestModel, v))
 }
 
+// AnswerProbeEnabled applies equality check predicate on the "answer_probe_enabled" field. It's identical to AnswerProbeEnabledEQ.
+func AnswerProbeEnabled(v bool) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldEQ(FieldAnswerProbeEnabled, v))
+}
+
+// AnswerProbePrompt applies equality check predicate on the "answer_probe_prompt" field. It's identical to AnswerProbePromptEQ.
+func AnswerProbePrompt(v string) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldEQ(FieldAnswerProbePrompt, v))
+}
+
+// AnswerProbeIntervalSeconds applies equality check predicate on the "answer_probe_interval_seconds" field. It's identical to AnswerProbeIntervalSecondsEQ.
+func AnswerProbeIntervalSeconds(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldEQ(FieldAnswerProbeIntervalSeconds, v))
+}
+
 // AllowMediaProbe applies equality check predicate on the "allow_media_probe" field. It's identical to AllowMediaProbeEQ.
 func AllowMediaProbe(v bool) predicate.Sub2APIProviderProbeTarget {
 	return predicate.Sub2APIProviderProbeTarget(sql.FieldEQ(FieldAllowMediaProbe, v))
@@ -893,6 +908,131 @@ func TestModelEqualFold(v string) predicate.Sub2APIProviderProbeTarget {
 // TestModelContainsFold applies the ContainsFold predicate on the "test_model" field.
 func TestModelContainsFold(v string) predicate.Sub2APIProviderProbeTarget {
 	return predicate.Sub2APIProviderProbeTarget(sql.FieldContainsFold(FieldTestModel, v))
+}
+
+// AnswerProbeEnabledEQ applies the EQ predicate on the "answer_probe_enabled" field.
+func AnswerProbeEnabledEQ(v bool) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldEQ(FieldAnswerProbeEnabled, v))
+}
+
+// AnswerProbeEnabledNEQ applies the NEQ predicate on the "answer_probe_enabled" field.
+func AnswerProbeEnabledNEQ(v bool) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldNEQ(FieldAnswerProbeEnabled, v))
+}
+
+// AnswerProbePromptEQ applies the EQ predicate on the "answer_probe_prompt" field.
+func AnswerProbePromptEQ(v string) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldEQ(FieldAnswerProbePrompt, v))
+}
+
+// AnswerProbePromptNEQ applies the NEQ predicate on the "answer_probe_prompt" field.
+func AnswerProbePromptNEQ(v string) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldNEQ(FieldAnswerProbePrompt, v))
+}
+
+// AnswerProbePromptIn applies the In predicate on the "answer_probe_prompt" field.
+func AnswerProbePromptIn(vs ...string) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldIn(FieldAnswerProbePrompt, vs...))
+}
+
+// AnswerProbePromptNotIn applies the NotIn predicate on the "answer_probe_prompt" field.
+func AnswerProbePromptNotIn(vs ...string) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldNotIn(FieldAnswerProbePrompt, vs...))
+}
+
+// AnswerProbePromptGT applies the GT predicate on the "answer_probe_prompt" field.
+func AnswerProbePromptGT(v string) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldGT(FieldAnswerProbePrompt, v))
+}
+
+// AnswerProbePromptGTE applies the GTE predicate on the "answer_probe_prompt" field.
+func AnswerProbePromptGTE(v string) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldGTE(FieldAnswerProbePrompt, v))
+}
+
+// AnswerProbePromptLT applies the LT predicate on the "answer_probe_prompt" field.
+func AnswerProbePromptLT(v string) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldLT(FieldAnswerProbePrompt, v))
+}
+
+// AnswerProbePromptLTE applies the LTE predicate on the "answer_probe_prompt" field.
+func AnswerProbePromptLTE(v string) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldLTE(FieldAnswerProbePrompt, v))
+}
+
+// AnswerProbePromptContains applies the Contains predicate on the "answer_probe_prompt" field.
+func AnswerProbePromptContains(v string) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldContains(FieldAnswerProbePrompt, v))
+}
+
+// AnswerProbePromptHasPrefix applies the HasPrefix predicate on the "answer_probe_prompt" field.
+func AnswerProbePromptHasPrefix(v string) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldHasPrefix(FieldAnswerProbePrompt, v))
+}
+
+// AnswerProbePromptHasSuffix applies the HasSuffix predicate on the "answer_probe_prompt" field.
+func AnswerProbePromptHasSuffix(v string) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldHasSuffix(FieldAnswerProbePrompt, v))
+}
+
+// AnswerProbePromptIsNil applies the IsNil predicate on the "answer_probe_prompt" field.
+func AnswerProbePromptIsNil() predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldIsNull(FieldAnswerProbePrompt))
+}
+
+// AnswerProbePromptNotNil applies the NotNil predicate on the "answer_probe_prompt" field.
+func AnswerProbePromptNotNil() predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldNotNull(FieldAnswerProbePrompt))
+}
+
+// AnswerProbePromptEqualFold applies the EqualFold predicate on the "answer_probe_prompt" field.
+func AnswerProbePromptEqualFold(v string) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldEqualFold(FieldAnswerProbePrompt, v))
+}
+
+// AnswerProbePromptContainsFold applies the ContainsFold predicate on the "answer_probe_prompt" field.
+func AnswerProbePromptContainsFold(v string) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldContainsFold(FieldAnswerProbePrompt, v))
+}
+
+// AnswerProbeIntervalSecondsEQ applies the EQ predicate on the "answer_probe_interval_seconds" field.
+func AnswerProbeIntervalSecondsEQ(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldEQ(FieldAnswerProbeIntervalSeconds, v))
+}
+
+// AnswerProbeIntervalSecondsNEQ applies the NEQ predicate on the "answer_probe_interval_seconds" field.
+func AnswerProbeIntervalSecondsNEQ(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldNEQ(FieldAnswerProbeIntervalSeconds, v))
+}
+
+// AnswerProbeIntervalSecondsIn applies the In predicate on the "answer_probe_interval_seconds" field.
+func AnswerProbeIntervalSecondsIn(vs ...int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldIn(FieldAnswerProbeIntervalSeconds, vs...))
+}
+
+// AnswerProbeIntervalSecondsNotIn applies the NotIn predicate on the "answer_probe_interval_seconds" field.
+func AnswerProbeIntervalSecondsNotIn(vs ...int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldNotIn(FieldAnswerProbeIntervalSeconds, vs...))
+}
+
+// AnswerProbeIntervalSecondsGT applies the GT predicate on the "answer_probe_interval_seconds" field.
+func AnswerProbeIntervalSecondsGT(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldGT(FieldAnswerProbeIntervalSeconds, v))
+}
+
+// AnswerProbeIntervalSecondsGTE applies the GTE predicate on the "answer_probe_interval_seconds" field.
+func AnswerProbeIntervalSecondsGTE(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldGTE(FieldAnswerProbeIntervalSeconds, v))
+}
+
+// AnswerProbeIntervalSecondsLT applies the LT predicate on the "answer_probe_interval_seconds" field.
+func AnswerProbeIntervalSecondsLT(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldLT(FieldAnswerProbeIntervalSeconds, v))
+}
+
+// AnswerProbeIntervalSecondsLTE applies the LTE predicate on the "answer_probe_interval_seconds" field.
+func AnswerProbeIntervalSecondsLTE(v int) predicate.Sub2APIProviderProbeTarget {
+	return predicate.Sub2APIProviderProbeTarget(sql.FieldLTE(FieldAnswerProbeIntervalSeconds, v))
 }
 
 // AllowMediaProbeEQ applies the EQ predicate on the "allow_media_probe" field.

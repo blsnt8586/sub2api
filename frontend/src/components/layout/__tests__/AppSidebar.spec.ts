@@ -90,6 +90,14 @@ describe('AppSidebar subscription feature flag', () => {
   })
 })
 
+describe('AppSidebar feedback board entry', () => {
+  it('keeps the user message board independent from the Codex Radar feature flag', () => {
+    expect(componentSource).toMatch(/path: '\/feedback', label: t\('nav\.feedback'\), icon: TicketIcon/)
+    expect(componentSource).not.toMatch(/path: '\/feedback'[^\n]*featureFlag/)
+    expect(componentSource).toMatch(/path: '\/admin\/feedback', label: t\('nav\.feedbackManagement'\)/)
+  })
+})
+
 describe('AppSidebar MCP entry', () => {
   it('uses the MCP logo and shows the entry only when the deployment enables MCP', () => {
     expect(componentSource).toContain("render: () => h(Icon, { name: 'mcp' })")

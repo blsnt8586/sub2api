@@ -18,6 +18,11 @@ const (
 )
 
 type accountProbeChallengeContextKey struct{}
+type accountAnswerPromptContextKey struct{}
+
+func withAccountAnswerPrompt(ctx context.Context, prompt string) context.Context {
+	return context.WithValue(ctx, accountAnswerPromptContextKey{}, strings.TrimSpace(prompt))
+}
 
 // accountProbeChallengeState is request-local. Payload builders mark Applied
 // only when they actually replace a text prompt, so media probes keep their
@@ -71,6 +76,9 @@ func accountProbePromptForModel(ctx context.Context, modelID, fallback string) (
 	// converted into arithmetic requests or validated as text responses.
 	if isProviderProbeMediaModel(modelID) {
 		return fallback, 0, false
+	}
+	if prompt, ok := ctx.Value(accountAnswerPromptContextKey{}).(string); ok && strings.TrimSpace(prompt) != "" {
+		return prompt, 0, false
 	}
 	prompt, _, applied := accountProbePrompt(ctx, fallback)
 	return prompt, accountProbeMaxTokensForModel(modelID), applied
@@ -130,6 +138,11 @@ func createAccountTestClaudePayload(ctx context.Context, modelID string) (map[st
 		return nil, err
 	}
 	prompt, maxTokens, probe := accountProbePromptForModel(ctx, modelID, "hi")
+	if custom, ok := ctx.Value(accountAnswerPromptContextKey{}).(string); ok && strings.TrimSpace(custom) != "" {
+		messages := payload["messages"].([]map[string]any)
+		messages[0]["content"].([]map[string]any)[0]["text"] = prompt
+		return payload, nil
+	}
 	if !probe {
 		return payload, nil
 	}
@@ -146,6 +159,11 @@ func createAccountTestClaudePayload(ctx context.Context, modelID string) (map[st
 func createAccountTestOpenAIResponsesPayload(ctx context.Context, modelID string, isOAuth bool) map[string]any {
 	payload := createOpenAITestPayload(modelID, isOAuth)
 	prompt, maxTokens, probe := accountProbePromptForModel(ctx, modelID, "hi")
+	if custom, ok := ctx.Value(accountAnswerPromptContextKey{}).(string); ok && strings.TrimSpace(custom) != "" {
+		input := payload["input"].([]map[string]any)
+		input[0]["content"].([]map[string]any)[0]["text"] = prompt
+		return payload
+	}
 	if !probe {
 		return payload
 	}
@@ -165,6 +183,9 @@ func createAccountTestOpenAIResponsesPayload(ctx context.Context, modelID string
 
 func createAccountTestOpenAIChatPayload(ctx context.Context, modelID, prompt string) map[string]any {
 	probePrompt, maxTokens, probe := accountProbePromptForModel(ctx, modelID, prompt)
+	if custom, ok := ctx.Value(accountAnswerPromptContextKey{}).(string); ok && strings.TrimSpace(custom) != "" {
+		return createOpenAIChatCompletionsTestPayload(modelID, custom)
+	}
 	if !probe {
 		return createOpenAIChatCompletionsTestPayload(modelID, prompt)
 	}

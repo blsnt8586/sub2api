@@ -162,7 +162,7 @@
 
           <p v-if="accountsPanelProvider?.provider_type === 'newapi'" class="mb-3 text-sm text-gray-500 dark:text-dark-400">{{ t('admin.sub2apiProviders.newapiCapabilities') }}</p>
           <div v-if="panelLinkedAccounts.length > 0">
-            <div class="space-y-2 md:hidden">
+            <div class="space-y-2 lg:hidden">
               <article
                 v-for="acc in panelLinkedAccounts"
                 :key="`mobile-${acc.id}`"
@@ -197,6 +197,7 @@
                     </span>
                     <span class="mt-1 flex min-w-0 items-center gap-2 text-[11px] text-gray-500 dark:text-dark-400">
                       <span class="min-w-0 flex-1 truncate">{{ acc.remote_group_name || t('admin.sub2apiProviders.health.routes.unboundGroup') }}</span>
+                      <span v-if="acc.status !== 'active'" class="flex-shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-medium" :class="accountStatusClass(acc.status)">{{ accountStatusLabel(acc.status) }}</span>
                       <span :class="probeStatusTextClass(panelAccountProbeStatus(acc))">{{ probeAccountStatusLabel(panelAccountProbeStatus(acc), panelAccountProbeIsSelected(acc)) }}</span>
                     </span>
                   </span>
@@ -299,7 +300,7 @@
               </article>
             </div>
 
-            <div class="hidden overflow-x-auto md:block">
+            <div class="hidden overflow-x-auto lg:block">
              <div class="min-w-[1080px] space-y-2">
             <!-- 列表头 -->
             <div class="grid grid-cols-[1.35fr_72px_1.1fr_56px_88px_82px_82px_1.2fr_1.25fr_100px] gap-3 px-3 text-xs font-medium text-gray-400 dark:text-dark-500 uppercase tracking-wide">
@@ -322,7 +323,10 @@
             >
               <!-- 账号名称（KeyID 并入 title） -->
               <div class="min-w-0">
-                <span :title="`${acc.name}${acc.provider_api_key_id ? ' · KeyID ' + acc.provider_api_key_id : ''}`" class="block truncate font-medium text-gray-900 dark:text-white text-sm">{{ acc.name }}</span>
+                <div class="flex min-w-0 items-center gap-2">
+                  <span :title="`${acc.name}${acc.provider_api_key_id ? ' · KeyID ' + acc.provider_api_key_id : ''}`" class="min-w-0 flex-1 truncate font-medium text-gray-900 dark:text-white text-sm">{{ acc.name }}</span>
+                  <span v-if="acc.status !== 'active'" class="flex-shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-medium" :class="accountStatusClass(acc.status)">{{ accountStatusLabel(acc.status) }}</span>
+                </div>
                 <span class="mt-1 inline-flex items-center gap-1 text-[11px]" :class="probeStatusTextClass(panelAccountProbeStatus(acc))">
                   <span class="h-1.5 w-1.5 rounded-full" :class="probeStatusDotClass(panelAccountProbeStatus(acc))"></span>
                   {{ probeAccountStatusLabel(panelAccountProbeStatus(acc), panelAccountProbeIsSelected(acc)) }}
@@ -633,7 +637,7 @@
           <p class="input-hint">{{ t('admin.sub2apiProviders.form.providerTypeHint') }}</p>
         </div>
 
-        <div>
+        <div v-if="!(isEditing && (originalAuthMode === 'access_token' || (form.provider_type === 'sub2api' && originalAuthMode === 'password'))) ">
           <label class="input-label">{{ t('admin.sub2apiProviders.form.authMode') }}</label>
           <div class="grid grid-cols-1 gap-2 md:grid-cols-2" role="radiogroup" :aria-label="t('admin.sub2apiProviders.form.authMode')">
             <button
@@ -661,6 +665,7 @@
             </button>
           </div>
         </div>
+        <p v-else class="input-hint">{{ t(form.provider_type === 'newapi' ? 'admin.sub2apiProviders.form.newapiLegacyAuthRetained' : 'admin.sub2apiProviders.form.sub2apiLegacyPasswordRetained') }}</p>
 
         <div>
           <label class="input-label">{{ providerIdentityLabel }}</label>
@@ -696,11 +701,6 @@
               </span>
             </div>
           </div>
-          <Sub2APICredentialBundleImport
-            :key="credentialImportKey"
-            :expected-base-url="form.base_url"
-            @imported="handleCredentialBundleImported"
-          />
           <div>
             <label class="input-label">{{ t('admin.sub2apiProviders.form.accessToken') }}</label>
             <input v-model="form.access_token" type="password" autocomplete="off" spellcheck="false" class="input font-mono text-xs" :placeholder="tokenInputPlaceholder" :required="tokenPairRequired" />
@@ -711,16 +711,27 @@
           </div>
         </div>
 
-        <div v-if="form.auth_method === 'access_token'" class="space-y-3">
+        <div v-if="form.auth_method === 'browser_credentials'" class="space-y-3">
+          <Sub2APICredentialBundleImport
+            :key="credentialImportKey"
+            :expected-base-url="form.base_url"
+            @imported="handleCredentialBundleImported"
+          />
+          <p class="input-hint">{{ t('admin.sub2apiProviders.form.sub2apiBrowserCredentialsHint') }}</p>
+        </div>
+
+        <div v-if="form.auth_method === 'access_token' || form.auth_method === 'browser_session' || (isEditing && originalAuthMode === 'access_token')" class="space-y-3">
           <Sub2APICredentialBundleImport
             :key="credentialImportKey"
             provider-type="newapi"
             :expected-base-url="form.base_url"
             @imported="handleCredentialBundleImported"
           />
-          <label class="input-label">{{ t('admin.sub2apiProviders.form.authManagementToken') }}</label>
-          <input v-model="form.access_token" type="password" autocomplete="off" spellcheck="false" class="input font-mono text-xs" :placeholder="managementTokenRequired ? t('admin.sub2apiProviders.form.tokenRequiredPlaceholder') : t('admin.sub2apiProviders.form.keepSecretPlaceholder')" :required="managementTokenRequired" />
-          <p class="input-hint">{{ t('admin.sub2apiProviders.form.newapiTokenHint') }}</p>
+          <template v-if="form.auth_method === 'access_token' || form.auth_method === 'browser_session'">
+            <label class="input-label">{{ t(form.auth_method === 'browser_session' ? 'admin.sub2apiProviders.form.newapiBrowserToken' : 'admin.sub2apiProviders.form.enterToken') }}</label>
+            <input v-model="form.access_token" type="password" autocomplete="off" spellcheck="false" class="input font-mono text-xs" :placeholder="managementTokenRequired ? t('admin.sub2apiProviders.form.tokenRequiredPlaceholder') : t('admin.sub2apiProviders.form.keepSecretPlaceholder')" :required="managementTokenRequired" />
+            <p class="input-hint">{{ form.auth_method === 'browser_session' ? t(form.refresh_token ? 'admin.sub2apiProviders.form.newapiBrowserTokenHint' : 'admin.sub2apiProviders.form.newapiBearerOnlyHint') : t('admin.sub2apiProviders.form.newapiManualTokenHint') }}</p>
+          </template>
         </div>
         <p v-if="form.provider_type === 'newapi'" class="input-hint">{{ t('admin.sub2apiProviders.newapiCapabilities') }}</p>
 
@@ -877,6 +888,7 @@
           :routes="probeTargets"
           :draft-policies="pendingHealthPolicies"
           @update-policy="(id, policy) => pendingHealthPolicies[id] = policy"
+          @update-answer="handleAnswerProbeUpdate"
         />
       </div>
       <template #footer>
@@ -1405,7 +1417,7 @@ const showEditDialog = ref(false)
 const isEditing = ref(false)
 const editingId = ref<number | null>(null)
 const saving = ref(false)
-type ProviderAuthMode = 'password' | 'token_pair' | 'access_token'
+type ProviderAuthMode = 'password' | 'token_pair' | 'access_token' | 'browser_session' | 'browser_credentials'
 const form = reactive({
   name: '', base_url: '', provider_type: 'sub2api', email: '', password: '',
   auth_method: 'token_pair' as ProviderAuthMode, auth_mode: 'token_pair' as ProviderAuthMode, access_token: '', refresh_token: '',
@@ -1415,16 +1427,16 @@ const originalProxyID = ref<number | null>(null)
 const originalAuthMode = ref<ProviderAuthMode>('token_pair')
 const editingTokenStatus = reactive({ hasAccess: false, hasRefresh: false })
 const authModeOptions = computed(() => form.provider_type === 'newapi' ? [
-  { value: 'access_token' as const, icon: 'key' as const, label: t('admin.sub2apiProviders.form.authManagementToken'), description: t('admin.sub2apiProviders.form.authManagementTokenDesc'), recommended: true },
-  { value: 'password' as const, icon: 'lock' as const, label: t('admin.sub2apiProviders.form.newapiUsernamePassword'), description: t('admin.sub2apiProviders.form.newapiPasswordDesc'), recommended: false },
+  { value: 'browser_session' as const, icon: 'key' as const, label: t('admin.sub2apiProviders.form.browserCredentials'), description: t('admin.sub2apiProviders.form.browserCredentialsDesc'), recommended: true },
+  { value: 'access_token' as const, icon: 'key' as const, label: t('admin.sub2apiProviders.form.enterToken'), description: t('admin.sub2apiProviders.form.newapiManualTokenDesc'), recommended: false },
 ] : [
-  { value: 'token_pair' as const, icon: 'key' as const, label: t('admin.sub2apiProviders.form.authTokenPair'), description: t('admin.sub2apiProviders.form.authTokenPairDesc'), recommended: true },
-  { value: 'password' as const, icon: 'lock' as const, label: t('admin.sub2apiProviders.form.authPassword'), description: t('admin.sub2apiProviders.form.authPasswordDesc'), recommended: false },
+  { value: 'token_pair' as const, icon: 'key' as const, label: t('admin.sub2apiProviders.form.enterToken'), description: t('admin.sub2apiProviders.form.enterTokenDesc'), recommended: false },
+  { value: 'browser_credentials' as const, icon: 'lock' as const, label: t('admin.sub2apiProviders.form.browserCredentials'), description: t('admin.sub2apiProviders.form.browserCredentialsDesc'), recommended: true },
 ])
 const tokenPairRequired = computed(() => !isEditing.value || originalAuthMode.value !== 'token_pair' || !editingTokenStatus.hasAccess || !editingTokenStatus.hasRefresh)
 const tokenInputPlaceholder = computed(() => tokenPairRequired.value ? t('admin.sub2apiProviders.form.tokenRequiredPlaceholder') : t('admin.sub2apiProviders.form.keepSecretPlaceholder'))
-const managementTokenRequired = computed(() => !isEditing.value || originalAuthMode.value !== 'access_token' || !editingTokenStatus.hasAccess)
-const providerIdentityLabel = computed(() => form.provider_type === 'newapi' ? t(`admin.sub2apiProviders.form.${form.auth_mode === 'access_token' ? 'newapiUserID' : 'newapiUsername'}`) : t('admin.sub2apiProviders.form.email'))
+const managementTokenRequired = computed(() => !isEditing.value || !['access_token', 'browser_session'].includes(originalAuthMode.value) || !editingTokenStatus.hasAccess)
+const providerIdentityLabel = computed(() => form.provider_type === 'newapi' ? t(`admin.sub2apiProviders.form.${['access_token', 'browser_session'].includes(form.auth_mode) ? 'newapiUserID' : 'newapiUsername'}`) : t('admin.sub2apiProviders.form.email'))
 const credentialImportKey = ref(0)
 
 const selectProviderType = (providerType: string) => {
@@ -1432,12 +1444,13 @@ const selectProviderType = (providerType: string) => {
   credentialImportKey.value += 1
   form.provider_type = providerType
   form.email = ''; form.password = ''; form.access_token = ''; form.refresh_token = ''
-  form.auth_method = form.auth_mode = providerType === 'newapi' ? 'access_token' : 'token_pair'
+  form.auth_method = providerType === 'newapi' ? 'browser_session' : 'token_pair'
+  form.auth_mode = providerType === 'newapi' ? 'browser_session' : 'token_pair'
 }
 
 const selectAuthMethod = (method: ProviderAuthMode) => {
   if (form.auth_method === method) return
-  if (form.provider_type === 'newapi') form.email = ''
+  if (form.provider_type === 'newapi' || method === 'browser_credentials') form.email = ''
   form.password = ''; form.access_token = ''; form.refresh_token = ''
   form.auth_method = method
   form.auth_mode = method
@@ -1445,14 +1458,15 @@ const selectAuthMethod = (method: ProviderAuthMode) => {
 
 const handleCredentialBundleImported = (bundle: Sub2APICredentialBundle) => {
   if (bundle.providerType === 'newapi') {
-    form.auth_method = form.auth_mode = 'access_token'
-    form.password = ''; form.refresh_token = ''
+    form.auth_method = form.auth_mode = 'browser_session'
+    form.password = ''
     form.access_token = bundle.accessToken
+    form.refresh_token = bundle.refreshToken
     form.email = bundle.userID || ''
     if (!form.base_url.trim()) form.base_url = bundle.sourceOrigin
     return
   }
-  form.auth_method = 'token_pair'
+  form.auth_method = 'browser_credentials'
   form.auth_mode = 'token_pair'
   form.password = ''
   form.access_token = bundle.accessToken
@@ -1489,13 +1503,16 @@ const closeEditDialog = () => {
 const handleSave = async () => {
   saving.value=true
   try {
+    const persistedAuthMode: Exclude<ProviderAuthMode, 'browser_credentials'> = form.auth_method === 'browser_credentials'
+      ? 'token_pair'
+      : form.auth_mode as Exclude<ProviderAuthMode, 'browser_credentials'>
     if (isEditing.value && editingId.value) {
       const normalizedNotes = form.notes.trim()
-      const payload: Record<string,unknown> = { name:form.name, base_url:form.base_url, email:form.email, auth_mode:form.auth_mode, status:form.status, notes:normalizedNotes, remote_cost_divisor:form.remote_cost_divisor }
+      const payload: Record<string,unknown> = { name:form.name, base_url:form.base_url, email:form.email, auth_mode:persistedAuthMode, status:form.status, notes:normalizedNotes, remote_cost_divisor:form.remote_cost_divisor }
 	  if (form.proxy_id !== originalProxyID.value) payload.proxy_id = form.proxy_id
       if (form.auth_mode === 'password' && form.password) payload.password = form.password
       if (form.auth_mode !== 'password' && form.access_token) payload.access_token = form.access_token
-      if (form.auth_mode === 'token_pair' && form.refresh_token) payload.refresh_token = form.refresh_token
+      if ((form.auth_mode === 'token_pair' || form.auth_mode === 'browser_session') && form.refresh_token) payload.refresh_token = form.refresh_token
       const updated = await adminAPI.sub2apiProviders.update(editingId.value, payload as any)
       // 局部替换该行，不刷整列表
       updateProviderInList(editingId.value, { ...updated, notes: normalizedNotes || null })
@@ -1506,9 +1523,9 @@ const handleSave = async () => {
     } else {
       const created = await adminAPI.sub2apiProviders.create({
         name:form.name, base_url:form.base_url, provider_type:form.provider_type,
-        email:form.email, auth_mode:form.auth_mode,
+        email:form.email, auth_mode:persistedAuthMode,
 	    proxy_id:form.proxy_id,
-        ...(form.auth_mode === 'password' ? { password:form.password } : { access_token:form.access_token, ...(form.auth_mode === 'token_pair' ? { refresh_token:form.refresh_token } : {}) }),
+        ...(form.auth_mode === 'password' ? { password:form.password } : { access_token:form.access_token, ...((form.auth_mode === 'token_pair' || form.auth_mode === 'browser_session') ? { refresh_token:form.refresh_token } : {}) }),
         notes:form.notes||null, remote_cost_divisor:form.remote_cost_divisor
       })
       appStore.showSuccess(t('admin.sub2apiProviders.createSuccess'))
@@ -1703,6 +1720,18 @@ const probeStatusDotClass = (status?: ProviderAccountProbeStatus | null) => ({
 }[status || 'unknown'])
 
 const enabledProbeTargetCount = computed(() => probeTargets.value.filter(target => target.enabled).length)
+
+const handleAnswerProbeUpdate = async (targetID: number, payload: { answer_probe_enabled: boolean; answer_probe_prompt: string; answer_probe_interval_seconds: number }) => {
+  if (!probeProvider.value) return
+  try {
+    const updated = await adminAPI.sub2apiProviders.updateProbeTarget(probeProvider.value.id, targetID, payload)
+    const index = probeTargets.value.findIndex(target => target.id === targetID)
+    if (index >= 0) probeTargets.value.splice(index, 1, updated)
+    appStore.showSuccess(t('admin.sub2apiProviders.health.routes.answerProbeSaved'))
+  } catch (error) {
+    appStore.showError(extractProviderError(error, t('admin.sub2apiProviders.health.routes.answerProbeSaveFailed')))
+  }
+}
 
 const currentControlHasAnomaly = computed(() => {
   const health = probeDialogHealth.value
@@ -2188,6 +2217,15 @@ const probeAccountStatusLabel = (status: ProviderAccountProbeStatus, selected: b
   if (status === 'disabled') return t('admin.sub2apiProviders.health.mediaProbeSkipped')
   return t(`admin.sub2apiProviders.health.status.${status}`)
 }
+
+const accountStatusLabel = (status: string) => ({
+  inactive: t('admin.accounts.status.inactive'),
+  disabled: t('admin.accounts.status.paused'),
+  error: t('admin.accounts.status.error'),
+}[status] || status)
+const accountStatusClass = (status: string) => status === 'error'
+  ? 'border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300'
+  : 'border-gray-200 bg-gray-50 text-gray-600 dark:border-dark-600 dark:bg-dark-700 dark:text-dark-300'
 
 const openProbeFromAccountsPanel = () => {
   const provider = accountsPanelProvider.value

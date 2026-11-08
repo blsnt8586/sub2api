@@ -114,16 +114,16 @@ describe('Sub2APICredentialBundleImport', () => {
     await input.setValue(JSON.stringify({
       format: 'newapi-browser-credentials', version: 1,
       source: { origin: 'https://newapi.example.com' },
-      credentials: { user_id: '42', access_token: 'management-token' },
+      credentials: { user_id: '42', access_token: 'browser-session-token', refresh_cookie: 'refresh-cookie' },
     }))
     await wrapper.get('[data-test="credential-bundle-apply"]').trigger('click')
 
     expect(wrapper.emitted('imported')?.[0]?.[0]).toMatchObject({
-      providerType: 'newapi', userID: '42', accessToken: 'management-token', refreshToken: '',
+      providerType: 'newapi', userID: '42', accessToken: 'browser-session-token', refreshToken: 'refresh-cookie',
     })
     expect(input.element.value).toBe('')
     expect(wrapper.get('[data-test="credential-bundle-summary"]').text()).toContain('42')
-    expect(wrapper.text()).not.toContain('management-token')
+    expect(wrapper.text()).not.toContain('browser-session-token')
     expect(wrapper.find('[data-test="credential-cookie-none"]').exists()).toBe(false)
   })
 

@@ -74,6 +74,7 @@ type Handlers struct {
 	CodexRadar       *CodexRadarHandler
 	ToolDownloads    *ToolDownloadsHandler
 	TokenPark        *TokenParkHandler
+	RadarFeedback    *RadarFeedbackHandler
 }
 
 // BuildInfo contains build-time information

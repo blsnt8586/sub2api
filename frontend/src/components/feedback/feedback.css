@@ -1,0 +1,26 @@
+.feedback-scrollbar {
+  scrollbar-gutter: stable;
+}
+
+@supports (-moz-appearance: none) {
+  .feedback-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: theme('colors.gray.400') theme('colors.gray.100');
+  }
+
+  .dark .feedback-scrollbar {
+    scrollbar-color: theme('colors.dark.500') theme('colors.dark.800');
+  }
+}
+
+.feedback-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.feedback-scrollbar::-webkit-scrollbar-thumb {
+  @apply rounded-full bg-gray-400 dark:bg-dark-500;
+}
+
+.feedback-scrollbar::-webkit-scrollbar-track {
+  @apply bg-gray-100 dark:bg-dark-800;
+}

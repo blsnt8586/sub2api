@@ -51509,6 +51509,10 @@ type Sub2APIProviderProbeTargetMutation struct {
 	consecutive_healthy                *int
 	addconsecutive_healthy             *int
 	test_model                         *string
+	answer_probe_enabled               *bool
+	answer_probe_prompt                *string
+	answer_probe_interval_seconds      *int
+	addanswer_probe_interval_seconds   *int
 	allow_media_probe                  *bool
 	timeout_seconds                    *int
 	addtimeout_seconds                 *int
@@ -52465,6 +52469,147 @@ func (m *Sub2APIProviderProbeTargetMutation) ResetTestModel() {
 	delete(m.clearedFields, sub2apiproviderprobetarget.FieldTestModel)
 }
 
+// SetAnswerProbeEnabled sets the "answer_probe_enabled" field.
+func (m *Sub2APIProviderProbeTargetMutation) SetAnswerProbeEnabled(b bool) {
+	m.answer_probe_enabled = &b
+}
+
+// AnswerProbeEnabled returns the value of the "answer_probe_enabled" field in the mutation.
+func (m *Sub2APIProviderProbeTargetMutation) AnswerProbeEnabled() (r bool, exists bool) {
+	v := m.answer_probe_enabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAnswerProbeEnabled returns the old "answer_probe_enabled" field's value of the Sub2APIProviderProbeTarget entity.
+// If the Sub2APIProviderProbeTarget object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetMutation) OldAnswerProbeEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAnswerProbeEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAnswerProbeEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAnswerProbeEnabled: %w", err)
+	}
+	return oldValue.AnswerProbeEnabled, nil
+}
+
+// ResetAnswerProbeEnabled resets all changes to the "answer_probe_enabled" field.
+func (m *Sub2APIProviderProbeTargetMutation) ResetAnswerProbeEnabled() {
+	m.answer_probe_enabled = nil
+}
+
+// SetAnswerProbePrompt sets the "answer_probe_prompt" field.
+func (m *Sub2APIProviderProbeTargetMutation) SetAnswerProbePrompt(s string) {
+	m.answer_probe_prompt = &s
+}
+
+// AnswerProbePrompt returns the value of the "answer_probe_prompt" field in the mutation.
+func (m *Sub2APIProviderProbeTargetMutation) AnswerProbePrompt() (r string, exists bool) {
+	v := m.answer_probe_prompt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAnswerProbePrompt returns the old "answer_probe_prompt" field's value of the Sub2APIProviderProbeTarget entity.
+// If the Sub2APIProviderProbeTarget object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetMutation) OldAnswerProbePrompt(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAnswerProbePrompt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAnswerProbePrompt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAnswerProbePrompt: %w", err)
+	}
+	return oldValue.AnswerProbePrompt, nil
+}
+
+// ClearAnswerProbePrompt clears the value of the "answer_probe_prompt" field.
+func (m *Sub2APIProviderProbeTargetMutation) ClearAnswerProbePrompt() {
+	m.answer_probe_prompt = nil
+	m.clearedFields[sub2apiproviderprobetarget.FieldAnswerProbePrompt] = struct{}{}
+}
+
+// AnswerProbePromptCleared returns if the "answer_probe_prompt" field was cleared in this mutation.
+func (m *Sub2APIProviderProbeTargetMutation) AnswerProbePromptCleared() bool {
+	_, ok := m.clearedFields[sub2apiproviderprobetarget.FieldAnswerProbePrompt]
+	return ok
+}
+
+// ResetAnswerProbePrompt resets all changes to the "answer_probe_prompt" field.
+func (m *Sub2APIProviderProbeTargetMutation) ResetAnswerProbePrompt() {
+	m.answer_probe_prompt = nil
+	delete(m.clearedFields, sub2apiproviderprobetarget.FieldAnswerProbePrompt)
+}
+
+// SetAnswerProbeIntervalSeconds sets the "answer_probe_interval_seconds" field.
+func (m *Sub2APIProviderProbeTargetMutation) SetAnswerProbeIntervalSeconds(i int) {
+	m.answer_probe_interval_seconds = &i
+	m.addanswer_probe_interval_seconds = nil
+}
+
+// AnswerProbeIntervalSeconds returns the value of the "answer_probe_interval_seconds" field in the mutation.
+func (m *Sub2APIProviderProbeTargetMutation) AnswerProbeIntervalSeconds() (r int, exists bool) {
+	v := m.answer_probe_interval_seconds
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAnswerProbeIntervalSeconds returns the old "answer_probe_interval_seconds" field's value of the Sub2APIProviderProbeTarget entity.
+// If the Sub2APIProviderProbeTarget object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetMutation) OldAnswerProbeIntervalSeconds(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAnswerProbeIntervalSeconds is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAnswerProbeIntervalSeconds requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAnswerProbeIntervalSeconds: %w", err)
+	}
+	return oldValue.AnswerProbeIntervalSeconds, nil
+}
+
+// AddAnswerProbeIntervalSeconds adds i to the "answer_probe_interval_seconds" field.
+func (m *Sub2APIProviderProbeTargetMutation) AddAnswerProbeIntervalSeconds(i int) {
+	if m.addanswer_probe_interval_seconds != nil {
+		*m.addanswer_probe_interval_seconds += i
+	} else {
+		m.addanswer_probe_interval_seconds = &i
+	}
+}
+
+// AddedAnswerProbeIntervalSeconds returns the value that was added to the "answer_probe_interval_seconds" field in this mutation.
+func (m *Sub2APIProviderProbeTargetMutation) AddedAnswerProbeIntervalSeconds() (r int, exists bool) {
+	v := m.addanswer_probe_interval_seconds
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAnswerProbeIntervalSeconds resets all changes to the "answer_probe_interval_seconds" field.
+func (m *Sub2APIProviderProbeTargetMutation) ResetAnswerProbeIntervalSeconds() {
+	m.answer_probe_interval_seconds = nil
+	m.addanswer_probe_interval_seconds = nil
+}
+
 // SetAllowMediaProbe sets the "allow_media_probe" field.
 func (m *Sub2APIProviderProbeTargetMutation) SetAllowMediaProbe(b bool) {
 	m.allow_media_probe = &b
@@ -53218,7 +53363,7 @@ func (m *Sub2APIProviderProbeTargetMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *Sub2APIProviderProbeTargetMutation) Fields() []string {
-	fields := make([]string, 0, 29)
+	fields := make([]string, 0, 32)
 	if m.created_at != nil {
 		fields = append(fields, sub2apiproviderprobetarget.FieldCreatedAt)
 	}
@@ -53269,6 +53414,15 @@ func (m *Sub2APIProviderProbeTargetMutation) Fields() []string {
 	}
 	if m.test_model != nil {
 		fields = append(fields, sub2apiproviderprobetarget.FieldTestModel)
+	}
+	if m.answer_probe_enabled != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldAnswerProbeEnabled)
+	}
+	if m.answer_probe_prompt != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldAnswerProbePrompt)
+	}
+	if m.answer_probe_interval_seconds != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldAnswerProbeIntervalSeconds)
 	}
 	if m.allow_media_probe != nil {
 		fields = append(fields, sub2apiproviderprobetarget.FieldAllowMediaProbe)
@@ -53348,6 +53502,12 @@ func (m *Sub2APIProviderProbeTargetMutation) Field(name string) (ent.Value, bool
 		return m.ConsecutiveHealthy()
 	case sub2apiproviderprobetarget.FieldTestModel:
 		return m.TestModel()
+	case sub2apiproviderprobetarget.FieldAnswerProbeEnabled:
+		return m.AnswerProbeEnabled()
+	case sub2apiproviderprobetarget.FieldAnswerProbePrompt:
+		return m.AnswerProbePrompt()
+	case sub2apiproviderprobetarget.FieldAnswerProbeIntervalSeconds:
+		return m.AnswerProbeIntervalSeconds()
 	case sub2apiproviderprobetarget.FieldAllowMediaProbe:
 		return m.AllowMediaProbe()
 	case sub2apiproviderprobetarget.FieldTimeoutSeconds:
@@ -53415,6 +53575,12 @@ func (m *Sub2APIProviderProbeTargetMutation) OldField(ctx context.Context, name 
 		return m.OldConsecutiveHealthy(ctx)
 	case sub2apiproviderprobetarget.FieldTestModel:
 		return m.OldTestModel(ctx)
+	case sub2apiproviderprobetarget.FieldAnswerProbeEnabled:
+		return m.OldAnswerProbeEnabled(ctx)
+	case sub2apiproviderprobetarget.FieldAnswerProbePrompt:
+		return m.OldAnswerProbePrompt(ctx)
+	case sub2apiproviderprobetarget.FieldAnswerProbeIntervalSeconds:
+		return m.OldAnswerProbeIntervalSeconds(ctx)
 	case sub2apiproviderprobetarget.FieldAllowMediaProbe:
 		return m.OldAllowMediaProbe(ctx)
 	case sub2apiproviderprobetarget.FieldTimeoutSeconds:
@@ -53567,6 +53733,27 @@ func (m *Sub2APIProviderProbeTargetMutation) SetField(name string, value ent.Val
 		}
 		m.SetTestModel(v)
 		return nil
+	case sub2apiproviderprobetarget.FieldAnswerProbeEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAnswerProbeEnabled(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldAnswerProbePrompt:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAnswerProbePrompt(v)
+		return nil
+	case sub2apiproviderprobetarget.FieldAnswerProbeIntervalSeconds:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAnswerProbeIntervalSeconds(v)
+		return nil
 	case sub2apiproviderprobetarget.FieldAllowMediaProbe:
 		v, ok := value.(bool)
 		if !ok {
@@ -53683,6 +53870,9 @@ func (m *Sub2APIProviderProbeTargetMutation) AddedFields() []string {
 	if m.addconsecutive_healthy != nil {
 		fields = append(fields, sub2apiproviderprobetarget.FieldConsecutiveHealthy)
 	}
+	if m.addanswer_probe_interval_seconds != nil {
+		fields = append(fields, sub2apiproviderprobetarget.FieldAnswerProbeIntervalSeconds)
+	}
 	if m.addtimeout_seconds != nil {
 		fields = append(fields, sub2apiproviderprobetarget.FieldTimeoutSeconds)
 	}
@@ -53728,6 +53918,8 @@ func (m *Sub2APIProviderProbeTargetMutation) AddedField(name string) (ent.Value,
 		return m.AddedStableHealthyThreshold()
 	case sub2apiproviderprobetarget.FieldConsecutiveHealthy:
 		return m.AddedConsecutiveHealthy()
+	case sub2apiproviderprobetarget.FieldAnswerProbeIntervalSeconds:
+		return m.AddedAnswerProbeIntervalSeconds()
 	case sub2apiproviderprobetarget.FieldTimeoutSeconds:
 		return m.AddedTimeoutSeconds()
 	case sub2apiproviderprobetarget.FieldDegradedLatencyMs:
@@ -53807,6 +53999,13 @@ func (m *Sub2APIProviderProbeTargetMutation) AddField(name string, value ent.Val
 		}
 		m.AddConsecutiveHealthy(v)
 		return nil
+	case sub2apiproviderprobetarget.FieldAnswerProbeIntervalSeconds:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAnswerProbeIntervalSeconds(v)
+		return nil
 	case sub2apiproviderprobetarget.FieldTimeoutSeconds:
 		v, ok := value.(int)
 		if !ok {
@@ -53876,6 +54075,9 @@ func (m *Sub2APIProviderProbeTargetMutation) ClearedFields() []string {
 	if m.FieldCleared(sub2apiproviderprobetarget.FieldTestModel) {
 		fields = append(fields, sub2apiproviderprobetarget.FieldTestModel)
 	}
+	if m.FieldCleared(sub2apiproviderprobetarget.FieldAnswerProbePrompt) {
+		fields = append(fields, sub2apiproviderprobetarget.FieldAnswerProbePrompt)
+	}
 	if m.FieldCleared(sub2apiproviderprobetarget.FieldLastCostOptimizeAt) {
 		fields = append(fields, sub2apiproviderprobetarget.FieldLastCostOptimizeAt)
 	}
@@ -53910,6 +54112,9 @@ func (m *Sub2APIProviderProbeTargetMutation) ClearField(name string) error {
 		return nil
 	case sub2apiproviderprobetarget.FieldTestModel:
 		m.ClearTestModel()
+		return nil
+	case sub2apiproviderprobetarget.FieldAnswerProbePrompt:
+		m.ClearAnswerProbePrompt()
 		return nil
 	case sub2apiproviderprobetarget.FieldLastCostOptimizeAt:
 		m.ClearLastCostOptimizeAt()
@@ -53978,6 +54183,15 @@ func (m *Sub2APIProviderProbeTargetMutation) ResetField(name string) error {
 		return nil
 	case sub2apiproviderprobetarget.FieldTestModel:
 		m.ResetTestModel()
+		return nil
+	case sub2apiproviderprobetarget.FieldAnswerProbeEnabled:
+		m.ResetAnswerProbeEnabled()
+		return nil
+	case sub2apiproviderprobetarget.FieldAnswerProbePrompt:
+		m.ResetAnswerProbePrompt()
+		return nil
+	case sub2apiproviderprobetarget.FieldAnswerProbeIntervalSeconds:
+		m.ResetAnswerProbeIntervalSeconds()
 		return nil
 	case sub2apiproviderprobetarget.FieldAllowMediaProbe:
 		m.ResetAllowMediaProbe()
@@ -54167,6 +54381,8 @@ type Sub2APIProviderProbeTargetRunMutation struct {
 	addtraffic_p95_latency_ms *int
 	error_category            *string
 	error_message             *string
+	response_text             *string
+	answer_probe              *bool
 	started_at                *time.Time
 	finished_at               *time.Time
 	created_at                *time.Time
@@ -55098,6 +55314,91 @@ func (m *Sub2APIProviderProbeTargetRunMutation) ResetErrorMessage() {
 	delete(m.clearedFields, sub2apiproviderprobetargetrun.FieldErrorMessage)
 }
 
+// SetResponseText sets the "response_text" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) SetResponseText(s string) {
+	m.response_text = &s
+}
+
+// ResponseText returns the value of the "response_text" field in the mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) ResponseText() (r string, exists bool) {
+	v := m.response_text
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldResponseText returns the old "response_text" field's value of the Sub2APIProviderProbeTargetRun entity.
+// If the Sub2APIProviderProbeTargetRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetRunMutation) OldResponseText(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldResponseText is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldResponseText requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldResponseText: %w", err)
+	}
+	return oldValue.ResponseText, nil
+}
+
+// ClearResponseText clears the value of the "response_text" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) ClearResponseText() {
+	m.response_text = nil
+	m.clearedFields[sub2apiproviderprobetargetrun.FieldResponseText] = struct{}{}
+}
+
+// ResponseTextCleared returns if the "response_text" field was cleared in this mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) ResponseTextCleared() bool {
+	_, ok := m.clearedFields[sub2apiproviderprobetargetrun.FieldResponseText]
+	return ok
+}
+
+// ResetResponseText resets all changes to the "response_text" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) ResetResponseText() {
+	m.response_text = nil
+	delete(m.clearedFields, sub2apiproviderprobetargetrun.FieldResponseText)
+}
+
+// SetAnswerProbe sets the "answer_probe" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) SetAnswerProbe(b bool) {
+	m.answer_probe = &b
+}
+
+// AnswerProbe returns the value of the "answer_probe" field in the mutation.
+func (m *Sub2APIProviderProbeTargetRunMutation) AnswerProbe() (r bool, exists bool) {
+	v := m.answer_probe
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAnswerProbe returns the old "answer_probe" field's value of the Sub2APIProviderProbeTargetRun entity.
+// If the Sub2APIProviderProbeTargetRun object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *Sub2APIProviderProbeTargetRunMutation) OldAnswerProbe(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAnswerProbe is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAnswerProbe requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAnswerProbe: %w", err)
+	}
+	return oldValue.AnswerProbe, nil
+}
+
+// ResetAnswerProbe resets all changes to the "answer_probe" field.
+func (m *Sub2APIProviderProbeTargetRunMutation) ResetAnswerProbe() {
+	m.answer_probe = nil
+}
+
 // SetStartedAt sets the "started_at" field.
 func (m *Sub2APIProviderProbeTargetRunMutation) SetStartedAt(t time.Time) {
 	m.started_at = &t
@@ -55267,7 +55568,7 @@ func (m *Sub2APIProviderProbeTargetRunMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *Sub2APIProviderProbeTargetRunMutation) Fields() []string {
-	fields := make([]string, 0, 18)
+	fields := make([]string, 0, 20)
 	if m.target != nil {
 		fields = append(fields, sub2apiproviderprobetargetrun.FieldTargetID)
 	}
@@ -55312,6 +55613,12 @@ func (m *Sub2APIProviderProbeTargetRunMutation) Fields() []string {
 	}
 	if m.error_message != nil {
 		fields = append(fields, sub2apiproviderprobetargetrun.FieldErrorMessage)
+	}
+	if m.response_text != nil {
+		fields = append(fields, sub2apiproviderprobetargetrun.FieldResponseText)
+	}
+	if m.answer_probe != nil {
+		fields = append(fields, sub2apiproviderprobetargetrun.FieldAnswerProbe)
 	}
 	if m.started_at != nil {
 		fields = append(fields, sub2apiproviderprobetargetrun.FieldStartedAt)
@@ -55360,6 +55667,10 @@ func (m *Sub2APIProviderProbeTargetRunMutation) Field(name string) (ent.Value, b
 		return m.ErrorCategory()
 	case sub2apiproviderprobetargetrun.FieldErrorMessage:
 		return m.ErrorMessage()
+	case sub2apiproviderprobetargetrun.FieldResponseText:
+		return m.ResponseText()
+	case sub2apiproviderprobetargetrun.FieldAnswerProbe:
+		return m.AnswerProbe()
 	case sub2apiproviderprobetargetrun.FieldStartedAt:
 		return m.StartedAt()
 	case sub2apiproviderprobetargetrun.FieldFinishedAt:
@@ -55405,6 +55716,10 @@ func (m *Sub2APIProviderProbeTargetRunMutation) OldField(ctx context.Context, na
 		return m.OldErrorCategory(ctx)
 	case sub2apiproviderprobetargetrun.FieldErrorMessage:
 		return m.OldErrorMessage(ctx)
+	case sub2apiproviderprobetargetrun.FieldResponseText:
+		return m.OldResponseText(ctx)
+	case sub2apiproviderprobetargetrun.FieldAnswerProbe:
+		return m.OldAnswerProbe(ctx)
 	case sub2apiproviderprobetargetrun.FieldStartedAt:
 		return m.OldStartedAt(ctx)
 	case sub2apiproviderprobetargetrun.FieldFinishedAt:
@@ -55524,6 +55839,20 @@ func (m *Sub2APIProviderProbeTargetRunMutation) SetField(name string, value ent.
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetErrorMessage(v)
+		return nil
+	case sub2apiproviderprobetargetrun.FieldResponseText:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetResponseText(v)
+		return nil
+	case sub2apiproviderprobetargetrun.FieldAnswerProbe:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAnswerProbe(v)
 		return nil
 	case sub2apiproviderprobetargetrun.FieldStartedAt:
 		v, ok := value.(time.Time)
@@ -55702,6 +56031,9 @@ func (m *Sub2APIProviderProbeTargetRunMutation) ClearedFields() []string {
 	if m.FieldCleared(sub2apiproviderprobetargetrun.FieldErrorMessage) {
 		fields = append(fields, sub2apiproviderprobetargetrun.FieldErrorMessage)
 	}
+	if m.FieldCleared(sub2apiproviderprobetargetrun.FieldResponseText) {
+		fields = append(fields, sub2apiproviderprobetargetrun.FieldResponseText)
+	}
 	return fields
 }
 
@@ -55742,6 +56074,9 @@ func (m *Sub2APIProviderProbeTargetRunMutation) ClearField(name string) error {
 		return nil
 	case sub2apiproviderprobetargetrun.FieldErrorMessage:
 		m.ClearErrorMessage()
+		return nil
+	case sub2apiproviderprobetargetrun.FieldResponseText:
+		m.ClearResponseText()
 		return nil
 	}
 	return fmt.Errorf("unknown Sub2APIProviderProbeTargetRun nullable field %s", name)
@@ -55795,6 +56130,12 @@ func (m *Sub2APIProviderProbeTargetRunMutation) ResetField(name string) error {
 		return nil
 	case sub2apiproviderprobetargetrun.FieldErrorMessage:
 		m.ResetErrorMessage()
+		return nil
+	case sub2apiproviderprobetargetrun.FieldResponseText:
+		m.ResetResponseText()
+		return nil
+	case sub2apiproviderprobetargetrun.FieldAnswerProbe:
+		m.ResetAnswerProbe()
 		return nil
 	case sub2apiproviderprobetargetrun.FieldStartedAt:
 		m.ResetStartedAt()

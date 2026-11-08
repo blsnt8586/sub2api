@@ -5,40 +5,49 @@
     :style="{ '--provider-entry-delay': `${Math.min(animationIndex ?? 0, 7) * 45}ms` }"
   >
     <div class="flex flex-1 flex-col px-4 py-3">
-      <header class="flex min-w-0 items-start justify-between gap-3">
-        <div class="min-w-0 flex-1">
-          <div class="flex min-w-0 items-center gap-2">
-            <h2 class="min-w-0 truncate text-sm font-semibold text-gray-900 dark:text-white" :title="provider.name">
-              {{ provider.name }}
-            </h2>
-            <span :class="['badge flex-shrink-0 text-[10px]', provider.status === 'active' ? 'badge-success' : 'badge-gray']">
-              {{ t(`admin.sub2apiProviders.statusLabels.${provider.status}`) }}
-            </span>
-          </div>
-          <div class="mt-1.5 flex min-w-0 items-center gap-1.5 text-xs text-gray-500 dark:text-dark-400">
-            <span class="flex-shrink-0 font-medium text-blue-600 dark:text-blue-400">{{ providerTypeLabel }}</span>
-            <span aria-hidden="true">·</span>
+      <header class="flex min-w-0 items-center justify-between gap-3">
+        <div class="flex min-w-0 flex-1 items-center gap-x-1.5 overflow-hidden">
+          <h2 class="flex h-8 min-w-0 max-w-[18rem] flex-1 items-center truncate text-sm font-semibold text-gray-900 dark:text-white" :title="provider.name">
             <a
               v-if="providerURL"
               :href="providerURL"
               target="_blank"
               rel="noopener noreferrer"
               data-test="provider-upstream-link"
-              class="inline-flex min-w-0 max-w-[13rem] items-center gap-1 rounded border border-blue-200 bg-blue-50 px-1.5 py-1 font-medium text-blue-700 transition-colors hover:border-blue-300 hover:bg-blue-100 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-300 dark:hover:border-blue-700 dark:hover:bg-blue-900/40"
+              class="inline-flex h-8 min-w-0 max-w-full flex-shrink items-center gap-1 text-sm font-semibold text-gray-900 transition-colors hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-white dark:hover:text-blue-300"
               :title="t('admin.sub2apiProviders.openUpstream')"
             >
-              <span class="truncate">{{ providerHostname }}</span>
+              <span class="truncate">{{ provider.name }}</span>
               <Icon name="externalLink" size="xs" class="flex-shrink-0" />
             </a>
-            <span v-else class="min-w-0 truncate" :title="provider.base_url">{{ providerHostname }}</span>
-            <span aria-hidden="true">·</span>
-            <span class="flex-shrink-0 tabular-nums">{{ t('admin.sub2apiProviders.linkedAccountCount', { count: provider.accounts_count ?? 0 }) }}</span>
-          </div>
+            <span v-else class="min-w-0 truncate">{{ provider.name }}</span>
+          </h2>
+          <span :class="['badge inline-flex h-8 flex-shrink-0 items-center px-2 text-[10px]', provider.status === 'active' ? 'badge-success' : 'badge-gray']">
+            {{ t(`admin.sub2apiProviders.statusLabels.${provider.status}`) }}
+          </span>
+          <button
+            v-if="provider.status !== 'inactive'"
+            type="button"
+            class="inline-flex h-8 min-w-0 max-w-[7.5rem] flex-shrink-0 items-center gap-1 rounded-md border border-gray-200 px-2 text-[10px] font-medium tabular-nums transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:border-dark-600 dark:hover:bg-dark-700"
+            data-test="provider-control-status"
+            :class="availabilityTextClass"
+            :title="t('admin.sub2apiProviders.health.activeProbe')"
+            :aria-label="`${t('admin.sub2apiProviders.health.activeProbe')}: ${t(`admin.sub2apiProviders.health.availabilityStatus.${availabilityStatus}`)}`"
+            @click="emit('view-health')"
+          >
+            <span class="h-1.5 w-1.5 flex-shrink-0 rounded-full" :class="availabilityDotClass"></span>
+            <span class="truncate">{{ t(`admin.sub2apiProviders.health.availabilityStatus.${availabilityStatus}`) }}</span>
+          </button>
+          <span
+            class="provider-type-tag inline-flex h-8 flex-shrink-0 items-center rounded-md border px-2 text-[10px] font-semibold"
+            :class="providerTypeTagClass"
+            data-test="provider-type-tag"
+          >{{ providerTypeLabel }}</span>
         </div>
 
         <button
           type="button"
-          class="inline-flex h-11 w-11 flex-shrink-0 cursor-pointer items-center justify-center rounded-md text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:text-dark-300 dark:hover:bg-dark-700 dark:hover:text-white dark:focus-visible:ring-offset-dark-800"
+          class="inline-flex h-8 w-8 flex-shrink-0 cursor-pointer items-center justify-center rounded-md text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 dark:text-dark-300 dark:hover:bg-dark-700 dark:hover:text-white dark:focus-visible:ring-offset-dark-800"
           :title="t('common.more')"
           :aria-label="`${provider.name} ${t('common.more')}`"
           @click="emit('more', $event)"
@@ -63,27 +72,6 @@
         </div>
       </div>
 
-      <div v-else class="mt-3 rounded-md border border-gray-100 dark:border-dark-700">
-        <button
-          type="button"
-          class="flex min-h-10 w-full min-w-0 cursor-pointer items-center justify-between gap-3 px-3 py-2 text-left transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-inset dark:hover:bg-dark-700/50"
-          data-test="provider-control-status"
-          @click="emit('view-health')"
-        >
-          <span class="flex min-w-0 items-center gap-2">
-            <span class="h-2 w-2 flex-shrink-0 rounded-full" :class="availabilityDotClass"></span>
-            <span class="truncate text-xs font-medium text-gray-600 dark:text-dark-300">{{ t('admin.sub2apiProviders.health.activeProbe') }}</span>
-          </span>
-          <span class="flex min-w-0 flex-shrink items-center justify-end text-[11px] tabular-nums" :class="availabilityTextClass">
-            <span class="flex-shrink-0">{{ t(`admin.sub2apiProviders.health.availabilityStatus.${availabilityStatus}`) }}</span>
-            <span v-if="latestControl?.health_latency_ms != null" class="ml-2 flex-shrink-0 text-gray-400 dark:text-dark-400">{{ latestControl.health_latency_ms }} ms</span>
-            <span v-if="latestControl?.last_checked_at" class="ml-2 min-w-0 truncate text-gray-400 dark:text-dark-400" :title="latestControl.last_checked_at">
-              {{ formatRelative(latestControl.last_checked_at) }}
-            </span>
-          </span>
-        </button>
-      </div>
-
       <button
         type="button"
         data-test="provider-remote-overview"
@@ -97,7 +85,7 @@
           {{ t('admin.sub2apiProviders.remoteOverview.loading') }}
         </span>
         <span v-else-if="remoteOverviewAvailable" class="block min-w-0" data-test="provider-remote-metrics">
-          <span class="grid grid-cols-3 gap-x-3 gap-y-2">
+          <span class="grid grid-cols-4 gap-x-3 gap-y-2">
             <span v-for="metric in remoteMetrics" :key="metric.key" class="min-w-0 text-center" :data-test="`remote-metric-${metric.key}`">
               <span class="flex min-w-0 items-center justify-center gap-1 text-[10px] font-medium text-gray-500 dark:text-dark-400">
                 <Icon :name="metric.icon" size="xs" class="flex-shrink-0" :class="metric.iconClass" />
@@ -164,6 +152,11 @@
                 {{ route.account_name }}
               </span>
               <span
+                v-if="route.account_status && route.account_status !== 'active'"
+                class="flex-shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-medium"
+                :class="accountStatusClass(route.account_status)"
+              >{{ accountStatusLabel(route.account_status) }}</span>
+              <span
                 v-if="route.remote_group_multiplier != null"
                 class="multiplier-badge flex-shrink-0 border tabular-nums"
                 :class="multiplierClass(route)"
@@ -192,14 +185,6 @@
                 {{ route.latency_ms != null ? `${route.latency_ms} ms` : t(`admin.sub2apiProviders.health.status.${route.status}`) }}
               </span>
             </div>
-            <div class="mt-1.5 flex min-w-0 items-center gap-2 pl-3.5 text-[11px] text-gray-500 dark:text-dark-400">
-              <span class="min-w-0 flex-1 truncate font-medium text-gray-600 dark:text-dark-300" :title="routeIdentityTitle(route)">{{ route.remote_group_name || t('admin.sub2apiProviders.health.routes.unboundGroup') }}</span>
-              <span v-if="route.test_model" class="inline-flex min-w-0 max-w-[46%] items-center gap-1 text-gray-500 dark:text-dark-400" :title="route.test_model">
-                <Icon name="cpu" size="xs" class="flex-shrink-0" />
-                <span class="truncate">{{ route.test_model }}</span>
-              </span>
-              <span class="flex-shrink-0 tabular-nums">{{ route.last_checked_at ? formatRelative(route.last_checked_at) : t(route.monitoring_source === 'user_requests' ? 'admin.sub2apiProviders.health.routes.noRequestResults' : 'admin.sub2apiProviders.health.neverChecked') }}</span>
-            </div>
             <div
               v-if="route.average_duration_ms != null || route.cache_hit_rate_available"
               class="mt-1 flex items-center justify-center gap-3 pl-3.5 text-center text-[10px] tabular-nums text-gray-500 dark:text-dark-400"
@@ -213,8 +198,9 @@
               </span>
             </div>
             <div class="mt-1.5 min-w-0 pl-3.5">
-              <Sub2APIProviderRouteTimeline :route="route" compact />
+              <Sub2APIProviderRouteTimeline :route="route" compact :interactive="false" />
             </div>
+            <Sub2APIProviderAnswerTimeline class="mt-1.5 pl-3.5" :route="route" />
           </button>
 
         </div>
@@ -289,11 +275,11 @@ import type {
   Sub2APIProviderProbeTargetHealth,
   Sub2APIProviderRemoteOverview,
 } from '@/api/admin/sub2apiProviders'
-import { formatRelativeTime } from '@/utils/format'
 import { getMultiplierRangeState } from '@/utils/sub2apiValidation'
 import { platformTagClass } from '@/utils/platformColors'
 import Icon from '@/components/icons/Icon.vue'
 import Sub2APIProviderRouteTimeline from './Sub2APIProviderRouteTimeline.vue'
+import Sub2APIProviderAnswerTimeline from './Sub2APIProviderAnswerTimeline.vue'
 
 const props = defineProps<{
   provider: Sub2APIProvider
@@ -314,13 +300,13 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-const formatRelative = (value: string | Date | null | undefined) => {
-  void props.nowTick
-  return formatRelativeTime(value)
-}
 
 const providerTypeLabel = computed(() => props.provider.provider_type === 'sub2api' ? 'Sub2API' : props.provider.provider_type === 'newapi' ? 'New API' : props.provider.provider_type)
+const providerTypeTagClass = computed(() => props.provider.provider_type === 'newapi'
+  ? 'border-teal-200 bg-teal-50 text-teal-700 dark:border-teal-800 dark:bg-teal-900/25 dark:text-teal-300'
+  : 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-900/25 dark:text-blue-300')
 const authStatusLabel = computed(() => {
+  if (props.provider.auth_mode === 'browser_session') return t(props.provider.last_auth_error ? 'admin.sub2apiProviders.auth.reimportRequired' : 'admin.sub2apiProviders.form.newapiBrowserSession')
   if (props.provider.auth_mode === 'access_token') return t(props.provider.last_auth_error ? 'admin.sub2apiProviders.auth.reimportRequired' : 'admin.sub2apiProviders.form.authManagementToken')
   if (props.provider.auth_mode !== 'token_pair') return t('admin.sub2apiProviders.auth.password')
   if (props.provider.last_auth_error) return t('admin.sub2apiProviders.auth.reimportRequired')
@@ -328,25 +314,20 @@ const authStatusLabel = computed(() => {
   return t('admin.sub2apiProviders.auth.tokenIncomplete')
 })
 const authStatusClass = computed(() => {
-  if (props.provider.auth_mode === 'access_token') return props.provider.last_auth_error ? 'text-red-600 dark:text-red-400' : props.provider.has_access_token ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'
+  if (props.provider.auth_mode === 'access_token' || props.provider.auth_mode === 'browser_session') return props.provider.last_auth_error ? 'text-red-600 dark:text-red-400' : props.provider.has_access_token ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'
   if (props.provider.auth_mode !== 'token_pair') return 'text-gray-500 dark:text-dark-400'
   if (props.provider.last_auth_error) return 'text-red-600 dark:text-red-400'
   return props.provider.has_access_token && props.provider.has_refresh_token
     ? 'text-green-600 dark:text-green-400'
     : 'text-amber-600 dark:text-amber-400'
 })
-const authStatusTitle = computed(() => props.provider.auth_mode === 'access_token'
+const authStatusTitle = computed(() => props.provider.auth_mode === 'browser_session'
+  ? t('admin.sub2apiProviders.form.newapiBrowserTokenHint')
+  : props.provider.auth_mode === 'access_token'
   ? t('admin.sub2apiProviders.form.newapiTokenHint')
   : props.provider.auth_mode === 'token_pair'
   ? t('admin.sub2apiProviders.auth.tokenTitle')
   : props.provider.provider_type === 'newapi' ? t('admin.sub2apiProviders.form.newapiPasswordDesc') : t('admin.sub2apiProviders.auth.passwordTitle'))
-const providerHostname = computed(() => {
-  try {
-    return new URL(props.provider.base_url).host
-  } catch {
-    return props.provider.base_url
-  }
-})
 const providerURL = computed(() => {
   try {
     const url = new URL(props.provider.base_url)
@@ -402,15 +383,14 @@ type RemoteMetric = {
 const remoteMetrics = computed<RemoteMetric[]>(() => {
   const usage = remoteUsage.value
   const metrics: RemoteMetric[] = [
-    { key: 'balance', label: 'balance', icon: 'creditCard', iconClass: 'text-emerald-500', value: props.remoteOverview?.available ? formatMoney(props.remoteOverview.balance) : '-', valueClass: 'text-emerald-600 dark:text-emerald-400' },
-    { key: 'total-recharged', label: 'totalRecharged', icon: 'dollar', iconClass: 'text-blue-500', value: props.remoteOverview?.usage?.funding_summary_available ? formatMoney(props.remoteOverview.usage.total_recharged) : '-', valueClass: 'text-blue-600 dark:text-blue-400' },
-    { key: 'total-tokens', label: 'totalTokens', icon: 'database', iconClass: 'text-indigo-500', value: remoteMetricValue(usage?.total_tokens, formatTokens), valueClass: 'text-gray-900 dark:text-white' },
-    { key: 'today-requests', label: 'todayRequests', icon: 'chart', iconClass: 'text-green-500', value: remoteMetricValue(usage?.today_requests, formatCount), valueClass: 'text-gray-900 dark:text-white' },
     { key: 'today-consumed', label: 'todayConsumed', icon: 'dollar', iconClass: 'text-purple-500', value: remoteMetricValue(usage?.today_actual_cost, formatMoney), valueClass: 'text-purple-600 dark:text-purple-400' },
     { key: 'today-tokens', label: 'todayTokens', icon: 'database', iconClass: 'text-amber-500', value: remoteMetricValue(usage?.today_tokens, formatTokens), valueClass: 'text-gray-900 dark:text-white' },
+    { key: 'total-recharged', label: 'totalRecharged', icon: 'dollar', iconClass: 'text-blue-500', value: props.remoteOverview?.usage?.funding_summary_available ? formatMoney(props.remoteOverview.usage.total_recharged) : '-', valueClass: 'text-blue-600 dark:text-blue-400' },
+    { key: 'total-tokens', label: 'totalTokens', icon: 'database', iconClass: 'text-indigo-500', value: remoteMetricValue(usage?.total_tokens, formatTokens), valueClass: 'text-gray-900 dark:text-white' },
   ]
   const profit = props.remoteOverview?.profit
   metrics.push(
+    { key: 'balance', label: 'balance', icon: 'creditCard', iconClass: 'text-emerald-500', value: props.remoteOverview?.available ? formatMoney(props.remoteOverview.balance) : '-', valueClass: 'text-emerald-600 dark:text-emerald-400' },
     { key: 'today-profit', label: 'todayProfit', icon: 'dollar', iconClass: 'text-emerald-500', value: profit?.available ? formatMoney(profit.today_gross_profit) : '-', valueClass: profit && profit.today_gross_profit < 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400', detail: profit?.available ? `${formatPercent(profit.today_gross_margin)} ${t('admin.sub2apiProviders.remoteOverview.marginSuffix')}` : undefined },
     { key: 'month-profit', label: 'monthProfit', icon: 'chart', iconClass: 'text-cyan-500', value: profit?.month_profit_available ? formatMoney(profit.month_gross_profit) : '-', valueClass: profit && profit.month_gross_profit < 0 ? 'text-red-600 dark:text-red-400' : 'text-cyan-600 dark:text-cyan-400', detail: profit?.month_profit_available ? `${formatPercent(profit.month_gross_margin)} ${t('admin.sub2apiProviders.remoteOverview.marginSuffix')}` : undefined },
     { key: 'cumulative-profit', label: 'cumulativeProfit', icon: 'chart', iconClass: 'text-teal-500', value: profit?.cumulative_profit_available ? formatMoney(profit.cumulative_gross_profit) : '-', valueClass: profit && profit.cumulative_gross_profit < 0 ? 'text-red-600 dark:text-red-400' : 'text-teal-600 dark:text-teal-400', detail: profit?.cumulative_profit_available ? `${formatPercent(profit.cumulative_gross_margin)} ${t('admin.sub2apiProviders.remoteOverview.marginSuffix')}` : undefined },
@@ -418,7 +398,6 @@ const remoteMetrics = computed<RemoteMetric[]>(() => {
   return metrics
 })
 
-const latestControl = computed(() => props.overview?.latest_control ?? null)
 const availabilityStatus = computed<ProviderHealthStatus>(() => props.overview?.availability_status ?? 'unknown')
 const routes = computed(() => props.overview?.routes ?? [])
 const enabledRouteCount = computed(() => routes.value.filter(route => route.enabled).length)
@@ -457,6 +436,14 @@ const statusTextClass = (status: ProviderHealthStatus | Sub2APIProviderProbeTarg
 
 const routeStatusDotClass = (status: Sub2APIProviderProbeTargetHealth['status']) => statusDotClass(status)
 const routeStatusTextClass = (status: Sub2APIProviderProbeTargetHealth['status']) => statusTextClass(status)
+const accountStatusLabel = (status: string) => ({
+  inactive: t('admin.accounts.status.inactive'),
+  error: t('admin.accounts.status.error'),
+  disabled: t('admin.accounts.status.paused'),
+}[status] || status)
+const accountStatusClass = (status: string) => status === 'error'
+  ? 'border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300'
+  : 'border-gray-200 bg-gray-50 text-gray-600 dark:border-dark-600 dark:bg-dark-700 dark:text-dark-300'
 
 const formatMultiplier = (value: number) => Number.isInteger(value) ? value.toFixed(0) : String(Number(value.toFixed(4)))
 const multiplierRangeState = (route: Sub2APIProviderProbeTargetHealth) => route.sub2api_optimize_enabled
@@ -508,16 +495,6 @@ const multiplierTitle = (route: Sub2APIProviderProbeTargetHealth) => {
   }
   return t('admin.sub2apiProviders.multiplierRangeUnconfigured', { current })
 }
-
-const routeIdentityTitle = (route: Sub2APIProviderProbeTargetHealth) => [
-  route.account_name,
-  route.platform,
-  route.provider_api_key_id != null ? `Key #${route.provider_api_key_id}` : null,
-  route.remote_group_name,
-  route.remote_group_id != null ? `Group #${route.remote_group_id}` : null,
-  route.test_model,
-  route.remote_group_multiplier != null ? `×${formatMultiplier(route.remote_group_multiplier)}` : null,
-].filter(Boolean).join(' · ')
 
 const pathStatusTitle = computed(() => props.provider.api_path_keys
   ? `Keys: ${props.provider.api_path_keys}\nGroups: ${props.provider.api_path_groups || t('admin.sub2apiProviders.pathsNotDetected')}`

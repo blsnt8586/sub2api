@@ -150,6 +150,7 @@ type UpdateSub2APIProviderInput struct {
 	RefreshTokenEncrypted *string
 	AccessTokenExpiresAt  *time.Time
 	ClearTokenPair        bool
+	ClearRefreshToken     bool
 	TokenPairUpdated      bool
 	Status                *string
 	Notes                 *string
@@ -221,14 +222,39 @@ func newAuthedSub2APIProviderClient(
 	}
 	if provider.ProviderType == domain.ProviderTypeNewAPI {
 		access := ""
-		if authMode == domain.Sub2APIProviderAuthModeAccessToken {
+		refreshCookie := ""
+		if authMode == domain.Sub2APIProviderAuthModeAccessToken || authMode == domain.Sub2APIProviderAuthModeBrowserSession {
 			var err error
 			access, err = decryptProviderSecret(encryptor, provider.AccessTokenEncrypted, "management access token")
 			if err != nil {
 				return nil, err
 			}
+			if authMode == domain.Sub2APIProviderAuthModeBrowserSession {
+				if provider.RefreshTokenEncrypted != nil && strings.TrimSpace(*provider.RefreshTokenEncrypted) != "" {
+					refreshCookie, err = decryptProviderSecret(encryptor, provider.RefreshTokenEncrypted, "New API refresh cookie")
+					if err != nil {
+						return nil, err
+					}
+				}
+			}
 		}
-		if err := client.ConfigureNewAPI(access); err != nil {
+		configure := client.ConfigureNewAPI
+		if authMode == domain.Sub2APIProviderAuthModeBrowserSession {
+			configure = func(_ string) error {
+				return client.ConfigureNewAPIBrowserSession(access, refreshCookie, func(updateCtx context.Context, updatedAccess, updatedCookie string, expiresAt time.Time) error {
+					accessEncrypted, err := encryptor.Encrypt(updatedAccess)
+					if err != nil {
+						return err
+					}
+					cookieEncrypted, err := encryptor.Encrypt(updatedCookie)
+					if err != nil {
+						return err
+					}
+					return repo.PersistTokenPair(updateCtx, provider.ID, accessEncrypted, cookieEncrypted, expiresAt, time.Now())
+				})
+			}
+		}
+		if err := configure(access); err != nil {
 			return nil, err
 		}
 	}
@@ -391,6 +417,16 @@ func (s *Sub2APIProviderService) CreateProvider(ctx context.Context, input *Crea
 		}
 		return nil, fmt.Errorf("create provider failed: %w", err)
 	}
+	if providerAuthRequiresRefresh(provider.ProviderType, provider.AuthMode) {
+		provider, err = s.claimImportedProviderCredentials(ctx, provider)
+		if err != nil {
+			_ = s.repo.Delete(ctx, provider.ID)
+			if s.tokenCache != nil {
+				s.tokenCache.Evict(provider.ID)
+			}
+			return nil, err
+		}
+	}
 
 	return providerFromEnt(provider), nil
 }
@@ -417,7 +453,8 @@ func (s *Sub2APIProviderService) prepareCreateProviderAuth(input *CreateProvider
 		}
 		return prepared, nil
 	}
-	if input.AccessToken == nil || strings.TrimSpace(*input.AccessToken) == "" || (mode == domain.Sub2APIProviderAuthModeTokenPair && (input.RefreshToken == nil || strings.TrimSpace(*input.RefreshToken) == "")) {
+	requiresRefreshCredential := mode == domain.Sub2APIProviderAuthModeTokenPair || mode == domain.Sub2APIProviderAuthModeBrowserSession
+	if input.AccessToken == nil || strings.TrimSpace(*input.AccessToken) == "" || (requiresRefreshCredential && (input.RefreshToken == nil || strings.TrimSpace(*input.RefreshToken) == "")) {
 		return nil, infraerrors.BadRequest("PROVIDER_TOKEN_PAIR_REQUIRED", "required provider token credentials are missing")
 	}
 	if !s.providerTokenKeyConfigured {
@@ -438,10 +475,10 @@ func (s *Sub2APIProviderService) prepareCreateProviderAuth(input *CreateProvider
 	if err != nil {
 		return nil, fmt.Errorf("encrypt provider refresh token: %w", err)
 	}
-	pair := sub2api.NewTokenPair(strings.TrimSpace(*input.AccessToken), strings.TrimSpace(*input.RefreshToken), nil)
 	prepared.accessEncrypted = &accessEncrypted
 	prepared.refreshEncrypted = &refreshEncrypted
-	prepared.expiresAt = &pair.ExpiresAt
+	claimAt := time.Now()
+	prepared.expiresAt = &claimAt
 	return prepared, nil
 }
 
@@ -556,6 +593,7 @@ func (s *Sub2APIProviderService) UpdateProvider(ctx context.Context, id int64, i
 		RefreshTokenEncrypted: authUpdate.RefreshTokenEncrypted,
 		AccessTokenExpiresAt:  authUpdate.AccessTokenExpiresAt,
 		ClearTokenPair:        authUpdate.ClearTokenPair,
+		ClearRefreshToken:     authUpdate.ClearRefreshToken,
 		TokenPairUpdated:      authUpdate.TokenPairUpdated,
 		Status:                input.Status,
 		Notes: func() *string {
@@ -590,8 +628,44 @@ func (s *Sub2APIProviderService) UpdateProvider(ctx context.Context, id int64, i
 	if s.tokenCache != nil {
 		s.tokenCache.Evict(id)
 	}
+	if authUpdate.TokenPairUpdated && providerAuthRequiresRefresh(provider.ProviderType, provider.AuthMode) {
+		provider, err = s.claimImportedProviderCredentials(ctx, provider)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	return providerFromEnt(provider), nil
+}
+
+func providerAuthRequiresRefresh(providerType, mode string) bool {
+	if providerType == domain.ProviderTypeNewAPI {
+		return mode == domain.Sub2APIProviderAuthModeBrowserSession
+	}
+	return mode == domain.Sub2APIProviderAuthModeTokenPair
+}
+
+func (s *Sub2APIProviderService) claimImportedProviderCredentials(ctx context.Context, provider *ent.Sub2APIProvider) (*ent.Sub2APIProvider, error) {
+	if provider == nil {
+		return nil, ErrInvalidProviderAuth
+	}
+	if s.tokenCache != nil {
+		s.tokenCache.Evict(provider.ID)
+	}
+	client, err := s.newAuthedClient(ctx, provider)
+	if err != nil {
+		return nil, infraerrors.ServiceUnavailable("PROVIDER_CREDENTIAL_REFRESH_FAILED", "imported credentials could not be claimed for automatic renewal").WithCause(err)
+	}
+	if provider.ProviderType == domain.ProviderTypeNewAPI {
+		if err := client.RefreshProviderCredentials(ctx); err != nil {
+			return nil, infraerrors.ServiceUnavailable("PROVIDER_CREDENTIAL_REFRESH_FAILED", "imported credentials could not be claimed for automatic renewal").WithCause(err)
+		}
+	}
+	refreshed, err := s.repo.GetByID(ctx, provider.ID)
+	if err != nil {
+		return nil, fmt.Errorf("reload provider after credential refresh: %w", err)
+	}
+	return refreshed, nil
 }
 
 func (s *Sub2APIProviderService) validateProviderProxy(ctx context.Context, proxyID *int64) error {
@@ -676,10 +750,14 @@ func (s *Sub2APIProviderService) prepareUpdateProviderAuth(existing *ent.Sub2API
 			return nil, fmt.Errorf("encrypt provider access token: %w", err)
 		}
 		update.AccessTokenEncrypted = &encrypted
-		pair := sub2api.NewTokenPair(access, "", nil)
-		update.AccessTokenExpiresAt = &pair.ExpiresAt
+		claimAt := time.Now()
+		update.AccessTokenExpiresAt = &claimAt
 		update.TokenPairUpdated = true
 		hasAccess = true
+	}
+	if mode == domain.Sub2APIProviderAuthModeBrowserSession && input.AccessToken != nil && strings.TrimSpace(*input.AccessToken) != "" && (input.RefreshToken == nil || strings.TrimSpace(*input.RefreshToken) == "") {
+		update.ClearRefreshToken = hasRefresh
+		hasRefresh = false
 	}
 	if input.RefreshToken != nil && strings.TrimSpace(*input.RefreshToken) != "" {
 		encrypted, err := s.encryptor.Encrypt(strings.TrimSpace(*input.RefreshToken))
@@ -690,7 +768,11 @@ func (s *Sub2APIProviderService) prepareUpdateProviderAuth(existing *ent.Sub2API
 		update.TokenPairUpdated = true
 		hasRefresh = true
 	}
-	if !hasAccess || (mode == domain.Sub2APIProviderAuthModeTokenPair && !hasRefresh) {
+	authTouched := input.AuthMode != nil || input.AccessToken != nil || input.RefreshToken != nil
+	requiresRefreshCredential := mode == domain.Sub2APIProviderAuthModeTokenPair || mode == domain.Sub2APIProviderAuthModeBrowserSession
+	newAccessWithoutRefresh := input.AccessToken != nil && strings.TrimSpace(*input.AccessToken) != "" &&
+		requiresRefreshCredential && (input.RefreshToken == nil || strings.TrimSpace(*input.RefreshToken) == "")
+	if !hasAccess || newAccessWithoutRefresh || (authTouched && requiresRefreshCredential && !hasRefresh) {
 		return nil, infraerrors.BadRequest("PROVIDER_TOKEN_PAIR_REQUIRED", "required provider token credentials are missing")
 	}
 	return update, nil

@@ -327,6 +327,61 @@ func (_u *Sub2APIProviderProbeTargetUpdate) ClearTestModel() *Sub2APIProviderPro
 	return _u
 }
 
+// SetAnswerProbeEnabled sets the "answer_probe_enabled" field.
+func (_u *Sub2APIProviderProbeTargetUpdate) SetAnswerProbeEnabled(v bool) *Sub2APIProviderProbeTargetUpdate {
+	_u.mutation.SetAnswerProbeEnabled(v)
+	return _u
+}
+
+// SetNillableAnswerProbeEnabled sets the "answer_probe_enabled" field if the given value is not nil.
+func (_u *Sub2APIProviderProbeTargetUpdate) SetNillableAnswerProbeEnabled(v *bool) *Sub2APIProviderProbeTargetUpdate {
+	if v != nil {
+		_u.SetAnswerProbeEnabled(*v)
+	}
+	return _u
+}
+
+// SetAnswerProbePrompt sets the "answer_probe_prompt" field.
+func (_u *Sub2APIProviderProbeTargetUpdate) SetAnswerProbePrompt(v string) *Sub2APIProviderProbeTargetUpdate {
+	_u.mutation.SetAnswerProbePrompt(v)
+	return _u
+}
+
+// SetNillableAnswerProbePrompt sets the "answer_probe_prompt" field if the given value is not nil.
+func (_u *Sub2APIProviderProbeTargetUpdate) SetNillableAnswerProbePrompt(v *string) *Sub2APIProviderProbeTargetUpdate {
+	if v != nil {
+		_u.SetAnswerProbePrompt(*v)
+	}
+	return _u
+}
+
+// ClearAnswerProbePrompt clears the value of the "answer_probe_prompt" field.
+func (_u *Sub2APIProviderProbeTargetUpdate) ClearAnswerProbePrompt() *Sub2APIProviderProbeTargetUpdate {
+	_u.mutation.ClearAnswerProbePrompt()
+	return _u
+}
+
+// SetAnswerProbeIntervalSeconds sets the "answer_probe_interval_seconds" field.
+func (_u *Sub2APIProviderProbeTargetUpdate) SetAnswerProbeIntervalSeconds(v int) *Sub2APIProviderProbeTargetUpdate {
+	_u.mutation.ResetAnswerProbeIntervalSeconds()
+	_u.mutation.SetAnswerProbeIntervalSeconds(v)
+	return _u
+}
+
+// SetNillableAnswerProbeIntervalSeconds sets the "answer_probe_interval_seconds" field if the given value is not nil.
+func (_u *Sub2APIProviderProbeTargetUpdate) SetNillableAnswerProbeIntervalSeconds(v *int) *Sub2APIProviderProbeTargetUpdate {
+	if v != nil {
+		_u.SetAnswerProbeIntervalSeconds(*v)
+	}
+	return _u
+}
+
+// AddAnswerProbeIntervalSeconds adds value to the "answer_probe_interval_seconds" field.
+func (_u *Sub2APIProviderProbeTargetUpdate) AddAnswerProbeIntervalSeconds(v int) *Sub2APIProviderProbeTargetUpdate {
+	_u.mutation.AddAnswerProbeIntervalSeconds(v)
+	return _u
+}
+
 // SetAllowMediaProbe sets the "allow_media_probe" field.
 func (_u *Sub2APIProviderProbeTargetUpdate) SetAllowMediaProbe(v bool) *Sub2APIProviderProbeTargetUpdate {
 	_u.mutation.SetAllowMediaProbe(v)
@@ -842,6 +897,21 @@ func (_u *Sub2APIProviderProbeTargetUpdate) sqlSave(ctx context.Context) (_node 
 	if _u.mutation.TestModelCleared() {
 		_spec.ClearField(sub2apiproviderprobetarget.FieldTestModel, field.TypeString)
 	}
+	if value, ok := _u.mutation.AnswerProbeEnabled(); ok {
+		_spec.SetField(sub2apiproviderprobetarget.FieldAnswerProbeEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.AnswerProbePrompt(); ok {
+		_spec.SetField(sub2apiproviderprobetarget.FieldAnswerProbePrompt, field.TypeString, value)
+	}
+	if _u.mutation.AnswerProbePromptCleared() {
+		_spec.ClearField(sub2apiproviderprobetarget.FieldAnswerProbePrompt, field.TypeString)
+	}
+	if value, ok := _u.mutation.AnswerProbeIntervalSeconds(); ok {
+		_spec.SetField(sub2apiproviderprobetarget.FieldAnswerProbeIntervalSeconds, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedAnswerProbeIntervalSeconds(); ok {
+		_spec.AddField(sub2apiproviderprobetarget.FieldAnswerProbeIntervalSeconds, field.TypeInt, value)
+	}
 	if value, ok := _u.mutation.AllowMediaProbe(); ok {
 		_spec.SetField(sub2apiproviderprobetarget.FieldAllowMediaProbe, field.TypeBool, value)
 	}
@@ -1324,6 +1394,61 @@ func (_u *Sub2APIProviderProbeTargetUpdateOne) SetNillableTestModel(v *string) *
 // ClearTestModel clears the value of the "test_model" field.
 func (_u *Sub2APIProviderProbeTargetUpdateOne) ClearTestModel() *Sub2APIProviderProbeTargetUpdateOne {
 	_u.mutation.ClearTestModel()
+	return _u
+}
+
+// SetAnswerProbeEnabled sets the "answer_probe_enabled" field.
+func (_u *Sub2APIProviderProbeTargetUpdateOne) SetAnswerProbeEnabled(v bool) *Sub2APIProviderProbeTargetUpdateOne {
+	_u.mutation.SetAnswerProbeEnabled(v)
+	return _u
+}
+
+// SetNillableAnswerProbeEnabled sets the "answer_probe_enabled" field if the given value is not nil.
+func (_u *Sub2APIProviderProbeTargetUpdateOne) SetNillableAnswerProbeEnabled(v *bool) *Sub2APIProviderProbeTargetUpdateOne {
+	if v != nil {
+		_u.SetAnswerProbeEnabled(*v)
+	}
+	return _u
+}
+
+// SetAnswerProbePrompt sets the "answer_probe_prompt" field.
+func (_u *Sub2APIProviderProbeTargetUpdateOne) SetAnswerProbePrompt(v string) *Sub2APIProviderProbeTargetUpdateOne {
+	_u.mutation.SetAnswerProbePrompt(v)
+	return _u
+}
+
+// SetNillableAnswerProbePrompt sets the "answer_probe_prompt" field if the given value is not nil.
+func (_u *Sub2APIProviderProbeTargetUpdateOne) SetNillableAnswerProbePrompt(v *string) *Sub2APIProviderProbeTargetUpdateOne {
+	if v != nil {
+		_u.SetAnswerProbePrompt(*v)
+	}
+	return _u
+}
+
+// ClearAnswerProbePrompt clears the value of the "answer_probe_prompt" field.
+func (_u *Sub2APIProviderProbeTargetUpdateOne) ClearAnswerProbePrompt() *Sub2APIProviderProbeTargetUpdateOne {
+	_u.mutation.ClearAnswerProbePrompt()
+	return _u
+}
+
+// SetAnswerProbeIntervalSeconds sets the "answer_probe_interval_seconds" field.
+func (_u *Sub2APIProviderProbeTargetUpdateOne) SetAnswerProbeIntervalSeconds(v int) *Sub2APIProviderProbeTargetUpdateOne {
+	_u.mutation.ResetAnswerProbeIntervalSeconds()
+	_u.mutation.SetAnswerProbeIntervalSeconds(v)
+	return _u
+}
+
+// SetNillableAnswerProbeIntervalSeconds sets the "answer_probe_interval_seconds" field if the given value is not nil.
+func (_u *Sub2APIProviderProbeTargetUpdateOne) SetNillableAnswerProbeIntervalSeconds(v *int) *Sub2APIProviderProbeTargetUpdateOne {
+	if v != nil {
+		_u.SetAnswerProbeIntervalSeconds(*v)
+	}
+	return _u
+}
+
+// AddAnswerProbeIntervalSeconds adds value to the "answer_probe_interval_seconds" field.
+func (_u *Sub2APIProviderProbeTargetUpdateOne) AddAnswerProbeIntervalSeconds(v int) *Sub2APIProviderProbeTargetUpdateOne {
+	_u.mutation.AddAnswerProbeIntervalSeconds(v)
 	return _u
 }
 
@@ -1871,6 +1996,21 @@ func (_u *Sub2APIProviderProbeTargetUpdateOne) sqlSave(ctx context.Context) (_no
 	}
 	if _u.mutation.TestModelCleared() {
 		_spec.ClearField(sub2apiproviderprobetarget.FieldTestModel, field.TypeString)
+	}
+	if value, ok := _u.mutation.AnswerProbeEnabled(); ok {
+		_spec.SetField(sub2apiproviderprobetarget.FieldAnswerProbeEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.AnswerProbePrompt(); ok {
+		_spec.SetField(sub2apiproviderprobetarget.FieldAnswerProbePrompt, field.TypeString, value)
+	}
+	if _u.mutation.AnswerProbePromptCleared() {
+		_spec.ClearField(sub2apiproviderprobetarget.FieldAnswerProbePrompt, field.TypeString)
+	}
+	if value, ok := _u.mutation.AnswerProbeIntervalSeconds(); ok {
+		_spec.SetField(sub2apiproviderprobetarget.FieldAnswerProbeIntervalSeconds, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedAnswerProbeIntervalSeconds(); ok {
+		_spec.AddField(sub2apiproviderprobetarget.FieldAnswerProbeIntervalSeconds, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.AllowMediaProbe(); ok {
 		_spec.SetField(sub2apiproviderprobetarget.FieldAllowMediaProbe, field.TypeBool, value)

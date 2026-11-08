@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/ent"
+	"github.com/Wei-Shaw/sub2api/internal/domain"
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/sub2api"
@@ -33,6 +34,9 @@ const (
 	upstreamLogRetentionPeriod         = 3 * 24 * time.Hour
 	upstreamLogRetentionCheckInterval  = time.Hour
 	upstreamLogRetentionBatchSize      = 1000
+	providerCredentialRefreshLead      = 15 * time.Minute
+	providerCredentialRefreshTimeout   = 90 * time.Second
+	providerCredentialRefreshRetry     = 5 * time.Minute
 )
 
 const upstreamLogRetentionLeaderLockKey = "sub2api:upstream-log-retention"
@@ -63,6 +67,10 @@ type Sub2APIUpstreamLogRetentionRepository interface {
 	DeleteUpstreamLogsBefore(context.Context, time.Time, int) (Sub2APIUpstreamLogCleanupResult, error)
 }
 
+type Sub2APIAnswerProbeResponseRetentionRepository interface {
+	ClearAnswerProbeResponsesBefore(context.Context, time.Time, int) (int64, error)
+}
+
 // Sub2APIProviderProbeRepository is deliberately separate from the Provider
 // repository: probe history is append-only inside its enforced retention window.
 type Sub2APIProviderProbeRepository interface {
@@ -87,6 +95,7 @@ type Sub2APIProviderProbeRepository interface {
 	CreateTargetRun(context.Context, *Sub2APIProviderProbeTargetRunInput) (*ent.Sub2APIProviderProbeTargetRun, error)
 	ListTargetRunsSince(context.Context, []int64, time.Time) ([]*ent.Sub2APIProviderProbeTargetRun, error)
 	ListRecentTargetRuns(context.Context, []int64, time.Time, int) ([]*ent.Sub2APIProviderProbeTargetRun, error)
+	ListRecentAnswerProbeRuns(context.Context, int64, time.Time, int) ([]*ent.Sub2APIProviderProbeTargetRun, error)
 	TargetTrafficStats(context.Context, int64, time.Time) (*Sub2APIProviderProbeTargetTrafficStats, error)
 }
 
@@ -1410,21 +1419,32 @@ func shouldRunProviderProbeTargetWithRecovery(target *ent.Sub2APIProviderProbeTa
 	return !scheduled || probeIntervalDueWithJitterAt(target.LastRunAt, effectiveProbeTargetIntervalSecondsWithRecovery(target, minimumHealthyStreak), target.ID, now)
 }
 
+func shouldRunScheduledAnswerProbe(target *ent.Sub2APIProviderProbeTarget, lastAnswerAt *time.Time, now time.Time) bool {
+	if target == nil || !target.AnswerProbeEnabled || target.AnswerProbePrompt == nil || strings.TrimSpace(*target.AnswerProbePrompt) == "" {
+		return false
+	}
+	// Answer tests use the operator's explicit fixed interval. Health-probe
+	// adaptive stages and jitter should not change the requested cadence.
+	return probeIntervalDueAt(lastAnswerAt, target.AnswerProbeIntervalSeconds, now)
+}
+
 func providerProbeStringPtr(v string) *string     { return &v }
 func providerProbeTimePtr(v time.Time) *time.Time { return &v }
 
 // Sub2APIProviderProbeRunner scans frequently; each persisted config controls
 // due decision is persisted in each config, so restarts do not reset cadence.
 type Sub2APIProviderProbeRunner struct {
-	service            *Sub2APIProviderProbeService
-	cron               *cron.Cron
-	lockCache          LeaderLockCache
-	db                 *sql.DB
-	instanceID         string
-	once               sync.Once
-	retentionMu        sync.Mutex
-	nextRetentionRunAt time.Time
-	nextCostSnapshotAt time.Time
+	service                  *Sub2APIProviderProbeService
+	cron                     *cron.Cron
+	lockCache                LeaderLockCache
+	db                       *sql.DB
+	instanceID               string
+	once                     sync.Once
+	retentionMu              sync.Mutex
+	nextRetentionRunAt       time.Time
+	nextCostSnapshotAt       time.Time
+	credentialRefreshMu      sync.Mutex
+	credentialRefreshRetryAt map[int64]time.Time
 }
 
 func NewSub2APIProviderProbeRunner(service *Sub2APIProviderProbeService, lockCache LeaderLockCache, db *sql.DB) *Sub2APIProviderProbeRunner {
@@ -1470,8 +1490,12 @@ func (r *Sub2APIProviderProbeRunner) runDue() {
 			defer func() { <-workers }()
 			workCtx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 			defer cancel()
+			r.refreshProviderCredentials(workCtx, id, now)
 			if err := r.service.runHybridAccountHealth(workCtx, id); err != nil {
 				logger.LegacyPrintf("service.sub2api_provider_probe", "account hybrid health: %v", err)
+			}
+			if err := r.service.runScheduledAnswerProbes(workCtx, id); err != nil {
+				logger.LegacyPrintf("service.sub2api_provider_probe", "scheduled answer probe: %v", err)
 			}
 			cfg, err := r.service.ensureConfig(workCtx, id)
 			if err == nil && cfg.ControlEnabled && probeIntervalDue(cfg.LastControlRunAt, cfg.ControlIntervalSeconds) {
@@ -1480,6 +1504,64 @@ func (r *Sub2APIProviderProbeRunner) runDue() {
 		}(p.ID)
 	}
 	wg.Wait()
+}
+
+func (r *Sub2APIProviderProbeRunner) refreshProviderCredentials(ctx context.Context, providerID int64, now time.Time) {
+	if r == nil || r.service == nil || providerID <= 0 || r.service.providerRepo == nil {
+		return
+	}
+	r.credentialRefreshMu.Lock()
+	if r.credentialRefreshRetryAt != nil && now.Before(r.credentialRefreshRetryAt[providerID]) {
+		r.credentialRefreshMu.Unlock()
+		return
+	}
+	r.credentialRefreshMu.Unlock()
+
+	provider, err := r.service.providerRepo.GetByID(ctx, providerID)
+	if err != nil || provider == nil || !providerCredentialRefreshDue(provider, now) {
+		return
+	}
+	release, acquired := r.service.operationGate.TryAcquire(ctx, providerID, providerCredentialRefreshTimeout)
+	if !acquired {
+		return
+	}
+	defer release()
+
+	refreshCtx, cancel := context.WithTimeout(ctx, providerCredentialRefreshTimeout)
+	defer cancel()
+	client, err := newAuthedSub2APIProviderClient(refreshCtx, provider, r.service.providerRepo, r.service.tokenCache, r.service.encryptor)
+	if err == nil && provider.AccessTokenExpiresAt.After(now) {
+		err = client.RefreshProviderCredentials(refreshCtx)
+	}
+	if err != nil {
+		message := trimProviderAuthError(err)
+		_ = r.service.providerRepo.UpdateAuthError(ctx, providerID, &message)
+		r.credentialRefreshMu.Lock()
+		if r.credentialRefreshRetryAt == nil {
+			r.credentialRefreshRetryAt = make(map[int64]time.Time)
+		}
+		r.credentialRefreshRetryAt[providerID] = now.Add(providerCredentialRefreshRetry)
+		r.credentialRefreshMu.Unlock()
+		logger.LegacyPrintf("service.sub2api_provider_probe", "provider %d scheduled credential refresh failed: %v", providerID, err)
+		return
+	}
+	_ = r.service.providerRepo.UpdateAuthError(ctx, providerID, nil)
+	r.credentialRefreshMu.Lock()
+	delete(r.credentialRefreshRetryAt, providerID)
+	r.credentialRefreshMu.Unlock()
+}
+
+func providerCredentialRefreshDue(provider *ent.Sub2APIProvider, now time.Time) bool {
+	if provider == nil || provider.AccessTokenExpiresAt == nil || provider.AccessTokenExpiresAt.After(now.Add(providerCredentialRefreshLead)) {
+		return false
+	}
+	mode := strings.TrimSpace(provider.AuthMode)
+	switch provider.ProviderType {
+	case "newapi":
+		return mode == domain.Sub2APIProviderAuthModeBrowserSession && provider.RefreshTokenEncrypted != nil && strings.TrimSpace(*provider.RefreshTokenEncrypted) != ""
+	default:
+		return mode == domain.Sub2APIProviderAuthModeTokenPair && provider.RefreshTokenEncrypted != nil && strings.TrimSpace(*provider.RefreshTokenEncrypted) != ""
+	}
 }
 
 func (r *Sub2APIProviderProbeRunner) runProviderAccountCostSnapshotsIfDue(now time.Time) {
@@ -1560,6 +1642,38 @@ func (r *Sub2APIProviderProbeRunner) runLogRetentionIfDue(now time.Time) {
 			deleted.OptimizeLogs,
 			cutoff.Format(time.RFC3339),
 		)
+	}
+	answerRetentionRepo, supportsAnswerRetention := r.service.probeRepo.(Sub2APIAnswerProbeResponseRetentionRepository)
+	if !supportsAnswerRetention {
+		return
+	}
+	cleared, err := clearExpiredAnswerProbeResponses(ctx, answerRetentionRepo, now.UTC().Add(-answerProbeHistoryWindow), upstreamLogRetentionBatchSize)
+	if err != nil {
+		logger.LegacyPrintf("service.sub2api_provider_probe", "[Sub2APIAnswerProbeRetention] cleanup failed: %v", err)
+		return
+	}
+	if cleared > 0 {
+		logger.LegacyPrintf("service.sub2api_provider_probe", "[Sub2APIAnswerProbeRetention] cleared response_text=%d cutoff=%s", cleared, now.UTC().Add(-answerProbeHistoryWindow).Format(time.RFC3339))
+	}
+}
+
+func clearExpiredAnswerProbeResponses(ctx context.Context, repo Sub2APIAnswerProbeResponseRetentionRepository, cutoff time.Time, batchSize int) (int64, error) {
+	if repo == nil {
+		return 0, nil
+	}
+	if batchSize <= 0 {
+		return 0, errors.New("answer probe response cleanup batch size must be positive")
+	}
+	var total int64
+	for {
+		cleared, err := repo.ClearAnswerProbeResponsesBefore(ctx, cutoff.UTC(), batchSize)
+		total += cleared
+		if err != nil {
+			return total, err
+		}
+		if cleared < int64(batchSize) {
+			return total, nil
+		}
 	}
 }
 

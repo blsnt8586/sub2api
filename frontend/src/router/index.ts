@@ -312,6 +312,12 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/feedback',
+    name: 'Feedback',
+    component: () => import('@/views/user/FeedbackView.vue'),
+    meta: { requiresAuth: true, requiresAdmin: false, title: '留言板' }
+  },
+  {
     path: '/affiliate',
     name: 'Affiliate',
     component: () => import('@/views/user/AffiliateView.vue'),
@@ -642,6 +648,12 @@ const routes: RouteRecordRaw[] = [
       titleKey: 'admin.plugins.title',
       descriptionKey: 'admin.plugins.description'
     }
+  },
+  {
+    path: '/admin/feedback',
+    name: 'AdminFeedback',
+    component: () => import('@/views/admin/RadarFeedbackView.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true, title: 'Feedback Management', titleKey: 'nav.feedbackManagement' }
   },
   {
     path: '/admin/announcements',

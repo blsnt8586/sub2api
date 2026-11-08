@@ -18,24 +18,29 @@ import (
 // Healthy accounts generate no model tests. Only a latched quarantine permits
 // automatic recovery tests; an elapsed timer never admits user traffic.
 type ProviderAccountHealthPolicy struct {
-	Enabled                 bool `json:"enabled"`
-	WindowSeconds           int  `json:"window_seconds"`
-	MinimumSamples          int  `json:"minimum_samples"`
-	DegradedLatencyMS       int  `json:"degraded_latency_ms"`
-	TimeoutMS               int  `json:"timeout_ms"`
-	FailureThreshold        int  `json:"failure_threshold"`
-	AccountFailureThreshold int  `json:"account_failure_threshold"`
-	SessionAvoidSeconds     int  `json:"session_avoid_seconds"`
-	RecoveryDelaySeconds    int  `json:"recovery_delay_seconds"`
-	ProbeIntervalSeconds    int  `json:"probe_interval_seconds"`
-	ProbeTimeoutSeconds     int  `json:"probe_timeout_seconds"`
-	RecoverySuccesses       int  `json:"recovery_successes"`
+	Enabled                  bool `json:"enabled"`
+	WindowSeconds            int  `json:"window_seconds"`
+	MinimumSamples           int  `json:"minimum_samples"`
+	DegradedLatencyMS        int  `json:"degraded_latency_ms"`
+	TimeoutMS                int  `json:"timeout_ms"`
+	FailureThreshold         int  `json:"failure_threshold"`
+	AccountFailureThreshold  int  `json:"account_failure_threshold"`
+	DegradedThreshold        int  `json:"degraded_threshold"`
+	AccountDegradedThreshold int  `json:"account_degraded_threshold"`
+	SessionAvoidSeconds      int  `json:"session_avoid_seconds"`
+	RecoveryDelaySeconds     int  `json:"recovery_delay_seconds"`
+	ProbeIntervalSeconds     int  `json:"probe_interval_seconds"`
+	ProbeTimeoutSeconds      int  `json:"probe_timeout_seconds"`
+	RecoverySuccesses        int  `json:"recovery_successes"`
 }
 
 func DefaultProviderAccountHealthPolicy() ProviderAccountHealthPolicy {
-	return ProviderAccountHealthPolicy{Enabled: true, WindowSeconds: 300, MinimumSamples: 3, DegradedLatencyMS: 25000, TimeoutMS: 60000, FailureThreshold: 2, AccountFailureThreshold: 3, SessionAvoidSeconds: 300, RecoveryDelaySeconds: 300, ProbeIntervalSeconds: 60, ProbeTimeoutSeconds: 60, RecoverySuccesses: 2}
+	return ProviderAccountHealthPolicy{Enabled: true, WindowSeconds: 300, MinimumSamples: 3, DegradedLatencyMS: 25000, TimeoutMS: 60000, FailureThreshold: 2, AccountFailureThreshold: 3, DegradedThreshold: 2, AccountDegradedThreshold: 5, SessionAvoidSeconds: 300, RecoveryDelaySeconds: 300, ProbeIntervalSeconds: 60, ProbeTimeoutSeconds: 60, RecoverySuccesses: 2}
 }
 func (p ProviderAccountHealthPolicy) Validate() error {
+	if p.DegradedThreshold < 0 || p.DegradedThreshold > 100 || p.AccountDegradedThreshold < 0 || p.AccountDegradedThreshold > 10000 {
+		return invalidProviderProbeConfig("invalid degraded request thresholds")
+	}
 	if p.SessionAvoidSeconds < 30 || p.SessionAvoidSeconds > 86400 {
 		return invalidProviderProbeConfig("invalid session avoidance duration")
 	}
@@ -43,6 +48,15 @@ func (p ProviderAccountHealthPolicy) Validate() error {
 		return invalidProviderProbeConfig("invalid account hybrid health policy")
 	}
 	return nil
+}
+
+func (p ProviderAccountHealthPolicy) recoveryLatencyLimitMS() int {
+	// When slow requests can isolate an account, a merely non-timeout probe
+	// must not immediately send users back to the same degraded service.
+	if p.DegradedThreshold > 0 || p.AccountDegradedThreshold > 0 {
+		return p.DegradedLatencyMS
+	}
+	return p.TimeoutMS
 }
 
 type ProviderAccountHealthState struct {
@@ -204,6 +218,7 @@ func hybridObserve(h ProviderAccountHealthState, events []providerPassiveRequest
 	})
 	trigger := ""
 	badRequests := map[string]struct{}{}
+	degradedRequests := map[string]struct{}{}
 	since := now.Add(-time.Duration(h.Policy.WindowSeconds) * time.Second)
 	if h.ObserveSince.After(since) {
 		since = h.ObserveSince
@@ -223,16 +238,23 @@ func hybridObserve(h ProviderAccountHealthState, events []providerPassiveRequest
 		}
 		isTimeout := !e.Failure && e.Latency != nil && *e.Latency > h.Policy.TimeoutMS
 		isBad := e.Failure || isTimeout
-		if isBad {
+		isDegraded := !isBad && e.Latency != nil && *e.Latency > h.Policy.DegradedLatencyMS
+		if isBad || isDegraded {
 			requestID := e.RequestID
 			if requestID == "" {
 				requestID = fmt.Sprintf("event:%d:%d", e.At.UnixNano(), index)
 			}
-			badRequests[requestID] = struct{}{}
+			if isBad {
+				badRequests[requestID] = struct{}{}
+			} else {
+				degradedRequests[requestID] = struct{}{}
+			}
 		}
 	}
 	if len(badRequests) >= h.Policy.AccountFailureThreshold {
 		trigger = fmt.Sprintf("%d failed or timed-out requests within %d seconds", len(badRequests), h.Policy.WindowSeconds)
+	} else if h.Policy.AccountDegradedThreshold > 0 && len(degradedRequests) >= h.Policy.AccountDegradedThreshold {
+		trigger = providerDegradedPauseReason(len(degradedRequests), h.Policy)
 	}
 	if len(ordered) > 0 {
 		for i := len(ordered) - 1; i >= 0; i-- {
@@ -337,6 +359,10 @@ func (s *Sub2APIProviderProbeService) finishHybridRecoveryProbe(ctx context.Cont
 	probeStatus := "unhealthy"
 	phase := "recovering"
 	token := h.Token
+	if healthy && (latency == nil || *latency > current.Policy.recoveryLatencyLimitMS()) {
+		healthy = false
+		reason = "recovery probe has not returned below the configured latency threshold"
+	}
 	if healthy {
 		streak = current.RecoverySuccesses + 1
 		probeStatus = "healthy"
@@ -392,11 +418,14 @@ func (s *Sub2APIProviderProbeService) runHybridRecoveryProbe(ctx context.Context
 	// and the provider operation gate. Never run legacy account status projection.
 	copyTarget := *target
 	copyTarget.TimeoutSeconds = h.Policy.ProbeTimeoutSeconds
-	copyTarget.DegradedLatencyMs = h.Policy.TimeoutMS
+	copyTarget.DegradedLatencyMs = h.Policy.recoveryLatencyLimitMS()
 	if configuredAccountTestModel(a) == nil || (a.IsCanvas() || isProviderProbeMediaModel(*configuredAccountTestModel(a))) && !copyTarget.AllowMediaProbe {
 		return s.finishHybridRecoveryProbe(ctx, h, false, nil, "configure a text test model or explicitly allow media recovery probes", now)
 	}
-	run, _, acquired, err := s.runTargetIfProviderAvailable(ctx, &copyTarget)
+	// Recovery is an account-health signal. Keep it separate from the optional
+	// answer challenge so a recovery success cannot create answer history or
+	// alter the answer probe cadence.
+	run, _, acquired, err := s.runTargetIfProviderAvailableWithAnswerProbe(ctx, &copyTarget, false)
 	if !acquired {
 		return nil
 	}
@@ -406,13 +435,13 @@ func (s *Sub2APIProviderProbeService) runHybridRecoveryProbe(ctx context.Context
 	if run == nil {
 		return nil
 	}
-	healthy := string(run.Status) == "healthy" && run.LatencyMs != nil && *run.LatencyMs <= h.Policy.TimeoutMS
+	healthy := string(run.Status) == "healthy" && run.LatencyMs != nil && *run.LatencyMs <= h.Policy.recoveryLatencyLimitMS()
 	message := ""
 	if run.ErrorMessage != nil {
 		message = *run.ErrorMessage
 	}
 	if !healthy && message == "" {
-		message = "recovery probe exceeded timeout"
+		message = "recovery probe has not returned below the configured latency threshold"
 	}
 	return s.finishHybridRecoveryProbe(ctx, h, healthy, run.LatencyMs, message, time.Now().UTC())
 }
@@ -449,14 +478,13 @@ func (s *Sub2APIProviderProbeService) runHybridAccountHealth(ctx context.Context
 				continue
 			}
 			readCtx, cancel := context.WithTimeout(ctx, 150*time.Millisecond)
-			failures, e := runtime.cache.ProviderRecentFailures(readCtx, h.AccountID, p.Generation, now, h.Policy.WindowSeconds)
+			reason, e := runtime.accountPauseReason(readCtx, h.AccountID, p, now)
 			cancel()
 			if e != nil {
 				return e
 			}
-			if failures >= h.Policy.AccountFailureThreshold {
-				reason := fmt.Sprintf("%d failed or timed-out requests within %d seconds", failures, h.Policy.WindowSeconds)
-				if err = s.enterHybridRecovery(ctx, h, reason, now); err != nil {
+			if reason != "" {
+				if err = s.enterHybridRecoveryWithGeneration(ctx, h, p.Generation, reason, now); err != nil {
 					return err
 				}
 			}

@@ -143,7 +143,20 @@ func (s *TokenParkRewardService) requireEligible(ctx context.Context, userID int
 }
 
 func (s *TokenParkRewardService) currentUserFunding(ctx context.Context, userID int64) (balance, credited float64, err error) {
-	rows, err := s.entClient.QueryContext(ctx, `SELECT balance, total_recharged FROM users WHERE id = $1 AND deleted_at IS NULL`, userID)
+	// Keep eligibility aligned with the admin user's "total recharge" display.
+	// total_recharged was added after existing recharge records were created, so
+	// use the larger of the stored counter and the historical positive credits.
+	rows, err := s.entClient.QueryContext(ctx, `
+		SELECT u.balance,
+		       GREATEST(u.total_recharged, COALESCE((
+			SELECT SUM(rc.value)
+			FROM redeem_codes rc
+			WHERE rc.used_by = u.id
+			  AND rc.value > 0
+			  AND rc.type IN ('balance', 'admin_balance')
+		), 0))
+		FROM users u
+		WHERE u.id = $1 AND u.deleted_at IS NULL`, userID)
 	if err != nil {
 		return 0, 0, fmt.Errorf("query token park user funding: %w", err)
 	}
@@ -268,7 +281,18 @@ func (s *TokenParkRewardService) Claim(ctx context.Context, userID int64, game s
 	defer tx.Rollback()
 	// Recheck cumulative credited balance under the same transaction that records
 	// the reward. Spending the balance after unlocking never revokes eligibility.
-	rows, err := tx.Client().QueryContext(ctx, `SELECT balance, total_recharged FROM users WHERE id = $1 AND deleted_at IS NULL FOR UPDATE`, userID)
+	rows, err := tx.Client().QueryContext(ctx, `
+		SELECT u.balance,
+		       GREATEST(u.total_recharged, COALESCE((
+			SELECT SUM(rc.value)
+			FROM redeem_codes rc
+			WHERE rc.used_by = u.id
+			  AND rc.value > 0
+			  AND rc.type IN ('balance', 'admin_balance')
+		), 0))
+		FROM users u
+		WHERE u.id = $1 AND u.deleted_at IS NULL
+		FOR UPDATE`, userID)
 	if err != nil {
 		return 0, 0, fmt.Errorf("lock token park user balance: %w", err)
 	}

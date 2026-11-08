@@ -94,6 +94,12 @@ func RegisterUserRoutes(
 				passkeys.DELETE("/:id", h.Passkey.Delete)
 			}
 		}
+		feedback := authenticated.Group("/feedback")
+		{
+			feedback.GET("", h.RadarFeedback.ListMine)
+			feedback.POST("", h.RadarFeedback.Create)
+			feedback.POST("/:id/reply", h.RadarFeedback.UserReply)
+		}
 
 		// 工具下载：登录用户共享每日刷新的官方 Release 信息。
 		if h.ToolDownloads != nil {

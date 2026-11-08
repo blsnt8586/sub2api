@@ -6,7 +6,7 @@ const mocks = vi.hoisted(() => ({ get: vi.fn() }))
 vi.mock('@/api/codexradar', () => ({ getCodexRadarSummary: mocks.get }))
 vi.mock('@/components/layout/AppLayout.vue', () => ({ default: { template: '<main><slot /></main>' } }))
 describe('RadarBench display', () => {
- it('renders real public scores and switches dimensions without fetching or synthesizing IQ', async () => {
+ it('renders the total public score matrix without the dimension tabs', async () => {
   mocks.get.mockResolvedValue({data:{intelligence:{score_max:150,expected:1,fresh:1,points:[{...point,stale:false,observed_at:'2026-10-15T07:00:00Z'}]}}})
   const w=mount(CodexRadarView); await flushPromises()
   expect(w.text()).toContain('100.5')
@@ -16,10 +16,8 @@ describe('RadarBench display', () => {
   expect(w.text()).toContain('70 题次')
   expect(w.text()).toContain('$0.50')
   expect(w.text()).toContain('15.9 分钟')
-  await w.findAll('nav button')[2].trigger('click')
-  expect(w.text()).toContain('125.2')
-  expect(w.text()).toContain('13 题次')
-  expect(w.find('.metrics').exists()).toBe(false)
+  expect(w.find('.dimension-tabs').exists()).toBe(false)
+  expect(w.find('.metrics').exists()).toBe(true)
   expect(mocks.get).toHaveBeenCalledTimes(1)
   w.unmount()
  })

@@ -198,6 +198,25 @@ func (c *Client) ConfigureImportedTokenAuth(onUpdated func(context.Context, Toke
 	c.onTokenPairUpdated = onUpdated
 }
 
+// RefreshProviderCredentials forces one rotation for imported provider
+// credentials. Scheduled refresh workers use this before the access token
+// expires, independently of the health-probe cadence.
+func (c *Client) RefreshProviderCredentials(ctx context.Context) error {
+	if c.newAPI != nil {
+		if !c.newAPI.tokenAuth || !c.newAPI.refreshAuth {
+			return errors.New("New API refresh cookie is missing")
+		}
+		return c.newAPI.refresh(ctx)
+	}
+	if c.RefreshToken == "" {
+		return errors.New("refresh token is missing")
+	}
+	if c.tokenCache != nil {
+		return c.authenticate(ctx, true, c.Token)
+	}
+	return c.Refresh(ctx)
+}
+
 // LoginRequest 登录请求
 type LoginRequest struct {
 	Email    string `json:"email"`

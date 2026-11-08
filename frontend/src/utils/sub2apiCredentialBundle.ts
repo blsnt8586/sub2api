@@ -17,6 +17,7 @@ export type Sub2APICredentialBundleErrorCode =
   | 'tokenTooLarge'
   | 'providerMismatch'
   | 'managementTokenMissing'
+  | 'refreshCookieMissing'
   | 'invalidUserID'
 
 export class Sub2APICredentialBundleError extends Error {
@@ -135,6 +136,9 @@ export function parseSub2APICredentialBundle(
     const accessToken = optionalString(credentials?.access_token)
     if (!accessToken) throw new Sub2APICredentialBundleError('managementTokenMissing')
     if (accessToken.length > MAX_TOKEN_LENGTH) throw new Sub2APICredentialBundleError('tokenTooLarge')
+    const refreshCookie = optionalString(credentials?.refresh_cookie) || ''
+    if (!refreshCookie) throw new Sub2APICredentialBundleError('refreshCookieMissing')
+    if (refreshCookie.length > MAX_TOKEN_LENGTH) throw new Sub2APICredentialBundleError('tokenTooLarge')
     const userID = typeof credentials?.user_id === 'number' ? String(credentials.user_id) : optionalString(credentials?.user_id)
     if (!userID || !/^[1-9]\d*$/.test(userID) || !Number.isSafeInteger(Number(userID))) {
       throw new Sub2APICredentialBundleError('invalidUserID')
@@ -143,9 +147,10 @@ export function parseSub2APICredentialBundle(
       providerType,
       userID,
       accessToken,
-      refreshToken: '',
+      refreshToken: refreshCookie,
       sourceOrigin,
       capturedAt: optionalString(source?.captured_at),
+      tokenExpiresAt: parseOptionalTimestamp(credentials?.access_expires_at),
       cookieCount: 0,
       httpOnlyCookieCount: 0,
       rawSize,

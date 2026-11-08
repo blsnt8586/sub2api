@@ -16,27 +16,39 @@ import (
 
 func TestNewAPIProviderAuthenticationValidation(t *testing.T) {
 	s := &Sub2APIProviderService{encryptor: providerAuthTestEncryptor{}, providerTokenKeyConfigured: true}
-	token := "management-secret"
-	prepared, err := s.prepareCreateProviderAuth(&CreateProviderInput{ProviderType: "newapi", AuthMode: "access_token", AccessToken: &token})
+	token := "browser-session-secret"
+	_, err := s.prepareCreateProviderAuth(&CreateProviderInput{ProviderType: "newapi", AuthMode: domain.Sub2APIProviderAuthModeBrowserSession, AccessToken: &token})
+	require.ErrorContains(t, err, "credentials are missing")
+	prepared, err := s.prepareCreateProviderAuth(&CreateProviderInput{ProviderType: "newapi", AuthMode: domain.Sub2APIProviderAuthModeBrowserSession, AccessToken: &token, RefreshToken: &token})
 	require.NoError(t, err)
-	require.Equal(t, "encrypted:management-secret", *prepared.accessEncrypted)
-	require.Nil(t, prepared.refreshEncrypted)
-	require.Nil(t, prepared.expiresAt)
-	existing := &ent.Sub2APIProvider{ProviderType: "newapi", AuthMode: "access_token", AccessTokenEncrypted: prepared.accessEncrypted}
+	require.Equal(t, "encrypted:browser-session-secret", *prepared.accessEncrypted)
+	require.Equal(t, "encrypted:browser-session-secret", *prepared.refreshEncrypted)
+	require.NotNil(t, prepared.expiresAt)
+	existing := &ent.Sub2APIProvider{ProviderType: "newapi", AuthMode: domain.Sub2APIProviderAuthModeBrowserSession, AccessTokenEncrypted: prepared.accessEncrypted, RefreshTokenEncrypted: prepared.refreshEncrypted}
 	update, err := s.prepareUpdateProviderAuth(existing, &UpdateProviderInput{})
 	require.NoError(t, err)
 	require.Nil(t, update.AccessTokenEncrypted)
 	require.False(t, update.TokenPairUpdated)
 	rotated := "rotated"
 	update, err = s.prepareUpdateProviderAuth(existing, &UpdateProviderInput{AccessToken: &rotated})
+	require.ErrorContains(t, err, "credentials are missing")
+	rotatedExisting := &ent.Sub2APIProvider{ProviderType: "newapi", AuthMode: domain.Sub2APIProviderAuthModeBrowserSession, AccessTokenEncrypted: prepared.accessEncrypted, RefreshTokenEncrypted: prepared.refreshEncrypted}
+	update, err = s.prepareUpdateProviderAuth(rotatedExisting, &UpdateProviderInput{AccessToken: &rotated})
+	require.ErrorContains(t, err, "credentials are missing")
+	update, err = s.prepareUpdateProviderAuth(existing, &UpdateProviderInput{AccessToken: &rotated, RefreshToken: &rotated})
 	require.NoError(t, err)
 	require.Equal(t, "encrypted:rotated", *update.AccessTokenEncrypted)
+	require.Equal(t, "encrypted:rotated", *update.RefreshTokenEncrypted)
+	noCookieExisting := &ent.Sub2APIProvider{ProviderType: "newapi", AuthMode: domain.Sub2APIProviderAuthModeBrowserSession, AccessTokenEncrypted: prepared.accessEncrypted}
+	update, err = s.prepareUpdateProviderAuth(noCookieExisting, &UpdateProviderInput{})
+	require.NoError(t, err)
+	require.False(t, update.ClearRefreshToken)
 	for _, input := range []CreateProviderInput{{ProviderType: "newapi", AuthMode: "token_pair", AccessToken: &token, RefreshToken: &token}, {ProviderType: "sub2api", AuthMode: "access_token", AccessToken: &token}} {
 		_, err = s.prepareCreateProviderAuth(&input)
 		require.ErrorIs(t, err, ErrInvalidProviderAuth)
 	}
 	s.providerTokenKeyConfigured = false
-	_, err = s.prepareCreateProviderAuth(&CreateProviderInput{ProviderType: "newapi", AuthMode: "access_token", AccessToken: &token})
+	_, err = s.prepareCreateProviderAuth(&CreateProviderInput{ProviderType: "newapi", AuthMode: domain.Sub2APIProviderAuthModeBrowserSession, AccessToken: &token, RefreshToken: &token})
 	require.ErrorContains(t, err, "provider_token_key")
 }
 
@@ -45,7 +57,7 @@ func TestNewAPIProviderIdentity(t *testing.T) {
 		protocol, mode, identity string
 		valid                    bool
 	}{
-		{"newapi", "password", "username", true}, {"newapi", "access_token", "42", true}, {"newapi", "access_token", "user@example.com", false}, {"newapi", "access_token", "0", false}, {"newapi", "access_token", "-1", false},
+		{"newapi", "password", "username", true}, {"newapi", "access_token", "42", true}, {"newapi", "browser_session", "42", true}, {"newapi", "browser_session", "user@example.com", false}, {"newapi", "access_token", "user@example.com", false}, {"newapi", "access_token", "0", false}, {"newapi", "access_token", "-1", false},
 		{"sub2api", "password", "user@example.com", true}, {"sub2api", "password", "username", false}, {"sub2api", "token_pair", "user@example.com", true}, {"newapi", "token_pair", "user@example.com", false},
 	} {
 		t.Run(tt.protocol+tt.mode+tt.identity, func(t *testing.T) {

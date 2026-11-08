@@ -314,6 +314,7 @@ export default {
     title: '充值/订阅',
     amountLabel: '充值金额',
     paymentAmount: '支付金额',
+    orderSummary: '订单预览',
     creditedBalance: '到账余额',
     rechargeBonus: {
       creditedShort: '到账 {amount}',

@@ -22,19 +22,6 @@
           </div>
         </header>
 
-        <nav class="dimension-tabs" aria-label="评分维度">
-          <button
-            v-for="tab in tabs"
-            :key="tab.key"
-            type="button"
-            :aria-pressed="selected === tab.key"
-            :class="{ selected: selected === tab.key }"
-            @click="selected = tab.key"
-          >
-            <span class="tab-mark" aria-hidden="true"></span>{{ tab.label }}
-          </button>
-        </nav>
-
         <p class="legend">
           <span class="legend-bar" aria-hidden="true"></span>
           分数越高代表已判分题目的完成度越高；费用与耗时只显示总分的 API 等价统计。
@@ -71,7 +58,7 @@
                 </div>
                 <div class="score-line">
                   <strong>{{ number(dimension(row.cells[effort]).score) }}</strong>
-                  <div v-if="selected === 'total'" class="metrics">
+                  <div class="metrics">
                     <span>{{ money(metric(row.cells[effort], 'api_equivalent_usd')) }}</span>
                     <span>{{ number(minutes(row.cells[effort])) }} 分钟</span>
                   </div>
@@ -79,7 +66,7 @@
                 <progress :value="scorePercent(dimension(row.cells[effort]).score)" max="100" aria-label="雷达分进度" />
                 <div class="card-meta">
                   <span>覆盖 {{ dimension(row.cells[effort]).coverage ?? '—' }}/{{ dimension(row.cells[effort]).required_tasks ?? '—' }}</span>
-                  <span v-if="partialMetrics(row.cells[effort]) && selected === 'total'">部分样本</span>
+                  <span v-if="partialMetrics(row.cells[effort])">部分样本</span>
                   <span v-else-if="isStale(row.cells[effort])">待更新</span>
                   <span v-else-if="isProvisional(row.cells[effort])">暂定</span>
                 </div>
@@ -107,18 +94,10 @@ import { parseRadarBench, type BenchDimension, type BenchMetric, type BenchPoint
 const data = ref<ReturnType<typeof parseRadarBench>>(null)
 const loading = ref(false)
 const error = ref(false)
-const selected = ref('total')
 const now = ref(Date.now())
 let refreshTimer: ReturnType<typeof setInterval> | undefined
 
 const efforts = ['ultra', 'max', 'xhigh', 'high', 'medium', 'low']
-const tabs = [
-  { key: 'total', label: '总雷达分' },
-  { key: 'deepswe', label: '软件工程' },
-  { key: 'pompeii', label: '视觉空间推理' },
-  { key: 'tb4', label: '终端与系统操作' },
-  { key: 'science', label: '科学研究' },
-]
 
 const rows = computed(() => {
   const grouped = new Map<string, Record<string, BenchPoint>>()
@@ -139,7 +118,7 @@ const updatedAtLabel = computed(() => {
 })
 
 function dimension(point: BenchPoint): BenchDimension {
-  return selected.value === 'total' ? point : point.source_scores?.[selected.value] ?? {}
+  return point
 }
 
 function metric(point: BenchPoint, key: string): number | null {
@@ -257,26 +236,6 @@ h1 span {
 
 .source-button {
   @apply no-underline;
-}
-
-.dimension-tabs {
-  @apply flex flex-wrap gap-2 py-3;
-}
-
-.dimension-tabs button {
-  @apply inline-flex min-h-9 items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 text-sm font-medium text-gray-600 transition-colors hover:border-teal-300 hover:text-teal-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 dark:border-dark-600 dark:bg-dark-800 dark:text-gray-300 dark:hover:border-teal-700 dark:hover:text-teal-300;
-}
-
-.dimension-tabs button.selected {
-  @apply border-teal-500 bg-teal-50 text-teal-700 dark:border-teal-600 dark:bg-teal-900/30 dark:text-teal-300;
-}
-
-.tab-mark {
-  @apply h-1.5 w-1.5 rounded-full bg-gray-300 dark:bg-dark-500;
-}
-
-.selected .tab-mark {
-  @apply bg-teal-500;
 }
 
 .legend {
@@ -484,7 +443,6 @@ progress::-moz-progress-bar {
 
 @media (prefers-reduced-motion: reduce) {
   .toolbar-button,
-  .dimension-tabs button,
   .score-card {
     transition: none;
   }

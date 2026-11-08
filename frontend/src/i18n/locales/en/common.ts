@@ -177,6 +177,8 @@ export default {
     affiliateRebateRecords: 'Rebate Records',
     affiliateTransferRecords: 'Transfer Records',
     profile: 'Profile',
+    feedback: 'Message Board',
+    feedbackManagement: 'Feedback Management',
     users: 'Users',
     groups: 'Groups',
     channels: 'Channels',

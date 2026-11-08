@@ -1,14 +1,15 @@
 package domain
 
 const (
-	Sub2APIProviderAuthModePassword    = "password"
-	Sub2APIProviderAuthModeTokenPair   = "token_pair"
-	Sub2APIProviderAuthModeAccessToken = "access_token"
+	Sub2APIProviderAuthModePassword       = "password"
+	Sub2APIProviderAuthModeTokenPair      = "token_pair"
+	Sub2APIProviderAuthModeAccessToken    = "access_token"
+	Sub2APIProviderAuthModeBrowserSession = "browser_session"
 )
 
 func IsValidSub2APIProviderAuthMode(mode string) bool {
 	switch mode {
-	case Sub2APIProviderAuthModePassword, Sub2APIProviderAuthModeTokenPair, Sub2APIProviderAuthModeAccessToken:
+	case Sub2APIProviderAuthModePassword, Sub2APIProviderAuthModeTokenPair, Sub2APIProviderAuthModeAccessToken, Sub2APIProviderAuthModeBrowserSession:
 		return true
 	default:
 		return false

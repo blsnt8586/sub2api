@@ -2,7 +2,7 @@
   <div class="border-t border-gray-200 pt-3 dark:border-dark-600">
     <div class="flex flex-wrap items-center gap-2">
       <a
-        href="/sub2api-credential-exporter.user.js"
+        href="/sub2api-credential-exporter.user.js?v=1.9.0"
         target="_blank"
         rel="noopener noreferrer"
         class="btn btn-secondary"

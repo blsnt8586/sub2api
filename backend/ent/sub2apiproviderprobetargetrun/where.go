@@ -125,6 +125,16 @@ func ErrorMessage(v string) predicate.Sub2APIProviderProbeTargetRun {
 	return predicate.Sub2APIProviderProbeTargetRun(sql.FieldEQ(FieldErrorMessage, v))
 }
 
+// ResponseText applies equality check predicate on the "response_text" field. It's identical to ResponseTextEQ.
+func ResponseText(v string) predicate.Sub2APIProviderProbeTargetRun {
+	return predicate.Sub2APIProviderProbeTargetRun(sql.FieldEQ(FieldResponseText, v))
+}
+
+// AnswerProbe applies equality check predicate on the "answer_probe" field. It's identical to AnswerProbeEQ.
+func AnswerProbe(v bool) predicate.Sub2APIProviderProbeTargetRun {
+	return predicate.Sub2APIProviderProbeTargetRun(sql.FieldEQ(FieldAnswerProbe, v))
+}
+
 // StartedAt applies equality check predicate on the "started_at" field. It's identical to StartedAtEQ.
 func StartedAt(v time.Time) predicate.Sub2APIProviderProbeTargetRun {
 	return predicate.Sub2APIProviderProbeTargetRun(sql.FieldEQ(FieldStartedAt, v))
@@ -913,6 +923,91 @@ func ErrorMessageEqualFold(v string) predicate.Sub2APIProviderProbeTargetRun {
 // ErrorMessageContainsFold applies the ContainsFold predicate on the "error_message" field.
 func ErrorMessageContainsFold(v string) predicate.Sub2APIProviderProbeTargetRun {
 	return predicate.Sub2APIProviderProbeTargetRun(sql.FieldContainsFold(FieldErrorMessage, v))
+}
+
+// ResponseTextEQ applies the EQ predicate on the "response_text" field.
+func ResponseTextEQ(v string) predicate.Sub2APIProviderProbeTargetRun {
+	return predicate.Sub2APIProviderProbeTargetRun(sql.FieldEQ(FieldResponseText, v))
+}
+
+// ResponseTextNEQ applies the NEQ predicate on the "response_text" field.
+func ResponseTextNEQ(v string) predicate.Sub2APIProviderProbeTargetRun {
+	return predicate.Sub2APIProviderProbeTargetRun(sql.FieldNEQ(FieldResponseText, v))
+}
+
+// ResponseTextIn applies the In predicate on the "response_text" field.
+func ResponseTextIn(vs ...string) predicate.Sub2APIProviderProbeTargetRun {
+	return predicate.Sub2APIProviderProbeTargetRun(sql.FieldIn(FieldResponseText, vs...))
+}
+
+// ResponseTextNotIn applies the NotIn predicate on the "response_text" field.
+func ResponseTextNotIn(vs ...string) predicate.Sub2APIProviderProbeTargetRun {
+	return predicate.Sub2APIProviderProbeTargetRun(sql.FieldNotIn(FieldResponseText, vs...))
+}
+
+// ResponseTextGT applies the GT predicate on the "response_text" field.
+func ResponseTextGT(v string) predicate.Sub2APIProviderProbeTargetRun {
+	return predicate.Sub2APIProviderProbeTargetRun(sql.FieldGT(FieldResponseText, v))
+}
+
+// ResponseTextGTE applies the GTE predicate on the "response_text" field.
+func ResponseTextGTE(v string) predicate.Sub2APIProviderProbeTargetRun {
+	return predicate.Sub2APIProviderProbeTargetRun(sql.FieldGTE(FieldResponseText, v))
+}
+
+// ResponseTextLT applies the LT predicate on the "response_text" field.
+func ResponseTextLT(v string) predicate.Sub2APIProviderProbeTargetRun {
+	return predicate.Sub2APIProviderProbeTargetRun(sql.FieldLT(FieldResponseText, v))
+}
+
+// ResponseTextLTE applies the LTE predicate on the "response_text" field.
+func ResponseTextLTE(v string) predicate.Sub2APIProviderProbeTargetRun {
+	return predicate.Sub2APIProviderProbeTargetRun(sql.FieldLTE(FieldResponseText, v))
+}
+
+// ResponseTextContains applies the Contains predicate on the "response_text" field.
+func ResponseTextContains(v string) predicate.Sub2APIProviderProbeTargetRun {
+	return predicate.Sub2APIProviderProbeTargetRun(sql.FieldContains(FieldResponseText, v))
+}
+
+// ResponseTextHasPrefix applies the HasPrefix predicate on the "response_text" field.
+func ResponseTextHasPrefix(v string) predicate.Sub2APIProviderProbeTargetRun {
+	return predicate.Sub2APIProviderProbeTargetRun(sql.FieldHasPrefix(FieldResponseText, v))
+}
+
+// ResponseTextHasSuffix applies the HasSuffix predicate on the "response_text" field.
+func ResponseTextHasSuffix(v string) predicate.Sub2APIProviderProbeTargetRun {
+	return predicate.Sub2APIProviderProbeTargetRun(sql.FieldHasSuffix(FieldResponseText, v))
+}
+
+// ResponseTextIsNil applies the IsNil predicate on the "response_text" field.
+func ResponseTextIsNil() predicate.Sub2APIProviderProbeTargetRun {
+	return predicate.Sub2APIProviderProbeTargetRun(sql.FieldIsNull(FieldResponseText))
+}
+
+// ResponseTextNotNil applies the NotNil predicate on the "response_text" field.
+func ResponseTextNotNil() predicate.Sub2APIProviderProbeTargetRun {
+	return predicate.Sub2APIProviderProbeTargetRun(sql.FieldNotNull(FieldResponseText))
+}
+
+// ResponseTextEqualFold applies the EqualFold predicate on the "response_text" field.
+func ResponseTextEqualFold(v string) predicate.Sub2APIProviderProbeTargetRun {
+	return predicate.Sub2APIProviderProbeTargetRun(sql.FieldEqualFold(FieldResponseText, v))
+}
+
+// ResponseTextContainsFold applies the ContainsFold predicate on the "response_text" field.
+func ResponseTextContainsFold(v string) predicate.Sub2APIProviderProbeTargetRun {
+	return predicate.Sub2APIProviderProbeTargetRun(sql.FieldContainsFold(FieldResponseText, v))
+}
+
+// AnswerProbeEQ applies the EQ predicate on the "answer_probe" field.
+func AnswerProbeEQ(v bool) predicate.Sub2APIProviderProbeTargetRun {
+	return predicate.Sub2APIProviderProbeTargetRun(sql.FieldEQ(FieldAnswerProbe, v))
+}
+
+// AnswerProbeNEQ applies the NEQ predicate on the "answer_probe" field.
+func AnswerProbeNEQ(v bool) predicate.Sub2APIProviderProbeTargetRun {
+	return predicate.Sub2APIProviderProbeTargetRun(sql.FieldNEQ(FieldAnswerProbe, v))
 }
 
 // StartedAtEQ applies the EQ predicate on the "started_at" field.

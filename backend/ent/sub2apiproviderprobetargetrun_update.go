@@ -349,6 +349,40 @@ func (_u *Sub2APIProviderProbeTargetRunUpdate) ClearErrorMessage() *Sub2APIProvi
 	return _u
 }
 
+// SetResponseText sets the "response_text" field.
+func (_u *Sub2APIProviderProbeTargetRunUpdate) SetResponseText(v string) *Sub2APIProviderProbeTargetRunUpdate {
+	_u.mutation.SetResponseText(v)
+	return _u
+}
+
+// SetNillableResponseText sets the "response_text" field if the given value is not nil.
+func (_u *Sub2APIProviderProbeTargetRunUpdate) SetNillableResponseText(v *string) *Sub2APIProviderProbeTargetRunUpdate {
+	if v != nil {
+		_u.SetResponseText(*v)
+	}
+	return _u
+}
+
+// ClearResponseText clears the value of the "response_text" field.
+func (_u *Sub2APIProviderProbeTargetRunUpdate) ClearResponseText() *Sub2APIProviderProbeTargetRunUpdate {
+	_u.mutation.ClearResponseText()
+	return _u
+}
+
+// SetAnswerProbe sets the "answer_probe" field.
+func (_u *Sub2APIProviderProbeTargetRunUpdate) SetAnswerProbe(v bool) *Sub2APIProviderProbeTargetRunUpdate {
+	_u.mutation.SetAnswerProbe(v)
+	return _u
+}
+
+// SetNillableAnswerProbe sets the "answer_probe" field if the given value is not nil.
+func (_u *Sub2APIProviderProbeTargetRunUpdate) SetNillableAnswerProbe(v *bool) *Sub2APIProviderProbeTargetRunUpdate {
+	if v != nil {
+		_u.SetAnswerProbe(*v)
+	}
+	return _u
+}
+
 // SetStartedAt sets the "started_at" field.
 func (_u *Sub2APIProviderProbeTargetRunUpdate) SetStartedAt(v time.Time) *Sub2APIProviderProbeTargetRunUpdate {
 	_u.mutation.SetStartedAt(v)
@@ -557,6 +591,15 @@ func (_u *Sub2APIProviderProbeTargetRunUpdate) sqlSave(ctx context.Context) (_no
 	}
 	if _u.mutation.ErrorMessageCleared() {
 		_spec.ClearField(sub2apiproviderprobetargetrun.FieldErrorMessage, field.TypeString)
+	}
+	if value, ok := _u.mutation.ResponseText(); ok {
+		_spec.SetField(sub2apiproviderprobetargetrun.FieldResponseText, field.TypeString, value)
+	}
+	if _u.mutation.ResponseTextCleared() {
+		_spec.ClearField(sub2apiproviderprobetargetrun.FieldResponseText, field.TypeString)
+	}
+	if value, ok := _u.mutation.AnswerProbe(); ok {
+		_spec.SetField(sub2apiproviderprobetargetrun.FieldAnswerProbe, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.StartedAt(); ok {
 		_spec.SetField(sub2apiproviderprobetargetrun.FieldStartedAt, field.TypeTime, value)
@@ -933,6 +976,40 @@ func (_u *Sub2APIProviderProbeTargetRunUpdateOne) ClearErrorMessage() *Sub2APIPr
 	return _u
 }
 
+// SetResponseText sets the "response_text" field.
+func (_u *Sub2APIProviderProbeTargetRunUpdateOne) SetResponseText(v string) *Sub2APIProviderProbeTargetRunUpdateOne {
+	_u.mutation.SetResponseText(v)
+	return _u
+}
+
+// SetNillableResponseText sets the "response_text" field if the given value is not nil.
+func (_u *Sub2APIProviderProbeTargetRunUpdateOne) SetNillableResponseText(v *string) *Sub2APIProviderProbeTargetRunUpdateOne {
+	if v != nil {
+		_u.SetResponseText(*v)
+	}
+	return _u
+}
+
+// ClearResponseText clears the value of the "response_text" field.
+func (_u *Sub2APIProviderProbeTargetRunUpdateOne) ClearResponseText() *Sub2APIProviderProbeTargetRunUpdateOne {
+	_u.mutation.ClearResponseText()
+	return _u
+}
+
+// SetAnswerProbe sets the "answer_probe" field.
+func (_u *Sub2APIProviderProbeTargetRunUpdateOne) SetAnswerProbe(v bool) *Sub2APIProviderProbeTargetRunUpdateOne {
+	_u.mutation.SetAnswerProbe(v)
+	return _u
+}
+
+// SetNillableAnswerProbe sets the "answer_probe" field if the given value is not nil.
+func (_u *Sub2APIProviderProbeTargetRunUpdateOne) SetNillableAnswerProbe(v *bool) *Sub2APIProviderProbeTargetRunUpdateOne {
+	if v != nil {
+		_u.SetAnswerProbe(*v)
+	}
+	return _u
+}
+
 // SetStartedAt sets the "started_at" field.
 func (_u *Sub2APIProviderProbeTargetRunUpdateOne) SetStartedAt(v time.Time) *Sub2APIProviderProbeTargetRunUpdateOne {
 	_u.mutation.SetStartedAt(v)
@@ -1171,6 +1248,15 @@ func (_u *Sub2APIProviderProbeTargetRunUpdateOne) sqlSave(ctx context.Context) (
 	}
 	if _u.mutation.ErrorMessageCleared() {
 		_spec.ClearField(sub2apiproviderprobetargetrun.FieldErrorMessage, field.TypeString)
+	}
+	if value, ok := _u.mutation.ResponseText(); ok {
+		_spec.SetField(sub2apiproviderprobetargetrun.FieldResponseText, field.TypeString, value)
+	}
+	if _u.mutation.ResponseTextCleared() {
+		_spec.ClearField(sub2apiproviderprobetargetrun.FieldResponseText, field.TypeString)
+	}
+	if value, ok := _u.mutation.AnswerProbe(); ok {
+		_spec.SetField(sub2apiproviderprobetargetrun.FieldAnswerProbe, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.StartedAt(); ok {
 		_spec.SetField(sub2apiproviderprobetargetrun.FieldStartedAt, field.TypeTime, value)

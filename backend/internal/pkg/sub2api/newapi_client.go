@@ -13,6 +13,7 @@ import (
 	"math"
 	"net/http"
 	"net/http/cookiejar"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -22,27 +23,39 @@ import (
 var errNewAPIUnsupportedStats = errors.New("New API does not expose equivalent funding, cache or per-key period statistics; unavailable")
 
 type newAPISession struct {
-	Token     string
-	UserID    int64
-	UserGroup string
-	Cookies   []*http.Cookie
-	ExpiresAt time.Time
+	Token         string
+	RefreshCookie string
+	UserID        int64
+	UserGroup     string
+	Cookies       []*http.Cookie
+	ExpiresAt     time.Time
 }
 
 type newAPIClient struct {
 	client       *Client
 	session      newAPISession
 	tokenAuth    bool
+	refreshAuth  bool
+	onRefresh    func(context.Context, string, string, time.Time) error
 	quotaPerUnit float64
 	groupsPath   string
 }
 
 func (c *Client) IsNewAPI() bool { return c.newAPI != nil }
 
-// ConfigureNewAPI selects New API password/session authentication, or a
-// management access token with the numeric user ID stored in Email. Relay
-// tokens (sk-...) are not management credentials.
+// ConfigureNewAPI selects New API password/session authentication, or an
+// imported browser/management bearer token with the numeric user ID in Email.
 func (c *Client) ConfigureNewAPI(accessToken string) error {
+	return c.configureNewAPI(accessToken, "", nil)
+}
+
+// ConfigureNewAPIBrowserSession configures a bearer token plus the New API
+// HttpOnly refresh cookie exported from the same browser session.
+func (c *Client) ConfigureNewAPIBrowserSession(accessToken, refreshCookie string, onRefresh func(context.Context, string, string, time.Time) error) error {
+	return c.configureNewAPI(accessToken, refreshCookie, onRefresh)
+}
+
+func (c *Client) configureNewAPI(accessToken, refreshCookie string, onRefresh func(context.Context, string, string, time.Time) error) error {
 	jar, err := cookiejar.New(nil)
 	if err != nil {
 		return err
@@ -56,10 +69,12 @@ func (c *Client) ConfigureNewAPI(accessToken string) error {
 	if accessToken != "" {
 		id, err := strconv.ParseInt(strings.TrimSpace(c.Email), 10, 64)
 		if err != nil || id <= 0 {
-			return errors.New("New API management token requires a positive numeric user ID")
+			return errors.New("New API bearer session requires a positive numeric user ID")
 		}
 		n.tokenAuth = true
-		n.session = newAPISession{Token: strings.TrimSpace(accessToken), UserID: id}
+		n.refreshAuth = strings.TrimSpace(refreshCookie) != ""
+		n.onRefresh = onRefresh
+		n.session = newAPISession{Token: strings.TrimSpace(accessToken), RefreshCookie: strings.TrimSpace(refreshCookie), UserID: id, ExpiresAt: accessTokenExpiresAt(accessToken, 0)}
 	}
 	c.newAPI = n
 	return nil
@@ -133,8 +148,14 @@ func (n *newAPIClient) request(ctx context.Context, method, path string, body, o
 
 func (n *newAPIClient) authedRequest(ctx context.Context, method, path string, body, out any) error {
 	err := n.request(ctx, method, path, body, out, true)
-	if !IsUnauthorized(err) || n.tokenAuth {
+	if !IsUnauthorized(err) || (!n.refreshAuth && n.tokenAuth) {
 		return err
+	}
+	if n.refreshAuth {
+		if err := n.refresh(ctx); err != nil {
+			return err
+		}
+		return n.request(ctx, method, path, body, out, true)
 	}
 	if err := n.login(ctx); err != nil {
 		return err
@@ -144,6 +165,11 @@ func (n *newAPIClient) authedRequest(ctx context.Context, method, path string, b
 
 func (n *newAPIClient) ensureLoggedIn(ctx context.Context) error {
 	if n.tokenAuth {
+		if n.refreshAuth && !time.Now().Add(time.Minute).Before(n.session.ExpiresAt) {
+			if err := n.refresh(ctx); err != nil {
+				return err
+			}
+		}
 		_, err := n.profile(ctx)
 		return err
 	}
@@ -184,6 +210,92 @@ func (n *newAPIClient) applySession(s newAPISession) {
 	n.session = s
 	req, _ := http.NewRequest(http.MethodGet, n.client.BaseURL, nil)
 	n.client.HTTPClient.Jar.SetCookies(req.URL, s.Cookies)
+}
+
+func (n *newAPIClient) refresh(ctx context.Context) error {
+	cache := n.client.tokenCache
+	if cache == nil {
+		return n.refreshSession(ctx)
+	}
+	_, err, _ := cache.authGroup.Do("newapi-refresh:"+strconv.FormatInt(n.client.providerID, 10), func() (any, error) {
+		cache.mu.RLock()
+		latest, ok := cache.newAPISessions[n.client.providerID]
+		cache.mu.RUnlock()
+		if ok && latest.Token != "" && latest.Token != n.session.Token {
+			n.applySession(latest)
+			if time.Now().Add(time.Minute).Before(latest.ExpiresAt) {
+				return nil, nil
+			}
+		}
+		return nil, n.refreshSession(ctx)
+	})
+	return err
+}
+
+func (n *newAPIClient) refreshSession(ctx context.Context) error {
+	if strings.TrimSpace(n.session.RefreshCookie) == "" {
+		return errors.New("New API refresh cookie is missing; re-import browser credentials")
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, n.client.requestURL("/api/user/auth/refresh"), nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Cookie", "new_api_refresh="+n.session.RefreshCookie)
+	if base, err := url.Parse(n.client.BaseURL); err == nil {
+		req.Header.Set("Origin", base.Scheme+"://"+base.Host)
+		req.Header.Set("Referer", base.Scheme+"://"+base.Host+"/")
+	}
+	resp, err := n.client.HTTPClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("New API session refresh failed: %w", err)
+	}
+	defer resp.Body.Close()
+	b, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return &ErrUnauthorized{Body: "New API refresh session rejected"}
+	}
+	var envelope struct {
+		Success *bool `json:"success"`
+		Data    struct {
+			AccessToken string `json:"access_token"`
+			ExpiresAt   int64  `json:"access_expires_at"`
+			User        struct {
+				ID int64 `json:"id"`
+			} `json:"user"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(b, &envelope); err != nil || envelope.Success == nil || !*envelope.Success || envelope.Data.AccessToken == "" || envelope.Data.User.ID != n.session.UserID {
+		return errors.New("New API refresh response is invalid or belongs to another user")
+	}
+	refreshCookie := n.session.RefreshCookie
+	for _, cookie := range resp.Cookies() {
+		if cookie.Name == "new_api_refresh" && cookie.Value != "" {
+			refreshCookie = cookie.Value
+		}
+	}
+	expiresAt := time.Now().Add(time.Hour)
+	if envelope.Data.ExpiresAt > 0 {
+		expiresAt = time.Unix(envelope.Data.ExpiresAt, 0).Add(-time.Minute)
+	}
+	n.session.Token, n.session.RefreshCookie, n.session.ExpiresAt = envelope.Data.AccessToken, refreshCookie, expiresAt
+	if n.onRefresh != nil {
+		if err := n.onRefresh(ctx, n.session.Token, n.session.RefreshCookie, n.session.ExpiresAt); err != nil {
+			return err
+		}
+	}
+	if cache := n.client.tokenCache; cache != nil {
+		cache.mu.Lock()
+		if cache.newAPISessions == nil {
+			cache.newAPISessions = make(map[int64]newAPISession)
+		}
+		cache.newAPISessions[n.client.providerID] = n.session
+		cache.mu.Unlock()
+	}
+	return nil
 }
 
 func (n *newAPIClient) login(ctx context.Context) error {

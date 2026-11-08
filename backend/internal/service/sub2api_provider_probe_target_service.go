@@ -2,9 +2,11 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/Wei-Shaw/sub2api/ent"
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
@@ -13,6 +15,9 @@ import (
 
 const (
 	probeManagedAccountStatusExtraKey = Sub2APIProbeManagedAccountStatusExtraKey
+	answerProbeHistoryWindow          = time.Hour
+	answerProbeHistoryLimit           = 256
+	maxAnswerProbeResponseBytes       = 8 * 1024
 	// probeRuntimeRecoverableAccountErrorExtraKey is written by request-time
 	// error handling, never by admin status edits. A healthy provider probe may
 	// clear this kind of transient upstream failure after the account recovers.
@@ -32,6 +37,9 @@ type Sub2APIProviderProbeTargetInput struct {
 	StableHealthyIntervalSeconds *int    `json:"stable_healthy_interval_seconds"`
 	StableHealthyThreshold       *int    `json:"stable_healthy_threshold"`
 	TestModel                    *string `json:"test_model"`
+	AnswerProbeEnabled           *bool   `json:"answer_probe_enabled"`
+	AnswerProbePrompt            *string `json:"answer_probe_prompt"`
+	AnswerProbeIntervalSeconds   *int    `json:"answer_probe_interval_seconds"`
 	AllowMediaProbe              *bool   `json:"allow_media_probe"`
 	TimeoutSeconds               *int    `json:"timeout_seconds"`
 	DegradedLatencyMS            *int    `json:"degraded_latency_ms"`
@@ -57,6 +65,9 @@ type Sub2APIProviderProbeTargetCreateInput struct {
 	HealthyIntervalThreshold     int
 	StableHealthyIntervalSeconds int
 	StableHealthyThreshold       int
+	AnswerProbeEnabled           bool
+	AnswerProbePrompt            *string
+	AnswerProbeIntervalSeconds   int
 	AllowMediaProbe              bool
 	TimeoutSeconds               int
 	DegradedLatencyMS            int
@@ -84,6 +95,8 @@ type Sub2APIProviderProbeTargetRunInput struct {
 	TrafficP95LatencyMS *int
 	ErrorCategory       *string
 	ErrorMessage        *string
+	ResponseText        *string
+	AnswerProbe         bool
 	StartedAt           time.Time
 	FinishedAt          time.Time
 }
@@ -110,6 +123,7 @@ type Sub2APIProviderProbeTargetHealth struct {
 	ProviderID                   int64                         `json:"provider_id"`
 	AccountID                    int64                         `json:"account_id"`
 	AccountName                  string                        `json:"account_name"`
+	AccountStatus                string                        `json:"account_status,omitempty"`
 	ProviderAPIKeyID             *int64                        `json:"provider_api_key_id,omitempty"`
 	RemoteGroupID                *int64                        `json:"remote_group_id,omitempty"`
 	RemoteGroupName              *string                       `json:"remote_group_name,omitempty"`
@@ -130,6 +144,12 @@ type Sub2APIProviderProbeTargetHealth struct {
 	ConsecutiveHealthy           int                           `json:"consecutive_healthy"`
 	CurrentIntervalSeconds       int                           `json:"current_interval_seconds"`
 	TestModel                    *string                       `json:"test_model,omitempty"`
+	AnswerProbeEnabled           bool                          `json:"answer_probe_enabled"`
+	AnswerProbePrompt            *string                       `json:"answer_probe_prompt,omitempty"`
+	AnswerProbeIntervalSeconds   int                           `json:"answer_probe_interval_seconds"`
+	AnswerText                   string                        `json:"answer_text,omitempty"`
+	AnswerAt                     *time.Time                    `json:"answer_at,omitempty"`
+	AnswerHistory                []Sub2APIProviderAnswer       `json:"answer_history,omitempty"`
 	AllowMediaProbe              bool                          `json:"allow_media_probe"`
 	TimeoutSeconds               int                           `json:"timeout_seconds"`
 	DegradedLatencyMS            int                           `json:"degraded_latency_ms"`
@@ -157,6 +177,14 @@ type Sub2APIProviderProbeTargetHealth struct {
 	RouteChangedAt               *time.Time                    `json:"route_changed_at,omitempty"`
 	ConsecutiveFailures          int                           `json:"consecutive_failures"`
 	Buckets                      []Sub2APIProviderHealthBucket `json:"buckets"`
+}
+
+type Sub2APIProviderAnswer struct {
+	At        time.Time `json:"at"`
+	Model     string    `json:"model,omitempty"`
+	Text      string    `json:"text,omitempty"`
+	Error     string    `json:"error,omitempty"`
+	LatencyMS *int      `json:"latency_ms,omitempty"`
 }
 
 // ListTargets returns each independently configurable route. sync=true refreshes
@@ -240,6 +268,8 @@ func (s *Sub2APIProviderProbeService) RunTargetNow(ctx context.Context, provider
 	if refreshed, refreshErr := s.refreshTargetBindings(ctx, provider, []*ent.Sub2APIProviderProbeTarget{target}); refreshErr == nil && len(refreshed) == 1 {
 		target = refreshed[0]
 	}
+	// A manual route probe is a health check. Answer challenges are scheduled
+	// separately and must never affect account status projection.
 	run, adminStateGeneration, err := s.runTarget(ctx, target)
 	if err != nil {
 		return nil, err
@@ -400,6 +430,7 @@ func defaultProbeTargetCreateInput(providerID int64, cfg *ent.Sub2APIProviderPro
 		RemoteGroupName:              account.RemoteGroupName,
 		Platform:                     strings.TrimSpace(account.Platform),
 		Enabled:                      false,
+		AnswerProbeIntervalSeconds:   300,
 		IntervalSeconds:              interval,
 		AdaptiveIntervalEnabled:      adaptive,
 		HealthyIntervalSeconds:       healthyInterval,
@@ -543,18 +574,23 @@ func (s *Sub2APIProviderProbeService) MarkProbeTargetsCostOptimize(ctx context.C
 }
 
 func (s *Sub2APIProviderProbeService) runTarget(ctx context.Context, target *ent.Sub2APIProviderProbeTarget) (*ent.Sub2APIProviderProbeTargetRun, string, error) {
+	return s.runTargetWithAnswerProbe(ctx, target, false)
+}
+
+func (s *Sub2APIProviderProbeService) runTargetWithAnswerProbe(ctx context.Context, target *ent.Sub2APIProviderProbeTarget, answerProbe bool) (*ent.Sub2APIProviderProbeTargetRun, string, error) {
 	if target == nil {
 		return nil, "", fmt.Errorf("probe target is required")
 	}
+	useAnswerProbe := answerProbe && target.AnswerProbeEnabled && target.AnswerProbePrompt != nil && strings.TrimSpace(*target.AnswerProbePrompt) != ""
 	started := time.Now()
 	account, err := s.accountRepo.GetByID(ctx, target.AccountID)
 	if err != nil {
-		run, writeErr := s.writeTargetFailure(ctx, target, started, "unhealthy", fmt.Errorf("load account %d: %w", target.AccountID, err))
+		run, writeErr := s.writeTargetFailure(ctx, target, started, "unhealthy", fmt.Errorf("load account %d: %w", target.AccountID, err), useAnswerProbe)
 		return run, "", writeErr
 	}
 	adminStateGeneration := sub2APIAdminAccountStateGeneration(account)
 	if account.ProviderID == nil || *account.ProviderID != target.ProviderID {
-		run, writeErr := s.writeTargetFailure(ctx, target, started, "unhealthy", fmt.Errorf("account is no longer linked to provider"))
+		run, writeErr := s.writeTargetFailure(ctx, target, started, "unhealthy", fmt.Errorf("account is no longer linked to provider"), useAnswerProbe)
 		return run, adminStateGeneration, writeErr
 	}
 	modelID := ""
@@ -562,6 +598,10 @@ func (s *Sub2APIProviderProbeService) runTarget(ctx context.Context, target *ent
 		modelID = *configuredModel
 	}
 	if (account.IsCanvas() || isProviderProbeMediaModel(modelID)) && !target.AllowMediaProbe {
+		if useAnswerProbe {
+			run, writeErr := s.writeTargetFailure(ctx, target, started, "unhealthy", fmt.Errorf("answer probe is disabled for this media account"), true)
+			return run, adminStateGeneration, writeErr
+		}
 		now := time.Now()
 		if err := s.probeRepo.MarkTargetRun(ctx, target.ID, now, ""); err != nil {
 			return nil, adminStateGeneration, err
@@ -570,7 +610,19 @@ func (s *Sub2APIProviderProbeService) runTarget(ctx context.Context, target *ent
 	}
 
 	probeCtx, cancel := context.WithTimeout(ctx, time.Duration(target.TimeoutSeconds)*time.Second)
-	res, testErr := s.accountTest.RunProbeTestBackground(probeCtx, target.AccountID, modelID)
+	var res *ScheduledTestResult
+	var testErr error
+	if useAnswerProbe {
+		answerRunner, ok := s.accountTest.(Sub2APIAnswerProbeRunner)
+		if !ok {
+			cancel()
+			run, writeErr := s.writeTargetFailure(ctx, target, started, "unhealthy", fmt.Errorf("answer probe is not supported by the account test runner"), true)
+			return run, adminStateGeneration, writeErr
+		}
+		res, testErr = answerRunner.RunAnswerProbeBackground(probeCtx, target.AccountID, modelID, *target.AnswerProbePrompt)
+	} else {
+		res, testErr = s.accountTest.RunProbeTestBackground(probeCtx, target.AccountID, modelID)
+	}
 	cancel()
 	finished := time.Now()
 	status := "healthy"
@@ -615,12 +667,26 @@ func (s *Sub2APIProviderProbeService) runTarget(ctx context.Context, target *ent
 	if modelID != "" {
 		input.ModelID = &modelID
 	}
+	if useAnswerProbe && res != nil && strings.TrimSpace(res.ResponseText) != "" {
+		responseText := res.ResponseText
+		if len(responseText) > maxAnswerProbeResponseBytes {
+			cutoff := maxAnswerProbeResponseBytes
+			for cutoff > 0 && !utf8.RuneStart(responseText[cutoff]) {
+				cutoff--
+			}
+			responseText = responseText[:cutoff]
+		}
+		input.ResponseText = &responseText
+	}
+	input.AnswerProbe = useAnswerProbe
 	run, err := s.probeRepo.CreateTargetRun(ctx, input)
 	if err != nil {
 		return nil, adminStateGeneration, err
 	}
-	if err := s.probeRepo.MarkTargetRun(ctx, target.ID, finished, status); err != nil {
-		return nil, adminStateGeneration, err
+	if !useAnswerProbe {
+		if err := s.probeRepo.MarkTargetRun(ctx, target.ID, finished, status); err != nil {
+			return nil, adminStateGeneration, err
+		}
 	}
 	return run, adminStateGeneration, nil
 }
@@ -630,6 +696,13 @@ func latestProbeErrorMessage(run *ent.Sub2APIProviderProbeTargetRun) string {
 		return strings.TrimSpace(*run.ErrorMessage)
 	}
 	return "账号探针请求失败，当前分组不可用"
+}
+
+func derefString(value *string) string {
+	if value == nil {
+		return ""
+	}
+	return *value
 }
 
 func consecutiveTargetProbeStatus(runs []*ent.Sub2APIProviderProbeTargetRun, status string) int {
@@ -895,6 +968,14 @@ func probeGroupsExhausted(account *Account) bool {
 }
 
 func (s *Sub2APIProviderProbeService) runTargetIfProviderAvailable(ctx context.Context, target *ent.Sub2APIProviderProbeTarget) (*ent.Sub2APIProviderProbeTargetRun, string, bool, error) {
+	return s.runTargetIfProviderAvailableWithAnswerProbe(ctx, target, false)
+}
+
+func (s *Sub2APIProviderProbeService) runAnswerProbeIfProviderAvailable(ctx context.Context, target *ent.Sub2APIProviderProbeTarget) (*ent.Sub2APIProviderProbeTargetRun, string, bool, error) {
+	return s.runTargetIfProviderAvailableWithAnswerProbe(ctx, target, true)
+}
+
+func (s *Sub2APIProviderProbeService) runTargetIfProviderAvailableWithAnswerProbe(ctx context.Context, target *ent.Sub2APIProviderProbeTarget, answerProbe bool) (*ent.Sub2APIProviderProbeTargetRun, string, bool, error) {
 	if target == nil {
 		return nil, "", true, fmt.Errorf("probe target is required")
 	}
@@ -903,11 +984,42 @@ func (s *Sub2APIProviderProbeService) runTargetIfProviderAvailable(ctx context.C
 		return nil, "", false, nil
 	}
 	defer release()
-	run, generation, err := s.runTarget(ctx, target)
+	run, generation, err := s.runTargetWithAnswerProbe(ctx, target, answerProbe)
 	return run, generation, true, err
 }
 
-func (s *Sub2APIProviderProbeService) writeTargetFailure(ctx context.Context, target *ent.Sub2APIProviderProbeTarget, started time.Time, status string, err error) (*ent.Sub2APIProviderProbeTargetRun, error) {
+func (s *Sub2APIProviderProbeService) runScheduledAnswerProbes(ctx context.Context, providerID int64) error {
+	targets, err := s.ensureTargets(ctx, providerID)
+	if err != nil {
+		return err
+	}
+	now := time.Now().UTC()
+	var probeErr error
+	for _, target := range targets {
+		if target == nil || !target.AnswerProbeEnabled || target.AnswerProbePrompt == nil || strings.TrimSpace(*target.AnswerProbePrompt) == "" {
+			continue
+		}
+		recentRuns, historyErr := s.probeRepo.ListRecentAnswerProbeRuns(ctx, target.ID, now.Add(-24*time.Hour), 1)
+		if historyErr != nil {
+			probeErr = errors.Join(probeErr, fmt.Errorf("load last answer probe for target %d: %w", target.ID, historyErr))
+			continue
+		}
+		var lastAnswerAt *time.Time
+		if len(recentRuns) > 0 {
+			lastAnswerAt = &recentRuns[0].FinishedAt
+		}
+		if !shouldRunScheduledAnswerProbe(target, lastAnswerAt, now) {
+			continue
+		}
+		_, _, acquired, runErr := s.runAnswerProbeIfProviderAvailable(ctx, target)
+		if acquired && runErr != nil {
+			probeErr = errors.Join(probeErr, fmt.Errorf("answer probe target %d: %w", target.ID, runErr))
+		}
+	}
+	return probeErr
+}
+
+func (s *Sub2APIProviderProbeService) writeTargetFailure(ctx context.Context, target *ent.Sub2APIProviderProbeTarget, started time.Time, status string, err error, answerProbe bool) (*ent.Sub2APIProviderProbeTargetRun, error) {
 	if status == "" {
 		status = "unhealthy"
 	}
@@ -918,14 +1030,16 @@ func (s *Sub2APIProviderProbeService) writeTargetFailure(ctx context.Context, ta
 		TargetID: target.ID, ProviderID: target.ProviderID, AccountID: target.AccountID,
 		ProviderAPIKeyID: target.ProviderAPIKeyID, RemoteGroupID: target.RemoteGroupID, RemoteGroupName: target.RemoteGroupName,
 		Platform: target.Platform, Status: status, ErrorCategory: &category, ErrorMessage: &message,
-		StartedAt: started, FinishedAt: finished,
+		StartedAt: started, FinishedAt: finished, AnswerProbe: answerProbe,
 	}
 	run, writeErr := s.probeRepo.CreateTargetRun(ctx, input)
 	if writeErr != nil {
 		return nil, writeErr
 	}
-	if markErr := s.probeRepo.MarkTargetRun(ctx, target.ID, finished, status); markErr != nil {
-		return nil, markErr
+	if !answerProbe {
+		if markErr := s.probeRepo.MarkTargetRun(ctx, target.ID, finished, status); markErr != nil {
+			return nil, markErr
+		}
 	}
 	return run, nil
 }
@@ -958,7 +1072,14 @@ func (s *Sub2APIProviderProbeService) targetHealths(ctx context.Context, targets
 	}
 	out := make([]*Sub2APIProviderProbeTargetHealth, 0, len(targets))
 	for _, target := range targets {
-		health := targetHealthFromTarget(target, accountsByID[target.AccountID], nil, now)
+		var answerRuns []*ent.Sub2APIProviderProbeTargetRun
+		if target.AnswerProbeEnabled {
+			answerRuns, err = s.probeRepo.ListRecentAnswerProbeRuns(ctx, target.ID, now.Add(-answerProbeHistoryWindow), answerProbeHistoryLimit)
+			if err != nil {
+				return nil, err
+			}
+		}
+		health := targetHealthFromTarget(target, accountsByID[target.AccountID], answerRuns, now)
 		state, ok := states[target.AccountID]
 		if !ok {
 			state = ProviderAccountHealthState{AccountID: target.AccountID, ProviderID: target.ProviderID, Phase: "observing", Policy: DefaultProviderAccountHealthPolicy()}
@@ -1012,7 +1133,9 @@ func targetHealthFromTarget(target *ent.Sub2APIProviderProbeTarget, account *Acc
 		HealthyIntervalSeconds:  target.HealthyIntervalSeconds, HealthyIntervalThreshold: target.HealthyIntervalThreshold,
 		StableHealthyIntervalSeconds: target.StableHealthyIntervalSeconds, StableHealthyThreshold: target.StableHealthyThreshold,
 		ConsecutiveHealthy: target.ConsecutiveHealthy, CurrentIntervalSeconds: effectiveProbeTargetIntervalSeconds(target),
-		AllowMediaProbe: target.AllowMediaProbe, TimeoutSeconds: target.TimeoutSeconds, DegradedLatencyMS: target.DegradedLatencyMs,
+		AnswerProbeEnabled: target.AnswerProbeEnabled, AnswerProbePrompt: target.AnswerProbePrompt,
+		AnswerProbeIntervalSeconds: target.AnswerProbeIntervalSeconds,
+		AllowMediaProbe:            target.AllowMediaProbe, TimeoutSeconds: target.TimeoutSeconds, DegradedLatencyMS: target.DegradedLatencyMs,
 		DegradedOptimizeThreshold: target.DegradedOptimizeThreshold, CostOptimizeEnabled: target.CostOptimizeEnabled,
 		CostOptimizeIntervalSeconds: target.CostOptimizeIntervalSeconds, CostOptimizeHealthyThreshold: target.CostOptimizeHealthyThreshold,
 		LastCostOptimizeAt: target.LastCostOptimizeAt,
@@ -1020,6 +1143,7 @@ func targetHealthFromTarget(target *ent.Sub2APIProviderProbeTarget, account *Acc
 		RouteChangedAt: target.RouteChangedAt, Status: "unknown",
 	}
 	if account != nil {
+		health.AccountStatus = account.Status
 		health.AccountName = account.Name
 		health.RemoteGroupMultiplier = account.RemoteGroupMultiplier
 		health.Sub2APIOptimizeEnabled = account.Sub2APIOptimizeEnabled
@@ -1033,6 +1157,11 @@ func targetHealthFromTarget(target *ent.Sub2APIProviderProbeTarget, account *Acc
 	}
 	health.TestModel = configuredAccountTestModel(account)
 	health.Buckets = buildTargetProbeSamples(runs, target.DegradedLatencyMs)
+	health.AnswerHistory = buildProviderAnswerHistory(runs)
+	if latest := firstTargetProbeRun(runs); latest != nil {
+		health.AnswerText = derefString(latest.ResponseText)
+		health.AnswerAt = &latest.FinishedAt
+	}
 	if !target.Enabled {
 		health.Status = "disabled"
 		return health
@@ -1079,8 +1208,34 @@ func targetHealthFromRun(run *ent.Sub2APIProviderProbeTargetRun, degradedLatency
 		TestModel: run.ModelID, Status: targetProbeStatusFromRun(run, degradedLatencyMS), LatencyMS: run.LatencyMs,
 		TrafficRequestCount: run.TrafficRequestCount, TrafficSuccessRate: run.TrafficSuccessRate,
 		TrafficP95LatencyMS: run.TrafficP95LatencyMs, ErrorCategory: run.ErrorCategory, ErrorMessage: run.ErrorMessage,
+		AnswerText: derefString(run.ResponseText), AnswerAt: &run.FinishedAt,
+		AnswerHistory: buildProviderAnswerHistory([]*ent.Sub2APIProviderProbeTargetRun{run}),
 		LastCheckedAt: &run.FinishedAt,
 	}
+}
+
+func buildProviderAnswerHistory(runs []*ent.Sub2APIProviderProbeTargetRun) []Sub2APIProviderAnswer {
+	answers := make([]Sub2APIProviderAnswer, 0, min(len(runs), 100))
+	for _, run := range runs {
+		if run == nil || (run.ResponseText == nil && run.ErrorMessage == nil) {
+			continue
+		}
+		answer := Sub2APIProviderAnswer{At: run.FinishedAt, LatencyMS: run.LatencyMs}
+		if run.ModelID != nil {
+			answer.Model = *run.ModelID
+		}
+		if run.ResponseText != nil {
+			answer.Text = *run.ResponseText
+		}
+		if run.ErrorMessage != nil {
+			answer.Error = *run.ErrorMessage
+		}
+		answers = append(answers, answer)
+		if len(answers) >= 100 {
+			break
+		}
+	}
+	return answers
 }
 
 func firstTargetProbeRun(runs []*ent.Sub2APIProviderProbeTargetRun) *ent.Sub2APIProviderProbeTargetRun {
@@ -1176,6 +1331,18 @@ func validateProbeTargetInput(input *Sub2APIProviderProbeTargetInput) error {
 	}
 	if input.TestModel != nil {
 		return invalidProviderProbeConfig("test_model is managed by the linked account configuration")
+	}
+	if input.AnswerProbeEnabled != nil && *input.AnswerProbeEnabled && input.AnswerProbePrompt == nil {
+		return invalidProviderProbeConfig("answer_probe_prompt is required when answer probe is enabled")
+	}
+	if input.AnswerProbePrompt != nil && len(strings.TrimSpace(*input.AnswerProbePrompt)) > 12000 {
+		return invalidProviderProbeConfig("answer_probe_prompt must be at most 12000 characters")
+	}
+	if input.AnswerProbeIntervalSeconds != nil && (*input.AnswerProbeIntervalSeconds < 30 || *input.AnswerProbeIntervalSeconds > 86400) {
+		return invalidProviderProbeConfig("answer_probe_interval_seconds must be between 30 and 86400")
+	}
+	if input.AnswerProbeEnabled != nil && *input.AnswerProbeEnabled && input.AnswerProbePrompt != nil && strings.TrimSpace(*input.AnswerProbePrompt) == "" {
+		return invalidProviderProbeConfig("answer_probe_prompt is required when answer probe is enabled")
 	}
 	if input.IntervalSeconds != nil && (*input.IntervalSeconds < 30 || *input.IntervalSeconds > 86400) {
 		return invalidProviderProbeConfig("interval_seconds must be between 30 and 86400")

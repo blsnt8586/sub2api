@@ -27,6 +27,10 @@ type Sub2APIProbeTestRunner interface {
 	RunProbeTestBackground(context.Context, int64, string) (*ScheduledTestResult, error)
 }
 
+type Sub2APIAnswerProbeRunner interface {
+	RunAnswerProbeBackground(context.Context, int64, string, string) (*ScheduledTestResult, error)
+}
+
 // Sub2APIOptimizeTestRunner is the account-test capability required by the
 // Provider group optimizer. The optimizer can run either an ordinary test or a
 // probe-owned test, depending on the context supplied by the caller.
@@ -36,4 +40,5 @@ type Sub2APIOptimizeTestRunner interface {
 }
 
 var _ Sub2APIProbeTestRunner = (*AccountTestService)(nil)
+var _ Sub2APIAnswerProbeRunner = (*AccountTestService)(nil)
 var _ Sub2APIOptimizeTestRunner = (*AccountTestService)(nil)

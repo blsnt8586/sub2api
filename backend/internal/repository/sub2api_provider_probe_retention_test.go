@@ -63,3 +63,27 @@ func TestDeleteUpstreamLogsBeforeRejectsMissingDatabaseAndInvalidBatch(t *testin
 		t.Fatal("expected invalid batch size error")
 	}
 }
+
+func TestClearAnswerProbeResponsesBeforeUsesStrictCutoffAndBatch(t *testing.T) {
+	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherRegexp))
+	if err != nil {
+		t.Fatalf("sqlmock: %v", err)
+	}
+	defer func() { _ = db.Close() }()
+
+	cutoff := time.Date(2026, 11, 8, 12, 0, 0, 0, time.UTC)
+	mock.ExpectExec(`(?s)WITH expired AS \(.*answer_probe IS TRUE.*response_text IS NOT NULL.*finished_at < \$1.*LIMIT \$2.*UPDATE sub2api_provider_probe_target_runs AS runs.*SET response_text = NULL`).
+		WithArgs(cutoff, 1000).
+		WillReturnResult(sqlmock.NewResult(0, 7))
+
+	cleared, err := (&sub2APIProviderProbeRepository{db: db}).ClearAnswerProbeResponsesBefore(context.Background(), cutoff, 1000)
+	if err != nil {
+		t.Fatalf("clear expired answers: %v", err)
+	}
+	if cleared != 7 {
+		t.Fatalf("cleared=%d, want 7", cleared)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("sql expectations: %v", err)
+	}
+}

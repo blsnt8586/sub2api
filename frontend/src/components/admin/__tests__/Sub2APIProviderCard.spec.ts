@@ -200,19 +200,20 @@ describe('Sub2APIProviderCard', () => {
       'rounded-lg',
       'border',
     ]))
-    expect(wrapper.get('h2').text()).toBe(provider.name)
-    expect(wrapper.text()).toContain('provider.example.com')
+    expect(wrapper.get('h2').text()).toContain(provider.name)
+    expect(wrapper.get('[data-test="provider-upstream-link"]').text()).toContain(provider.name)
+    expect(wrapper.text()).not.toContain('provider.example.com')
     expect(wrapper.text()).toContain(provider.notes)
-    expect(wrapper.text()).toContain('relative:2026-08-14T05:00:00Z')
     expect(wrapper.text()).toContain('admin.sub2apiProviders.health.availabilityStatus.healthy')
+    expect(wrapper.get('[data-test="provider-control-status"]').text()).not.toContain('relative:')
     expect(wrapper.text()).toContain('admin.sub2apiProviders.apiPathStatus.ready')
     expect(wrapper.text()).not.toContain('admin.sub2apiProviders.accountSyncLabel')
     expect(wrapper.text()).toContain('Codex Account')
     expect(wrapper.text()).toContain('Claude Account')
     expect(wrapper.text()).toContain('openai')
     expect(wrapper.text()).toContain('anthropic')
-    expect(wrapper.text()).toContain('openai-test-model')
-    expect(wrapper.text()).toContain('anthropic-test-model')
+    expect(wrapper.text()).not.toContain('openai-test-model')
+    expect(wrapper.text()).not.toContain('anthropic-test-model')
     expect(wrapper.text()).toContain('×0.4')
     expect(wrapper.text()).toContain('×1')
     expect(wrapper.get('[data-test="route-multiplier-1"]').classes()).toContain('text-emerald-700')
@@ -223,6 +224,11 @@ describe('Sub2APIProviderCard', () => {
     expect(wrapper.get('[data-test="provider-route-probe-1"] .route-platform').classes()).toContain('bg-emerald-100')
     expect(wrapper.get('[data-test="provider-route-probe-2"] .route-platform').classes()).toContain('bg-orange-100')
     expect(wrapper.get('[data-test="route-optimize-1"]').attributes('aria-label')).toBe('admin.sub2apiProviders.joinScheduleOn')
+    const controlStatus = wrapper.get('[data-test="provider-control-status"]').element
+    expect(wrapper.get('header').element.contains(controlStatus)).toBe(true)
+    expect(wrapper.get('[data-test="provider-control-status"]').classes()).toContain('h-8')
+    expect(wrapper.get('[data-test="provider-type-tag"]').classes()).toContain('h-8')
+    expect(wrapper.get('[aria-label="Production Provider common.more"]').classes()).toContain('h-8')
     // The legacy fixture still contains 60 fixed slots per account, but only
     // one slot per account is backed by a real probe sample.
     expect(wrapper.findAll('[data-test="route-timeline-bucket"]')).toHaveLength(2)
@@ -243,6 +249,15 @@ describe('Sub2APIProviderCard', () => {
     expect(link.find('svg').exists()).toBe(true)
   })
 
+  it('shows account status separately from route health', () => {
+    const unhealthy = { ...route(1, 'Paused account', 'openai'), account_status: 'error', status: 'healthy' as const }
+    const wrapper = mount(Sub2APIProviderCard, {
+      props: { provider, overview: { ...overview, routes: [unhealthy] } },
+    })
+    expect(wrapper.text()).toContain('admin.accounts.status.error')
+    expect(wrapper.text()).toContain('240 ms')
+  })
+
   it('does not create an external link for an invalid provider URL', () => {
     const wrapper = mount(Sub2APIProviderCard, {
       props: { provider: { ...provider, base_url: 'javascript:alert(1)' }, overview },
@@ -254,7 +269,7 @@ describe('Sub2APIProviderCard', () => {
   it('opens account-level probe management without exposing a provider-wide run action', async () => {
     const wrapper = mount(Sub2APIProviderCard, { props: { provider, overview } })
 
-    await wrapper.findAll('button')[0].trigger('click')
+    await wrapper.get('[aria-label="Production Provider common.more"]').trigger('click')
     await wrapper.get('[data-test="provider-control-status"]').trigger('click')
     await wrapper.get('[data-test="provider-route-probe-1"]').trigger('click')
     await wrapper.get('[data-test="provider-view-accounts"]').trigger('click')
@@ -335,10 +350,11 @@ describe('Sub2APIProviderCard', () => {
     }
     const wrapper = mount(Sub2APIProviderCard, { props: { provider, remoteOverview: localOverview } })
     const metrics = wrapper.get('[data-test="provider-remote-metrics"]')
+    expect(metrics.find('span.grid').classes()).toContain('grid-cols-4')
     expect(metrics.findAll('[data-test^="remote-metric-"]').filter(item => item.attributes('data-test') !== 'remote-metric-detail')
       .map(item => item.attributes('data-test'))).toEqual([
-      'remote-metric-balance', 'remote-metric-total-recharged', 'remote-metric-total-tokens',
-      'remote-metric-today-requests', 'remote-metric-today-consumed', 'remote-metric-today-tokens',
+      'remote-metric-today-consumed', 'remote-metric-today-tokens', 'remote-metric-total-recharged', 'remote-metric-total-tokens',
+      'remote-metric-balance',
       'remote-metric-today-profit', 'remote-metric-month-profit', 'remote-metric-cumulative-profit',
     ])
     expect(metrics.get('[data-test="remote-metric-balance"]').text()).not.toContain('999,999')

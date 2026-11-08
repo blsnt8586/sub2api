@@ -21,8 +21,9 @@ import (
 var accountProbeTestQuestionPattern = regexp.MustCompile(`(\d+) ([+-]) (\d+) =`)
 
 type arithmeticProbeHTTPUpstream struct {
-	wrongAnswer bool
-	lastBody    []byte
+	wrongAnswer  bool
+	customAnswer string
+	lastBody     []byte
 }
 
 func (u *arithmeticProbeHTTPUpstream) Do(req *http.Request, _ string, _ int64, _ int) (*http.Response, error) {
@@ -34,7 +35,11 @@ func (u *arithmeticProbeHTTPUpstream) Do(req *http.Request, _ string, _ int64, _
 	prompt := gjson.GetBytes(body, "input").String()
 	matches := accountProbeTestQuestionPattern.FindAllStringSubmatch(prompt, -1)
 	if len(matches) == 0 {
-		return nil, fmt.Errorf("probe request does not contain an arithmetic challenge")
+		if u.customAnswer == "" {
+			return nil, fmt.Errorf("probe request does not contain an arithmetic challenge")
+		}
+		stream := fmt.Sprintf("data: {\"type\":\"response.output_text.delta\",\"delta\":%q}\n\ndata: {\"type\":\"response.completed\"}\n\n", u.customAnswer)
+		return &http.Response{StatusCode: http.StatusOK, Header: http.Header{"Content-Type": []string{"text/event-stream"}}, Body: io.NopCloser(strings.NewReader(stream))}, nil
 	}
 	question := matches[len(matches)-1]
 	left, _ := strconv.Atoi(question[1])
@@ -52,6 +57,18 @@ func (u *arithmeticProbeHTTPUpstream) Do(req *http.Request, _ string, _ int64, _
 		Header:     http.Header{"Content-Type": []string{"text/event-stream"}},
 		Body:       io.NopCloser(strings.NewReader(stream)),
 	}, nil
+}
+
+func TestRunAnswerProbeBackgroundReturnsRawAnswerWithoutJudging(t *testing.T) {
+	t.Parallel()
+	account := &Account{ID: 902, Platform: PlatformOpenAI, Type: AccountTypeOAuth, Status: StatusActive, Schedulable: true, Concurrency: 1, Credentials: map[string]any{"access_token": "probe-token"}}
+	upstream := &arithmeticProbeHTTPUpstream{customAnswer: "This answer does not match the hidden arithmetic challenge."}
+	svc := &AccountTestService{accountRepo: &mockAccountRepoForGemini{accountsByID: map[int64]*Account{account.ID: account}}, httpUpstream: upstream, tlsFPProfileService: &TLSFingerprintProfileService{}}
+	result, err := svc.RunAnswerProbeBackground(context.Background(), account.ID, "gpt-5.4", "Explain the difficult question exactly as configured.")
+	require.NoError(t, err)
+	require.Equal(t, "success", result.Status)
+	require.Equal(t, "This answer does not match the hidden arithmetic challenge.", result.ResponseText)
+	require.Contains(t, string(upstream.lastBody), "Explain the difficult question exactly as configured.")
 }
 
 func (u *arithmeticProbeHTTPUpstream) DoWithTLS(req *http.Request, proxyURL string, accountID int64, accountConcurrency int, _ *tlsfingerprint.Profile) (*http.Response, error) {

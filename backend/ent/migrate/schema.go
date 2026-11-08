@@ -1840,6 +1840,9 @@ var (
 		{Name: "stable_healthy_threshold", Type: field.TypeInt, Default: 6},
 		{Name: "consecutive_healthy", Type: field.TypeInt, Default: 0},
 		{Name: "test_model", Type: field.TypeString, Nullable: true, Size: 160},
+		{Name: "answer_probe_enabled", Type: field.TypeBool, Default: false},
+		{Name: "answer_probe_prompt", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "answer_probe_interval_seconds", Type: field.TypeInt, Default: 300},
 		{Name: "allow_media_probe", Type: field.TypeBool, Default: false},
 		{Name: "timeout_seconds", Type: field.TypeInt, Default: 60},
 		{Name: "degraded_latency_ms", Type: field.TypeInt, Default: 5000},
@@ -1863,13 +1866,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "sub2api_provider_probe_targets_accounts_sub2api_probe_targets",
-				Columns:    []*schema.Column{Sub2apiProviderProbeTargetsColumns[28]},
+				Columns:    []*schema.Column{Sub2apiProviderProbeTargetsColumns[31]},
 				RefColumns: []*schema.Column{AccountsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "sub2api_provider_probe_targets_sub2api_providers_probe_targets",
-				Columns:    []*schema.Column{Sub2apiProviderProbeTargetsColumns[29]},
+				Columns:    []*schema.Column{Sub2apiProviderProbeTargetsColumns[32]},
 				RefColumns: []*schema.Column{Sub2apiProvidersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1878,17 +1881,17 @@ var (
 			{
 				Name:    "sub2apiproviderprobetarget_provider_id_account_id",
 				Unique:  true,
-				Columns: []*schema.Column{Sub2apiProviderProbeTargetsColumns[29], Sub2apiProviderProbeTargetsColumns[28]},
+				Columns: []*schema.Column{Sub2apiProviderProbeTargetsColumns[32], Sub2apiProviderProbeTargetsColumns[31]},
 			},
 			{
 				Name:    "sub2apiproviderprobetarget_provider_id_enabled_last_run_at",
 				Unique:  false,
-				Columns: []*schema.Column{Sub2apiProviderProbeTargetsColumns[29], Sub2apiProviderProbeTargetsColumns[7], Sub2apiProviderProbeTargetsColumns[26]},
+				Columns: []*schema.Column{Sub2apiProviderProbeTargetsColumns[32], Sub2apiProviderProbeTargetsColumns[7], Sub2apiProviderProbeTargetsColumns[29]},
 			},
 			{
 				Name:    "sub2apiproviderprobetarget_account_id",
 				Unique:  false,
-				Columns: []*schema.Column{Sub2apiProviderProbeTargetsColumns[28]},
+				Columns: []*schema.Column{Sub2apiProviderProbeTargetsColumns[31]},
 			},
 		},
 	}
@@ -1909,6 +1912,8 @@ var (
 		{Name: "traffic_p95_latency_ms", Type: field.TypeInt, Nullable: true},
 		{Name: "error_category", Type: field.TypeString, Nullable: true, Size: 64},
 		{Name: "error_message", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "response_text", Type: field.TypeString, Nullable: true, SchemaType: map[string]string{"postgres": "text"}},
+		{Name: "answer_probe", Type: field.TypeBool, Default: false},
 		{Name: "started_at", Type: field.TypeTime},
 		{Name: "finished_at", Type: field.TypeTime},
 		{Name: "created_at", Type: field.TypeTime},
@@ -1922,7 +1927,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "sub2api_provider_probe_target_runs_sub2api_provider_probe_targets_runs",
-				Columns:    []*schema.Column{Sub2apiProviderProbeTargetRunsColumns[18]},
+				Columns:    []*schema.Column{Sub2apiProviderProbeTargetRunsColumns[20]},
 				RefColumns: []*schema.Column{Sub2apiProviderProbeTargetsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1931,17 +1936,17 @@ var (
 			{
 				Name:    "sub2apiproviderprobetargetrun_target_id_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{Sub2apiProviderProbeTargetRunsColumns[18], Sub2apiProviderProbeTargetRunsColumns[17]},
+				Columns: []*schema.Column{Sub2apiProviderProbeTargetRunsColumns[20], Sub2apiProviderProbeTargetRunsColumns[19]},
 			},
 			{
 				Name:    "sub2apiproviderprobetargetrun_provider_id_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{Sub2apiProviderProbeTargetRunsColumns[1], Sub2apiProviderProbeTargetRunsColumns[17]},
+				Columns: []*schema.Column{Sub2apiProviderProbeTargetRunsColumns[1], Sub2apiProviderProbeTargetRunsColumns[19]},
 			},
 			{
 				Name:    "sub2apiproviderprobetargetrun_account_id_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{Sub2apiProviderProbeTargetRunsColumns[2], Sub2apiProviderProbeTargetRunsColumns[17]},
+				Columns: []*schema.Column{Sub2apiProviderProbeTargetRunsColumns[2], Sub2apiProviderProbeTargetRunsColumns[19]},
 			},
 		},
 	}

@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Sub2API 浏览器凭据导出助手
 // @namespace    https://github.com/Wei-Shaw/sub2api
-// @version      1.2.0
-// @description  导出 Sub2API 登录凭据，或验证并导出 New API 管理令牌与用户 ID，生成平台可导入的 JSON 包。
+// @version      1.9.0
+// @description  导出 Sub2API 登录凭据，或导出当前 New API 浏览器登录会话，生成平台可导入的 JSON 包。
 // @author       Sub2API
 // @match        http://*/*
 // @match        https://*/*
@@ -292,88 +292,6 @@
     return null
   }
 
-  function collectNewAPICredentials() {
-    document.getElementById(PANEL_ID)?.remove()
-    const overlay = document.createElement('div')
-    overlay.id = PANEL_ID
-    overlay.setAttribute('role', 'dialog')
-    overlay.setAttribute('aria-modal', 'true')
-    overlay.setAttribute('aria-label', 'New API 管理凭据')
-    overlay.innerHTML = `
-      <section class="sub2api-export-panel">
-        <header class="sub2api-export-header"><h2>导出 New API 凭据</h2><button type="button" class="sub2api-export-close" aria-label="关闭">&times;</button></header>
-        <form class="sub2api-export-body">
-          <p>填写 New API 个人设置中的管理访问令牌，以及所属用户的数字 ID。不是调用模型的 sk- 密钥。</p>
-          <label>用户 ID<input name="user_id" type="text" inputmode="numeric" pattern="[1-9][0-9]*" required style="display:block;width:100%;padding:8px;margin:6px 0 12px" /></label>
-          <label>管理访问令牌<input name="access_token" type="password" autocomplete="off" required style="display:block;width:100%;padding:8px;margin:6px 0 12px" /></label>
-          <p class="sub2api-export-warning">点击后仅向当前站点验证身份，不创建或修改令牌，不导出 Cookie。生成后请只导入你自己的上游管理页面。</p>
-          <div class="sub2api-copy-status" role="status" aria-live="polite"></div>
-          <div class="sub2api-export-actions"><button type="submit">验证并生成凭据包</button></div>
-        </form>
-      </section>`
-    const form = overlay.querySelector('form')
-    const idInput = form.elements.namedItem('user_id')
-    const tokenInput = form.elements.namedItem('access_token')
-    const status = overlay.querySelector('[role="status"]')
-    try {
-      const user = JSON.parse(localStorage.getItem('user') || 'null')
-      if (Number.isSafeInteger(user?.id) && user.id > 0) idInput.value = String(user.id)
-    } catch { /* Legacy user data is only an optional identity hint. */ }
-    return new Promise(resolve => {
-      let closed = false
-      let pendingRequest = null
-      const close = () => {
-        closed = true
-        pendingRequest?.abort()
-        tokenInput.value = ''
-        overlay.remove()
-        resolve(null)
-      }
-      overlay.querySelector('.sub2api-export-close').addEventListener('click', close)
-      overlay.addEventListener('click', event => { if (event.target === overlay) close() })
-      overlay.addEventListener('keydown', event => { if (event.key === 'Escape') close() })
-      form.addEventListener('submit', async event => {
-        event.preventDefault()
-        if (pendingRequest || closed) return
-        const userID = idInput.value.trim()
-        const token = tokenInput.value.trim()
-        if (!/^[1-9]\d*$/.test(userID) || !Number.isSafeInteger(Number(userID)) || !token) {
-          status.textContent = '请填写有效的正整数用户 ID 和管理访问令牌。'
-          return
-        }
-        const submit = form.querySelector('[type="submit"]')
-        submit.disabled = true
-        status.textContent = '正在向当前站点验证管理令牌...'
-        pendingRequest = new AbortController()
-        const timeout = window.setTimeout(() => pendingRequest?.abort(), 15000)
-        try {
-          const response = await fetch('/api/user/self', {
-            method: 'GET', credentials: 'omit', redirect: 'error',
-            signal: pendingRequest.signal,
-            headers: { Accept: 'application/json', Authorization: `Bearer ${token}`, 'New-Api-User': userID },
-          })
-          const payload = await response.json()
-          if (closed) return
-          if (!response.ok || payload?.success !== true || String(payload.data?.id) !== userID) {
-            throw new Error('管理令牌验证失败或用户 ID 不匹配，请检查令牌权限和用户 ID。')
-          }
-          const credentials = { user_id: userID, access_token: token }
-          tokenInput.value = ''
-          overlay.remove()
-          resolve(credentials)
-        } catch {
-          if (!closed) status.textContent = '管理令牌验证失败或用户 ID 不匹配，请检查管理令牌、用户 ID、权限及网络后重试。'
-        } finally {
-          window.clearTimeout(timeout)
-          pendingRequest = null
-          submit.disabled = false
-        }
-      })
-      document.body.appendChild(overlay)
-      tokenInput.focus()
-    })
-  }
-
   function documentCookieItems() {
     if (!document.cookie.trim()) return []
     return document.cookie.split(';').map(part => {
@@ -390,6 +308,62 @@
         source: 'document.cookie',
       }
     }).filter(cookie => cookie.name)
+  }
+
+  async function readNewAPICredentials() {
+    const authURL = `${location.origin}/api/user/auth/refresh`
+    const initialCookies = await readNewAPIRefreshCookie(authURL)
+    const response = await fetch('/api/user/auth/refresh', {
+      method: 'POST', credentials: 'include', redirect: 'error',
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    })
+    const payload = await response.json().catch(() => null)
+    if (!response.ok || payload?.success !== true) {
+      const code = typeof payload?.code === 'string' && /^[A-Z0-9_]{1,64}$/.test(payload.code) ? ` ${payload.code}` : ''
+      throw new Error(`会话刷新失败：HTTP ${response.status}${code}。请确认当前 New API 登录未过期后重试。`)
+    }
+    const userID = String(payload?.data?.user?.id || '')
+    const token = String(payload?.data?.access_token || '')
+    if (!/^[1-9]\d*$/.test(userID) || !Number.isSafeInteger(Number(userID)) || !token) {
+      throw new Error('会话刷新接口返回成功，但缺少有效的用户 ID 或 Bearer Token。')
+    }
+    const verifyResponse = await fetch('/api/user/self', {
+      method: 'GET', credentials: 'omit', redirect: 'error',
+      headers: { Accept: 'application/json', Authorization: `Bearer ${token}`, 'New-Api-User': userID },
+    })
+    const verifyPayload = await verifyResponse.json().catch(() => null)
+    if (!verifyResponse.ok || verifyPayload?.success !== true || String(verifyPayload.data?.id) !== userID) {
+      throw new Error(`Bearer Token 身份验证失败：HTTP ${verifyResponse.status}。`)
+    }
+    let refreshCookie = ''
+    if (initialCookies.cookie) {
+      for (let attempt = 0; attempt < 5; attempt += 1) {
+        const current = await readNewAPIRefreshCookie(authURL)
+        if (current.cookie && current.cookie !== initialCookies.cookie) {
+          refreshCookie = current.cookie
+          break
+        }
+        if (attempt < 4) await new Promise(resolve => window.setTimeout(resolve, 200))
+      }
+    } else {
+      const current = await readNewAPIRefreshCookie(authURL)
+      refreshCookie = current.cookie || ''
+      if (!refreshCookie) throw new Error(current.error || initialCookies.error || '无法读取 New API Refresh Cookie，不能生成可自动续期的凭据。')
+    }
+    if (!refreshCookie) throw new Error('Refresh Cookie 轮换后未能读取新值，不能生成可自动续期的凭据。')
+    return {
+      user_id: userID,
+      access_token: token,
+      access_expires_at: Number(payload.data.access_expires_at) || undefined,
+      ...(refreshCookie ? { refresh_cookie: refreshCookie } : {}),
+    }
+  }
+
+  function confirmExport(providerType) {
+    const guidance = providerType === 'newapi'
+      ? '无法读取 HttpOnly Refresh Cookie 时，Bearer Token 过期后需要重新导入。'
+      : '建议使用专用浏览器会话，避免浏览器和管理端同时轮换同一枚 Refresh Token。'
+    return window.confirm(`即将读取并验证当前已登录的 ${providerType === 'newapi' ? 'New API' : 'Sub2API'} 会话，生成可导入的凭据包。凭据可控制当前账号，请只导入到你自己的上游管理页面。\n\n${guidance}\n\n是否继续？`)
   }
 
   function mergeCookieItems(primary, fallback) {
@@ -411,7 +385,7 @@
     return Array.from(merged.values())
   }
 
-  function listCookies() {
+  function listCookies(url = location.href) {
     return new Promise(resolve => {
       if (typeof GM_cookie === 'undefined' || typeof GM_cookie.list !== 'function') {
         resolve({
@@ -421,7 +395,10 @@
         })
         return
       }
-      GM_cookie.list({ url: location.href }, (cookies, error) => {
+      let settled = false
+      const finish = (cookies, error) => {
+        if (settled) return
+        settled = true
         if (error || !Array.isArray(cookies)) {
           resolve({
             method: 'document.cookie',
@@ -453,8 +430,53 @@
           http_only_support: 'tampermonkey-beta-only',
           items: mergeCookieItems(gmCookies, visibleCookies),
         })
-      })
+      }
+      try {
+        const result = GM_cookie.list({ url }, finish)
+        if (result && typeof result.then === 'function') result.then(cookies => finish(cookies, null)).catch(error => finish(null, error))
+      } catch (error) {
+        finish(null, error)
+      }
     })
+  }
+
+  function cookieDomainMatches(cookie, hostname) {
+    const domain = String(cookie.domain || hostname).replace(/^\./, '').toLowerCase()
+    const host = hostname.toLowerCase()
+    return cookie.hostOnly === false ? host === domain || host.endsWith(`.${domain}`) : host === domain
+  }
+
+  function cookiePathMatches(cookiePath, requestPath) {
+    const path = cookiePath || '/'
+    if (!requestPath.startsWith(path)) return false
+    return path.endsWith('/') || requestPath.length === path.length || requestPath[path.length] === '/'
+  }
+
+  async function readNewAPIRefreshCookie(authURL) {
+    const urls = [authURL, `${location.origin}/`, location.href]
+    let lastCapture = null
+    for (const url of urls) {
+      const capture = await listCookies(url)
+      lastCapture = capture
+      const target = new URL(authURL)
+      const candidates = capture.items.filter(cookie => cookie.name === 'new_api_refresh' && cookie.value &&
+        cookieDomainMatches(cookie, target.hostname) && cookiePathMatches(cookie.path, target.pathname) &&
+        (!cookie.secure || target.protocol === 'https:'))
+      candidates.sort((a, b) => (b.path || '/').length - (a.path || '/').length)
+      if (candidates.length) {
+        const longestPath = (candidates[0].path || '/').length
+        const bestCandidates = candidates.filter(cookie => (cookie.path || '/').length === longestPath)
+        if (new Set(bestCandidates.map(cookie => cookie.value)).size > 1) {
+          return { cookie: '', error: 'Cookie API 返回多个同名且同路径的 Refresh Cookie，无法可靠确定当前会话对应值；为避免导入错误会话，已停止导出。' }
+        }
+        return { cookie: candidates[0].value, method: capture.method }
+      }
+    }
+    const capture = lastCapture
+    if (capture?.method === 'document.cookie') {
+      return { cookie: '', error: '脚本管理器没有提供可读取 HttpOnly Cookie 的 GM_cookie.list API；请启用兼容该 API 的 Tampermonkey Cookie 权限。' }
+    }
+    return { cookie: '', error: 'GM_cookie.list 未返回适用于 New API 认证路径的 new_api_refresh Cookie。' }
   }
 
   async function copyText(text, manualTextarea) {
@@ -497,7 +519,7 @@
       <section class="sub2api-export-panel">
         <header class="sub2api-export-header">
           <div>
-            <h2 id="${PANEL_ID}-title">Sub2API 凭据已生成</h2>
+            <h2 id="${PANEL_ID}-title">登录凭据已生成</h2>
             <p class="sub2api-export-subtitle"></p>
           </div>
           <button type="button" class="sub2api-export-close" aria-label="关闭">&times;</button>
@@ -534,11 +556,14 @@
     const copyButton = overlay.querySelector('.sub2api-copy-button')
 
     if (providerType === 'newapi') {
-      overlay.querySelector('h2').textContent = 'New API 凭据已生成'
+      overlay.querySelector('h2').textContent = '登录凭据已生成'
       const badges = overlay.querySelectorAll('.sub2api-token-status > div')
       overlay.querySelector('.sub2api-token-status').style.gridTemplateColumns = 'repeat(2, minmax(0, 1fr))'
-      badges[0].textContent = '管理访问令牌已验证'
+      badges[0].textContent = storage.refresh_cookie ? '浏览器会话已验证 · 自动续期' : 'Bearer Token 已验证 · 无自动续期'
       badges[1].textContent = `用户 ID: ${storage.user_id}`
+      if (!storage.refresh_cookie) {
+        overlay.querySelector('.sub2api-export-warning').textContent = '当前站点已验证 Bearer Token，但脚本管理器无法读取 HttpOnly Refresh Cookie。导入后可正常使用；Token 过期后需重新导入。'
+      }
       cookieCount.hidden = true
       overlay.querySelector('.sub2api-cookie-heading').hidden = true
       cookieList.hidden = true
@@ -626,11 +651,15 @@
   async function generateCredentials() {
     const providerType = await detectProvider(true)
     if (providerType === 'newapi') {
-      const credentials = await collectNewAPICredentials()
-      if (!credentials) return
-      const bundle = { format: 'newapi-browser-credentials', version: VERSION, provider_type: 'newapi',
-        source: { origin: location.origin, captured_at: new Date().toISOString() }, credentials }
-      showExportPanel(JSON.stringify(bundle, null, 2), credentials, { items: [] }, 'newapi')
+      if (!await confirmExport(providerType)) return
+      try {
+        const credentials = await readNewAPICredentials()
+        const bundle = { format: 'newapi-browser-credentials', version: VERSION, provider_type: 'newapi',
+          source: { origin: location.origin, captured_at: new Date().toISOString() }, credentials }
+        showExportPanel(JSON.stringify(bundle, null, 2), credentials, { items: [] }, 'newapi')
+      } catch (error) {
+        notify(error instanceof Error ? error.message : '无法生成凭据包。', true)
+      }
       return
     }
     if (providerType !== 'sub2api') { notify('未识别为已登录的 Sub2API 或 New API 站点。', true); return }
@@ -639,10 +668,7 @@
       notify('没有检测到完整的 Access Token 和 Refresh Token，请先完成登录。', true)
       return
     }
-    const accepted = window.confirm(
-      '即将生成当前站点的登录 Token 和可读取 Cookie，并在页面面板中提供复制按钮。凭据可控制当前账号，请只粘贴到你自己的 Sub2API 上游管理页面。\n\n建议从专用或临时浏览器会话导出，导入后关闭该会话，避免浏览器与管理端同时轮换同一枚 Refresh Token。是否继续？'
-    )
-    if (!accepted) return
+    if (!await confirmExport(providerType)) return
 
     try {
       const cookieCapture = await listCookies()
@@ -676,8 +702,8 @@
     const button = document.createElement('button')
     button.id = BUTTON_ID
     button.type = 'button'
-    button.title = providerType === 'newapi' ? '验证并导出 New API 管理访问令牌与用户 ID' : '导出当前 Sub2API 登录 Token 与可读取 Cookie'
-    button.innerHTML = `<span class="sub2api-exporter-dot" aria-hidden="true"></span><span>导出 ${providerType === 'newapi' ? 'New API' : 'Sub2API'} 凭据</span>`
+    button.title = '读取并导出当前登录凭据'
+    button.innerHTML = '<span class="sub2api-exporter-dot" aria-hidden="true"></span><span>导出登录凭据</span>'
     button.addEventListener('click', () => exportCredentials(button))
     document.body.appendChild(button)
   }

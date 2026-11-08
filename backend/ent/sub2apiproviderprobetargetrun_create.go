@@ -201,6 +201,34 @@ func (_c *Sub2APIProviderProbeTargetRunCreate) SetNillableErrorMessage(v *string
 	return _c
 }
 
+// SetResponseText sets the "response_text" field.
+func (_c *Sub2APIProviderProbeTargetRunCreate) SetResponseText(v string) *Sub2APIProviderProbeTargetRunCreate {
+	_c.mutation.SetResponseText(v)
+	return _c
+}
+
+// SetNillableResponseText sets the "response_text" field if the given value is not nil.
+func (_c *Sub2APIProviderProbeTargetRunCreate) SetNillableResponseText(v *string) *Sub2APIProviderProbeTargetRunCreate {
+	if v != nil {
+		_c.SetResponseText(*v)
+	}
+	return _c
+}
+
+// SetAnswerProbe sets the "answer_probe" field.
+func (_c *Sub2APIProviderProbeTargetRunCreate) SetAnswerProbe(v bool) *Sub2APIProviderProbeTargetRunCreate {
+	_c.mutation.SetAnswerProbe(v)
+	return _c
+}
+
+// SetNillableAnswerProbe sets the "answer_probe" field if the given value is not nil.
+func (_c *Sub2APIProviderProbeTargetRunCreate) SetNillableAnswerProbe(v *bool) *Sub2APIProviderProbeTargetRunCreate {
+	if v != nil {
+		_c.SetAnswerProbe(*v)
+	}
+	return _c
+}
+
 // SetStartedAt sets the "started_at" field.
 func (_c *Sub2APIProviderProbeTargetRunCreate) SetStartedAt(v time.Time) *Sub2APIProviderProbeTargetRunCreate {
 	_c.mutation.SetStartedAt(v)
@@ -291,6 +319,10 @@ func (_c *Sub2APIProviderProbeTargetRunCreate) defaults() {
 		v := sub2apiproviderprobetargetrun.DefaultTrafficRequestCount
 		_c.mutation.SetTrafficRequestCount(v)
 	}
+	if _, ok := _c.mutation.AnswerProbe(); !ok {
+		v := sub2apiproviderprobetargetrun.DefaultAnswerProbe
+		_c.mutation.SetAnswerProbe(v)
+	}
 	if _, ok := _c.mutation.StartedAt(); !ok {
 		v := sub2apiproviderprobetargetrun.DefaultStartedAt()
 		_c.mutation.SetStartedAt(v)
@@ -349,6 +381,9 @@ func (_c *Sub2APIProviderProbeTargetRunCreate) check() error {
 		if err := sub2apiproviderprobetargetrun.ErrorCategoryValidator(v); err != nil {
 			return &ValidationError{Name: "error_category", err: fmt.Errorf(`ent: validator failed for field "Sub2APIProviderProbeTargetRun.error_category": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.AnswerProbe(); !ok {
+		return &ValidationError{Name: "answer_probe", err: errors.New(`ent: missing required field "Sub2APIProviderProbeTargetRun.answer_probe"`)}
 	}
 	if _, ok := _c.mutation.StartedAt(); !ok {
 		return &ValidationError{Name: "started_at", err: errors.New(`ent: missing required field "Sub2APIProviderProbeTargetRun.started_at"`)}
@@ -444,6 +479,14 @@ func (_c *Sub2APIProviderProbeTargetRunCreate) createSpec() (*Sub2APIProviderPro
 	if value, ok := _c.mutation.ErrorMessage(); ok {
 		_spec.SetField(sub2apiproviderprobetargetrun.FieldErrorMessage, field.TypeString, value)
 		_node.ErrorMessage = &value
+	}
+	if value, ok := _c.mutation.ResponseText(); ok {
+		_spec.SetField(sub2apiproviderprobetargetrun.FieldResponseText, field.TypeString, value)
+		_node.ResponseText = &value
+	}
+	if value, ok := _c.mutation.AnswerProbe(); ok {
+		_spec.SetField(sub2apiproviderprobetargetrun.FieldAnswerProbe, field.TypeBool, value)
+		_node.AnswerProbe = value
 	}
 	if value, ok := _c.mutation.StartedAt(); ok {
 		_spec.SetField(sub2apiproviderprobetargetrun.FieldStartedAt, field.TypeTime, value)
@@ -805,6 +848,36 @@ func (u *Sub2APIProviderProbeTargetRunUpsert) UpdateErrorMessage() *Sub2APIProvi
 // ClearErrorMessage clears the value of the "error_message" field.
 func (u *Sub2APIProviderProbeTargetRunUpsert) ClearErrorMessage() *Sub2APIProviderProbeTargetRunUpsert {
 	u.SetNull(sub2apiproviderprobetargetrun.FieldErrorMessage)
+	return u
+}
+
+// SetResponseText sets the "response_text" field.
+func (u *Sub2APIProviderProbeTargetRunUpsert) SetResponseText(v string) *Sub2APIProviderProbeTargetRunUpsert {
+	u.Set(sub2apiproviderprobetargetrun.FieldResponseText, v)
+	return u
+}
+
+// UpdateResponseText sets the "response_text" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetRunUpsert) UpdateResponseText() *Sub2APIProviderProbeTargetRunUpsert {
+	u.SetExcluded(sub2apiproviderprobetargetrun.FieldResponseText)
+	return u
+}
+
+// ClearResponseText clears the value of the "response_text" field.
+func (u *Sub2APIProviderProbeTargetRunUpsert) ClearResponseText() *Sub2APIProviderProbeTargetRunUpsert {
+	u.SetNull(sub2apiproviderprobetargetrun.FieldResponseText)
+	return u
+}
+
+// SetAnswerProbe sets the "answer_probe" field.
+func (u *Sub2APIProviderProbeTargetRunUpsert) SetAnswerProbe(v bool) *Sub2APIProviderProbeTargetRunUpsert {
+	u.Set(sub2apiproviderprobetargetrun.FieldAnswerProbe, v)
+	return u
+}
+
+// UpdateAnswerProbe sets the "answer_probe" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetRunUpsert) UpdateAnswerProbe() *Sub2APIProviderProbeTargetRunUpsert {
+	u.SetExcluded(sub2apiproviderprobetargetrun.FieldAnswerProbe)
 	return u
 }
 
@@ -1203,6 +1276,41 @@ func (u *Sub2APIProviderProbeTargetRunUpsertOne) UpdateErrorMessage() *Sub2APIPr
 func (u *Sub2APIProviderProbeTargetRunUpsertOne) ClearErrorMessage() *Sub2APIProviderProbeTargetRunUpsertOne {
 	return u.Update(func(s *Sub2APIProviderProbeTargetRunUpsert) {
 		s.ClearErrorMessage()
+	})
+}
+
+// SetResponseText sets the "response_text" field.
+func (u *Sub2APIProviderProbeTargetRunUpsertOne) SetResponseText(v string) *Sub2APIProviderProbeTargetRunUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetRunUpsert) {
+		s.SetResponseText(v)
+	})
+}
+
+// UpdateResponseText sets the "response_text" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetRunUpsertOne) UpdateResponseText() *Sub2APIProviderProbeTargetRunUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetRunUpsert) {
+		s.UpdateResponseText()
+	})
+}
+
+// ClearResponseText clears the value of the "response_text" field.
+func (u *Sub2APIProviderProbeTargetRunUpsertOne) ClearResponseText() *Sub2APIProviderProbeTargetRunUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetRunUpsert) {
+		s.ClearResponseText()
+	})
+}
+
+// SetAnswerProbe sets the "answer_probe" field.
+func (u *Sub2APIProviderProbeTargetRunUpsertOne) SetAnswerProbe(v bool) *Sub2APIProviderProbeTargetRunUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetRunUpsert) {
+		s.SetAnswerProbe(v)
+	})
+}
+
+// UpdateAnswerProbe sets the "answer_probe" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetRunUpsertOne) UpdateAnswerProbe() *Sub2APIProviderProbeTargetRunUpsertOne {
+	return u.Update(func(s *Sub2APIProviderProbeTargetRunUpsert) {
+		s.UpdateAnswerProbe()
 	})
 }
 
@@ -1771,6 +1879,41 @@ func (u *Sub2APIProviderProbeTargetRunUpsertBulk) UpdateErrorMessage() *Sub2APIP
 func (u *Sub2APIProviderProbeTargetRunUpsertBulk) ClearErrorMessage() *Sub2APIProviderProbeTargetRunUpsertBulk {
 	return u.Update(func(s *Sub2APIProviderProbeTargetRunUpsert) {
 		s.ClearErrorMessage()
+	})
+}
+
+// SetResponseText sets the "response_text" field.
+func (u *Sub2APIProviderProbeTargetRunUpsertBulk) SetResponseText(v string) *Sub2APIProviderProbeTargetRunUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetRunUpsert) {
+		s.SetResponseText(v)
+	})
+}
+
+// UpdateResponseText sets the "response_text" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetRunUpsertBulk) UpdateResponseText() *Sub2APIProviderProbeTargetRunUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetRunUpsert) {
+		s.UpdateResponseText()
+	})
+}
+
+// ClearResponseText clears the value of the "response_text" field.
+func (u *Sub2APIProviderProbeTargetRunUpsertBulk) ClearResponseText() *Sub2APIProviderProbeTargetRunUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetRunUpsert) {
+		s.ClearResponseText()
+	})
+}
+
+// SetAnswerProbe sets the "answer_probe" field.
+func (u *Sub2APIProviderProbeTargetRunUpsertBulk) SetAnswerProbe(v bool) *Sub2APIProviderProbeTargetRunUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetRunUpsert) {
+		s.SetAnswerProbe(v)
+	})
+}
+
+// UpdateAnswerProbe sets the "answer_probe" field to the value that was provided on create.
+func (u *Sub2APIProviderProbeTargetRunUpsertBulk) UpdateAnswerProbe() *Sub2APIProviderProbeTargetRunUpsertBulk {
+	return u.Update(func(s *Sub2APIProviderProbeTargetRunUpsert) {
+		s.UpdateAnswerProbe()
 	})
 }
 

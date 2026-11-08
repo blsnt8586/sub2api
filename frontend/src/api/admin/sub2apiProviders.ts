@@ -29,7 +29,7 @@ export interface Sub2APIProvider {
   proxy_id: number | null
   proxy_name?: string | null
   email: string
-  auth_mode: 'password' | 'token_pair' | 'access_token'
+  auth_mode: 'password' | 'token_pair' | 'access_token' | 'browser_session'
   has_access_token: boolean
   has_refresh_token: boolean
   access_token_expires_at?: string | null
@@ -57,7 +57,7 @@ export interface CreateProviderRequest {
   provider_type?: string
   email: string
   password?: string
-  auth_mode?: 'password' | 'token_pair' | 'access_token'
+  auth_mode?: 'password' | 'token_pair' | 'access_token' | 'browser_session'
   access_token?: string
   refresh_token?: string
   notes?: string | null
@@ -70,7 +70,7 @@ export interface UpdateProviderRequest {
   base_url?: string
   email?: string
   password?: string
-  auth_mode?: 'password' | 'token_pair' | 'access_token'
+  auth_mode?: 'password' | 'token_pair' | 'access_token' | 'browser_session'
   access_token?: string
   refresh_token?: string
   status?: 'active' | 'inactive'
@@ -288,6 +288,7 @@ export interface Sub2APIProviderProbeTargetHealth {
   provider_id: number
   account_id: number
   account_name: string
+  account_status?: string
   provider_api_key_id?: number | null
   remote_group_id?: number | null
   remote_group_name?: string | null
@@ -308,6 +309,12 @@ export interface Sub2APIProviderProbeTargetHealth {
   consecutive_healthy: number
   current_interval_seconds: number
   test_model?: string | null
+  answer_probe_enabled: boolean
+  answer_probe_prompt?: string | null
+  answer_probe_interval_seconds: number
+  answer_text?: string
+  answer_at?: string | null
+  answer_history?: Array<{ at: string; model?: string; text?: string; error?: string; latency_ms?: number | null }>
   allow_media_probe: boolean
   timeout_seconds: number
   degraded_latency_ms: number
@@ -348,6 +355,8 @@ export interface ProviderAccountHealthPolicy {
   timeout_ms: number
   failure_threshold: number
   account_failure_threshold: number
+  degraded_threshold: number
+  account_degraded_threshold: number
   session_avoid_seconds: number
   recovery_delay_seconds: number
   probe_interval_seconds: number
@@ -400,6 +409,9 @@ export type UpdateProviderProbeTargetRequest = Partial<Pick<
   | 'cost_optimize_healthy_threshold'
   | 'failure_threshold'
   | 'recovery_threshold'
+  | 'answer_probe_enabled'
+  | 'answer_probe_prompt'
+  | 'answer_probe_interval_seconds'
 >>
 
 export interface Sub2APIProviderProbeConfig {

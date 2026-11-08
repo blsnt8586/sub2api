@@ -81,20 +81,20 @@ describe('parseSub2APICredentialBundle', () => {
 })
 
 describe('New API credential bundles', () => {
-  const newAPIBundle = (credentials: Record<string, unknown> = { user_id: '42', access_token: 'management-token' }) =>
+  const newAPIBundle = (credentials: Record<string, unknown> = { user_id: '42', access_token: 'browser-session-token', refresh_cookie: 'refresh-cookie' }) =>
     JSON.stringify({
       format: 'newapi-browser-credentials', version: 1,
       source: { origin: 'https://newapi.example.com' }, credentials,
     })
 
-  it.each(['42', 42])('imports user ID %s and a management token without a refresh token', userID => {
+  it.each(['42', 42])('imports user ID %s and a browser session refresh cookie', userID => {
     const parsed = parseSub2APICredentialBundle(
-      newAPIBundle({ user_id: userID, access_token: ' management-token ' }),
+      newAPIBundle({ user_id: userID, access_token: ' browser-session-token ', refresh_cookie: ' refresh-cookie ' }),
       'https://newapi.example.com/console', 'newapi'
     )
     expect(parsed).toMatchObject({
-      providerType: 'newapi', userID: '42', accessToken: 'management-token',
-      refreshToken: '', sourceOrigin: 'https://newapi.example.com', cookieCount: 0,
+      providerType: 'newapi', userID: '42', accessToken: 'browser-session-token',
+      refreshToken: 'refresh-cookie', sourceOrigin: 'https://newapi.example.com', cookieCount: 0,
     })
   })
 
@@ -105,11 +105,12 @@ describe('New API credential bundles', () => {
   })
 
   it.each([0, -1, 1.5, '01', '1e3', 'abc', '9007199254740992', null])('rejects invalid user ID %s', userID => {
-    expectCode(() => parseSub2APICredentialBundle(newAPIBundle({ user_id: userID, access_token: 'token' })), 'invalidUserID')
+    expectCode(() => parseSub2APICredentialBundle(newAPIBundle({ user_id: userID, access_token: 'token', refresh_cookie: 'refresh' })), 'invalidUserID')
   })
 
-  it('requires a bounded management token', () => {
+  it('requires bounded renewable browser credentials', () => {
     expectCode(() => parseSub2APICredentialBundle(newAPIBundle({ user_id: '42' })), 'managementTokenMissing')
     expectCode(() => parseSub2APICredentialBundle(newAPIBundle({ user_id: '42', access_token: 'x'.repeat(128 * 1024 + 1) })), 'tokenTooLarge')
+    expectCode(() => parseSub2APICredentialBundle(newAPIBundle({ user_id: '42', access_token: 'token' })), 'refreshCookieMissing')
   })
 })

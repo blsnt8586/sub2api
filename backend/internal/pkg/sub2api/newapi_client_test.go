@@ -77,6 +77,41 @@ func TestNewAPIAuthenticationCompatibilityAndCache(t *testing.T) {
 	}
 }
 
+func TestNewAPIBrowserSessionRefreshesAndPersistsRotation(t *testing.T) {
+	var persistedAccess, persistedCookie string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/api/user/auth/refresh":
+			require.Equal(t, http.MethodPost, r.Method)
+			require.Equal(t, "new_api_refresh=old-cookie", r.Header.Get("Cookie"))
+			require.Equal(t, "http://"+r.Host, r.Header.Get("Origin"))
+			http.SetCookie(w, &http.Cookie{Name: "new_api_refresh", Value: "rotated-cookie", Path: "/api/user/auth", HttpOnly: true})
+			newAPIReply(w, map[string]any{"access_token": "fresh-token", "access_expires_at": time.Now().Add(time.Hour).Unix(), "user": map[string]any{"id": 42}})
+		case "/api/user/self":
+			if r.Header.Get("Authorization") == "Bearer old-token" {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+			require.Equal(t, "Bearer fresh-token", r.Header.Get("Authorization"))
+			newAPIReply(w, map[string]any{"id": 42, "quota": 1000000, "used_quota": 250000})
+		case "/api/status":
+			newAPIReply(w, map[string]any{"quota_per_unit": 500000})
+		default:
+			t.Errorf("unexpected request: %s", r.URL.Path)
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer server.Close()
+	c := NewClient(server.URL, "42", "")
+	require.NoError(t, c.ConfigureNewAPIBrowserSession("old-token", "old-cookie", func(_ context.Context, access, cookie string, _ time.Time) error {
+		persistedAccess, persistedCookie = access, cookie
+		return nil
+	}))
+	require.NoError(t, c.EnsureLoggedIn(context.Background(), 9, NewTokenCache()))
+	require.Equal(t, "fresh-token", persistedAccess)
+	require.Equal(t, "rotated-cookie", persistedCookie)
+}
+
 func TestNewAPITokenIdentityAndErrorRedaction(t *testing.T) {
 	for _, test := range []struct {
 		name    string

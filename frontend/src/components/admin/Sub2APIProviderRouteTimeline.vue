@@ -17,18 +17,18 @@
       v-if="displayBuckets.length"
       class="rounded-[2px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-dark-800"
       :aria-label="activeBucketAriaLabel"
-      role="img"
-      tabindex="0"
-      @keydown.left.prevent="moveSelection(-1)"
-      @keydown.right.prevent="moveSelection(1)"
-      @keydown.home.prevent="selectBucket(0)"
-      @keydown.end.prevent="selectBucket(displayBuckets.length - 1)"
+      :role="interactive ? 'img' : undefined"
+      :tabindex="interactive ? 0 : undefined"
+      @keydown.left.prevent="interactive && moveSelection(-1)"
+      @keydown.right.prevent="interactive && moveSelection(1)"
+      @keydown.home.prevent="interactive && selectBucket(0)"
+      @keydown.end.prevent="interactive && selectBucket(displayBuckets.length - 1)"
     >
       <div class="route-probe-timeline grid h-3 min-w-0 gap-px overflow-hidden rounded-[2px] border border-gray-100 dark:border-dark-700" :style="timelineGridStyle" aria-hidden="true">
         <span
           v-for="(bucket, index) in displayBuckets"
           :key="`${route.id}-${bucket.started_at || index}`"
-          class="route-probe-timeline__bucket min-w-0 cursor-crosshair transition-[filter,opacity,transform] duration-150 motion-reduce:transition-none"
+          class="route-probe-timeline__bucket min-w-0 transition-[filter,opacity,transform] duration-150 motion-reduce:transition-none"
           :class="[
             statusBucketClass(bucket.status),
             index === selectedIndex ? 'scale-y-125 saturate-150' : 'opacity-80 hover:opacity-100',
@@ -36,8 +36,8 @@
           :style="index === 0 ? firstBucketGridStyle : undefined"
           :title="bucketTitle(bucket)"
           data-test="route-timeline-bucket"
-          @pointerenter="selectBucket(index)"
-          @click="selectBucket(index)"
+          @pointerenter="interactive && selectBucket(index)"
+          @click="interactive && selectBucket(index)"
         />
       </div>
     </div>
@@ -70,8 +70,10 @@ import type { ProviderHealthStatus, Sub2APIProviderHealthBucket, Sub2APIProvider
 const props = withDefaults(defineProps<{
   route: Sub2APIProviderProbeTargetHealth
   compact?: boolean
+  interactive?: boolean
 }>(), {
   compact: false,
+  interactive: true,
 })
 
 const { t, locale } = useI18n()

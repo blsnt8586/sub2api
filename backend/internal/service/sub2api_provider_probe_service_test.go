@@ -228,6 +228,39 @@ func TestDeleteExpiredSub2APIUpstreamLogsDrainsAllBatches(t *testing.T) {
 	}
 }
 
+type answerProbeResponseRetentionStub struct {
+	counts  []int64
+	cutoffs []time.Time
+	limits  []int
+}
+
+func (r *answerProbeResponseRetentionStub) ClearAnswerProbeResponsesBefore(_ context.Context, cutoff time.Time, limit int) (int64, error) {
+	r.cutoffs = append(r.cutoffs, cutoff)
+	r.limits = append(r.limits, limit)
+	index := len(r.cutoffs) - 1
+	if index >= len(r.counts) {
+		return 0, nil
+	}
+	return r.counts[index], nil
+}
+
+func TestClearExpiredAnswerProbeResponsesDrainsBatches(t *testing.T) {
+	cutoff := time.Date(2026, 11, 8, 12, 0, 0, 0, time.UTC)
+	repo := &answerProbeResponseRetentionStub{counts: []int64{2, 1}}
+	cleared, err := clearExpiredAnswerProbeResponses(context.Background(), repo, cutoff, 2)
+	if err != nil {
+		t.Fatalf("clear expired response bodies: %v", err)
+	}
+	if cleared != 3 || len(repo.cutoffs) != 2 {
+		t.Fatalf("cleared=%d calls=%d, want 3 in two batches", cleared, len(repo.cutoffs))
+	}
+	for index := range repo.cutoffs {
+		if !repo.cutoffs[index].Equal(cutoff) || repo.limits[index] != 2 {
+			t.Fatalf("batch %d cutoff/limit=%s/%d", index, repo.cutoffs[index], repo.limits[index])
+		}
+	}
+}
+
 func TestDeleteExpiredSub2APIUpstreamLogsStopsAfterRepositoryError(t *testing.T) {
 	repo := &upstreamLogRetentionRepositoryStub{
 		results:   []Sub2APIUpstreamLogCleanupResult{{ProviderProbeRuns: 1000}},
@@ -376,6 +409,200 @@ func TestScheduledAccountProbeRemainsOffAfterNonHealthyResult(t *testing.T) {
 	target.ConsecutiveHealthy = 0
 	if shouldRunProviderProbeTarget(target, true, true, now) {
 		t.Fatal("scheduled model probing must stay off even after failures")
+	}
+}
+
+func TestScheduledAnswerProbeUsesConfiguredCadenceWithoutTargetEnable(t *testing.T) {
+	now := time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC)
+	prompt := "answer this"
+	target := &ent.Sub2APIProviderProbeTarget{
+		ID:                           43,
+		Enabled:                      false,
+		AnswerProbeEnabled:           true,
+		AnswerProbePrompt:            &prompt,
+		AnswerProbeIntervalSeconds:   30,
+		LastRunAt:                    nil,
+		IntervalSeconds:              30,
+		AdaptiveIntervalEnabled:      true,
+		HealthyIntervalSeconds:       120,
+		HealthyIntervalThreshold:     2,
+		StableHealthyIntervalSeconds: 300,
+		StableHealthyThreshold:       6,
+	}
+	if !shouldRunScheduledAnswerProbe(target, nil, now) {
+		t.Fatal("enabled answer probe should run immediately when it has no prior result")
+	}
+	last := now.Add(-29 * time.Second)
+	target.LastRunAt = &last
+	if shouldRunScheduledAnswerProbe(target, &last, now) {
+		t.Fatal("answer probe must wait for its configured interval")
+	}
+	last = now.Add(-30 * time.Second)
+	if !shouldRunScheduledAnswerProbe(target, &last, now) {
+		t.Fatal("answer probe should run exactly when its configured interval elapses")
+	}
+	target.LastRunAt = nil
+	target.AnswerProbeEnabled = false
+	if shouldRunScheduledAnswerProbe(target, nil, now) {
+		t.Fatal("disabled answer probe must not schedule a model request")
+	}
+}
+
+type probeModeAccountRepo struct {
+	Sub2APIAccountRepository
+	account *Account
+	err     error
+}
+
+func (r *probeModeAccountRepo) GetByID(context.Context, int64) (*Account, error) {
+	return r.account, r.err
+}
+
+type probeModeRepo struct {
+	Sub2APIProviderProbeRepository
+	run       *Sub2APIProviderProbeTargetRunInput
+	markCalls int
+}
+
+func (r *probeModeRepo) CreateTargetRun(_ context.Context, input *Sub2APIProviderProbeTargetRunInput) (*ent.Sub2APIProviderProbeTargetRun, error) {
+	r.run = input
+	return &ent.Sub2APIProviderProbeTargetRun{
+		TargetID:   input.TargetID,
+		AccountID:  input.AccountID,
+		Status:     sub2apiproviderprobetargetrun.Status(input.Status),
+		LatencyMs:  input.LatencyMS,
+		FinishedAt: input.FinishedAt,
+	}, nil
+}
+
+func (r *probeModeRepo) MarkTargetRun(context.Context, int64, time.Time, string) error {
+	r.markCalls++
+	return nil
+}
+
+type probeModeRunner struct {
+	normalCalls int
+	answerCalls int
+}
+
+func (r *probeModeRunner) RunProbeTestBackground(context.Context, int64, string) (*ScheduledTestResult, error) {
+	r.normalCalls++
+	return &ScheduledTestResult{Status: "success", LatencyMs: 10, FinishedAt: time.Now().UTC()}, nil
+}
+
+func (r *probeModeRunner) RunAnswerProbeBackground(context.Context, int64, string, string) (*ScheduledTestResult, error) {
+	r.answerCalls++
+	return &ScheduledTestResult{Status: "success", LatencyMs: 10, ResponseText: "answer", FinishedAt: time.Now().UTC()}, nil
+}
+
+func TestRecoveryProbeDoesNotRunAnswerChallenge(t *testing.T) {
+	providerID := int64(18)
+	prompt := "answer this difficult question"
+	runner := &probeModeRunner{}
+	repo := &probeModeRepo{}
+	svc := &Sub2APIProviderProbeService{
+		accountRepo: &probeModeAccountRepo{account: &Account{
+			ID:               7,
+			ProviderID:       &providerID,
+			Status:           StatusActive,
+			Schedulable:      true,
+			Sub2APITestModel: providerProbeStringPtr("test-model"),
+			Credentials:      map[string]any{},
+			Extra:            map[string]any{},
+		}},
+		probeRepo:   repo,
+		accountTest: runner,
+	}
+	target := &ent.Sub2APIProviderProbeTarget{
+		ID:                 9,
+		ProviderID:         providerID,
+		AccountID:          7,
+		Enabled:            true,
+		AnswerProbeEnabled: true,
+		AnswerProbePrompt:  &prompt,
+		TimeoutSeconds:     10,
+		DegradedLatencyMs:  1000,
+	}
+
+	run, _, err := svc.runTargetWithAnswerProbe(context.Background(), target, false)
+	if err != nil {
+		t.Fatalf("run recovery-shaped probe: %v", err)
+	}
+	if run == nil || repo.run == nil {
+		t.Fatal("expected a persisted probe result")
+	}
+	if runner.normalCalls != 1 || runner.answerCalls != 0 {
+		t.Fatalf("recovery probe calls: normal=%d answer=%d", runner.normalCalls, runner.answerCalls)
+	}
+	if repo.markCalls != 1 {
+		t.Fatalf("health probe should update health cadence exactly once: calls=%d", repo.markCalls)
+	}
+	if repo.run.AnswerProbe {
+		t.Fatal("recovery probe must not be persisted as an answer probe")
+	}
+}
+
+func TestAnswerProbeDoesNotUpdateHealthProbeCadence(t *testing.T) {
+	providerID := int64(18)
+	prompt := "answer this question"
+	runner := &probeModeRunner{}
+	repo := &probeModeRepo{}
+	svc := &Sub2APIProviderProbeService{
+		accountRepo: &probeModeAccountRepo{account: &Account{
+			ID:               7,
+			ProviderID:       &providerID,
+			Status:           StatusActive,
+			Schedulable:      true,
+			Sub2APITestModel: providerProbeStringPtr("test-model"),
+			Credentials:      map[string]any{},
+			Extra:            map[string]any{},
+		}},
+		probeRepo:   repo,
+		accountTest: runner,
+	}
+	target := &ent.Sub2APIProviderProbeTarget{
+		ID: 9, ProviderID: providerID, AccountID: 7, Enabled: true,
+		AnswerProbeEnabled: true, AnswerProbePrompt: &prompt,
+		TimeoutSeconds: 10, DegradedLatencyMs: 1000,
+	}
+
+	run, _, err := svc.runTargetWithAnswerProbe(context.Background(), target, true)
+	if err != nil {
+		t.Fatalf("run answer probe: %v", err)
+	}
+	if run == nil || repo.run == nil || !repo.run.AnswerProbe || repo.run.ResponseText == nil {
+		t.Fatal("answer probe result was not persisted as an answer record")
+	}
+	if runner.normalCalls != 0 || runner.answerCalls != 1 {
+		t.Fatalf("answer probe calls: normal=%d answer=%d", runner.normalCalls, runner.answerCalls)
+	}
+	if repo.markCalls != 0 {
+		t.Fatalf("answer probes must not update health probe cadence: calls=%d", repo.markCalls)
+	}
+}
+
+func TestAnswerProbeAccountLoadFailureIsRecordedForAnswerCadence(t *testing.T) {
+	providerID := int64(18)
+	prompt := "answer this question"
+	repo := &probeModeRepo{}
+	svc := &Sub2APIProviderProbeService{
+		accountRepo: &probeModeAccountRepo{err: errors.New("account lookup unavailable")},
+		probeRepo:   repo,
+	}
+	target := &ent.Sub2APIProviderProbeTarget{
+		ID: 9, ProviderID: providerID, AccountID: 7,
+		AnswerProbeEnabled: true, AnswerProbePrompt: &prompt,
+	}
+
+	run, _, err := svc.runTargetWithAnswerProbe(context.Background(), target, true)
+	if err != nil {
+		t.Fatalf("persist failed answer probe: %v", err)
+	}
+	if run == nil || repo.run == nil || !repo.run.AnswerProbe || repo.run.ErrorMessage == nil {
+		t.Fatal("account lookup failure must create an answer-probe history row")
+	}
+	if repo.markCalls != 0 {
+		t.Fatalf("answer-probe failures must not update health probe cadence: calls=%d", repo.markCalls)
 	}
 }
 

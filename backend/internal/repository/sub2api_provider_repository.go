@@ -163,6 +163,9 @@ func (r *Sub2APIProviderRepository) Update(ctx context.Context, id int64, input 
 	if input.ClearTokenPair {
 		update = update.ClearAccessTokenEncrypted().ClearRefreshTokenEncrypted().ClearAccessTokenExpiresAt().ClearLastTokenRefreshAt().ClearLastAuthError()
 	} else {
+		if input.ClearRefreshToken {
+			update = update.ClearRefreshTokenEncrypted()
+		}
 		if input.AccessTokenEncrypted != nil {
 			update = update.SetAccessTokenEncrypted(*input.AccessTokenEncrypted)
 		}
@@ -173,7 +176,7 @@ func (r *Sub2APIProviderRepository) Update(ctx context.Context, id int64, input 
 			update = update.SetAccessTokenExpiresAt(*input.AccessTokenExpiresAt)
 		}
 		if input.TokenPairUpdated {
-			update = update.SetLastTokenRefreshAt(time.Now()).ClearLastAuthError()
+			update = update.ClearLastTokenRefreshAt().ClearLastAuthError()
 		}
 	}
 	if input.Status != nil {

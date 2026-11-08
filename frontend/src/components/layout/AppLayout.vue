@@ -19,6 +19,7 @@
         <slot />
       </main>
     </div>
+    <FeedbackLauncher v-if="!isAdmin" />
   </div>
 </template>
 
@@ -31,6 +32,7 @@ import { useOnboardingTour } from '@/composables/useOnboardingTour'
 import { useOnboardingStore } from '@/stores/onboarding'
 import AppSidebar from './AppSidebar.vue'
 import AppHeader from './AppHeader.vue'
+import FeedbackLauncher from '@/components/feedback/FeedbackLauncher.vue'
 
 const appStore = useAppStore()
 const authStore = useAuthStore()

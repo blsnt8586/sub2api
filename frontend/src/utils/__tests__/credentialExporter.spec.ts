@@ -17,17 +17,27 @@ function startScript() {
 }
 
 async function openNewAPI() {
-  fetchMock.mockImplementation(async (path: string) => ({
-    ok: true, json: async () => path === '/api/status'
-      ? { success: true, data: { quota_per_unit: 500000 } }
-      : { success: true, data: { id: 42 } },
-  }))
+  let refreshCookie = 'old-refresh-cookie'
+  cookies.mockImplementation((_options, callback) => {
+    callback([
+      { name: 'new_api_refresh', value: 'wrong-path-cookie', httpOnly: true, domain: window.location.hostname, hostOnly: false, path: '/', secure: false },
+      { name: 'new_api_refresh', value: refreshCookie, httpOnly: true, domain: window.location.hostname, hostOnly: false, path: '/api/user/auth', secure: false },
+    ])
+  })
+  fetchMock.mockImplementation(async (path: string) => {
+    if (path === '/api/user/auth/refresh') refreshCookie = 'refresh-cookie'
+    return {
+      ok: true, json: async () => path === '/api/status'
+        ? { success: true, data: { quota_per_unit: 500000 } }
+        : path === '/api/user/auth/refresh'
+          ? { success: true, data: { access_token: 'browser-session-token', user: { id: 42 } } }
+          : { success: true, data: { id: 42 } },
+    }
+  })
   localStorage.setItem('user', JSON.stringify({ id: 42 }))
+  vi.spyOn(window, 'confirm').mockReturnValue(true)
   startScript()
   await flushPromises()
-  document.querySelector<HTMLButtonElement>('#sub2api-credential-exporter-button')!.click()
-  await flushPromises()
-  return document.querySelector<HTMLFormElement>('form')!
 }
 
 describe('credential exporter userscript', () => {
@@ -45,54 +55,66 @@ describe('credential exporter userscript', () => {
     document.body.innerHTML = ''
   })
 
-  it('verifies the New API management token without browser cookies and produces an importable bundle', async () => {
-    const form = await openNewAPI()
-    expect((form.elements.namedItem('user_id') as HTMLInputElement).value).toBe('42')
-    ;(form.elements.namedItem('access_token') as HTMLInputElement).value = 'management-token'
-    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
+  it('exports the current New API browser session without asking for a management token', async () => {
+    await openNewAPI()
+    document.querySelector<HTMLButtonElement>('#sub2api-credential-exporter-button')!.click()
     await flushPromises()
 
+    expect(fetchMock).toHaveBeenCalledWith('/api/user/auth/refresh', expect.objectContaining({
+      method: 'POST', credentials: 'include',
+    }))
     expect(fetchMock).toHaveBeenLastCalledWith('/api/user/self', expect.objectContaining({
       credentials: 'omit', redirect: 'error',
-      headers: { Accept: 'application/json', Authorization: 'Bearer management-token', 'New-Api-User': '42' },
+      headers: { Accept: 'application/json', Authorization: 'Bearer browser-session-token', 'New-Api-User': '42' },
     }))
     const raw = document.querySelector<HTMLTextAreaElement>('.sub2api-export-json')!.value
     expect(parseSub2APICredentialBundle(raw, window.location.origin, 'newapi')).toMatchObject({
-      providerType: 'newapi', userID: '42', accessToken: 'management-token', refreshToken: '',
+      providerType: 'newapi', userID: '42', accessToken: 'browser-session-token', refreshToken: 'refresh-cookie',
     })
-    expect(cookies).not.toHaveBeenCalled()
-    expect(document.body.textContent).not.toContain('management-token')
+    expect(cookies).toHaveBeenCalledWith({ url: `${window.location.origin}/api/user/auth/refresh` }, expect.any(Function))
+    expect(document.body.textContent).not.toContain('browser-session-token')
     document.querySelector<HTMLButtonElement>('.sub2api-copy-button')!.click()
     await flushPromises()
     expect(clipboard).toHaveBeenCalledWith(raw, 'text')
   })
 
-  it.each([
-    { ok: true, success: true, id: 43 },
-    { ok: true, success: false, id: 42 },
-    { ok: false, success: true, id: 42 },
-  ])('refuses rejected credentials or another user identity: %j', async result => {
-    const form = await openNewAPI()
-    fetchMock.mockResolvedValue({ ok: result.ok, json: async () => ({ success: result.success, data: { id: result.id } }) })
-    ;(form.elements.namedItem('access_token') as HTMLInputElement).value = 'bad-token'
-    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
+  it('supports Promise-based GM_cookie.list implementations', async () => {
+    await openNewAPI()
+    const originalFetch = fetchMock.getMockImplementation()!
+    let currentCookie = 'old-refresh-cookie'
+    cookies.mockImplementation((_options: unknown, _callback: unknown) => Promise.resolve([
+      { name: 'new_api_refresh', value: currentCookie, httpOnly: true, domain: window.location.hostname, hostOnly: false, path: '/api/user/auth', secure: false },
+    ]))
+    fetchMock.mockImplementation((path: string, options: unknown) => {
+      if (path === '/api/user/auth/refresh') currentCookie = 'fresh-refresh-cookie'
+      return originalFetch(path, options)
+    })
+    document.querySelector<HTMLButtonElement>('#sub2api-credential-exporter-button')!.click()
     await flushPromises()
-    expect(document.querySelector('.sub2api-export-json')).toBeNull()
-    expect(form.querySelector('[role="status"]')?.textContent).toContain('验证失败')
-    expect(form.querySelector<HTMLButtonElement>('[type="submit"]')!.disabled).toBe(false)
+    await vi.advanceTimersByTimeAsync(1200)
+    await flushPromises()
+    expect(document.querySelector('.sub2api-export-json')).not.toBeNull()
   })
 
-  it('does not reopen the export result when verification finishes after cancellation', async () => {
-    const form = await openNewAPI()
-    let respond!: (response: unknown) => void
-    fetchMock.mockImplementation(() => new Promise(resolve => { respond = resolve }))
-    ;(form.elements.namedItem('access_token') as HTMLInputElement).value = 'management-token'
-    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
-    document.querySelector<HTMLButtonElement>('.sub2api-export-close')!.click()
-    respond({ ok: true, json: async () => ({ success: true, data: { id: 42 } }) })
+  it.each([
+    { ok: true, success: true, data: { access_token: 'token', user: { id: 43 } } },
+    { ok: true, success: false, data: { access_token: 'token', user: { id: 42 } } },
+    { ok: false, success: true, data: { access_token: 'token', user: { id: 42 } } },
+  ])('refuses rejected browser sessions or another user identity: %j', async result => {
+    await openNewAPI()
+    fetchMock.mockResolvedValue({ ok: result.ok, json: async () => result })
+    document.querySelector<HTMLButtonElement>('#sub2api-credential-exporter-button')!.click()
     await flushPromises()
-    expect(document.querySelector('#sub2api-credential-exporter-panel')).toBeNull()
-    expect(fetchMock.mock.calls.at(-1)?.[1].signal.aborted).toBe(true)
+    expect(document.querySelector('.sub2api-export-json')).toBeNull()
+    expect(document.querySelector<HTMLButtonElement>('#sub2api-credential-exporter-button')!.disabled).toBe(false)
+  })
+
+  it('refuses a non-renewable export when HttpOnly cookies are unreadable', async () => {
+    await openNewAPI()
+    cookies.mockImplementation((_options, callback) => callback([]))
+    document.querySelector<HTMLButtonElement>('#sub2api-credential-exporter-button')!.click()
+    await flushPromises()
+    expect(document.querySelector('.sub2api-export-json')).toBeNull()
     expect(document.querySelector<HTMLButtonElement>('#sub2api-credential-exporter-button')!.disabled).toBe(false)
   })
 

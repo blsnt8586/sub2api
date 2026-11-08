@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/ent"
@@ -73,6 +74,38 @@ func (r *sub2APIProviderProbeRepository) DeleteUpstreamLogsBefore(
 		*target.count = deleted
 	}
 	return out, nil
+}
+
+func (r *sub2APIProviderProbeRepository) ClearAnswerProbeResponsesBefore(ctx context.Context, cutoff time.Time, batchSize int) (int64, error) {
+	if r == nil || r.db == nil {
+		return 0, fmt.Errorf("nil database for answer probe response retention")
+	}
+	if batchSize <= 0 {
+		return 0, fmt.Errorf("answer probe response retention batch size must be positive")
+	}
+	const query = `
+WITH expired AS (
+  SELECT id
+    FROM sub2api_provider_probe_target_runs
+   WHERE answer_probe IS TRUE
+     AND response_text IS NOT NULL
+     AND finished_at < $1
+   ORDER BY id
+   LIMIT $2
+)
+UPDATE sub2api_provider_probe_target_runs AS runs
+   SET response_text = NULL
+  FROM expired
+ WHERE runs.id = expired.id`
+	result, err := r.db.ExecContext(ctx, query, cutoff.UTC(), batchSize)
+	if err != nil {
+		return 0, fmt.Errorf("clear expired answer probe responses: %w", err)
+	}
+	cleared, err := result.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("count cleared answer probe responses: %w", err)
+	}
+	return cleared, nil
 }
 
 func (r *sub2APIProviderProbeRepository) GetConfig(ctx context.Context, providerID int64) (*ent.Sub2APIProviderProbeConfig, error) {
@@ -305,6 +338,8 @@ func (r *sub2APIProviderProbeRepository) CreateTarget(ctx context.Context, input
 		SetHealthyIntervalThreshold(input.HealthyIntervalThreshold).
 		SetStableHealthyIntervalSeconds(input.StableHealthyIntervalSeconds).
 		SetStableHealthyThreshold(input.StableHealthyThreshold).
+		SetAnswerProbeEnabled(input.AnswerProbeEnabled).
+		SetAnswerProbeIntervalSeconds(input.AnswerProbeIntervalSeconds).
 		SetAllowMediaProbe(input.AllowMediaProbe).
 		SetTimeoutSeconds(input.TimeoutSeconds).
 		SetDegradedLatencyMs(input.DegradedLatencyMS).
@@ -323,6 +358,9 @@ func (r *sub2APIProviderProbeRepository) CreateTarget(ctx context.Context, input
 	if input.RemoteGroupName != nil {
 		b.SetRemoteGroupName(*input.RemoteGroupName)
 	}
+	if input.AnswerProbePrompt != nil {
+		b.SetAnswerProbePrompt(*input.AnswerProbePrompt)
+	}
 	return b.Save(ctx)
 }
 
@@ -339,6 +377,19 @@ func (r *sub2APIProviderProbeRepository) UpdateTarget(ctx context.Context, provi
 	}
 	if input.AdaptiveIntervalEnabled != nil {
 		u.SetAdaptiveIntervalEnabled(*input.AdaptiveIntervalEnabled).SetConsecutiveHealthy(0)
+	}
+	if input.AnswerProbeEnabled != nil {
+		u.SetAnswerProbeEnabled(*input.AnswerProbeEnabled)
+	}
+	if input.AnswerProbeIntervalSeconds != nil {
+		u.SetAnswerProbeIntervalSeconds(*input.AnswerProbeIntervalSeconds)
+	}
+	if input.AnswerProbePrompt != nil {
+		if strings.TrimSpace(*input.AnswerProbePrompt) == "" {
+			u.ClearAnswerProbePrompt()
+		} else {
+			u.SetAnswerProbePrompt(strings.TrimSpace(*input.AnswerProbePrompt))
+		}
 	}
 	if input.HealthyIntervalSeconds != nil {
 		u.SetHealthyIntervalSeconds(*input.HealthyIntervalSeconds)
@@ -473,6 +524,10 @@ func (r *sub2APIProviderProbeRepository) CreateTargetRun(ctx context.Context, in
 	if input.ErrorMessage != nil {
 		b.SetErrorMessage(*input.ErrorMessage)
 	}
+	if input.ResponseText != nil {
+		b.SetResponseText(*input.ResponseText)
+	}
+	b.SetAnswerProbe(input.AnswerProbe)
 	return b.Save(ctx)
 }
 
@@ -515,6 +570,19 @@ func (r *sub2APIProviderProbeRepository) ListRecentTargetRuns(ctx context.Contex
 		result = append(result, runs...)
 	}
 	return result, nil
+}
+
+func (r *sub2APIProviderProbeRepository) ListRecentAnswerProbeRuns(ctx context.Context, targetID int64, since time.Time, limit int) ([]*ent.Sub2APIProviderProbeTargetRun, error) {
+	if targetID <= 0 || limit <= 0 {
+		return []*ent.Sub2APIProviderProbeTargetRun{}, nil
+	}
+	return r.client.Sub2APIProviderProbeTargetRun.Query().Where(
+		sub2apiproviderprobetargetrun.TargetID(targetID),
+		sub2apiproviderprobetargetrun.AnswerProbe(true),
+		sub2apiproviderprobetargetrun.CreatedAtGTE(since.UTC()),
+	).Order(
+		ent.Desc(sub2apiproviderprobetargetrun.FieldCreatedAt),
+	).Limit(limit).All(ctx)
 }
 
 func (r *sub2APIProviderProbeRepository) TargetTrafficStats(ctx context.Context, accountID int64, since time.Time) (*service.Sub2APIProviderProbeTargetTrafficStats, error) {

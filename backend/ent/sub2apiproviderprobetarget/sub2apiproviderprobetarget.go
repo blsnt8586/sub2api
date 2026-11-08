@@ -48,6 +48,12 @@ const (
 	FieldConsecutiveHealthy = "consecutive_healthy"
 	// FieldTestModel holds the string denoting the test_model field in the database.
 	FieldTestModel = "test_model"
+	// FieldAnswerProbeEnabled holds the string denoting the answer_probe_enabled field in the database.
+	FieldAnswerProbeEnabled = "answer_probe_enabled"
+	// FieldAnswerProbePrompt holds the string denoting the answer_probe_prompt field in the database.
+	FieldAnswerProbePrompt = "answer_probe_prompt"
+	// FieldAnswerProbeIntervalSeconds holds the string denoting the answer_probe_interval_seconds field in the database.
+	FieldAnswerProbeIntervalSeconds = "answer_probe_interval_seconds"
 	// FieldAllowMediaProbe holds the string denoting the allow_media_probe field in the database.
 	FieldAllowMediaProbe = "allow_media_probe"
 	// FieldTimeoutSeconds holds the string denoting the timeout_seconds field in the database.
@@ -123,6 +129,9 @@ var Columns = []string{
 	FieldStableHealthyThreshold,
 	FieldConsecutiveHealthy,
 	FieldTestModel,
+	FieldAnswerProbeEnabled,
+	FieldAnswerProbePrompt,
+	FieldAnswerProbeIntervalSeconds,
 	FieldAllowMediaProbe,
 	FieldTimeoutSeconds,
 	FieldDegradedLatencyMs,
@@ -190,6 +199,10 @@ var (
 	ConsecutiveHealthyValidator func(int) error
 	// TestModelValidator is a validator for the "test_model" field. It is called by the builders before save.
 	TestModelValidator func(string) error
+	// DefaultAnswerProbeEnabled holds the default value on creation for the "answer_probe_enabled" field.
+	DefaultAnswerProbeEnabled bool
+	// DefaultAnswerProbeIntervalSeconds holds the default value on creation for the "answer_probe_interval_seconds" field.
+	DefaultAnswerProbeIntervalSeconds int
 	// DefaultAllowMediaProbe holds the default value on creation for the "allow_media_probe" field.
 	DefaultAllowMediaProbe bool
 	// DefaultTimeoutSeconds holds the default value on creation for the "timeout_seconds" field.
@@ -315,6 +328,21 @@ func ByConsecutiveHealthy(opts ...sql.OrderTermOption) OrderOption {
 // ByTestModel orders the results by the test_model field.
 func ByTestModel(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTestModel, opts...).ToFunc()
+}
+
+// ByAnswerProbeEnabled orders the results by the answer_probe_enabled field.
+func ByAnswerProbeEnabled(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAnswerProbeEnabled, opts...).ToFunc()
+}
+
+// ByAnswerProbePrompt orders the results by the answer_probe_prompt field.
+func ByAnswerProbePrompt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAnswerProbePrompt, opts...).ToFunc()
+}
+
+// ByAnswerProbeIntervalSeconds orders the results by the answer_probe_interval_seconds field.
+func ByAnswerProbeIntervalSeconds(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAnswerProbeIntervalSeconds, opts...).ToFunc()
 }
 
 // ByAllowMediaProbe orders the results by the allow_media_probe field.

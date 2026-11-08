@@ -17,7 +17,7 @@ func validProviderProtocolAuth(providerType, mode string) bool {
 		return providerType == "" || domain.IsValidProviderType(providerType)
 	}
 	if providerType == domain.ProviderTypeNewAPI {
-		return mode == domain.Sub2APIProviderAuthModeAccessToken
+		return mode == domain.Sub2APIProviderAuthModeAccessToken || mode == domain.Sub2APIProviderAuthModeBrowserSession
 	}
 	return (providerType == "" || providerType == domain.ProviderTypeSub2API) && mode == domain.Sub2APIProviderAuthModeTokenPair
 }
@@ -33,10 +33,10 @@ func validateProviderIdentity(providerType, mode, identity string) error {
 		return infraerrors.BadRequest("INVALID_PROVIDER_IDENTITY", "provider login identity is required (maximum 200 bytes)")
 	}
 	if providerType == domain.ProviderTypeNewAPI {
-		if mode == domain.Sub2APIProviderAuthModeAccessToken {
+		if mode == domain.Sub2APIProviderAuthModeAccessToken || mode == domain.Sub2APIProviderAuthModeBrowserSession {
 			id, err := strconv.ParseInt(identity, 10, 64)
 			if err != nil || id <= 0 {
-				return infraerrors.BadRequest("INVALID_PROVIDER_IDENTITY", "New API management token requires a positive numeric user ID")
+				return infraerrors.BadRequest("INVALID_PROVIDER_IDENTITY", "New API browser session requires a positive numeric user ID")
 			}
 		}
 		return nil

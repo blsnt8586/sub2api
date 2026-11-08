@@ -33,7 +33,7 @@ type CreateProviderRequest struct {
 	ProviderType      string   `json:"provider_type" binding:"omitempty,oneof=sub2api newapi"`
 	Email             string   `json:"email" binding:"required,max=200"`
 	Password          string   `json:"password"`
-	AuthMode          string   `json:"auth_mode" binding:"omitempty,oneof=password token_pair access_token"`
+	AuthMode          string   `json:"auth_mode" binding:"omitempty,oneof=password token_pair access_token browser_session"`
 	AccessToken       *string  `json:"access_token"`
 	RefreshToken      *string  `json:"refresh_token"`
 	Notes             *string  `json:"notes"`
@@ -91,7 +91,7 @@ type UpdateProviderRequest struct {
 	BaseURL           *string                 `json:"base_url" binding:"omitempty,url"`
 	Email             *string                 `json:"email" binding:"omitempty,max=200"`
 	Password          *string                 `json:"password"`
-	AuthMode          *string                 `json:"auth_mode" binding:"omitempty,oneof=password token_pair access_token"`
+	AuthMode          *string                 `json:"auth_mode" binding:"omitempty,oneof=password token_pair access_token browser_session"`
 	AccessToken       *string                 `json:"access_token"`
 	RefreshToken      *string                 `json:"refresh_token"`
 	Status            *string                 `json:"status" binding:"omitempty,oneof=active inactive"`
@@ -681,7 +681,7 @@ func (h *Sub2APIProviderHandler) AccountHealthPolicy(c *gin.Context) {
 		return
 	}
 	if c.Request.Method == "PUT" {
-		var policy service.ProviderAccountHealthPolicy
+		policy := service.DefaultProviderAccountHealthPolicy()
 		if err := c.ShouldBindJSON(&policy); err != nil {
 			response.BadRequest(c, "Invalid account health policy")
 			return

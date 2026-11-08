@@ -39,6 +39,8 @@ func (Sub2APIProviderProbeTargetRun) Fields() []ent.Field {
 		field.Int("traffic_p95_latency_ms").Optional().Nillable(),
 		field.String("error_category").Optional().Nillable().MaxLen(64),
 		field.String("error_message").Optional().Nillable().SchemaType(map[string]string{dialect.Postgres: "text"}),
+		field.String("response_text").Optional().Nillable().SchemaType(map[string]string{dialect.Postgres: "text"}),
+		field.Bool("answer_probe").Default(false),
 		field.Time("started_at").Default(time.Now),
 		field.Time("finished_at").Default(time.Now),
 		field.Time("created_at").Default(time.Now).Immutable(),

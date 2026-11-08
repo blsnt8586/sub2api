@@ -210,6 +210,7 @@ func ProvideHandlers(
 	codexRadarHandler *CodexRadarHandler, // [CUSTOM]
 	toolDownloadsHandler *ToolDownloadsHandler,
 	tokenParkHandler *TokenParkHandler,
+	radarFeedbackHandler *RadarFeedbackHandler,
 	_ *service.IdempotencyCoordinator,
 	_ *service.IdempotencyCleanupService,
 	_ *service.OpenAIQuotaAutoResetService,
@@ -240,6 +241,7 @@ func ProvideHandlers(
 		CodexRadar:       codexRadarHandler, // [CUSTOM]
 		ToolDownloads:    toolDownloadsHandler,
 		TokenPark:        tokenParkHandler,
+		RadarFeedback:    radarFeedbackHandler,
 	}
 }
 
@@ -309,6 +311,7 @@ var ProviderSet = wire.NewSet(
 	NewCodexRadarHandler,
 	NewToolDownloadsHandler,
 	NewTokenParkHandler,
+	NewRadarFeedbackHandler,
 
 	// AdminHandlers and Handlers constructors
 	ProvideAdminHandlers,

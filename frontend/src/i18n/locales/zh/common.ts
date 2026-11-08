@@ -177,6 +177,8 @@ export default {
     affiliateRebateRecords: '返利记录',
     affiliateTransferRecords: '提取记录',
     profile: '个人资料',
+    feedback: '留言板',
+    feedbackManagement: '留言管理',
     users: '用户管理',
     groups: '分组管理',
     channels: '渠道管理',
