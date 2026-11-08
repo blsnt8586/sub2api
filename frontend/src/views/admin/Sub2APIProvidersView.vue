@@ -498,11 +498,13 @@
             {{ t('admin.sub2apiProviders.loadingAccounts') }}
           </div>
 
-          <!-- 账号选择（支持搜索，options>5 自动启用） -->
-          <Select
+          <!-- 账号选择（支持搜索和多选） -->
+          <MultiSelect
             v-else
-            v-model="selectedAccountId"
+            v-model="selectedAccountIDs"
             :options="availableAccountOptions"
+            :selected-count-label="t('admin.sub2apiProviders.accountsSelected')"
+            :clear-label="t('admin.sub2apiProviders.clearSelectedAccounts')"
             :searchable="true"
             :search-placeholder="t('admin.sub2apiProviders.searchAccountPlaceholder')"
             :placeholder="availableAccountOptions.length === 0 ? t('admin.sub2apiProviders.allAccountsLinked') : t('admin.sub2apiProviders.selectAccountPlaceholder')"
@@ -530,10 +532,10 @@
           <button type="button" class="btn btn-secondary" @click="closeLinkDialog">{{ t('common.cancel') }}</button>
           <button
             @click="handleLinkAccount"
-            :disabled="!selectedAccountId || linking"
+            :disabled="selectedAccountIDs.length === 0 || linking"
             class="btn btn-primary"
           >
-            {{ linking ? t('admin.sub2apiProviders.linking') : t('admin.sub2apiProviders.linkAccount') }}
+            {{ linking ? t('admin.sub2apiProviders.linking') : t('admin.sub2apiProviders.linkSelectedAccounts', { count: selectedAccountIDs.length }) }}
           </button>
         </div>
       </template>
@@ -2286,7 +2288,7 @@ const currentProvider = ref<Sub2APIProvider|null>(null)
 const allAccounts = ref<any[]>([])
 // 专门给关联对话框用的已关联账号 ID 集合，与"查看面板"独立
 const linkDialogLinkedIds = ref<Set<number>>(new Set())
-const selectedAccountId = ref<number|string>('')
+const selectedAccountIDs = ref<number[]>([])
 const linking = ref(false)
 const loadingAccounts = ref(false)
 
@@ -2304,7 +2306,7 @@ const openLinkDialog = async (row: Sub2APIProvider) => {
   // 重置状态，防止残留上次数据
   allAccounts.value = []
   linkDialogLinkedIds.value = new Set()
-  selectedAccountId.value = ''
+  selectedAccountIDs.value = []
   showLinkDialog.value = true
   loadingAccounts.value = true
 
@@ -2326,17 +2328,54 @@ const openLinkDialog = async (row: Sub2APIProvider) => {
   }
 }
 
-const closeLinkDialog = () => { showLinkDialog.value = false; selectedAccountId.value = '' }
+const closeLinkDialog = () => { showLinkDialog.value = false; selectedAccountIDs.value = [] }
 
 const handleLinkAccount = async () => {
-  if (!currentProvider.value || !selectedAccountId.value) return
+  if (!currentProvider.value || selectedAccountIDs.value.length === 0) return
   linking.value = true
+  const provider = currentProvider.value
+  const accountIDs = [...selectedAccountIDs.value]
   try {
-    await adminAPI.sub2apiProviders.linkAccount(currentProvider.value.id, Number(selectedAccountId.value))
-    appStore.showSuccess(t('admin.sub2apiProviders.linked'))
-    selectedAccountId.value = ''
+    const results: Array<{ status: 'fulfilled' } | { status: 'rejected'; reason: unknown }> = Array(accountIDs.length)
+    let nextIndex = 0
+    const linkWorker = async () => {
+      while (nextIndex < accountIDs.length) {
+        const index = nextIndex++
+        try {
+          await adminAPI.sub2apiProviders.linkAccount(provider.id, accountIDs[index])
+          results[index] = { status: 'fulfilled' }
+        } catch (reason) {
+          results[index] = { status: 'rejected', reason }
+        }
+      }
+    }
+    await Promise.all(Array.from({ length: Math.min(5, accountIDs.length) }, () => linkWorker()))
+    const successfulIDs = accountIDs.filter((_, index) => results[index].status === 'fulfilled')
+    const failed = results.flatMap((result, index) => result.status === 'rejected'
+      ? [{ accountID: accountIDs[index], error: result.reason }]
+      : [])
+    if (successfulIDs.length === 0) {
+      const firstFailure = failed[0]?.error
+      appStore.showError(extractI18nErrorMessage(
+        firstFailure,
+        t,
+        'admin.sub2apiProviders.linkErrors',
+        t('admin.sub2apiProviders.linkAccountLoadFailed'),
+      ))
+      return
+    }
+    if (failed.length === 0) {
+      appStore.showSuccess(t('admin.sub2apiProviders.linkedAccountsSuccess', { count: successfulIDs.length }))
+    } else {
+      const failedNames = failed.map(item => allAccounts.value.find(account => account.id === item.accountID)?.name || String(item.accountID))
+      appStore.showError(t('admin.sub2apiProviders.linkedAccountsPartial', {
+        success: successfulIDs.length,
+        failed: failedNames.join(', '),
+      }))
+    }
+    selectedAccountIDs.value = selectedAccountIDs.value.filter(id => !successfulIDs.includes(id))
     // 关联后立即同步分组信息（sync=true），让新账号即刻显示远端分组
-    const providerID = currentProvider.value.id
+    const providerID = provider.id
     const [linkedList, targets] = await Promise.all([
       adminAPI.sub2apiProviders.getLinkedAccounts(providerID, true),
       adminAPI.sub2apiProviders.getProbeTargets(providerID, true),
@@ -2346,11 +2385,12 @@ const handleLinkAccount = async () => {
     linkDialogLinkedIds.value = new Set(linkedList.map((a) => a.id))
     updateProviderAccountCount(providerID, linkedList.length)
     void loadHealthOverviews([providerID], false, true)
-    // 关闭关联对话框，直接打开账号面板展示结果（数据已是最新，无需重复 sync）
-    const provider = currentProvider.value
-    closeLinkDialog()
-    accountsPanelProvider.value = provider
-    showAccountsPanel.value = true
+    if (failed.length === 0) {
+      // 关闭关联对话框，直接打开账号面板展示结果（数据已是最新，无需重复 sync）
+      closeLinkDialog()
+      accountsPanelProvider.value = provider
+      showAccountsPanel.value = true
+    }
   } catch (e:any) {
     appStore.showError(extractI18nErrorMessage(
       e,
